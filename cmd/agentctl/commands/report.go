@@ -25,14 +25,17 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
-	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
-
+	govppapi "git.fd.io/govpp.git/api"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 )
 
@@ -77,14 +80,11 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	defer os.RemoveAll(dirName)
 
 	// create report files
-	errCounter := errorCounter( // TODO add other reports
-		writeReportTo("_report.txt", dirName, writeReportHeader, cli, reportTime), // TODO add info about other report files(what is there)
+	errCounter := errorCounter(
+		writeReportTo("_report.txt", dirName, writeMainReport, cli, reportTime),
 		writeReportTo("software-versions.txt", dirName, writeAgentctlVersionReport, cli),
 		writeReportTo("software-versions.txt", dirName, writeAgentVersionReport, cli),
 		writeReportTo("software-versions.txt", dirName, writeVPPVersionReport, cli),
-		writeReportTo("agent-status.txt", dirName, writeAgentStatusReport, cli),
-		writeReportTo("vpp-startup-config.txt", dirName, writeVPPStartupConfigReport, cli),
-		writeReportTo("vpp-running-config(vpp-agent-SB-dump).yaml", dirName, writeVPPRunningConfigReport, cli),
 		writeReportTo("hardware.txt", dirName, writeHardwareCPUReport, cli),
 		writeReportTo("hardware.txt", dirName, writeHardwareNumaReport, cli),
 		writeReportTo("hardware.txt", dirName, writeHardwareVPPMainMemoryReport, cli),
@@ -92,14 +92,29 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 		writeReportTo("hardware.txt", dirName, writeHardwareVPPPhysMemoryReport, cli),
 		writeReportTo("hardware.txt", dirName, writeHardwareVPPAPIMemoryReport, cli),
 		writeReportTo("hardware.txt", dirName, writeHardwareVPPStatsMemoryReport, cli),
+		writeReportTo("agent-status.txt", dirName, writeAgentStatusReport, cli),
+		writeReportTo("agent-transaction-history.txt", dirName, writeAgentTxnHistoryReport, cli),
+		writeReportTo("agent-NB-config.yaml", dirName, writeAgentNBConfigReport, cli),
+		writeReportTo("agent-kvscheduler-NB-config-view.txt", dirName, writeKVschedulerNBConfigReport, cli),
+		writeReportTo("agent-kvscheduler-SB-config-view.txt", dirName, writeKVschedulerSBConfigReport, cli),
+		writeReportTo("agent-kvscheduler-cached-config-view.txt", dirName, writeKVschedulerCachedConfigReport, cli),
+		writeReportTo("vpp-startup-config.txt", dirName, writeVPPStartupConfigReport, cli),
+		writeReportTo("vpp-running-config(vpp-agent-SB-dump).yaml", dirName, writeVPPRunningConfigReport, cli),
 		writeReportTo("vpp-event-log.txt", dirName, writeVPPEventLogReport, cli),
 		writeReportTo("vpp-log.txt", dirName, writeVPPLogReport, cli),
-		writeReportTo("agent-transaction-history.txt", dirName, writeAgentTxnHistoryReport, cli),
+		writeReportTo("vpp-statistics-interfaces.txt", dirName, writeVPPInterfaceStatsReport, cli),
+		writeReportTo("vpp-statistics-errors.txt", dirName, writeVPPErrorStatsReport, cli),
+		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6LocalsidReport, cli),
+		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6PolicyReport, cli),
+		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6SteeringReport, cli),
 	)
+	// summary errors from reports (actual errors are already written in reports,
+	// user console and failedReportFileName file)
 	if errCounter > 0 {
-		cli.Out().Write([]byte(fmt.Sprintf("\ncan't write %d subreport(s) "+
+		cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) couldn't be fully or partially created "+
 			"(full list with errors will be in packed zip file as file %s)\n\n", errCounter, failedReportFileName)))
 	} else { //
+		cli.Out().Write([]byte("All subreports were successfully created...\n\n"))
 		// remove empty "failed report" file (ignoring remove failure because it means only one more
 		// empty file in report zip file)
 		os.Remove(filepath.Join(dirName, failedReportFileName))
@@ -120,17 +135,66 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	if err := createZipFile(zipFileName, dirName); err != nil {
 		return fmt.Errorf("can't create zip file(%v) due to: %v", zipFileName, err)
 	}
-	cli.Out().Write([]byte(fmt.Sprintf("Done.\n\nReport file: %v\n", zipFileName)))
+	cli.Out().Write([]byte(fmt.Sprintf("Done.\nReport file: %v\n", zipFileName)))
 
 	return nil
 }
 
-func writeReportHeader(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+func writeMainReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
 	// using template also for simple cases to be consistent with variable formatting (i.e. time formatting)
 	format := `################# REPORT #################
 report creation time:    {{epoch .ReportTime}}
 report version:          {{.Version}} (=AGENTCTL version)
 
+Subreport/file structure of this report:
+    _report.txt (this file)
+        Contains primary identification for the whole report (creation time, report version)
+    _failed-reports.txt
+        Contains all errors from all subreports. The errors are presented for user convenience at 3 places:
+            1. showed to user in console while running the reporting command of agentctl
+            2. in failed report file (_failed-reports.txt) - all errors at one place
+            3. in subreport file - error in place where the retrieved information should be
+    software-versions.txt
+        Contains identification of the software stack used (agentctl/vpp-agent/vpp)
+    hardware.txt
+        Contains some information about the hardware that the software(vpp-agent/vpp) is running on
+    agent-status.txt
+        Contains status of vpp-agent and its plugins. Contains also boot time and up time of vpp-agent.
+    agent-transaction-history.txt
+        Contains transaction history of vpp-agent.
+    agent-NB-config.yaml
+        Contains vpp-agent's northbound(desired) configuration for VPP. The output is in compatible format 
+        (yaml with correct structure) with agentctl configuration import fuctionality ('agentctl config update')
+        so it can be used to setup the configuration from report target installation in local environment for 
+        debugging or other purposes.
+        This version doesn't contains data for custom 3rd party configuration models, but only data for 
+        vpp-agent upstreamed configuration models. For full configuration data (but not in import compatible format)
+        see agent-kvscheduler-NB-config-view.txt.
+    agent-kvscheduler-NB-config-view.txt
+        Contains vpp-agent's northbound(desired) configuration for VPP as seen by vpp-agent's KVScheduler component.
+        The KVScheduler is the source of truth in VPP-Agent so it contains all data (even the 3rd party models not
+        upstreamed into vpp-agent). The output is not compatible with agentctl configuration import functionality 
+        (agentctl config update).
+    agent-kvscheduler-SB-config-view.txt
+        Contains vpp-agent's southbound configuration for VPP(actual configuration retrieved from VPP) as seen 
+        by vpp-agent's KVScheduler component. This will actually retrieve new information from VPP.
+    agent-kvscheduler-cached-config-view.txt
+        Contains vpp-agent's cached northbound and southbound configuration for VPP as seen by vpp-agent's 
+        KVScheduler component. This will not trigger any VPP data retrieval. It will show only cached information.
+    vpp-startup-config.txt
+        Contains startup configuration of VPP (retrieved from the VPP executable cmd line parameters)
+    vpp-running-config(vpp-agent-SB-dump).yaml
+        Contains running configuration of VPP. It is retrieved using vpp-agent.
+    vpp-event-log.txt
+        Contains event log from VPP. It contains events happening to VPP, but without additional information or errors.
+    vpp-log.txt
+        Container log of VPP.
+    vpp-statistics-interfaces.txt
+        Contains interface statistics from VPP.
+    vpp-statistics-errors.txt
+        Contains error statistics from VPP.
+    vpp-other-*.txt
+        Contains additional information from VPP by using vppctl commands.
 `
 	data := map[string]interface{}{
 		"ReportTime": otherArgs[0].(time.Time).Unix(),
@@ -259,6 +323,110 @@ func writeVPPRunningConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli
 	return nil
 }
 
+func writeAgentNBConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	subTaskActionName := "Retrieving agent NB configuration"
+	cliOutputDefer, cliOutputErrPassing := subTaskCliOutputs(cli, subTaskActionName)
+	defer cliOutputDefer(cli)
+
+	// TODO replace with new implementation for agentctl config get (https://github.com/ligato/vpp-agent/pull/1754)
+	client, err := cli.Client().ConfiguratorClient()
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "getting configuration client"),
+			w, errorW, subTaskActionName)
+	}
+	resp, err := client.Get(ctx, &configurator.GetRequest{})
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "getting configuration"), w, errorW, subTaskActionName)
+	}
+
+	if err := formatAsTemplate(w, "yaml", resp.GetConfig()); err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "formatting"), w, errorW, subTaskActionName)
+	}
+	return nil
+}
+
+func writeKVschedulerNBConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	return writeKVschedulerReport(
+		"Retrieving agent kvscheduler NB configuration", "NB", nil, w, errorW, cli, otherArgs...)
+}
+
+func writeKVschedulerSBConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	ignoreModels := []string{ // not implemented SB retrieve
+		"ligato.vpp.srv6.LocalSID",
+		"ligato.vpp.srv6.Policy",
+		"ligato.vpp.srv6.SRv6Global",
+		"ligato.vpp.srv6.Steering",
+	}
+	return writeKVschedulerReport(
+		"Retrieving agent kvscheduler SB configuration", "SB", ignoreModels, w, errorW, cli, otherArgs...)
+}
+
+func writeKVschedulerCachedConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	return writeKVschedulerReport(
+		"Retrieving agent kvscheduler cached configuration", "cached", nil, w, errorW, cli, otherArgs...)
+}
+
+func writeKVschedulerReport(subTaskActionName string, view string, ignoreModels []string,
+	w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cliOutputDefer, cliOutputErrPassing := subTaskCliOutputs(cli, subTaskActionName)
+	defer cliOutputDefer(cli)
+
+	// get key prefixes for all models
+	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
+	})
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "getting model list"), w, errorW, subTaskActionName)
+	}
+	ignoreModelSet := make(map[string]struct{})
+	for _, ignoreModel := range ignoreModels {
+		ignoreModelSet[ignoreModel] = struct{}{}
+	}
+	var keyPrefixes []string
+	for _, m := range allModels {
+		if _, ignore := ignoreModelSet[m.ProtoName]; ignore {
+			continue
+		}
+		keyPrefixes = append(keyPrefixes, m.KeyPrefix)
+	}
+
+	// retrieve KVScheduler data
+	var (
+		errs  Errors
+		dumps []api.KVWithMetadata
+	)
+	for _, keyPrefix := range keyPrefixes {
+		dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
+			KeyPrefix: keyPrefix,
+			View:      view,
+		})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("Failed to get data for %s view and "+
+				"key prefix %s due to: %v\n", view, keyPrefix, err))
+			continue
+		}
+		dumps = append(dumps, dump...)
+	}
+
+	// sort and print retrieved KVScheduler data
+	sort.Slice(dumps, func(i, j int) bool {
+		return dumps[i].Key < dumps[j].Key
+	})
+	printDumpTable(w, dumps)
+
+	// error handling
+	if len(errs) > 0 {
+		return fileErrorPassing(cliOutputErrPassing(errs, "dumping kvscheduler data"), w, errorW, subTaskActionName)
+	}
+	return nil
+}
+
 func writeAgentTxnHistoryReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -297,11 +465,43 @@ func stripTextColoring(coloredText string) string {
 	return regexp.MustCompile(`(?m)\x1B\[[0-9;]*m`).ReplaceAllString(coloredText, "")
 }
 
+func writeVPPInterfaceStatsReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	subTaskActionName := "Retrieving vpp interface statistics"
+	cliOutputDefer, cliOutputErrPassing := subTaskCliOutputs(cli, subTaskActionName)
+	defer cliOutputDefer(cli)
+
+	// get interfaces statistics
+	interfaceStats, err := cli.Client().VppGetInterfaceStats()
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "getting interface stats"),
+			w, errorW, subTaskActionName)
+	}
+
+	// format and write it to output file
+	printInterfaceStatsTable(w, interfaceStats)
+	return nil
+}
+
+func writeVPPErrorStatsReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	subTaskActionName := "Retrieving vpp error statistics"
+	cliOutputDefer, cliOutputErrPassing := subTaskCliOutputs(cli, subTaskActionName)
+	defer cliOutputDefer(cli)
+
+	// get error statistics
+	errorStats, err := cli.Client().VppGetErrorStats()
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "getting error stats"), w, errorW, subTaskActionName)
+	}
+
+	// format and write it to output file
+	printErrorStatsTable(w, errorStats)
+	return nil
+}
+
 func writeVPPVersionReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
-	// NOTE: task/info-specialized VPP-Agent API(REST/GRPC) should be preferred (in compare to direct VPP
-	// CLI commands) due to solved compatibility with different VPP version
-	// => (plugins/govppmux/)vppcalls.VppCoreAPI contains some information(not all), but it is not exposed
-	// using REST or GRPC.
+	// NOTE: as task/info-specialized VPP-Agent API(REST/GRPC) should be preferred
+	// (see writeVPPCLICommandReport docs) there is (plugins/govppmux/)vppcalls.VppCoreAPI containing some
+	// information(not all), but it is not exposed using REST or GRPC.
 	return writeVPPCLICommandReport("Retrieving vpp version", "show version verbose",
 		w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
 			return fmt.Sprintf("VPP:\n    %s\n",
@@ -380,30 +580,20 @@ func writeVPPLogReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArg
 		"show logging", w, errorW, cli)
 }
 
-// TODO remove comments for development
-// show errors -> only error counts -> govpp instead?
+func writeVPPSRv6LocalsidReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	return writeVPPCLICommandReport("Retrieving vpp SRv6 localsid information",
+		"show sr localsid", w, errorW, cli)
+}
 
-//vpp# show memory api-segment
-//API segment
-//total: 16.00M, used: 1.50M, free: 14.49M, trimmable: 14.49M
-//free chunks 2 free fastbin blks 0
-//max total allocated 16.00M
-//vpp# show memory stats-segment
-//Stats segment
-//total: 31.99M, used: 783.62K, free: 31.23M, trimmable: 30.59M
-//free chunks 5 free fastbin blks 0
-//max total allocated 31.99M
-//vpp# show memeory main-heap
-//show: unknown input `memeory main-heap'
-//vpp# show memory main-heap
-//Thread 0 vpp_main
-//  virtual memory start 0x7ffaae1f0000, size 2123903k, 530975 pages, page size 4k
-//    numa 0: 11056 pages, 44224k
-//    not mapped: 247873 pages, 991492k
-//    unknown: 272046 pages, 1088184k
-//  total: 2.03G, used: 1.39G, free: 641.25M, trimmable: 63.83K
-//vpp# show memory numa-heaps
-//Numa 0 uses the main heap...
+func writeVPPSRv6PolicyReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	return writeVPPCLICommandReport("Retrieving vpp SRv6 policies information",
+		"show sr policies", w, errorW, cli)
+}
+
+func writeVPPSRv6SteeringReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	return writeVPPCLICommandReport("Retrieving vpp SRv6 steering information",
+		"show sr steering-policies", w, errorW, cli)
+}
 
 // writeVPPCLICommandReport writes to file a report based purely on one VPP CLI command output.
 // Before using this function think about using some task/info-specialized VPP-Agent API(REST/GRPC) because
@@ -431,33 +621,71 @@ func writeVPPCLICommandReport(subTaskActionName string, vppCLICmd string, w io.W
 	return nil
 }
 
-// TODO possible vpp things for output
-//vppcli "show clock" >> $vpp_info
-//vppcli "show version verbose" >> $vpp_info
-//vppcli "show plugins" >> $vpp_info
-//vppcli "show cpu" >> $vpp_info
-//vppcli "show version cmdline" >> $vpp_info
-//vppcli "show threads" >> $vpp_info
-//vppcli "show physmem" >> $vpp_info
-//vppcli "show memory main-heap verbose" >> $vpp_info
-//vppcli "show memory api-segment verbose" >> $vpp_info
-//vppcli "show memory stats-segment verbose" >> $vpp_info
-//vppcli "show api histogram" >> $vpp_info
-//vppcli "show api ring-stats" >> $vpp_info
-//vppcli "show api trace-status" >> $vpp_info
-//vppcli "api trace status" >> $vpp_info
-//vppcli "show api clients" >> $vpp_info
-//vppcli "show unix files" >> $vpp_info
-//vppcli "show unix errors" >> $vpp_info
-//vppcli "show event-logger" >> $vpp_info
-//vppcli "show ip fib summary" >> $vpp_info
+func printErrorStatsTable(out io.Writer, errorStats *govppapi.ErrorStats) {
+	table := tablewriter.NewWriter(out)
+	header := []string{
+		"Statistics name", "Error counter",
+	}
+	table.SetHeader(header)
+	table.SetRowLine(false)
+	table.SetAutoWrapText(false)
 
-//runCmd("show node counters")
-//runCmd("show runtime")
-//runCmd("show buffers")
-//runCmd("show memory")
-//runCmd("show ip fib")
-//runCmd("show ip6 fib")
+	for _, errorStat := range errorStats.Errors {
+		row := []string{
+			errorStat.CounterName,
+			fmt.Sprint(errorStat.Value),
+		}
+		table.Append(row)
+	}
+	table.Render()
+}
+
+func printInterfaceStatsTable(out io.Writer, interfaceStats *govppapi.InterfaceStats) {
+	table := tablewriter.NewWriter(out)
+	header := []string{
+		"Index", "Name", "Rx", "Tx", "Rx errors", "Tx errors", "Drops", "Rx unicast/multicast/broadcast",
+		"Tx unicast/multicast/broadcast", "Other",
+	}
+	table.SetHeader(header)
+	table.SetAutoWrapText(false)
+	table.SetRowLine(true)
+
+	for _, interfaceStat := range interfaceStats.Interfaces {
+		row := []string{
+			fmt.Sprint(interfaceStat.InterfaceIndex),
+			fmt.Sprint(interfaceStat.InterfaceName),
+			fmt.Sprintf("%d packets (%d bytes)", interfaceStat.Rx.Packets, interfaceStat.Rx.Bytes),
+			fmt.Sprintf("%d packets (%d bytes)", interfaceStat.Tx.Packets, interfaceStat.Tx.Bytes),
+			fmt.Sprint(interfaceStat.RxErrors),
+			fmt.Sprint(interfaceStat.TxErrors),
+			fmt.Sprint(interfaceStat.Drops),
+			fmt.Sprintf("%d packets (%d bytes)\n%d packets (%d bytes)\n%d packets (%d bytes)",
+				interfaceStat.RxUnicast.Packets, interfaceStat.RxUnicast.Bytes,
+				interfaceStat.RxMulticast.Packets, interfaceStat.RxMulticast.Bytes,
+				interfaceStat.RxBroadcast.Packets, interfaceStat.RxBroadcast.Bytes,
+			),
+			fmt.Sprintf("%d packets (%d bytes)\n%d packets (%d bytes)\n%d packets (%d bytes)",
+				interfaceStat.TxUnicast.Packets, interfaceStat.TxUnicast.Bytes,
+				interfaceStat.TxMulticast.Packets, interfaceStat.TxMulticast.Bytes,
+				interfaceStat.TxBroadcast.Packets, interfaceStat.TxBroadcast.Bytes,
+			),
+			fmt.Sprintf("Punts: %d\n"+
+				"IPv4: %d\n"+
+				"IPv6: %d\n"+
+				"RxNoBuf: %d\n"+
+				"RxMiss: %d\n"+
+				"Mpls: %d",
+				interfaceStat.Punts,
+				interfaceStat.IP4,
+				interfaceStat.IP6,
+				interfaceStat.RxNoBuf,
+				interfaceStat.RxMiss,
+				interfaceStat.Mpls),
+		}
+		table.Append(row)
+	}
+	table.Render()
+}
 
 func errorCounter(errors ...error) int {
 	counter := 0

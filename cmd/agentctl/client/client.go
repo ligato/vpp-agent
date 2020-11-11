@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"git.fd.io/govpp.git/proxy"
+
 	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
 	"go.ligato.io/cn-infra/v2/db/keyval"
@@ -82,8 +84,9 @@ type Client struct {
 	kvdbTLS         *tls.Config
 	serviceLabel    string
 
-	grpcClient *grpc.ClientConn
-	httpClient *http.Client
+	grpcClient       *grpc.ClientConn
+	httpClient       *http.Client
+	govppProxyClient *proxy.Client
 
 	customHTTPHeaders map[string]string
 	version           string
@@ -180,6 +183,19 @@ func (c *Client) HTTPClient() *http.Client {
 		}
 	}
 	return c.httpClient
+}
+
+// GoVPPProxyClient returns configured GoVPP proxy client that is already connected to the exposed
+// GoVPP proxy from vpp-agent
+func (c *Client) GoVPPProxyClient() (*proxy.Client, error) {
+	if c.govppProxyClient == nil {
+		client, err := proxy.Connect(c.httpAddr)
+		if err != nil {
+			return nil, fmt.Errorf("connecting to proxy failed due to: %v", err)
+		}
+		c.govppProxyClient = client
+	}
+	return c.govppProxyClient, nil
 }
 
 // KVDBClient returns configured KVDB client.
