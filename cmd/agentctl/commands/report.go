@@ -49,7 +49,17 @@ func NewReportCommand(cli agentcli.Cli) *cobra.Command {
 		Long: "Create report about running software stack (VPP-Agent, VPP, AgentCtl,...) " +
 			"to allow quicker resolving of problems. The report will be a zip file containing " +
 			"information grouped in multiple files",
-		Args: cobra.NoArgs,
+		Example: `
+# Default reporting (creates report file in current directory, whole reporting fails on subreport error)
+{{.CommandPath}} report
+
+# Reporting into custom directory ("/tmp")
+{{.CommandPath}} report -o /tmp
+
+# Reporting and ignoring errors from subreports (writing successful reports and 
+# errors from failed subreports into zip report file)
+{{.CommandPath}} report -i
+`, Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runReport(cli, opts)
 		},
@@ -58,11 +68,15 @@ func NewReportCommand(cli agentcli.Cli) *cobra.Command {
 	flags.StringVarP(&opts.OutputDirectory, "output-directory", "o", "",
 		"Output directory (as absolute path) where report zip file will be written. "+
 			"Default is current directory.")
+	flags.BoolVarP(&opts.IgnoreErrors, "ignore-errors", "i", false,
+		"Ignore subreport errors and create report zip file with all successfully retrieved/processed "+
+			"information (the errors will be part of the report too)")
 	return cmd
 }
 
 type ReportOptions struct {
 	OutputDirectory string
+	IgnoreErrors    bool
 }
 
 func runReport(cli agentcli.Cli, opts ReportOptions) error {
@@ -80,7 +94,7 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	defer os.RemoveAll(dirName)
 
 	// create report files
-	errCounter := errorCounter(
+	errors := packErrors(
 		writeReportTo("_report.txt", dirName, writeMainReport, cli, reportTime),
 		writeReportTo("software-versions.txt", dirName, writeAgentctlVersionReport, cli),
 		writeReportTo("software-versions.txt", dirName, writeAgentVersionReport, cli),
@@ -110,9 +124,15 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	)
 	// summary errors from reports (actual errors are already written in reports,
 	// user console and failedReportFileName file)
-	if errCounter > 0 {
+	if len(errors) > 0 {
+		if !opts.IgnoreErrors {
+			cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) failed.\n\nIf you want to ignore errors "+
+				"from subreports and create report from the successfully retrieved/processed information then "+
+				"add the --ignore-errors (-i) argument to the command (i.e. 'agentctl report -i')", len(errors))))
+			return errors
+		}
 		cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) couldn't be fully or partially created "+
-			"(full list with errors will be in packed zip file as file %s)\n\n", errCounter, failedReportFileName)))
+			"(full list with errors will be in packed zip file as file %s)\n\n", len(errors), failedReportFileName)))
 	} else { //
 		cli.Out().Write([]byte("All subreports were successfully created...\n\n"))
 		// remove empty "failed report" file (ignoring remove failure because it means only one more
@@ -687,14 +707,14 @@ func printInterfaceStatsTable(out io.Writer, interfaceStats *govppapi.InterfaceS
 	table.Render()
 }
 
-func errorCounter(errors ...error) int {
-	counter := 0
+func packErrors(errors ...error) Errors {
+	var errs Errors
 	for _, err := range errors {
 		if err != nil {
-			counter++
+			errs = append(errs, err)
 		}
 	}
-	return counter
+	return errs
 }
 
 func subTaskCliOutputs(cli agentcli.Cli, subTaskActionName string) (func(agentcli.Cli), func(error, ...string) error) {
