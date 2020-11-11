@@ -26,6 +26,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -591,8 +592,87 @@ func writeHardwareVPPStatsMemoryReport(w io.Writer, errorW io.Writer, cli agentc
 }
 
 func writeVPPEventLogReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
-	return writeVPPCLICommandReport("Retrieving vpp event-log information",
-		"show event-logger all", w, errorW, cli)
+	// retrieve (and write to report) vpp clock information
+	var clockOutput *string
+	var errs Errors
+	err := writeVPPCLICommandReport("Retrieving vpp start time information(for event-log)",
+		"show clock verbose", w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
+			clockOutput = &cmdOutput
+			return fmt.Sprintf("vppctl# %s (for precise conversion between vpp running time "+
+				"in seconds and real time):\n%s\n\n", vppCLICmd, cmdOutput)
+		})
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	// get VPP startup time
+	vppStartUpTime, err := vppStartupTime(*clockOutput)
+	addRealTime := err == nil
+
+	// write event-log report (+ add into each line real date/time computed from VPP start timestamp)
+	err = writeVPPCLICommandReport("Retrieving vpp event-log information",
+		"show event-logger all", w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
+			if addRealTime {
+				// Example line from output: "     6.952401056: api-msg: trace_plugin_msg_ids"
+				var reVPPTimeStamp = regexp.MustCompile(`(?m)^\s*(\d*.\d*):`)
+				var sb strings.Builder
+				for _, line := range strings.Split(cmdOutput, "\n") {
+					lineVPPTimeStrSlice := reVPPTimeStamp.FindStringSubmatch(line)
+					if len(lineVPPTimeStrSlice) == 0 {
+						sb.WriteString(line) // error => forget conversion for this line
+						continue
+					}
+					lineVPPTimeStr := lineVPPTimeStrSlice[0]
+					if len(lineVPPTimeStr) < 1 {
+						sb.WriteString(line) // error => forget conversion for this line
+						continue
+					}
+					lineVPPTime, err := strconv.ParseFloat(
+						strings.TrimSpace(lineVPPTimeStr[:len(lineVPPTimeStr)-1]), 32)
+					if err != nil {
+						sb.WriteString(line) // error => forget conversion for this line
+						continue
+					}
+					lineRealTime := (*vppStartUpTime).Add(time.Duration(int(lineVPPTime*1_000_000)) * time.Microsecond)
+					sb.WriteString(strings.Replace(line, lineVPPTimeStr, fmt.Sprintf("%s(%s +-1s)",
+						lineVPPTimeStr, lineRealTime.UTC().Format(time.RFC1123)), 1) + "\n")
+				}
+				return fmt.Sprintf("vppctl# %s:\n%s\n\n", vppCLICmd, sb.String())
+			}
+			return fmt.Sprintf("vppctl# %s:\n%s\n\n", vppCLICmd, cmdOutput) // default formatting
+		})
+	if err != nil {
+		errs = append(errs, err)
+	}
+	return errs
+}
+
+func vppStartupTime(vppClockCmdOutput string) (*time.Time, error) {
+	// vppctl# show clock verbose
+	// Example output: "Time now 705.541644, reftime 705.541644, error 0.000000, clocks/sec 2591995355.407570, Wed, 11 Nov 2020 14:32:39 GMT"
+
+	// get real date/time from command output
+	var reDateTime = regexp.MustCompile(`[^\s,]*,[^,]*\z`)
+	cmdTime, err := time.Parse(time.RFC1123, reDateTime.FindString(strings.ReplaceAll(vppClockCmdOutput, "\n", "")))
+	if err != nil {
+		return nil, fmt.Errorf("can't parse ref time form VPP "+
+			"show clock command due to: %v (cmd output=%s)", err, vppClockCmdOutput)
+	}
+
+	// get VPP time (seconds from VPP start)
+	var reReftime = regexp.MustCompile(`reftime\W*(\d*.\d*)\D`)
+	strSubmatch := reReftime.FindStringSubmatch(vppClockCmdOutput)
+	if len(strSubmatch) < 2 {
+		return nil, fmt.Errorf("can't find reftime in vpp clock cmd output %v", vppClockCmdOutput)
+	}
+	vppTimeAtCmdTime, err := strconv.ParseFloat(strSubmatch[1], 32)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse reftime string(%v) to float due to: %v", strSubmatch[1], err)
+	}
+
+	// compute VPP startup time
+	vppStartUpTime := cmdTime.Add(-time.Duration(int(vppTimeAtCmdTime*1_000_000)) * time.Microsecond)
+	return &vppStartUpTime, nil
 }
 
 func writeVPPLogReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
@@ -711,6 +791,10 @@ func packErrors(errors ...error) Errors {
 	var errs Errors
 	for _, err := range errors {
 		if err != nil {
+			if alreadyPackedError, isPacked := err.(Errors); isPacked {
+				errs = append(errs, alreadyPackedError...)
+				continue
+			}
 			errs = append(errs, err)
 		}
 	}
