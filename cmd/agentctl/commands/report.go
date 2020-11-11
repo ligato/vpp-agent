@@ -119,6 +119,7 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 		writeReportTo("vpp-log.txt", dirName, writeVPPLogReport, cli),
 		writeReportTo("vpp-statistics-interfaces.txt", dirName, writeVPPInterfaceStatsReport, cli),
 		writeReportTo("vpp-statistics-errors.txt", dirName, writeVPPErrorStatsReport, cli),
+		writeReportTo("vpp-api-trace.txt", dirName, writeVPPApiTraceReport, cli),
 		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6LocalsidReport, cli),
 		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6PolicyReport, cli),
 		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6SteeringReport, cli),
@@ -210,6 +211,8 @@ Subreport/file structure of this report:
         Contains event log from VPP. It contains events happening to VPP, but without additional information or errors.
     vpp-log.txt
         Container log of VPP.
+    vpp-api-trace.txt
+        Contains VPP API trace (formatted from VPP CLI command "api trace custom-dump").
     vpp-statistics-interfaces.txt
         Contains interface statistics from VPP.
     vpp-statistics-errors.txt
@@ -589,6 +592,33 @@ func writeHardwareVPPStatsMemoryReport(w io.Writer, errorW io.Writer, cli agentc
 			return fmt.Sprintf("    vppctl# %s:\n    %s\n\n",
 				vppCLICmd, strings.ReplaceAll(cmdOutput, "\n", "\n        "))
 		})
+}
+
+func writeVPPApiTraceReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	var saveFileCmdOutput *string
+	var errs Errors
+	err := writeVPPCLICommandReport("Saving vpp api trace remotely to a file",
+		"api trace save agentctl-report.api", w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
+			saveFileCmdOutput = &cmdOutput
+			return fmt.Sprintf("vppctl# %s:\n%s\n\n", vppCLICmd, cmdOutput) // default formatting
+		})
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	// retrieve file location on remote machine
+	// Example output: "API trace saved to /tmp/agentctl-report.api"
+	fileLocation := "/tmp/agentctl-report.api"
+	expectedFormattingPrefix := "API trace saved to"
+	if strings.HasPrefix(*saveFileCmdOutput, expectedFormattingPrefix) {
+		fileLocation = strings.TrimSpace(strings.TrimPrefix(*saveFileCmdOutput, expectedFormattingPrefix))
+	}
+
+	if err := writeVPPCLICommandReport("Retrieving vpp api trace from saved remote file",
+		fmt.Sprintf("api trace custom-dump %s", fileLocation), w, errorW, cli); err != nil {
+		errs = append(errs, err)
+	}
+	return errs
 }
 
 func writeVPPEventLogReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
