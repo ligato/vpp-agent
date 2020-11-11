@@ -27,15 +27,16 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip6_nd"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/rd_cp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/rdma"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/span"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/tapv2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vmxnet3"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vxlan"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip6_nd"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/rd_cp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -64,6 +65,9 @@ var HandlerVersion = vpp.HandlerVersion{
 		if c.IsPluginLoaded(vmxnet3.ModuleName) {
 			msgs.Add(vmxnet3.AllMessages)
 		}
+		if c.IsPluginLoaded(rdma.ModuleName) {
+			msgs.Add(rdma.AllMessages)
+		}
 		return c.CheckCompatiblity(msgs.AllMessages()...)
 	},
 	NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
@@ -83,6 +87,7 @@ type InterfaceVppHandler struct {
 	gtpu         gtpu.RPCService
 	memif        memif.RPCService
 	vmxnet3      vmxnet3.RPCService
+	rdma         rdma.RPCService
 	rpcIP6nd     ip6_nd.RPCService
 	rpcRdCp      rd_cp.RPCService
 	log          logging.Logger
@@ -110,6 +115,9 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 	}
 	if c.IsPluginLoaded(vmxnet3.ModuleName) {
 		h.vmxnet3 = vmxnet3.NewServiceClient(ch)
+	}
+	if c.IsPluginLoaded(rdma.ModuleName) {
+		h.rdma = rdma.NewServiceClient(ch)
 	}
 	return h
 }

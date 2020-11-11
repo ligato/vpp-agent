@@ -31,6 +31,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/l2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/memif"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/rd_cp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/rdma"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/span"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/tapv2"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vmxnet3"
@@ -67,6 +68,9 @@ var HandlerVersion = vpp.HandlerVersion{
 		if c.IsPluginLoaded(wireguard.APIFile) {
 			msgs.Add(wireguard.AllMessages)
 		}
+		if c.IsPluginLoaded(rdma.APIFile) {
+			msgs.Add(rdma.AllMessages)
+		}
 		return c.CheckCompatiblity(msgs.AllMessages()...)
 	},
 	NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
@@ -89,6 +93,7 @@ type InterfaceVppHandler struct {
 	rpcIP6nd     ip6_nd.RPCService
 	rpcRdCp      rd_cp.RPCService
 	wireguard    wireguard.RPCService
+	rdma         rdma.RPCService
 	log          logging.Logger
 }
 
@@ -117,6 +122,9 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 	}
 	if c.IsPluginLoaded(wireguard.APIFile) {
 		h.wireguard = wireguard.NewServiceClient(c)
+	}
+	if c.IsPluginLoaded(rdma.APIFile) {
+		h.rdma = rdma.NewServiceClient(c)
 	}
 	return h
 }

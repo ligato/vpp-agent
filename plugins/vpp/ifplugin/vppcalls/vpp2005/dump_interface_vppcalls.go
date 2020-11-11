@@ -932,6 +932,9 @@ func dhcpAddressToString(address ip_types.Address, maskWidth uint32, isIPv6 bool
 // such as loopback of af_packet.
 func guessInterfaceType(ifDevType, ifName string) ifs.Interface_Type {
 	switch {
+	case ifDevType == "RDMA interface":
+		return ifs.Interface_RDMA
+
 	case strings.HasPrefix(ifName, "loop"),
 		strings.HasPrefix(ifName, "local"):
 		return ifs.Interface_SOFTWARE_LOOPBACK

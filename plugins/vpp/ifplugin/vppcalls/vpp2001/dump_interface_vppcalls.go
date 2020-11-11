@@ -112,7 +112,7 @@ func (h *InterfaceVppHandler) dumpInterfaces(ifIdxs ...uint32) (map[uint32]*vppc
 			Interface: &ifs.Interface{
 				Name: strings.TrimRight(ifDetails.Tag, "\x00"),
 				// the type may be amended later by further dumps
-				Type:        guessInterfaceType(internalName),
+				Type:        guessInterfaceType(ifaceDevType, internalName),
 				Enabled:     isAdminStateUp(ifDetails.Flags),
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:]).String(),
 				Mtu:         getMtu(ifDetails.LinkMtu),
@@ -920,8 +920,11 @@ func dhcpAddressToString(address vpp_dhcp.Address, maskWidth uint32, isIPv6 bool
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
 // This is required mainly for those interface types, that do not provide dump binary API,
 // such as loopback of af_packet.
-func guessInterfaceType(ifName string) ifs.Interface_Type {
+func guessInterfaceType(ifDevType, ifName string) ifs.Interface_Type {
 	switch {
+	case ifDevType == "RDMA interface":
+		return ifs.Interface_RDMA
+
 	case strings.HasPrefix(ifName, "loop"),
 		strings.HasPrefix(ifName, "local"):
 		return ifs.Interface_SOFTWARE_LOOPBACK
