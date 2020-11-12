@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"git.fd.io/govpp.git/api"
 )
 
 func (c *Client) VppRunCli(ctx context.Context, cmd string) (reply string, err error) {
@@ -35,6 +37,80 @@ func (c *Client) VppRunCli(ctx context.Context, cmd string) (reply string, err e
 }
 
 func (c *Client) VppGetStats(ctx context.Context, typ string) error {
-	// TODO: implement this
+	// TODO: implement more generic stats provider that goes beyond GoVPP StatsProvider (git.fd.io/govpp/api/stats.go)
+	//  and can dump any possible stats or all of them (just like in stats dump example in
+	//  git.fd.io/govpp/examples/stats-client/stats_api.go)
 	return nil
+}
+
+func (c *Client) VppGetInterfaceStats() (*api.InterfaceStats, error) {
+	statsProvider, err := c.vppStatsProvider()
+	if err != nil {
+		return nil, fmt.Errorf("can't get vpp stats provider for interface stats retrieval due to: %v", err)
+	}
+	var stats api.InterfaceStats
+	if err := statsProvider.GetInterfaceStats(&stats); err != nil {
+		return nil, fmt.Errorf("getting interface stats failed due to: %v", err)
+	}
+	return &stats, nil
+}
+
+func (c *Client) VppGetErrorStats() (*api.ErrorStats, error) {
+	statsProvider, err := c.vppStatsProvider()
+	if err != nil {
+		return nil, fmt.Errorf("can't get vpp stats provider for error stats retrieval due to: %v", err)
+	}
+	var stats api.ErrorStats
+	if err := statsProvider.GetErrorStats(&stats); err != nil {
+		return nil, fmt.Errorf("getting error stats failed due to: %v", err)
+	}
+	return &stats, nil
+}
+
+func (c *Client) VppGetSystemStats() (*api.SystemStats, error) {
+	statsProvider, err := c.vppStatsProvider()
+	if err != nil {
+		return nil, fmt.Errorf("can't get vpp stats provider for system stats retrieval due to: %v", err)
+	}
+	var stats api.SystemStats
+	if err := statsProvider.GetSystemStats(&stats); err != nil {
+		return nil, fmt.Errorf("getting system stats failed due to: %v", err)
+	}
+	return &stats, nil
+}
+
+func (c *Client) VppGetNodeStats() (*api.NodeStats, error) {
+	statsProvider, err := c.vppStatsProvider()
+	if err != nil {
+		return nil, fmt.Errorf("can't get vpp stats provider for node stats retrieval due to: %v", err)
+	}
+	var stats api.NodeStats
+	if err := statsProvider.GetNodeStats(&stats); err != nil {
+		return nil, fmt.Errorf("getting node stats failed due to: %v", err)
+	}
+	return &stats, nil
+}
+
+func (c *Client) VppGetBufferStats() (*api.BufferStats, error) {
+	statsProvider, err := c.vppStatsProvider()
+	if err != nil {
+		return nil, fmt.Errorf("can't get vpp stats provider for buffer stats retrieval due to: %v", err)
+	}
+	var stats api.BufferStats
+	if err := statsProvider.GetBufferStats(&stats); err != nil {
+		return nil, fmt.Errorf("getting buffer stats failed due to: %v", err)
+	}
+	return &stats, nil
+}
+
+func (c *Client) vppStatsProvider() (api.StatsProvider, error) {
+	proxyClient, err := c.GoVPPProxyClient()
+	if err != nil {
+		return nil, fmt.Errorf("can't get GoVPP proxy client due to: %v", err)
+	}
+	statsProvider, err := proxyClient.NewStatsClient()
+	if err != nil {
+		return nil, fmt.Errorf("can't get GoVPP's proxy stats client due to: %v", err)
+	}
+	return statsProvider, nil
 }

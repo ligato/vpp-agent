@@ -4,16 +4,15 @@ import (
 	"context"
 	"net/http"
 
-	"google.golang.org/grpc"
-
+	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/health/probe"
-
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"google.golang.org/grpc"
 )
 
 // APIClient is an interface that clients that talk with a agent server must implement.
@@ -60,8 +59,18 @@ type SchedulerAPIClient interface {
 
 // VppAPIClient defines API client methods for the VPP
 type VppAPIClient interface {
+	VppStatsAPIClient
 	VppRunCli(ctx context.Context, cmd string) (reply string, err error)
+}
+
+// VppStatsAPIClient defines stats API client methods for the VPP
+type VppStatsAPIClient interface {
 	VppGetStats(ctx context.Context, typ string) error
+	VppGetBufferStats() (*govppapi.BufferStats, error)
+	VppGetNodeStats() (*govppapi.NodeStats, error)
+	VppGetSystemStats() (*govppapi.SystemStats, error)
+	VppGetErrorStats() (*govppapi.ErrorStats, error)
+	VppGetInterfaceStats() (*govppapi.InterfaceStats, error)
 }
 
 type MetricsAPIClient interface {
