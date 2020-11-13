@@ -18,13 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
-	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func Test_prepareNotifyFilters(t *testing.T) {
@@ -55,33 +49,4 @@ func Test_prepareNotifyFilters(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestCmp(t *testing.T) {
-	n := &configurator.Notification{
-		Notification: &configurator.Notification_VppNotification{
-			VppNotification: &vpp.Notification{
-				Interface: &vpp_interfaces.InterfaceNotification{
-					State: &vpp_interfaces.InterfaceState{
-						Name: "loop1",
-					},
-				},
-			},
-		}}
-	showMsg(n)
-}
-
-func showMsg(n proto.Message) {
-	logrus.Println("------- ", n.ProtoReflect().Descriptor().Name(), n.ProtoReflect().Descriptor().FullName())
-	n.ProtoReflect().Range(func(descriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		logrus.Printf("DESCRIPTOR: %+v\n", descriptor)
-		logrus.Printf("+ fullname %+v\n", descriptor.FullName())
-		logrus.Printf("+ %+v\n", descriptor.Name())
-		if m := descriptor.Message(); m != nil && value.Message().IsValid() {
-			showMsg(value.Message().Interface())
-		} else {
-			logrus.Printf("VALUE: %+v\n", value)
-		}
-		return true
-	})
 }
