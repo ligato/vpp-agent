@@ -4,6 +4,7 @@ package ligato.generic;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/generic";
 
+import "google/protobuf/descriptor.proto";
 import "ligato/generic/model.proto";
 
 // MetaService defines the RPC methods for managing generic models.
@@ -12,13 +13,45 @@ service MetaService {
     // KnownModels returns information about service capabilities
     // including list of models supported by the server.
     rpc KnownModels (KnownModelsRequest) returns (KnownModelsResponse);
+
+    // ProtoFileDescriptor returns proto file descriptor for proto file identified by full name.
+    // The proto file descriptor is in form of proto messages (file descriptor proto and
+    // proto of its imports) so there are needed additional steps to join them into protoreflect.FileDescriptor
+    // ("google.golang.org/protobuf/reflect/protodesc".NewFile(...)).
+    //
+    // This rpc can be used together with knownModels rpc to retrieve additional model information.
+    // Message descriptor can be retrieved from file descriptor corresponding to knownModel message
+    // and used with proto reflecting to get all kinds of information about the known model.
+    //
+    // Due to nature of data retrieval, it is expected that at least one message from that proto file
+    // is registered as known model.
+    rpc ProtoFileDescriptor (ProtoFileDescriptorRequest) returns (ProtoFileDescriptorResponse);
 }
 
 message KnownModelsRequest {
     string class = 1;
 }
 
+message ProtoFileDescriptorRequest {
+    // full_proto_file_name is full name of proto file that is needed to identify it. It has the form
+    // "<proto package name ('.' replaced with '/')>/<simple file name>" (i.e. for this proto model
+    // it is "ligato/generic/meta.proto").
+    // If you are using rpc ProtoFileDescriptor for additional information retrieve for known models from
+    // rpc KnownModels call, you can use usually present ModelDetail's generic.ModelDetail_Option for
+    // key "protoFile" that is containing full proto file name in correct format.
+    string full_proto_file_name = 1;
+}
+
 message KnownModelsResponse {
     repeated generic.ModelDetail known_models = 1;
     repeated string active_modules = 2;
+}
+
+message ProtoFileDescriptorResponse {
+    // file_descriptor is proto message representing proto file descriptor
+    google.protobuf.FileDescriptorProto file_descriptor = 1;
+    // file_import_descriptors is set of file descriptors that the file_descriptor is using as import. This
+    // is needed when converting file descriptor proto to protoreflect.FileDescriptor (using
+    // "google.golang.org/protobuf/reflect/protodesc".NewFile(...) )
+    google.protobuf.FileDescriptorSet file_import_descriptors = 2;
 }

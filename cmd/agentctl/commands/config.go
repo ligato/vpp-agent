@@ -25,18 +25,20 @@ import (
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
+	"github.com/golang/protobuf/proto"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/encoding/protojson"
-
+	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/encoding/protojson"
+	protoV2 "google.golang.org/protobuf/proto"
 )
 
 func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
@@ -77,23 +79,34 @@ type ConfigGetOptions struct {
 }
 
 func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	client, err := cli.Client().ConfiguratorClient()
-	if err != nil {
-		return err
-	}
-	resp, err := client.Get(ctx, &configurator.GetRequest{})
+	// get generic client
+	c, err := cli.Client().GenericClient()
 	if err != nil {
 		return err
 	}
 
+	// create dynamically config that can hold all remote known models
+	// (not using local model registry that gives only locally available models)
+	knownModels, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	config, err := client.NewDynamicConfig(knownModels)
+	if err != nil {
+		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
+	}
+
+	// retrieve data into config
+	if err := c.GetConfig(config); err != nil {
+		return fmt.Errorf("can't retrieve configuration due to: %v", err)
+	}
+
+	// handle data output
 	format := opts.Format
 	if len(format) == 0 {
 		format = `yaml`
 	}
-	if err := formatAsTemplate(cli.Out(), format, resp.Config); err != nil {
+	if err := formatAsTemplate(cli.Out(), format, config); err != nil {
 		return err
 	}
 
@@ -115,28 +128,21 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
-	flags.BoolVar(&opts.Replace, "replace", false, "Replaces all existing config")
-	flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
-	flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
+	flags.DurationVarP(&opts.Timeout, "timeout", "t",
+		5*time.Minute, "Timeout for sending updated data")
 	return cmd
 }
 
 type ConfigUpdateOptions struct {
-	Format   string
-	Replace  bool
-	WaitDone bool
-	Verbose  bool
+	Format  string
+	Timeout time.Duration
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
 
-	client, err := cli.Client().ConfiguratorClient()
-	if err != nil {
-		return err
-	}
-
+	// get input file
 	if len(args) == 0 {
 		return fmt.Errorf("missing file argument")
 	}
@@ -146,47 +152,58 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		return fmt.Errorf("reading file %s: %w", file, err)
 	}
 
-	var update = &configurator.Config{}
+	// get generic client
+	c, err := cli.Client().GenericClient()
+	if err != nil {
+		return err
+	}
+
+	// create dynamically config that can hold all remote known models
+	// (not using local model registry that gives only locally available models)
+	knownModels, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	config, err := client.NewDynamicConfig(knownModels)
+	if err != nil {
+		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
+	}
+
+	// filling dynamically created config with data from input file
 	bj, err := yaml2.YAMLToJSON(b)
 	if err != nil {
 		return fmt.Errorf("converting to JSON: %w", err)
 	}
-	err = protojson.Unmarshal(bj, update)
+	err = protojson.Unmarshal(bj, config)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't unmarshall input file data "+
+			"into dynamically created config due to: %v", err)
 	}
-	logrus.Infof("loaded config update:\n%s", update)
+	logrus.Infof("loaded config :\n%s", config)
 
+	// extracting proto messages from dynamically created config structure
+	// (generic client wants single proto messages and not one big hierarchical config)
+	req := c.ChangeRequest()
+	configMessages, err := client.DynamicConfigExport(config)
+	if err != nil {
+		return fmt.Errorf("can't extract single configuration proto messages "+
+			"from one big configuration proto message due to: %v", err)
+	}
+
+	// update configuration
+	req.Update(convertToProtoV1(configMessages)...)
+	if err := req.Send(ctx); err != nil {
+		return fmt.Errorf("send failed: %v", err)
+	}
+
+	// handle configuration update result and command output
 	var data interface{}
-
-	var header metadata.MD
-	resp, err := client.Update(ctx, &configurator.UpdateRequest{
-		Update:     update,
-		FullResync: opts.Replace,
-		WaitDone:   opts.WaitDone,
-	}, grpc.Header(&header))
 	if err != nil {
 		logrus.Warnf("update failed: %v", err)
 		data = err
 	} else {
-		data = resp
+		data = "OK"
 	}
-
-	if opts.Verbose {
-		logrus.Debugf("grpc header: %+v", header)
-		if seqNum, ok := header["seqnum"]; ok {
-			ref, _ := strconv.Atoi(seqNum[0])
-			txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
-				SeqNum: ref,
-			})
-			if err != nil {
-				logrus.Warnf("getting history for seqNum %d failed: %v", ref, err)
-			} else {
-				data = txns
-			}
-		}
-	}
-
 	format := opts.Format
 	if len(format) == 0 {
 		format = `{{.}}`
@@ -291,6 +308,14 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 	}
 
 	return nil
+}
+
+func convertToProtoV1(messages []protoV2.Message) []proto.Message {
+	result := make([]proto.Message, 0, len(messages))
+	for _, message := range messages {
+		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
+	}
+	return result
 }
 
 func newConfigRetrieveCommand(cli agentcli.Cli) *cobra.Command {

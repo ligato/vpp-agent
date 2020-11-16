@@ -211,7 +211,10 @@ func Setup(t *testing.T) *TestCtx {
 	if err != nil {
 		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
 	}
-	testCtx.grpcClient = remoteclient.NewClientGRPC(testCtx.grpcConn)
+	testCtx.grpcClient, err = remoteclient.NewClientGRPC(testCtx.grpcConn)
+	if err != nil {
+		t.Fatalf("Failed to create remote GRPC client: %v", err)
+	}
 
 	// run initial resync
 	syncAgent(t, testCtx.httpClient)

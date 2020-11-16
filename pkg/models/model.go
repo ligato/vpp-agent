@@ -19,18 +19,17 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// KnownModel represents a registered model.
-type KnownModel struct {
+// LocallyKnownModel represents a registered local model (local model has go types compiled into program binary)
+type LocallyKnownModel struct {
 	spec Spec
 	modelOptions
 
-	goType reflect.Type
-	proto  protoreflect.ProtoMessage
+	goType    reflect.Type
+	proto     protoreflect.ProtoMessage
 	protoName string
 
 	// cache
@@ -39,13 +38,13 @@ type KnownModel struct {
 }
 
 // Spec returns model specification for the model.
-func (m *KnownModel) Spec() *Spec {
+func (m *LocallyKnownModel) Spec() *Spec {
 	spec := m.spec
 	return &spec
 }
 
 // ModelDetail returns descriptor for the model.
-func (m *KnownModel) ModelDetail() *generic.ModelDetail {
+func (m *LocallyKnownModel) ModelDetail() *generic.ModelDetail {
 	return &generic.ModelDetail{
 		Spec:      m.Spec().Proto(),
 		ProtoName: m.ProtoName(),
@@ -59,12 +58,12 @@ func (m *KnownModel) ModelDetail() *generic.ModelDetail {
 }
 
 // NewInstance creates new instance value for model type.
-func (m *KnownModel) NewInstance() proto.Message {
+func (m *LocallyKnownModel) NewInstance() proto.Message {
 	return reflect.New(m.goType.Elem()).Interface().(proto.Message)
 }
 
 // ProtoName returns proto message name registered with the model.
-func (m *KnownModel) ProtoName() string {
+func (m *LocallyKnownModel) ProtoName() string {
 	if m.proto != nil {
 		return string(m.proto.ProtoReflect().Descriptor().FullName())
 	}
@@ -72,7 +71,7 @@ func (m *KnownModel) ProtoName() string {
 }
 
 // ProtoFile returns proto file name for the model.
-func (m *KnownModel) ProtoFile() string {
+func (m *LocallyKnownModel) ProtoFile() string {
 	if m.proto != nil {
 		return m.proto.ProtoReflect().Descriptor().ParentFile().Path()
 	}
@@ -80,22 +79,22 @@ func (m *KnownModel) ProtoFile() string {
 }
 
 // NameTemplate returns name template for the model.
-func (m *KnownModel) NameTemplate() string {
+func (m *LocallyKnownModel) NameTemplate() string {
 	return m.nameTemplate
 }
 
 // GoType returns go type for the model.
-func (m *KnownModel) GoType() string {
+func (m *LocallyKnownModel) GoType() string {
 	return m.goType.String()
 }
 
 // PkgPath returns package import path for the model definition.
-func (m *KnownModel) PkgPath() string {
+func (m *LocallyKnownModel) PkgPath() string {
 	return m.goType.Elem().PkgPath()
 }
 
 // Name returns name for the model.
-func (m *KnownModel) Name() string {
+func (m *LocallyKnownModel) Name() string {
 	if m.modelName == nil {
 		modelName := m.spec.ModelName()
 		m.modelName = &modelName
@@ -104,7 +103,7 @@ func (m *KnownModel) Name() string {
 }
 
 // KeyPrefix returns key prefix for the model.
-func (m *KnownModel) KeyPrefix() string {
+func (m *LocallyKnownModel) KeyPrefix() string {
 	if m.keyPrefix == nil {
 		keyPrefix := m.getKeyPrefix()
 		m.keyPrefix = &keyPrefix
@@ -112,17 +111,13 @@ func (m *KnownModel) KeyPrefix() string {
 	return *m.keyPrefix
 }
 
-func (m *KnownModel) getKeyPrefix() string {
-	keyPrefix := m.spec.KeyPrefix()
-	if m.nameFunc == nil {
-		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
-	}
-	return keyPrefix
+func (m *LocallyKnownModel) getKeyPrefix() string {
+	return keyPrefix(m.spec, m.nameFunc != nil)
 }
 
 // ParseKey parses the given key and returns item name
 // or returns empty name and valid as false if the key is not valid.
-func (m *KnownModel) ParseKey(key string) (name string, valid bool) {
+func (m *LocallyKnownModel) ParseKey(key string) (name string, valid bool) {
 	name = strings.TrimPrefix(key, m.KeyPrefix())
 	if name == key || (name == "" && m.nameFunc != nil) {
 		name = strings.TrimPrefix(key, m.Name())
@@ -137,20 +132,21 @@ func (m *KnownModel) ParseKey(key string) (name string, valid bool) {
 }
 
 // IsKeyValid returns true if given key is valid for this model.
-func (m *KnownModel) IsKeyValid(key string) bool {
+func (m *LocallyKnownModel) IsKeyValid(key string) bool {
 	_, valid := m.ParseKey(key)
 	return valid
 }
 
 // StripKeyPrefix returns key with prefix stripped.
-func (m *KnownModel) StripKeyPrefix(key string) string {
+func (m *LocallyKnownModel) StripKeyPrefix(key string) string {
 	if name, valid := m.ParseKey(key); valid {
 		return name
 	}
 	return key
 }
 
-func (m *KnownModel) instanceName(x interface{}) (string, error) {
+// InstanceName computes message name for given proto message using name template (if present).
+func (m *LocallyKnownModel) InstanceName(x interface{}) (string, error) {
 	if m.nameFunc == nil {
 		return "", nil
 	}

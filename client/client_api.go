@@ -18,11 +18,13 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
-type ModelInfo = generic.ModelDetail
+// ModelInfo is just retyped models.ModelInfo for backward compatibility purpose
+// Deprecated: use models.ModelInfo instead
+type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
 

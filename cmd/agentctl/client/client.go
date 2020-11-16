@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/proxy"
-
 	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
 	"go.ligato.io/cn-infra/v2/db/keyval"
@@ -43,6 +42,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 const (
@@ -160,16 +160,25 @@ func (c *Client) GenericClient() (client.GenericClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return remoteclient.NewClientGRPC(conn), nil
+	return remoteclient.NewClientGRPC(conn, remoteclient.UseRemoteRegistry("config"))
 }
 
-// ConfiguratorClient returns "confi" with gRPC connection.
+// ConfiguratorClient returns "config" with gRPC connection.
 func (c *Client) ConfiguratorClient() (configurator.ConfiguratorServiceClient, error) {
 	conn, err := c.GRPCConn()
 	if err != nil {
 		return nil, err
 	}
 	return configurator.NewConfiguratorServiceClient(conn), nil
+}
+
+// MetaServiceClient creates new client for using meta service
+func (c *Client) MetaServiceClient() (generic.MetaServiceClient, error) {
+	conn, err := c.GRPCConn()
+	if err != nil {
+		return nil, err
+	}
+	return generic.NewMetaServiceClient(conn), nil
 }
 
 // HTTPClient returns configured HTTP client.

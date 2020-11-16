@@ -16,17 +16,24 @@ package models
 
 import (
 	"path"
+	"strings"
 
+	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
 )
 
 // Register registers model in DefaultRegistry.
-func Register(pb proto.Message, spec Spec, opts ...ModelOption) *KnownModel {
+func Register(pb proto.Message, spec Spec, opts ...ModelOption) KnownModel {
 	model, err := DefaultRegistry.Register(pb, spec, opts...)
 	if err != nil {
 		panic(err)
 	}
 	return model
+}
+
+// RegisterRemote registers remotely known model in given RemoteRegistry
+func RegisterRemote(remoteModel *ModelInfo, remoteRegistry *RemoteRegistry) {
+	remoteRegistry.Register(remoteModel, ToSpec(remoteModel.Spec))
 }
 
 // RegisteredModels returns models registered in the DefaultRegistry.
@@ -36,12 +43,22 @@ func RegisteredModels() []KnownModel {
 
 // GetModel returns registered model for given model name.
 func GetModel(name string) (KnownModel, error) {
-	return DefaultRegistry.GetModel(name)
+	return GetModelFromRegistry(name, DefaultRegistry)
+}
+
+// GetModel returns registered model in given registry for given model name.
+func GetModelFromRegistry(name string, modelRegistry Registry) (KnownModel, error) {
+	return modelRegistry.GetModel(name)
 }
 
 // GetModelFor returns model registered in DefaultRegistry for given proto message.
 func GetModelFor(x proto.Message) (KnownModel, error) {
-	return DefaultRegistry.GetModelFor(x)
+	return GetModelFromRegistryFor(x, DefaultRegistry)
+}
+
+// GetModelFromRegistryFor returns model registered in modelRegistry for given proto message
+func GetModelFromRegistryFor(x proto.Message, modelRegistry Registry) (KnownModel, error) {
+	return modelRegistry.GetModelFor(x)
 }
 
 // GetModelForKey returns model registered in DefaultRegistry which matches key.
@@ -67,18 +84,30 @@ func Name(x proto.Message) string {
 	return name
 }
 
-// GetKey returns complete key for gived model,
+// GetKey returns complete key for given model,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
 func GetKey(x proto.Message) (string, error) {
-	model, err := GetModelFor(x)
+	return GetKeyUsingModelRegistry(x, DefaultRegistry)
+}
+
+// GetKey returns complete key for given model from given model registry,
+// including key prefix defined by model specification.
+// It returns error if given model is not registered.
+func GetKeyUsingModelRegistry(message proto.Message, modelRegistry Registry) (string, error) {
+	// find model for message
+	model, err := GetModelFromRegistryFor(message, modelRegistry)
 	if err != nil {
-		return "", err
+		return "", errors.Errorf("can't find known model "+
+			"for message (while getting key for model) due to: %v (message = %+v)", err, message)
 	}
-	name, err := model.instanceName(x)
+
+	// compute Item.ID.Name
+	name, err := model.InstanceName(message)
 	if err != nil {
-		return "", err
+		return "", errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
 	}
+
 	key := path.Join(model.KeyPrefix(), name)
 	return key, nil
 }
@@ -90,9 +119,20 @@ func GetName(x proto.Message) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name, err := model.instanceName(x)
+	name, err := model.InstanceName(x)
 	if err != nil {
 		return "", err
 	}
 	return name, nil
+}
+
+// keyPrefix computes correct key prefix from given model. It
+// handles correctly the case when name suffix of the key is empty
+// (no template name -> key prefix does not end with "/")
+func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
+	keyPrefix := modelSpec.KeyPrefix()
+	if !hasTemplateName {
+		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
+	}
+	return keyPrefix
 }

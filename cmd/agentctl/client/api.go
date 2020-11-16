@@ -11,6 +11,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	"google.golang.org/grpc"
 )
@@ -25,6 +26,7 @@ type APIClient interface {
 
 	GenericClient() (client.GenericClient, error)
 	ConfiguratorClient() (configurator.ConfiguratorServiceClient, error)
+	MetaServiceClient() (generic.MetaServiceClient, error)
 
 	AgentHost() string
 	Version() string

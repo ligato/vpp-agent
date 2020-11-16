@@ -19,14 +19,17 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.ligato.io/cn-infra/v2/logging"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type genericService struct {
@@ -48,6 +51,22 @@ func (s *genericService) KnownModels(ctx context.Context, req *generic.KnownMode
 		KnownModels: infos,
 	}
 	return resp, nil
+}
+
+func (s *genericService) ProtoFileDescriptor(ctx context.Context, req *generic.ProtoFileDescriptorRequest) (*generic.ProtoFileDescriptorResponse, error) {
+	for _, model := range models.RegisteredModels() {
+		if req.FullProtoFileName == model.ProtoFile() {
+			fileDesc := proto.MessageV2(model.NewInstance()).ProtoReflect().Descriptor().ParentFile()
+			if fileDesc != nil {
+				return &generic.ProtoFileDescriptorResponse{
+					FileDescriptor:        protodesc.ToFileDescriptorProto(fileDesc),
+					FileImportDescriptors: toImportSet(allImports(fileDesc)),
+				}, nil
+			}
+		}
+	}
+	return nil, status.Error(codes.NotFound, fmt.Sprintf("Can't find proto file %v "+
+		"using registered models.", req.FullProtoFileName))
 }
 
 func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRequest) (*generic.SetConfigResponse, error) {
@@ -207,4 +226,27 @@ func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (
 
 func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic.ManagerService_SubscribeServer) error {
 	return status.Error(codes.Unimplemented, "Not implemented yet")
+}
+
+// toImportSet performs convenient format conversion to descriptor.FileDescriptorSet
+func toImportSet(importFDs []protoreflect.FileDescriptor) *descriptor.FileDescriptorSet {
+	fdProtoimports := &descriptor.FileDescriptorSet{
+		File: make([]*descriptorpb.FileDescriptorProto, 0, len(importFDs)),
+	}
+	for _, importFD := range importFDs {
+		fdProtoimports.File = append(fdProtoimports.File, protodesc.ToFileDescriptorProto(importFD))
+	}
+	return fdProtoimports
+}
+
+// allImports extract direct and transitive imports from file descriptor.
+func allImports(desc protoreflect.FileDescriptor) []protoreflect.FileDescriptor {
+	results := make([]protoreflect.FileDescriptor, 0)
+	imports := desc.Imports()
+	for i := 0; i < imports.Len(); i++ {
+		importFD := imports.Get(i).FileDescriptor
+		results = append(results, importFD)
+		results = append(results, allImports(importFD)...)
+	}
+	return results
 }

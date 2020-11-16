@@ -10,7 +10,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]types.Model, error) {
@@ -48,7 +47,7 @@ func sortModels(list []types.Model) []types.Model {
 	return list
 }
 
-func convertModels(knownModels []*generic.ModelDetail) []types.Model {
+func convertModels(knownModels []*models.ModelInfo) []types.Model {
 	allModels := make([]types.Model, len(knownModels))
 	for i, m := range knownModels {
 		spec := models.ToSpec(m.Spec)
