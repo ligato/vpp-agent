@@ -27,6 +27,7 @@ require (
 	github.com/goccy/go-graphviz v0.0.6
 	github.com/goccy/go-yaml v1.8.0
 	github.com/golang/protobuf v1.4.2
+	github.com/google/go-cmp v0.4.0
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0

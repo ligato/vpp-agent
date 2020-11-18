@@ -80,18 +80,19 @@ message DumpRequest {
 }
 
 message DumpResponse {
-    // Dump describes running config dumped from southbound.
+    // Dump is a running config.
     Config dump = 1;
 }
 
 message NotifyRequest {
     uint32 idx = 1;
+    repeated Notification filters = 2;
 }
 
 message NotifyResponse {
-    // Index of following notification
+    // Index of next notification
     uint32 next_idx = 1;
-    // Notification data
+    // Notification contains notification data.
     Notification notification = 2;
 }
 

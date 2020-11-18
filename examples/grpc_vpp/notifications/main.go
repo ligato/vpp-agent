@@ -28,6 +28,8 @@ import (
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 var (
@@ -88,7 +90,17 @@ func (p *ExamplePlugin) watchNotifications(client configurator.ConfiguratorServi
 		// Prepare request with the initial index
 		request := &configurator.NotifyRequest{
 			Idx: nextIdx,
+			Filters: []*configurator.Notification{
+				{Notification: &configurator.Notification_VppNotification{
+					VppNotification: &vpp.Notification{
+						Interface: &vpp_interfaces.InterfaceNotification{
+							Type: vpp_interfaces.InterfaceNotification_UPDOWN,
+						},
+					},
+				}},
+			},
 		}
+
 		// Get stream object
 		stream, err := client.Notify(context.Background(), request)
 		if err != nil {
@@ -118,6 +130,7 @@ func (p *ExamplePlugin) watchNotifications(client configurator.ConfiguratorServi
 			recvNotifs++
 		}
 
+		logrus.DefaultLogger().Warnf("sleeping..")
 		// Wait till next request
 		time.Sleep(time.Duration(*reqPer) * time.Second)
 	}

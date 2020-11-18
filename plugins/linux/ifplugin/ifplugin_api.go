@@ -16,6 +16,7 @@ package ifplugin
 
 import (
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
 )
 
 // API defines methods exposed by Linux-IfPlugin.
@@ -23,4 +24,7 @@ type API interface {
 	// GetInterfaceIndex gives read-only access to map with metadata of all configured
 	// linux interfaces.
 	GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex
+
+	// SetNotifyService allows to pass function for updating interface notifications.
+	SetNotifyService(notify func(notification *linux.Notification))
 }

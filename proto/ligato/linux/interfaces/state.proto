@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package ligato.linux.interfaces;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces;linux_interfaces";
+
+import "ligato/linux/interfaces/interface.proto";
+
+message InterfaceState {
+    string name = 1;
+    string internal_name = 2;
+    interfaces.Interface.Type type = 3;
+    int32 if_index = 4;
+
+    enum Status {
+        UNKNOWN_STATUS = 0;
+        UP = 1;
+        DOWN = 2;
+        DELETED = 3;
+    };
+    Status admin_status = 5;
+    Status oper_status = 6;
+
+    int64 last_change = 7;
+    string phys_address = 8;
+    uint64 speed = 9;
+    uint32 mtu = 10;
+
+    message Statistics {
+        uint64 in_packets = 1;
+        uint64 in_bytes = 2;
+        uint64 out_packets = 3;
+        uint64 out_bytes = 4;
+        uint64 drop_packets = 5;
+        uint64 in_error_packets = 6;
+        uint64 out_error_packets = 7;
+    }
+    Statistics statistics = 100;
+}
+
+message InterfaceNotification {
+    enum NotifType {
+        UNKNOWN = 0;
+        UPDOWN = 1;
+    }
+    NotifType type = 1;
+    InterfaceState state = 2;
+}
