@@ -212,18 +212,11 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 
 	// handle configuration update result and command output
-	var data interface{}
-	if err != nil {
-		logrus.Warnf("update failed: %v", err)
-		data = err
-	} else {
-		data = "OK"
-	}
 	format := opts.Format
 	if len(format) == 0 {
 		format = `{{.}}`
 	}
-	if err := formatAsTemplate(cli.Out(), format, data); err != nil {
+	if err := formatAsTemplate(cli.Out(), format, "OK"); err != nil {
 		return err
 	}
 
