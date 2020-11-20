@@ -129,6 +129,11 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	flags.BoolVar(&opts.Replace, "replace", false, "Replaces all existing config")
+	// TODO implement waitdone also for generic client
+	//flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
+	// TODO implement transaction output when verbose is used
+	//flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t",
 		5*time.Minute, "Timeout for sending updated data")
 	return cmd
@@ -136,6 +141,9 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 
 type ConfigUpdateOptions struct {
 	Format  string
+	Replace bool
+	//WaitDone bool
+	//Verbose  bool
 	Timeout time.Duration
 }
 
@@ -184,17 +192,23 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 
 	// extracting proto messages from dynamically created config structure
 	// (generic client wants single proto messages and not one big hierarchical config)
-	req := c.ChangeRequest()
 	configMessages, err := client.DynamicConfigExport(config)
 	if err != nil {
 		return fmt.Errorf("can't extract single configuration proto messages "+
 			"from one big configuration proto message due to: %v", err)
 	}
 
-	// update configuration
-	req.Update(convertToProtoV1(configMessages)...)
-	if err := req.Send(ctx); err != nil {
-		return fmt.Errorf("send failed: %v", err)
+	// update/resync configuration
+	if opts.Replace {
+		if err := c.ResyncConfig(convertToProtoV1(configMessages)...); err != nil {
+			return fmt.Errorf("resync failed: %v", err)
+		}
+	} else {
+		req := c.ChangeRequest()
+		req.Update(convertToProtoV1(configMessages)...)
+		if err := req.Send(ctx); err != nil {
+			return fmt.Errorf("send failed: %v", err)
+		}
 	}
 
 	// handle configuration update result and command output
