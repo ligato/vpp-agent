@@ -39,6 +39,7 @@ type LocalRegistry struct {
 	registeredTypes map[reflect.Type]*LocallyKnownModel
 	modelNames      map[string]*LocallyKnownModel
 	ordered         []reflect.Type
+	proxied         *RemoteRegistry
 }
 
 // NewRegistry returns initialized Registry.
@@ -46,6 +47,7 @@ func NewRegistry() *LocalRegistry {
 	return &LocalRegistry{
 		registeredTypes: make(map[reflect.Type]*LocallyKnownModel),
 		modelNames:      make(map[string]*LocallyKnownModel),
+		proxied:         NewRemoteRegistry(),
 	}
 }
 
@@ -54,6 +56,9 @@ func NewRegistry() *LocalRegistry {
 func (r *LocalRegistry) GetModel(name string) (KnownModel, error) {
 	model, found := r.modelNames[name]
 	if !found {
+		if model, err := r.proxied.GetModel(name); err == nil {
+			return model, nil
+		}
 		return &LocallyKnownModel{}, fmt.Errorf("no model registered for name %v", name)
 	}
 	return model, nil
@@ -64,6 +69,9 @@ func (r *LocalRegistry) GetModelFor(x interface{}) (KnownModel, error) {
 	t := reflect.TypeOf(x)
 	model, found := r.registeredTypes[t]
 	if !found {
+		if proxModel, err := r.proxied.GetModelFor(x); err == nil {
+			return proxModel, nil
+		}
 		if model = r.checkProtoOptions(x); model == nil {
 			return &LocallyKnownModel{}, fmt.Errorf("no model registered for type %v", t)
 		}
@@ -78,6 +86,9 @@ func (r *LocalRegistry) GetModelForKey(key string) (KnownModel, error) {
 			return model, nil
 		}
 	}
+	if model, err := r.proxied.GetModelForKey(key); err == nil {
+		return model, nil
+	}
 	return &LocallyKnownModel{}, fmt.Errorf("no registered model matches for key %v", key)
 }
 
@@ -87,6 +98,7 @@ func (r *LocalRegistry) RegisteredModels() []KnownModel {
 	for _, typ := range r.ordered {
 		models = append(models, r.registeredTypes[typ])
 	}
+	models = append(models, r.proxied.RegisteredModels()...)
 	return models
 }
 
@@ -96,14 +108,32 @@ func (r *LocalRegistry) MessageTypeRegistry() *protoregistry.Types {
 	for _, model := range r.modelNames {
 		typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.proto.ProtoReflect().Descriptor()))
 	}
+	proxiedTypes := r.proxied.MessageTypeRegistry()
+	proxiedTypes.RangeMessages(func (mt protoreflect.MessageType) bool {
+		typeRegistry.RegisterMessage(mt)
+		return true
+	})
 	return typeRegistry
 }
 
-// Register registers a protobuf message with given model specification.
-// If spec.Class is unset empty it defaults to 'config'.
+// Register registers either a protobuf message known at compile-time together with the given model specification,
+// or a remote model represented by an instance of ModelInfo obtained via KnownModels RPC from MetaService.
+// While the former case is prevalent, the latter option is useful for scenarios with multiple agents and configuration
+// requests being proxied from one to another (remote model registered into LocalRegistry may act as a proxy for the
+// agent from which it was learned).
+// If spec.Class is unset then it defaults to 'config'.
 func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error) {
-	goType := reflect.TypeOf(x)
+	// check if the model was learned remotely
+	if modelInfo, isProxied := x.(*ModelInfo); isProxied {
+		// check for collision with local models
+		mName := ToSpec(modelInfo.Spec).ModelName()
+		if _, duplicate := r.modelNames[mName]; duplicate {
+			return nil, fmt.Errorf("model %v is already known locally and cannot be proxied", mName)
+		}
+		return r.proxied.Register(x, spec, opts...)
+	}
 
+	goType := reflect.TypeOf(x)
 	// Check go type duplicate registration
 	if m, ok := r.registeredTypes[goType]; ok {
 		return nil, fmt.Errorf("go type %v already registered for model %v", goType, m.Name())
@@ -125,6 +155,9 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 	// Check model name collisions
 	if pn, ok := r.modelNames[spec.ModelName()]; ok {
 		return nil, fmt.Errorf("model name %q already used by %s", spec.ModelName(), pn.goType)
+	}
+	if _, err := r.proxied.GetModel(spec.ModelName()); err == nil {
+		return nil, fmt.Errorf("model name %q is already proxied", spec.ModelName())
 	}
 
 	model := &LocallyKnownModel{

@@ -75,17 +75,17 @@ func UnmarshalItem(item *api.Item) (proto.Message, error) {
 // UnmarshalItemUsingModelRegistry is helper function for unmarshalling items (using given model registry)
 func UnmarshalItemUsingModelRegistry(item *api.Item, modelRegistry Registry) (proto.Message, error) {
 	// check existence of known model
-	_, err := GetModelFromModelRegistryForItem(item, modelRegistry)
+	model, err := GetModelFromModelRegistryForItem(item, modelRegistry)
 	if err != nil {
 		return nil, err
 	}
 
 	// unmarshal item's inner data
-	// (we must distinguish between model registries due to different go types produced by using different
-	// model registry. The LocalRegistry use cases need go types as generated from models, but
-	// the RemoteRegistry can't produce such go typed instances (we know the name of go type, but can't
-	// produce it from remote information) so dynamic proto message must be enough (*dynamicpb.Message))
-	if _, ok := modelRegistry.(*LocalRegistry); ok {
+	// We must distinguish between locally and remotely known models with respect to the underlying go type.
+	// LocallyKnownModel is used for proto message with go type generated from imported proto file and known
+	// at compile time, while RemotelyKnownModel can't produce such go typed instances (we know the name of go type,
+	// but can't produce it from remote information) so dynamic proto message must be enough (*dynamicpb.Message))
+	if _, ok := model.(*LocallyKnownModel); ok {
 		return unmarshalItemDataAnyOfLocalModel(item.GetData().GetAny())
 	}
 	return unmarshalItemDataAnyOfRemoteModel(item.GetData().GetAny(), modelRegistry.MessageTypeRegistry())

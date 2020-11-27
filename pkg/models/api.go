@@ -47,9 +47,11 @@ type Registry interface {
 	// RegisteredModels returns all registered modules.
 	RegisteredModels() []KnownModel
 
-	// Register registers a protobuf message (for LocalRegistry)/ModelInfo
-	// (for remote registry) with given model specification. If spec.Class
-	// is unset empty it defaults to 'config'.
+	// Register registers either a protobuf message known at compile-time together
+	// with the given model specification (for LocalRegistry),
+	// or a remote model represented by an instance of ModelInfo obtained via KnownModels RPC from MetaService
+	// (for RemoteRegistry or also for LocalRegistry but most likely just proxied to a remote agent).
+	// If spec.Class is unset, then it defaults to 'config'.
 	Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error)
 }
 
