@@ -11,13 +11,40 @@ message Interface {
         UNDEFINED = 0;
         VETH = 1;
         TAP_TO_VPP = 2; // TAP created by VPP to have the Linux-side further configured
+
+        // LOOPBACK is used to attach configuration to an existing "lo" interface,
+        // but unlike EXISTING type it is not limited to the default network namespace
+        // (i.e. loopbacks in other containers can be referenced also).
+        // To create an additional interface which effectively acts as a loopback,
+        // use DUMMY interface (see below).
         LOOPBACK = 3;
+
+        // Wait for and potentially attach additional network configuration to an interface
+        // created externally (i.e. not by this agent) in the default network namespace
+        // (i.e. same as used by the agent).
+        // Behaviour of the EXISTING interface depends on the values of ip_addresses and
+        // link_only attributes as follows:
+        // 1. link_only=false and ip_addresses are empty: agent waits for interface to be created
+        //    externally and then configures it in the L2-only mode (resync will remove any IP addresses
+        //    configured from outside of the agent)
+        // 2. link_only=false and ip_addresses are non-empty: agent waits for interface to be created
+        //    externally and then attaches the selected IP addresses to it (resync removes any other
+        //    IPs added externally)
+        // 3. link_only=true and ip_addresses are empty: agent only waits for the interface
+        //    to exists (it doesn't wait for or change any IP addresses attached to it)
+        // 4. link_only=true and ip_addresses are non empty: agent waits for the interface
+        //    to exists and the selected IP addresses to be assigned (i.e. there will be derived
+        //    value for each expected IP address in the PENDING state until the address is assigned
+        //    to the interface externally)
         EXISTING = 4;
 
         // In Linux, VRF is implemented as yet another type of netdevice (i.e. listed with `ip link show`).
         // Network interfaces are then assigned to VRF simply by enslaving them to the VRF device.
         // For more information, visit: https://www.kernel.org/doc/Documentation/networking/vrf.txt
         VRF_DEVICE = 5;
+
+        // Create a dummy Linux interface which effectively behaves just like the loopback.
+        DUMMY = 6;
     };
 
     // Name is mandatory field representing logical name for the interface.

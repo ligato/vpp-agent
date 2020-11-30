@@ -72,6 +72,8 @@ type NetlinkAPI interface {
 
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
+	// AddDummyInterface configures dummy interface (effectively additional loopback).
+	AddDummyInterface(ifName string) error
 	// AddVRFDevice configures new VRF network device.
 	AddVRFDevice(vrfDevName string, routingTable uint32) error
 	// PutInterfaceIntoVRF assigns Linux interface into a given VRF.
@@ -107,13 +109,18 @@ type NetlinkAPI interface {
 // NetlinkAPIRead interface covers read methods inside linux calls package
 // needed to manage linux interfaces.
 type NetlinkAPIRead interface {
-	// GetLinkByName returns netlink interface type
+	// GetLinkByName calls netlink API to get Link type from interface name
 	GetLinkByName(ifName string) (netlink.Link, error)
+	// GetLinkByIndex calls netlink API to get Link type from interface index
+	GetLinkByIndex(ifIdx int) (netlink.Link, error)
 	// GetLinkList return all links from namespace
 	GetLinkList() ([]netlink.Link, error)
 	// LinkSubscribe takes a channel to which notifications will be sent
 	// when links change. Close the 'done' chan to stop subscription.
 	LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error
+	// AddrSubscribe takes a channel to which notifications will be sent
+	// when addresses change. Close the 'done' chan to stop subscription.
+	AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan struct{}) error
 	// GetAddressList reads all IP addresses
 	GetAddressList(ifName string) ([]netlink.Addr, error)
 	// InterfaceExists verifies interface existence

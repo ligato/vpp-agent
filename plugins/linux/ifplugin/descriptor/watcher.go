@@ -52,7 +52,7 @@ type InterfaceWatcher struct {
 
 	// a set of interfaces present in the default namespace
 	ifacesMu sync.Mutex
-	ifaces   map[string]struct{}
+	ifaces   map[string]hostInterface
 
 	// conditional variable to check if the list of interfaces is in-sync with
 	// Linux network stack
@@ -60,9 +60,16 @@ type InterfaceWatcher struct {
 	intfsInSyncCond *sync.Cond
 
 	// Linux notifications
-	notifCh chan netlink.LinkUpdate
-	doneCh  chan struct{}
-	notify  func(notification *ifmodel.InterfaceNotification)
+	linkNotifCh chan netlink.LinkUpdate
+	addrNotifCh chan netlink.AddrUpdate
+	doneCh      chan struct{}
+	notify      func(notification *ifmodel.InterfaceNotification)
+}
+
+type hostInterface struct {
+	name    string
+	enabled bool
+	ipAddrs []string
 }
 
 // NewInterfaceWatcher creates a new instance of the Interface Watcher.
@@ -72,8 +79,9 @@ func NewInterfaceWatcher(kvscheduler kvs.KVScheduler, ifHandler linuxcalls.Netli
 		kvscheduler: kvscheduler,
 		ifHandler:   ifHandler,
 		notify:      notifyInterface,
-		ifaces:      make(map[string]struct{}),
-		notifCh:     make(chan netlink.LinkUpdate),
+		ifaces:      make(map[string]hostInterface),
+		linkNotifCh: make(chan netlink.LinkUpdate),
+		addrNotifCh: make(chan netlink.AddrUpdate),
 		doneCh:      make(chan struct{}),
 	}
 	descriptor.intfsInSyncCond = sync.NewCond(&descriptor.ifacesMu)
@@ -107,12 +115,22 @@ func (w *InterfaceWatcher) Retrieve(correlate []kvs.KVWithMetadata) (values []kv
 	}
 	defer w.ifacesMu.Unlock()
 
-	for ifName := range w.ifaces {
+	for _, hostIface := range w.ifaces {
+		if !hostIface.enabled {
+			continue
+		}
 		values = append(values, kvs.KVWithMetadata{
-			Key:    ifmodel.InterfaceHostNameKey(ifName),
+			Key:    ifmodel.InterfaceHostNameKey(hostIface.name),
 			Value:  &prototypes.Empty{},
 			Origin: kvs.FromSB,
 		})
+		for _, ipAddr := range hostIface.ipAddrs {
+			values = append(values, kvs.KVWithMetadata{
+				Key:    ifmodel.InterfaceHostNameWithAddrKey(hostIface.name, ipAddr),
+				Value:  &prototypes.Empty{},
+				Origin: kvs.FromSB,
+			})
+		}
 	}
 
 	return values, nil
@@ -121,9 +139,15 @@ func (w *InterfaceWatcher) Retrieve(correlate []kvs.KVWithMetadata) (values []kv
 // StartWatching starts interface watching.
 func (w *InterfaceWatcher) StartWatching() error {
 	// watch default namespace to be aware of interfaces not created by this plugin
-	err := w.ifHandler.LinkSubscribe(w.notifCh, w.doneCh)
+	err := w.ifHandler.LinkSubscribe(w.linkNotifCh, w.doneCh)
 	if err != nil {
-		err = errors.Errorf("failed to subscribe link: %v", err)
+		err = errors.Errorf("failed to subscribe for link notifications: %v", err)
+		w.log.Error(err)
+		return err
+	}
+	err = w.ifHandler.AddrSubscribe(w.addrNotifCh, w.doneCh)
+	if err != nil {
+		err = errors.Errorf("failed to subscribe for address notifications: %v", err)
 		w.log.Error(err)
 		return err
 	}
@@ -138,7 +162,7 @@ func (w *InterfaceWatcher) StopWatching() {
 	w.wg.Wait()
 }
 
-// watchDefaultNamespace watches for notification about added/removed interfaces
+// watchDefaultNamespace watches for notification about added/removed interfaces/addresses
 // to/from the default namespace.
 func (w *InterfaceWatcher) watchDefaultNamespace() {
 	defer w.wg.Done()
@@ -147,9 +171,24 @@ func (w *InterfaceWatcher) watchDefaultNamespace() {
 	links, err := w.ifHandler.GetLinkList()
 	if err == nil {
 		for _, link := range links {
-			if enabled, err := w.ifHandler.IsInterfaceUp(link.Attrs().Name); enabled && err == nil {
-				w.ifaces[link.Attrs().Name] = struct{}{}
+			iface := hostInterface{name: link.Attrs().Name}
+			enabled, err := w.ifHandler.IsInterfaceUp(iface.name)
+			if err != nil {
+				w.log.Warnf("IsInterfaceUp failed for interface %s: %v",
+					iface.name, err)
+				continue
 			}
+			iface.enabled = enabled
+			addrs, err := w.ifHandler.GetAddressList(iface.name)
+			if err != nil {
+				w.log.Warnf("GetAddressList failed for interface %s: %v",
+					iface.name, err)
+				continue
+			}
+			for _, addr := range addrs {
+				iface.ipAddrs = append(iface.ipAddrs, addr.IPNet.String())
+			}
+			w.ifaces[iface.name] = iface
 		}
 	} else {
 		w.log.Warnf("failed to list interfaces in the default namespace: %v", err)
@@ -163,9 +202,10 @@ func (w *InterfaceWatcher) watchDefaultNamespace() {
 
 	for {
 		select {
-		case linkNotif := <-w.notifCh:
+		case linkNotif := <-w.linkNotifCh:
 			w.processLinkNotification(linkNotif)
-
+		case addrNotif := <-w.addrNotifCh:
+			w.processAddrNotification(addrNotif)
 		case <-w.ctx.Done():
 			close(w.doneCh)
 			return
@@ -178,18 +218,69 @@ func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate
 	w.ifacesMu.Lock()
 	defer w.ifacesMu.Unlock()
 
+	// send notification to any interface state watcher (e.g. Configurator)
+	w.sendStateNotification(linkUpdate)
+
+	// push update to the KV Scheduler
 	ifName := linkUpdate.Attrs().Name
-	isUp := isLinkUp(linkUpdate)
+	prevState := w.ifaces[ifName]
+	newState := prevState
+	newState.name = ifName
+	newState.enabled = isLinkUp(linkUpdate)
+	if prevState.enabled != newState.enabled {
+		w.updateLinkKV(ifName, newState.enabled)
+		// do not advertise IPs if interface is disabled
+		for _, ipAddr := range newState.ipAddrs {
+			w.updateAddrKV(ifName, ipAddr, !newState.enabled)
+		}
+	}
+	w.ifaces[ifName] = newState
+}
 
-	w.sendNotification(linkUpdate)
+// processAddrNotification processes address notification received from Linux.
+func (w *InterfaceWatcher) processAddrNotification(addrUpdate netlink.AddrUpdate) {
+	w.ifacesMu.Lock()
+	defer w.ifacesMu.Unlock()
 
-	if !w.needsUpdate(ifName, isUp) {
-		// ignore notification if the interface admin status remained the same
+	link, err := w.ifHandler.GetLinkByIndex(addrUpdate.LinkIndex)
+	if err != nil {
+		w.log.Warn(err)
 		return
 	}
 
-	w.notifyScheduler(ifName, isUp)
+	// push update to the KV Scheduler
+	ifName := link.Attrs().Name
+	addr := addrUpdate.LinkAddress.String()
+	removed := !addrUpdate.NewAddr
+	prevState := w.ifaces[ifName]
+	addrIdx := -1
+	for i, ipAddr := range prevState.ipAddrs {
+		if ipAddr == addr {
+			addrIdx = i
+			break
+		}
+	}
+	knownAddr := addrIdx != -1
+	if knownAddr != removed {
+		// removed unknown IP or added already known IP
+		return
+	}
+	if prevState.enabled {
+		w.updateAddrKV(ifName, addr, removed)
+	}
 
+	// update the internal cache
+	newState := prevState
+	newState.name = ifName
+	if removed {
+		lastIdx := len(newState.ipAddrs)-1
+		newState.ipAddrs[addrIdx] = newState.ipAddrs[lastIdx]
+		newState.ipAddrs[lastIdx] = ""
+		newState.ipAddrs = newState.ipAddrs[:lastIdx]
+	} else {
+		newState.ipAddrs = append(newState.ipAddrs, addr)
+	}
+	w.ifaces[ifName] = newState
 }
 
 func linkToInterfaceType(link netlink.Link) ifmodel.Interface_Type {
@@ -200,6 +291,8 @@ func linkToInterfaceType(link netlink.Link) ifmodel.Interface_Type {
 		return ifmodel.Interface_TAP_TO_VPP
 	case "vrf":
 		return ifmodel.Interface_VRF_DEVICE
+	case "dummy":
+		return ifmodel.Interface_DUMMY
 	default:
 		if link.Attrs().Name == linuxcalls.DefaultLoopbackName {
 			return ifmodel.Interface_LOOPBACK
@@ -208,17 +301,13 @@ func linkToInterfaceType(link netlink.Link) ifmodel.Interface_Type {
 	}
 }
 
-// notifyScheduler notifies scheduler about interface change.
-func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
+// updateLinkKV updates key-value pair representing the interface latest link status.
+func (w *InterfaceWatcher) updateLinkKV(ifName string, enabled bool) {
 	var value proto.Message
-
 	if enabled {
-		w.ifaces[ifName] = struct{}{}
+		// empty == enabled, nil == disabled
 		value = &prototypes.Empty{}
-	} else {
-		delete(w.ifaces, ifName)
 	}
-
 	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:      ifmodel.InterfaceHostNameKey(ifName),
 		Value:    value,
@@ -228,12 +317,23 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 	}
 }
 
-func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
-	_, wasEnabled := w.ifaces[ifName]
-	return isEnabled != wasEnabled
+// updateAddrKV updates key-value pair representing IP address assigned to a host interface.
+func (w *InterfaceWatcher) updateAddrKV(ifName string, address string, removed bool) {
+	var value proto.Message
+	if !removed {
+		// empty == assigned, nil == not assigned
+		value = &prototypes.Empty{}
+	}
+	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+		Key:      ifmodel.InterfaceHostNameWithAddrKey(ifName, address),
+		Value:    value,
+		Metadata: nil,
+	}); err != nil {
+		w.log.Warnf("pushing SB notification failed: %v", err)
+	}
 }
 
-func (w *InterfaceWatcher) sendNotification(linkUpdate netlink.LinkUpdate) {
+func (w *InterfaceWatcher) sendStateNotification(linkUpdate netlink.LinkUpdate) {
 	if w.notify != nil {
 		attrs := linkUpdate.Attrs()
 		adminStatus := ifmodel.InterfaceState_DOWN

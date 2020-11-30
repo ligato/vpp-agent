@@ -532,10 +532,19 @@ func (ctx *TestCtx) TestConnection(fromMs, toMs, toAddr, listenAddr string,
 
 func (ctx *TestCtx) GetValueState(value proto.Message) kvscheduler.ValueState {
 	key := models.Key(value)
-	return ctx.GetValueStateByKey(key)
+	return ctx.getValueStateByKey(key, "")
 }
 
 func (ctx *TestCtx) GetValueStateByKey(key string) kvscheduler.ValueState {
+	return ctx.getValueStateByKey(key, "")
+}
+
+func (ctx *TestCtx) GetDerivedValueState(baseValue proto.Message, derivedKey string) kvscheduler.ValueState {
+	key := models.Key(baseValue)
+	return ctx.getValueStateByKey(key, derivedKey)
+}
+
+func (ctx *TestCtx) getValueStateByKey(key, derivedKey string) kvscheduler.ValueState {
 	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
 	resp, err := ctx.httpClient.GET(q)
 	if err != nil {
@@ -548,6 +557,14 @@ func (ctx *TestCtx) GetValueStateByKey(key string) kvscheduler.ValueState {
 	if st.GetValue().GetKey() != key {
 		ctx.t.Fatalf("Received value status for unexpected key: %v", st)
 	}
+	if derivedKey != "" {
+		for _, derVal := range st.DerivedValues {
+			if derVal.Key == derivedKey {
+				return derVal.State
+			}
+		}
+		return kvscheduler.ValueState_NONEXISTENT
+	}
 	return st.GetValue().GetState()
 }
 
@@ -556,6 +573,14 @@ func (ctx *TestCtx) GetValueStateByKey(key string) kvscheduler.ValueState {
 func (ctx *TestCtx) GetValueStateClb(value proto.Message) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
 		return ctx.GetValueState(value)
+	}
+}
+
+// GetDerivedValueStateClb can be used to repeatedly check derived value state inside
+// the assertions "Eventually" and "Consistently" from Omega.
+func (ctx *TestCtx) GetDerivedValueStateClb(baseValue proto.Message, derivedKey string) func() kvscheduler.ValueState {
+	return func() kvscheduler.ValueState {
+		return ctx.GetDerivedValueState(baseValue, derivedKey)
 	}
 }
 

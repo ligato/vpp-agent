@@ -198,6 +198,17 @@ func ParseTapAlias(alias string) (linuxTapName, vppTapName, origHostIfName strin
 	return
 }
 
+// GetDummyIfAlias returns alias for Linux Dummy interface managed by the agent.
+func GetDummyIfAlias(linuxIf *interfaces.Interface) string {
+	return linuxIf.Name
+}
+
+// ParseDummyIfAlias parses out logical name of a Dummy interface from the alias.
+// Currently there are no other logical information stored in the alias so it is very straightforward.
+func ParseDummyIfAlias(alias string) (ifName string) {
+	return alias
+}
+
 // GetVRFAlias returns alias for Linux VRF devices managed by the agent.
 func GetVRFAlias(linuxIf *interfaces.Interface) string {
 	return linuxIf.Name
@@ -262,6 +273,9 @@ func (h *NetLinkHandler) retrieveInterfaces(nsList []*namespaces.NetNamespace, g
 						PeerIfName: vethPeerIfName,
 					},
 				}
+			} else if link.Type() == "dummy" {
+				iface.Type = interfaces.Interface_DUMMY
+				iface.Name = ParseDummyIfAlias(alias)
 			} else if link.Type() == "tuntap" || link.Type() == "tun" /* not defined in vishvananda */ {
 				iface.Type = interfaces.Interface_TAP_TO_VPP
 				var vppTapIfName string
