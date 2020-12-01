@@ -15,10 +15,12 @@
 package commands
 
 import (
-	"reflect"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
 func Test_prepareNotifyFilters(t *testing.T) {
@@ -31,11 +33,13 @@ func Test_prepareNotifyFilters(t *testing.T) {
 		want []*configurator.Notification
 	}{
 		{
-			name: "",
+			name: "vpp-notification",
 			args: args{
-				filters: []string{"vpp"},
+				filters: []string{`{"vpp_notification":{}}`},
 			},
-			want: []*configurator.Notification{},
+			want: []*configurator.Notification{
+				{Notification: &configurator.Notification_VppNotification{VppNotification: &vpp.Notification{}}},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -44,9 +48,16 @@ func Test_prepareNotifyFilters(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("prepareNotifyFilters() = %v, want %v", got, tt.want)
+			if len(got) != len(tt.want) {
+				t.Fatalf("prepareNotifyFilters() = %v, want %v", got, tt.want)
 			}
+			for i, n := range got {
+				if !proto.Equal(n, tt.want[i]) {
+					//if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("prepareNotifyFilters()[%d] = %v, want %v", i, n, tt.want[i])
+				}
+			}
+
 		})
 	}
 }

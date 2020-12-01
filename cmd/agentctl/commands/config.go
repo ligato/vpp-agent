@@ -431,8 +431,10 @@ func runConfigWatch(cli agentcli.Cli, opts ConfigWatchOptions) error {
 ------------------
 {{if .Notification.GetVppNotification}}Source: VPP
 Value: {{protomulti .Notification.GetVppNotification}}
-{{end}}{{if .Notification.GetLinuxNotification}}Source: LINUX
+{{else if .Notification.GetLinuxNotification}}Source: LINUX
 Value:  {{protomulti .Notification.GetLinuxNotification}}
+{{else}}Source: {{printf "%T" .Notification.GetNotification}}
+Value:  {{protomulti .Notification.GetNotification}}
 {{end}}`
 	}
 
