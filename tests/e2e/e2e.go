@@ -70,6 +70,7 @@ const (
 	processExitTimeout   = time.Second * 3
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
+	execTimeout          = 10 * time.Second
 
 	vppConf = `
 		unix {
@@ -347,7 +348,9 @@ func (ctx *TestCtx) ExecCmd(cmd string, args ...string) (string, string, error) 
 	ctx.t.Helper()
 	ctx.logger.Printf("exec: '%s %s'", cmd, strings.Join(args, " "))
 	var stdout, stderr bytes.Buffer
-	c := exec.Command(cmd, args...)
+	execCtx, cancel := context.WithDeadline(context.Background(), time.Now().Add(execTimeout))
+	defer cancel()
+	c := exec.CommandContext(execCtx, cmd, args...)
 	c.Stdout = &stdout
 	c.Stderr = &stderr
 	err := c.Run()
@@ -582,6 +585,37 @@ func (ctx *TestCtx) GetDerivedValueStateClb(baseValue proto.Message, derivedKey 
 	return func() kvscheduler.ValueState {
 		return ctx.GetDerivedValueState(baseValue, derivedKey)
 	}
+}
+
+// GetValueMetadata retrieves metadata associated with the given value.
+func (ctx *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metadata interface{}) {
+	type KeyWithMetadata struct {
+		Key      string
+		Metadata interface{}
+	}
+	key, err := models.GetKey(value)
+	if err != nil {
+		ctx.t.Fatalf("Failed to get key for value %v: %v", value, err)
+	}
+	model, err := models.GetModelFor(value)
+	if err != nil {
+		ctx.t.Fatalf("Failed to get model for value %v: %v", value, err)
+	}
+	q := fmt.Sprintf(`/scheduler/dump?key-prefix=%s&view=%v`, url.QueryEscape(model.KeyPrefix()), view)
+	resp, err := ctx.httpClient.GET(q)
+	if err != nil {
+		ctx.t.Fatalf("Request to dump values failed: %v", err)
+	}
+	var kmDump []KeyWithMetadata
+	if err := json.Unmarshal(resp, &kmDump); err != nil {
+		ctx.t.Fatalf("Reply with dumped values cannot be decoded: %v", err)
+	}
+	for _, km := range kmDump {
+		if km.Key == key {
+			return km.Metadata
+		}
+	}
+	return nil
 }
 
 func (ctx *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {

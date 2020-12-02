@@ -16,15 +16,21 @@ package e2e
 
 import (
 	"context"
+	. "github.com/onsi/gomega"
 	"os"
 	"testing"
+	"time"
 
-	. "github.com/onsi/gomega"
+	"go.ligato.io/cn-infra/v2/logging"
 
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
@@ -454,4 +460,170 @@ func TestVRFRoutes(t *testing.T) {
 	Eventually(ctx.PingFromMsClb(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
 	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
+}
+
+// Test VRF created externally (i.e. not by the agent).
+func TestExistingLinuxVRF(t *testing.T) {
+	if os.Getenv("TRAVIS") != "" {
+		// VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
+		// TODO: remove `skip` once we upgrade to Ubuntu Bionic or newer
+		t.Skip("skip for travis")
+	}
+
+	ctx := Setup(t)
+	defer ctx.Teardown()
+
+	SetDefaultConsistentlyDuration(3 * time.Second)
+	SetDefaultConsistentlyPollingInterval(time.Second)
+
+	const (
+		vrfName           = "existing-vrf"
+		vrfHostName       = "vrf"
+		vrfRT             = 10
+		vrfIface1Name     = "existing-dummy1"
+		vrfIface1HostName = "dummy1"
+		vrfIface2Name     = "dummy2"
+		ipAddr1           = "192.168.7.7"
+		ipAddr2           = "10.7.7.7"
+		ipAddr3           = "172.16.7.7"
+		netMask           = "/24"
+	)
+
+	existingVrf := &linux_interfaces.Interface{
+		Name:       vrfName,
+		Type:       linux_interfaces.Interface_EXISTING,
+		Enabled:    true,
+		HostIfName: vrfHostName,
+		LinkOnly:   true,
+	}
+
+	existingIface1 := &linux_interfaces.Interface{
+		Name:               vrfIface1Name,
+		Type:               linux_interfaces.Interface_EXISTING,
+		Enabled:            true,
+		LinkOnly:           true, // wait for IP addresses, do not configure them
+		IpAddresses:        []string{ipAddr1 + netMask, ipAddr2 + netMask},
+		HostIfName:         vrfIface1HostName,
+		VrfMasterInterface: vrfName,
+	}
+
+	iface2 := &linux_interfaces.Interface{
+		Name:               vrfIface2Name,
+		Type:               linux_interfaces.Interface_DUMMY,
+		Enabled:            true,
+		IpAddresses:        []string{ipAddr3 + netMask},
+		VrfMasterInterface: vrfName,
+	}
+
+	ipAddr1Key := linux_interfaces.InterfaceAddressKey(
+		vrfIface1Name, ipAddr1+netMask, netalloc_api.IPAddressSource_EXISTING)
+	ipAddr2Key := linux_interfaces.InterfaceAddressKey(
+		vrfIface1Name, ipAddr2+netMask, netalloc_api.IPAddressSource_EXISTING)
+	ipAddr3Key := linux_interfaces.InterfaceAddressKey(
+		vrfIface2Name, ipAddr3+netMask, netalloc_api.IPAddressSource_STATIC)
+	iface1InVrfKey := linux_interfaces.InterfaceVrfKey(vrfIface1Name, vrfName)
+	iface2InVrfKey := linux_interfaces.InterfaceVrfKey(vrfIface2Name, vrfName)
+
+	// configure everything in one resync
+	err := ctx.GenericClient().ResyncConfig(
+		existingVrf,
+		existingIface1,
+		iface2,
+	)
+	Expect(err).ToNot(HaveOccurred())
+
+	// the referenced VRF with interface does not exist yet
+	Expect(ctx.GetValueState(existingVrf)).To(Equal(kvscheduler.ValueState_PENDING))
+	Expect(ctx.GetValueState(existingIface1)).To(Equal(kvscheduler.ValueState_PENDING))
+	Expect(ctx.GetValueState(iface2)).To(Equal(kvscheduler.ValueState_CONFIGURED)) // created but not in VRF yet
+	Expect(ctx.GetDerivedValueState(iface2, iface2InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
+
+	// create referenced VRF using netlink (without the interface inside it for now)
+	ifHandler := linuxcalls.NewNetLinkHandler(nil, nil, "", 0, logging.DefaultLogger)
+	err = ifHandler.AddVRFDevice(vrfHostName, vrfRT)
+	Expect(err).To(BeNil())
+	err = ifHandler.SetInterfaceUp(vrfHostName)
+	Expect(err).To(BeNil())
+
+	Eventually(ctx.GetValueStateClb(existingVrf)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfDevRT"), BeEquivalentTo(vrfRT)))
+	Eventually(ctx.GetDerivedValueStateClb(iface2, iface2InVrfKey)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
+	Eventually(ctx.GetDerivedValueStateClb(iface2, ipAddr3Key)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Consistently(ctx.GetValueStateClb(existingIface1)).Should(Equal(kvscheduler.ValueState_PENDING))
+
+	// re-check metadata after resync
+	Expect(ctx.AgentInSync()).To(BeTrue())
+	Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfDevRT"), BeEquivalentTo(vrfRT)))
+	Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
+
+	// create vrfIface1 but do not put it into VRF yet
+	err = ifHandler.AddDummyInterface(vrfIface1HostName)
+	Expect(err).To(BeNil())
+	err = ifHandler.SetInterfaceUp(vrfIface1HostName)
+	Expect(err).To(BeNil())
+
+	Eventually(ctx.GetValueStateClb(existingIface1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.GetValueMetadata(existingIface1, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
+	Expect(ctx.GetDerivedValueState(existingIface1, iface1InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
+
+	// put interface into VRF (without IPs for now)
+	err = ifHandler.PutInterfaceIntoVRF(vrfIface1HostName, vrfHostName)
+	Expect(err).To(BeNil())
+
+	Eventually(ctx.GetDerivedValueStateClb(existingIface1, iface1InVrfKey)).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
+		Should(Equal(kvscheduler.ValueState_PENDING))
+	Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
+		Should(Equal(kvscheduler.ValueState_PENDING))
+
+	// re-check metadata after resync
+	Expect(ctx.AgentInSync()).To(BeTrue())
+	Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfDevRT"), BeEquivalentTo(vrfRT)))
+	Expect(ctx.GetValueMetadata(existingIface1, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
+	Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
+		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
+
+	// add ipAddr1
+	ipAddr, _, err := utils.ParseIPAddr(ipAddr1+netMask, nil)
+	Expect(err).ToNot(HaveOccurred())
+	err = ifHandler.AddInterfaceIP(vrfIface1HostName, ipAddr)
+	Expect(err).ToNot(HaveOccurred())
+
+	Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
+		Should(Equal(kvscheduler.ValueState_PENDING))
+	Expect(ctx.AgentInSync()).To(BeTrue())
+
+	// add ipAddr2
+	ipAddr, _, err = utils.ParseIPAddr(ipAddr2+netMask, nil)
+	Expect(err).ToNot(HaveOccurred())
+	err = ifHandler.AddInterfaceIP(vrfIface1HostName, ipAddr)
+	Expect(err).ToNot(HaveOccurred())
+
+	Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	Expect(ctx.AgentInSync()).To(BeTrue())
+
+	// cleanup
+	req := ctx.GenericClient().ChangeRequest()
+	err = req.Delete(
+		existingVrf,
+		existingIface1,
+		iface2,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
+	err = ifHandler.DeleteInterface(vrfIface1HostName)
+	err = ifHandler.DeleteInterface(vrfHostName)
 }
