@@ -33,6 +33,15 @@ func (h *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
 	return link, nil
 }
 
+// GetLinkByIndex calls netlink API to get Link type from interface index
+func (h *NetLinkHandler) GetLinkByIndex(ifIdx int) (netlink.Link, error) {
+	link, err := netlink.LinkByIndex(ifIdx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "LinkByIndex %q", ifIdx)
+	}
+	return link, nil
+}
+
 // GetLinkList calls netlink API to get all Links in namespace
 func (h *NetLinkHandler) GetLinkList() ([]netlink.Link, error) {
 	return netlink.LinkList()
@@ -50,6 +59,12 @@ func (h *NetLinkHandler) SetLinkNamespace(link netlink.Link, ns netns.NsHandle) 
 // when links change. Close the 'done' chan to stop subscription.
 func (h *NetLinkHandler) LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error {
 	return netlink.LinkSubscribe(ch, done)
+}
+
+// AddrSubscribe takes a channel to which notifications will be sent
+// when addresses change. Close the 'done' chan to stop subscription.
+func (h *NetLinkHandler) AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan struct{}) error {
+	return netlink.AddrSubscribe(ch, done)
 }
 
 // GetInterfaceType returns the type (string representation) of a given interface.
@@ -229,6 +244,19 @@ func (h *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
 	}
 	if err := netlink.LinkAdd(link); err != nil {
 		return errors.Wrapf(err, "LinkAdd %v", link)
+	}
+	return nil
+}
+
+// AddDummyInterface configures dummy interface (effectively additional loopback).
+func (h *NetLinkHandler) AddDummyInterface(ifName string) error {
+	attrs := netlink.NewLinkAttrs()
+	attrs.Name = ifName
+	link := &netlink.Dummy{
+		LinkAttrs: attrs,
+	}
+	if err := netlink.LinkAdd(link); err != nil {
+		return errors.Wrapf(err, "LinkAdd (dummy-ifName=%s)", ifName)
 	}
 	return nil
 }

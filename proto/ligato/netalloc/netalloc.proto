@@ -57,6 +57,10 @@ enum IPAddressSource {
     // ALLOC_REF is a reference inside NB configuration to an allocated
     // IP address.
     ALLOC_REF = 3;
+
+    // EXISTING is set when IP address is assigned to (EXISTING) interface
+    // externally (i.e. by a different agent or manually by an administrator).
+    EXISTING = 4;
 }
 
 // IPAllocation represents a single allocated IP address.

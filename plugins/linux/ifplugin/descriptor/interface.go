@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net"
 	"path/filepath"
@@ -106,6 +107,10 @@ var (
 	// ErrExistingWithNamespace is returned when namespace is specified for
 	// EXISTING interface.
 	ErrExistingWithNamespace = errors.New("EXISTING interface defined with namespace")
+
+	// ErrExistingIpWithNetalloc is returned when netalloc and EXISTING-IP features are combined,
+	// which is currently not supported.
+	ErrExistingIpWithNetalloc = errors.New("it is not supported to reference EXISTING-IP via netalloc")
 
 	// ErrInvalidIPWithMask is returned when address is invalid or mask is missing
 	ErrInvalidIPWithMask = errors.New("IP with mask is not valid")
@@ -281,6 +286,16 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 		if linuxIf.GetNamespace() != nil {
 			return kvs.NewInvalidValueError(ErrExistingWithNamespace, "namespace")
 		}
+		// Currently it is not supported to combine netalloc with existing IP.
+		if linuxIf.GetLinkOnly() {
+			for i, ipAddr := range linuxIf.GetIpAddresses() {
+				_, hasAllocDep := d.addrAlloc.GetAddressAllocDep(ipAddr, linuxIf.Name, "")
+				if hasAllocDep {
+					return kvs.NewInvalidValueError(ErrExistingIpWithNetalloc,
+						"type", "link_only", fmt.Sprintf("ip_addresses[%d]", i))
+				}
+			}
+		}
 	case interfaces.Interface_LOOPBACK:
 		if linuxIf.GetLink() != nil {
 			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
@@ -357,6 +372,8 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 		metadata, err = getMetadata(linuxIf)
 	case interfaces.Interface_VRF_DEVICE:
 		metadata, err = d.createVRF(nsCtx, linuxIf)
+	case interfaces.Interface_DUMMY:
+		metadata, err = d.createDummyIf(nsCtx, linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -455,6 +472,8 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 		return nil
 	case interfaces.Interface_VRF_DEVICE:
 		return d.deleteVRF(linuxIf)
+	case interfaces.Interface_DUMMY:
+		return d.deleteDummyIf(linuxIf)
 	}
 
 	err = ErrUnsupportedLinuxInterfaceType
@@ -635,12 +654,20 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 			Value: &prototypes.Empty{},
 		})
 	}
-	if !linuxIf.GetLinkOnly() {
+	if !linuxIf.GetLinkOnly() || linuxIf.GetType() == interfaces.Interface_EXISTING {
+		var ipSource netalloc_api.IPAddressSource
+		var hostName string
+		if linuxIf.GetLinkOnly() { // interface type = EXISTING
+			ipSource = netalloc_api.IPAddressSource_EXISTING
+			hostName = getHostIfName(linuxIf)
+		} else {
+			ipSource = netalloc_api.IPAddressSource_STATIC
+		}
 		// IP addresses
 		for _, ipAddr := range linuxIf.IpAddresses {
 			derValues = append(derValues, kvs.KeyValuePair{
 				Key:   interfaces.InterfaceAddressKey(
-					linuxIf.Name, ipAddr, linuxIf.VrfMasterInterface, netalloc_api.IPAddressSource_STATIC),
+					linuxIf.Name, ipAddr, linuxIf.VrfMasterInterface, hostName, ipSource),
 				Value: &prototypes.Empty{},
 			})
 		}

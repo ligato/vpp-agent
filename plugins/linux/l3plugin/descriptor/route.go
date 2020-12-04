@@ -290,11 +290,11 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: allocatedAddrAttached,
 			AnyOf: kvs.AnyOfDependency{
-				// match IP address assignment regardless of VRF (hence key prefix omitting suffix with vrf from the key)
+				// match IP address assignment regardless of VRF (hence key prefix omitting vrf from the key)
 				KeyPrefixes: []string{
 					ifmodel.InterfaceAddressKey(
 						route.OutgoingInterface, d.addrAlloc.CreateAddressAllocRef(network, "", false),
-						"", netalloc_api.IPAddressSource_ALLOC_REF),
+						"", "", netalloc_api.IPAddressSource_ALLOC_REF),
 				},
 			},
 		})
@@ -316,7 +316,7 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 						}
 						return false
 					}
-					ifName, address, _, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					ifName, address, _, _, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
 					if isAddrKey && source != netalloc_api.IPAddressSource_ALLOC_REF {
 						if _, network, err := net.ParseCIDR(address); err == nil && network.Contains(gwAddr) {
 							// GW address is inside the local network of the outgoing interface

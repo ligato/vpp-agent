@@ -48,6 +48,8 @@ const (
 	// existing Linux interfaces in the default namespace (referenced by host names).
 	InterfaceHostNameKeyPrefix = "linux/interface/host-name/"
 
+	interfaceHostNameWithAddrKeyTmpl = InterfaceHostNameKeyPrefix + "{host-name}/address/{address}"
+
 	/* Interface State (derived) */
 
 	// InterfaceStateKeyPrefix is used as a common prefix for keys derived from
@@ -72,9 +74,14 @@ const (
 	// (incl. mask) assigned to a Linux interface (referenced by the logical name).
 	interfaceAddrKeyTmpl = interfaceAddrKeyPrefix + "{address-source}/{address}"
 
-	// interfaceAddrKeyTmplWithVrf is extended template for keys of derived
-	// interface addresses which also includes the VRF name.
-	interfaceAddrKeyTmplWithVrf = interfaceAddrKeyTmpl + "/vrf/{vrf}"
+	// interfaceAddrVrfKeyPart is added to key representing IP address assignment
+	// if the interface is inside a VRF.
+	interfaceAddrVrfKeyPart = "/vrf/{vrf}"
+
+	// interfaceAddrHostnameKeyPart is added to key representing IP address assignment
+	// if the host-name of the interface is needed, which is for example the case for EXISTING
+	// IP addresses (i.e. added externally and being waited for by the agent).
+	interfaceAddrHostnameKeyPart = "/host-name/{host-name}"
 
 	/* Interface VRF (derived) */
 
@@ -93,6 +100,19 @@ const (
 // InterfaceHostNameKey returns key representing Linux interface host name.
 func InterfaceHostNameKey(hostName string) string {
 	return InterfaceHostNameKeyPrefix + hostName
+}
+
+// InterfaceHostNameWithAddrKey returns key representing assignment of an IP address
+// to a Linux interface referenced by its host name.
+// If address is empty, the function returns key prefix matching any IP address.
+func InterfaceHostNameWithAddrKey(hostName, address string) string {
+	if hostName == "" {
+		hostName = InvalidKeyPart
+	}
+	tmpl := interfaceHostNameWithAddrKeyTmpl
+	key := strings.Replace(tmpl, "{host-name}", hostName, 1)
+	key = strings.Replace(key, "{address}", address, 1)
+	return key
 }
 
 /* Interface State (derived) */
@@ -141,7 +161,7 @@ func InterfaceAddressPrefix(iface string) string {
 // InterfaceAddressKey returns key representing IP address assigned to Linux interface.
 // With undefined vrf the returned key can be also used as a key prefix, matching derived
 // interface address key regardless of the VRF to which it belongs.
-func InterfaceAddressKey(iface, address, vrf string, source netalloc.IPAddressSource) string {
+func InterfaceAddressKey(iface, address, vrf, hostName string, source netalloc.IPAddressSource) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
@@ -158,7 +178,10 @@ func InterfaceAddressKey(iface, address, vrf string, source netalloc.IPAddressSo
 	// construct key without validating the IP address
 	tmpl := interfaceAddrKeyTmpl
 	if vrf != "" {
-		tmpl = interfaceAddrKeyTmplWithVrf
+		tmpl += interfaceAddrVrfKeyPart
+	}
+	if hostName != "" {
+		tmpl += interfaceAddrHostnameKeyPart
 	}
 	key := strings.Replace(tmpl, "{iface}", iface, 1)
 	key = strings.Replace(key, "{address-source}", src, 1)
@@ -166,12 +189,16 @@ func InterfaceAddressKey(iface, address, vrf string, source netalloc.IPAddressSo
 	if vrf != "" {
 		key = strings.Replace(key, "{vrf}", vrf, 1)
 	}
+	if hostName != "" {
+		key = strings.Replace(key, "{host-name}", hostName, 1)
+	}
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (iface, address, vrf string, source netalloc.IPAddressSource, invalidKey, isAddrKey bool) {
+func ParseInterfaceAddressKey(key string) (iface, address, vrf, hostName string, source netalloc.IPAddressSource,
+	invalidKey, isAddrKey bool) {
 	parts := strings.Split(key, "/")
 	if len(parts) < 4 || parts[0] != "linux" || parts[1] != "interface" {
 		return
@@ -179,12 +206,15 @@ func ParseInterfaceAddressKey(key string) (iface, address, vrf string, source ne
 
 	addrIdx := -1
 	vrfIdx := len(parts)
+	hostNameIdx := len(parts)
 	for idx, part := range parts {
 		switch part {
 		case "address":
 			addrIdx = idx
 		case "vrf":
 			vrfIdx = idx
+		case "host-name":
+			hostNameIdx = idx
 		}
 	}
 	if addrIdx == -1 {
@@ -215,7 +245,11 @@ func ParseInterfaceAddressKey(key string) (iface, address, vrf string, source ne
 	source = netalloc.IPAddressSource(srcInt)
 
 	// return address as is (not parsed - this is done by the netalloc plugin)
-	address = strings.Join(parts[addrIdx+2:vrfIdx], "/")
+	addrEnd := vrfIdx
+	if hostNameIdx < vrfIdx {
+		addrEnd = hostNameIdx
+	}
+	address = strings.Join(parts[addrIdx+2:addrEnd], "/")
 	if address == "" {
 		invalidKey = true
 	}
@@ -227,6 +261,15 @@ func ParseInterfaceAddressKey(key string) (iface, address, vrf string, source ne
 			return
 		}
 		vrf = parts[vrfIdx+1]
+	}
+
+	// parse host-name
+	if hostNameIdx < len(parts) {
+		if hostNameIdx == len(parts)-1 {
+			invalidKey = true
+			return
+		}
+		hostName = parts[hostNameIdx+1]
 	}
 	return
 }
