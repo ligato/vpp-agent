@@ -14,6 +14,7 @@ export DOCKER_BUILDKIT=1
 
 testname="vpp-agent-e2e-test"
 imgname="vpp-agent-e2e-tests"
+etcdcontainername="e2e-test-etcd"
 
 # Compile agentctl for testing
 go build -o ./tests/e2e/agentctl.test \
@@ -46,6 +47,14 @@ cleanup() {
 	set -x
 	docker stop -t 1 "${testname}" 2>/dev/null
 	docker rm -v "${testname}" 2>/dev/null
+	set +x
+
+  echo "Stopping etcd container if running"
+  if [ "$(docker ps -a | grep "${etcdcontainername}")" ]; then
+    set -x
+    docker stop -t 1 "${etcdcontainername}" 2>/dev/null
+    docker rm -v "${etcdcontainername}" 2>/dev/null
+  fi
 }
 
 trap 'cleanup' EXIT

@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -62,4 +63,187 @@ func TestStartStopAgent(t *testing.T) {
 
 	ctx.StopAgent(agent1)
 	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
+}
+
+// TestNBInitFromFile test configuring initial state of NB from file
+func TestNBInitFromFile(t *testing.T) {
+	ctx := Setup(t, WithoutVPPAgent())
+	defer ctx.Teardown() // will teardown also VPP-Agent created later
+
+	// create NB init file content
+	initialNBConfig := `
+netallocConfig: {}
+linuxConfig: {}
+vppConfig:
+  interfaces:
+    - name: loop-test-from-init-file
+      type: SOFTWARE_LOOPBACK
+      enabled: true
+      ipAddresses:
+        - 10.10.1.1/24
+      mtu: 1500
+`
+	initialNBConfigFileName := CreateFile(t, "nb-init-file.yaml", initialNBConfig)
+
+	// create config content for NB init file usage
+	nbInitFileRegistryConfig := `
+disable-nb-initial-configuration: false
+nb-initial-configuration-file-path: %v
+`
+	nbInitFileRegistryConfig = fmt.Sprintf(nbInitFileRegistryConfig, initialNBConfigFileName)
+
+	// create VPP-Agent
+	SetupVPPAgent(t, ctx,
+		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "nbinitfileregistry", nbInitFileRegistryConfig)),
+		WithoutManualInitialAgentResync(),
+	)
+
+	// check whether NB initial configuration inside file is correctly loaded in running VPP-Agent
+	initInterfaceConfigState := func() kvscheduler.ValueState {
+		return ctx.GetValueStateByKey("vpp/interface/loop-test-from-init-file/address/static/10.10.1.1/24")
+	}
+	Eventually(initInterfaceConfigState).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"loopback from init file was not properly created")
+}
+
+// TestNBInitFromEtcd test configuring initial state of NB from Etcd
+func TestNBInitFromEtcd(t *testing.T) {
+	ctx := Setup(t,
+		WithEtcd(),
+		WithoutVPPAgent(),
+	)
+	defer ctx.Teardown() // will teardown also VPP-Agent created later
+
+	// put NB config into Etcd
+	Expect(ctx.Etcd.Put(
+		"/vnf-agent/vpp1/config/vpp/v2/interfaces/loop-test-from-etcd",
+		`{"name":"loop-test-from-etcd","type":"SOFTWARE_LOOPBACK","enabled":true,"ip_addresses":["10.10.1.2/24"], "mtu":1500}`)).
+		To(Succeed(), "can't insert data into ETCD")
+
+	// prepare Etcd config for VPP-Agent
+	etcdConfig := `insecure-transport: true
+dial-timeout: 1s
+endpoints:
+    - "%v:2379"
+`
+	etcdConfig = fmt.Sprintf(etcdConfig, ctx.Etcd.Inspect().NetworkSettings.IPAddress)
+
+	// create VPP-Agent
+	SetupVPPAgent(t, ctx,
+		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "etcd", etcdConfig)),
+		WithoutManualInitialAgentResync(),
+	)
+
+	// check whether NB initial configuration is correctly loaded from Etcd in running VPP-Agent
+	initInterfaceConfigState := func() kvscheduler.ValueState {
+		return ctx.GetValueStateByKey("vpp/interface/loop-test-from-etcd/address/static/10.10.1.2/24")
+	}
+	Eventually(initInterfaceConfigState).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+		"loopback from etcd was not properly created")
+}
+
+// TestNBInitFromFileAndEtcd test configuring initial state of NB from Etcd and from file
+func TestNBInitFromFileAndEtcd(t *testing.T) {
+	ctx := Setup(t,
+		WithEtcd(),
+		WithoutVPPAgent(),
+	)
+	defer ctx.Teardown() // will teardown also VPP-Agent created later
+
+	// put NB config into Etcd
+	Expect(ctx.Etcd.Put(
+		"/vnf-agent/vpp1/config/vpp/v2/interfaces/memif-from-etcd",
+		`{
+"name":"memif-from-etcd",
+"type":"MEMIF",
+"enabled":true,
+"ip_addresses":["10.10.1.1/32"], 
+"mtu":1500,
+"memif": {
+		"master": false,
+		"id": 1,
+		"socket_filename": "/run/vpp/default.sock"
+	}
+}`)).To(Succeed(), "can't insert data1 into ETCD")
+	Expect(ctx.Etcd.Put(
+		"/vnf-agent/vpp1/config/vpp/v2/interfaces/memif-from-both-sources",
+		`{
+"name":"memif-from-both-sources",
+"type":"MEMIF",
+"enabled":true,
+"ip_addresses":["10.10.1.3/32"], 
+"mtu":1500,
+"memif": {
+		"master": false,
+		"id": 3,
+		"socket_filename": "/run/vpp/default.sock"
+	}
+}`)).To(Succeed(), "can't insert data2 into ETCD")
+
+	// create NB init file content
+	initialNBConfig := `
+netallocConfig: {}
+linuxConfig: {}
+vppConfig:
+ interfaces:
+   - name: memif-from-init-file
+     type: MEMIF
+     enabled: true
+     ipAddresses:
+       - 10.10.1.2/32
+     mtu: 1500
+     memif:
+         master: false
+         id: 2
+         socketFilename: /run/vpp/default.sock
+   - name: memif-from-both-sources
+     type: MEMIF
+     enabled: true
+     ipAddresses:
+       - 10.10.1.4/32
+     mtu: 1500
+     memif:
+         master: false
+         id: 4
+         socketFilename: /run/vpp/default.sock
+`
+	initialNBConfigFileName := CreateFile(t, "nb-init-file.yaml", initialNBConfig)
+
+	// create config content for NB init file usage
+	nbInitFileRegistryConfig := `
+disable-nb-initial-configuration: false
+nb-initial-configuration-file-path: %v
+`
+	nbInitFileRegistryConfig = fmt.Sprintf(nbInitFileRegistryConfig, initialNBConfigFileName)
+
+	// create config content for etcd connection
+	etcdConfig := `insecure-transport: true
+dial-timeout: 1s
+endpoints:
+    - "%v:2379"
+`
+	etcdConfig = fmt.Sprintf(etcdConfig, ctx.Etcd.Inspect().NetworkSettings.IPAddress)
+
+	// create VPP-Agent
+	SetupVPPAgent(t, ctx,
+		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "etcd", etcdConfig),
+			WithPluginConfigArg(t, "nbinitfileregistry", nbInitFileRegistryConfig)),
+		WithoutManualInitialAgentResync(),
+	)
+
+	// check whether NB initial configuration is correctly loaded from Etcd in running VPP-Agent
+	initInterfaceConfigState := func(interfaceName string, ipAddress string) kvscheduler.ValueState {
+		return ctx.GetValueStateByKey(
+			fmt.Sprintf("vpp/interface/%v/address/static/%v/32", interfaceName, ipAddress))
+	}
+	Eventually(initInterfaceConfigState("memif-from-etcd", "10.10.1.1")).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED),
+			"unique memif from etcd was not properly created")
+	Eventually(initInterfaceConfigState("memif-from-init-file", "10.10.1.2")).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED),
+			"unique memif from init file was not properly created")
+	Eventually(initInterfaceConfigState("memif-from-both-sources", "10.10.1.3")).
+		Should(Equal(kvscheduler.ValueState_CONFIGURED),
+			"conflicting memif (defined in init file and etcd) was either not correctly "+
+				"merged (etcd data should have priority) or other things prevented its proper creation")
 }

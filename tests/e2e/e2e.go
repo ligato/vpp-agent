@@ -19,8 +19,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -66,7 +70,17 @@ const (
 	//memifInputNode    = "memif-input"
 )
 
+// Setup options constants
+const (
+	NoManualInitialAgentResync   = "NoManualInitialAgentResync"
+	AdditionalAgentProcessParams = "AdditionalAgentProcessParams"
+	DontSetupVPPAgent            = "DontSetupVPPAgent"
+	SetupEtcdContainer           = "SetupEtcdContainer"
+)
+
 type TestCtx struct {
+	Etcd *EtcdContainer // TODO change?
+
 	t      *testing.T
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -85,13 +99,21 @@ type TestCtx struct {
 	logger    *log.Logger
 }
 
-func NewTest(t *testing.T) *TestCtx {
+// Option is key-value pair for customizing setup of tests
+type Option struct {
+	key   string
+	value interface{}
+}
+// TODO recheck options due to rebasing mess
+func NewTest(t *testing.T, options ...*Option) *TestCtx {
 	RegisterTestingT(t)
 	// TODO: Do not use global test registration.
 	//  It is now deprecated and you should use NewWithT() instead.
 	//g := NewWithT(t)
 
 	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
+
+	optionsMap := optionsMap(options)
 
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
@@ -111,6 +133,19 @@ func NewTest(t *testing.T) *TestCtx {
 	te.ctx, te.cancel = context.WithCancel(context.Background())
 	return te
 }
+
+// TODO resolver vppagent mess
+//if _, found := optionsMap[DontSetupVPPAgent]; !found {
+//  SetupVPPAgent(t, testCtx, options...)
+//}
+//
+//optionsMap := optionsMap(options)
+//
+//var agentArgs []string
+//if additionalParams, found := optionsMap[AdditionalAgentProcessParams]; found {
+//agentArgs = additionalParams.([]string)
+//}
+
 
 func Setup(t *testing.T) *TestCtx {
 	var err error
@@ -159,7 +194,9 @@ func Setup(t *testing.T) *TestCtx {
 	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
 
 	// run initial resync
-	testCtx.syncAgent()
+	if _, found := optionsMap[NoManualInitialAgentResync]; !found {
+		testCtx.syncAgent()
+	}
 
 	if version, err := testCtx.ExecVppctl("show version"); err != nil {
 		t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
@@ -173,7 +210,21 @@ func Setup(t *testing.T) *TestCtx {
 		}
 	}
 
+	// setup Etcd
+	if _, found := optionsMap[SetupEtcdContainer]; found {
+		testCtx.Etcd = NewEtcdContainer(testCtx, options...)
+	}
+
 	return testCtx
+}
+
+func optionsMap(options []*Option) map[string]interface{} {
+	// convert options to map
+	optionsMap := make(map[string]interface{})
+	for _, option := range options {
+		optionsMap[option.key] = option.value
+	}
+	return optionsMap
 }
 
 func (test *TestCtx) Teardown() {
@@ -196,8 +247,14 @@ func (test *TestCtx) Teardown() {
 		test.t.Logf("closing the client failed: %v", err)
 	}
 
+	// TODO check fon non-nil?
 	if err := test.agent.stop(); err != nil {
 		test.t.Logf("failed to stop vpp-agent: %v", err)
+	}
+
+	// terminate etcd
+	if test.Etcd != nil {
+		test.Etcd.Terminate(test)
 	}
 }
 
@@ -214,6 +271,58 @@ func (test *TestCtx) VppRelease() string {
 	}
 	return test.vppVersion
 }
+
+// WithoutManualInitialAgentResync is test setup option disabling manual agent resync just after agent setup
+func WithoutManualInitialAgentResync() *Option {
+	return &Option{
+		key:   NoManualInitialAgentResync,
+		value: struct{}{}, // only presence is needed
+	}
+}
+
+// WithAdditionalAgentProcessParams is test setup option adding additional parameters to executing vpp-agent process
+func WithAdditionalAgentProcessParams(params ...string) *Option {
+	return &Option{
+		key:   AdditionalAgentProcessParams,
+		value: params,
+	}
+}
+
+// WithPluginConfigArg persists configContent for give VPP-Agent plugin (expecting generic plugin config name)
+// and returns argument for VPP-Agent executable to use this plugin configuration file.
+func WithPluginConfigArg(t *testing.T, pluginName string, configContent string) string {
+	configFilePath := CreateFile(t, fmt.Sprintf("%v.config", pluginName), configContent)
+	return fmt.Sprintf("-%v-config=%v", pluginName, configFilePath)
+}
+
+// CreateFile persists fileContent to file in OS temp directory. It returns the absolute path to the newly
+// created file.
+func CreateFile(t *testing.T, simpleFileName string, fileContent string) string {
+	filePath, err := filepath.Abs(filepath.Join(os.TempDir(), fmt.Sprintf("e2e-test-%v-%v", t.Name(), simpleFileName)))
+	Expect(err).To(Not(HaveOccurred()))
+	Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
+
+	// TODO register in context and delete in teardown? this doesn't matter
+	//  that much because file names contain unique test names so no file collision can happen
+	return filePath
+}
+
+// WithoutVPPAgent is test setup option disabling vpp-agent setup
+func WithoutVPPAgent() *Option {
+	return &Option{
+		key:   DontSetupVPPAgent,
+		value: struct{}{}, // only presence is needed
+	}
+}
+
+// WithEtcd is test setup option enabling vpp-agent setup
+func WithEtcd() *Option {
+	return &Option{
+		key:   SetupEtcdContainer,
+		value: struct{}{}, // only presence is needed
+	}
+}
+
 
 func (test *TestCtx) GenericClient() client.GenericClient {
 	c, err := test.agentClient.GenericClient()
