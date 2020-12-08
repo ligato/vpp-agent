@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	protoV2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -267,16 +266,8 @@ func dynamicMessageToRegisteredGoType(dynamicMessage *dynamicpb.Message, goType 
 	}
 
 	// fill empty proto message with data from its dynamic proto message counterpart
-	// (dynamic proto message -> json -> registered-type proto message)
-	marshaller := jsonpb.Marshaler{EmitDefaults: true} // using jsonbp to generate json with json name field in proto tag
-	jsonData, err := marshaller.MarshalToString(dynamicMessage)
-	if err != nil {
-		return nil, errors.Errorf("can't marshall dynamic proto message "+
-			"to json due to: %v (message: %+v)", err, dynamicMessage)
-	}
-	if err := jsonpb.Unmarshal(strings.NewReader(jsonData), message); err != nil {
-		return nil, errors.Errorf("can't load json to registered-type "+
-			"proto message due to: %v (json=%v)", err, jsonData)
-	}
+	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
+	proto.Merge(message, dynamicMessage)
+
 	return message, nil
 }
