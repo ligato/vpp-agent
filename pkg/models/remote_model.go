@@ -29,7 +29,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-// RemotelyKnownModel represents a registered remnote model (remote model has only information about model
+// RemotelyKnownModel represents a registered remote model (remote model has only information about model
 // from remote source, i.e. missing go type because VPP-Agent meta service doesn't provide it)
 type RemotelyKnownModel struct {
 	model *ModelInfo

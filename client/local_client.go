@@ -23,7 +23,7 @@ import (
 	"go.ligato.io/cn-infra/v2/db/keyval"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
-	orch "go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
@@ -64,7 +64,7 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 	}
 
 	ctx := context.Background()
-	ctx = orch.DataSrcContext(ctx, "localclient")
+	ctx = contextdecorator.DataSrcContext(ctx, "localclient")
 	return txn.Commit(ctx)
 }
 
@@ -121,9 +121,9 @@ func (r *changeRequest) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}
-	_, withDataSrc := orch.DataSrcFromContext(ctx)
+	_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
 	if !withDataSrc {
-		ctx = orch.DataSrcContext(ctx, "localclient")
+		ctx = contextdecorator.DataSrcContext(ctx, "localclient")
 	}
 	return r.txn.Commit(ctx)
 }
