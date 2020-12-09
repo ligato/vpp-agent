@@ -171,8 +171,12 @@ func (r *NBInitFileRegistry) retrieveConfig() (*Config, error) {
 	}
 	found, err := r.Cfg.LoadValue(config)
 	if !found {
-		r.Log.Debug("NBInitFileRegistry plugin config not found")
-		return config, nil
+		if err == nil {
+			r.Log.Debug("NBInitFileRegistry plugin config not found")
+		} else {
+			r.Log.Debugf("NBInitFileRegistry plugin config can't be loaded due to: %v", err)
+		}
+		return config, err
 	}
 	if err != nil {
 		return nil, err
