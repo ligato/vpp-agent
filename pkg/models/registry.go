@@ -20,9 +20,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
-	protoV2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -214,10 +212,10 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 
 	// Use GetName as fallback for generating name
 	if _, ok := x.(named); ok {
-		model.nameFunc = func(obj interface{}) (s string, e error) {
+		model.nameFunc = func(obj interface{}, messageGoType reflect.Type) (s string, e error) {
 			// handling dynamic messages (they don't implement named interface)
 			if dynMessage, ok := obj.(*dynamicpb.Message); ok {
-				obj, e = dynamicMessageToRegisteredGoType(dynMessage, model.goType)
+				obj, e = dynamicMessageToGeneratedMessage(dynMessage, messageGoType)
 				if e != nil {
 					return "", e
 				}
@@ -241,33 +239,4 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 		fmt.Printf("- model %s registered: %+v\n", model.Name(), model)
 	}
 	return model, nil
-}
-
-// dynamicMessageToRegisteredGoType converts proto dynamic message to proto message that was used at
-// the registration of the proto model corresponding to the proto dynamic message.
-// The registration proto message is usually the protoc-generated proto message. This conversion method
-// should help handling dynamic proto messages in mostly protoc-generated proto message oriented codebase
-// (i.e. help for type conversions to named, help handle missing data fields as seen in generated proto messages,...)
-func dynamicMessageToRegisteredGoType(dynamicMessage *dynamicpb.Message, goType reflect.Type) (proto.Message, error) {
-	// create empty proto message of the same type as it was used for registration
-	var registeredGoType interface{}
-	if goType.Kind() == reflect.Ptr {
-		registeredGoType = reflect.New(goType.Elem()).Interface()
-	} else {
-		registeredGoType = reflect.Zero(goType).Interface()
-	}
-	message, isProtoV1 := registeredGoType.(proto.Message)
-	if !isProtoV1 {
-		messageV2, isProtoV2 := registeredGoType.(protoV2.Message)
-		if !isProtoV2 {
-			return nil, errors.Errorf("registered go type(%T) is not proto.Message", registeredGoType)
-		}
-		message = proto.MessageV1(messageV2)
-	}
-
-	// fill empty proto message with data from its dynamic proto message counterpart
-	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
-	proto.Merge(message, dynamicMessage)
-
-	return message, nil
 }

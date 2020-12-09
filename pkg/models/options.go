@@ -2,8 +2,11 @@ package models
 
 import (
 	"net"
+	"reflect"
 	"strings"
 	"text/template"
+
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type modelOptions struct {
@@ -15,7 +18,10 @@ type modelOptions struct {
 type ModelOption func(*modelOptions)
 
 // NameFunc represents function which can name model instance.
-type NameFunc func(obj interface{}) (string, error)
+// To properly handle also dynamic Messages (dynamicpb.Message)
+// as model instances, the go type of corresponding generated
+// proto message must be given.
+type NameFunc func(obj interface{}, messageGoType reflect.Type) (string, error)
 
 // WithNameTemplate returns option for models which sets function
 // for generating name of instances using custom template.
@@ -36,7 +42,17 @@ func NameTemplate(t string) NameFunc {
 	tmpl := template.Must(
 		template.New("name").Funcs(funcMap).Option("missingkey=error").Parse(t),
 	)
-	return func(obj interface{}) (string, error) {
+	return func(obj interface{}, messageGoType reflect.Type) (string, error) {
+		// handling dynamic messages (they don't have data fields as generated proto messages)
+		if dynMessage, ok := obj.(*dynamicpb.Message); ok {
+			var err error
+			obj, err = dynamicMessageToGeneratedMessage(dynMessage, messageGoType)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		// execute name template on generated proto message
 		var s strings.Builder
 		if err := tmpl.Execute(&s, obj); err != nil {
 			return "", err
