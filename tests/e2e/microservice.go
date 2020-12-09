@@ -17,9 +17,9 @@ import (
 const (
 	msImage       = "busybox"
 	msImageTag    = "1.31"
-	msStopTimeout = 3 // seconds
+	msStopTimeout = 1 // seconds
 	msLabelKey    = "e2e.test.ms"
-	msNamePrefix  = "e2e-test-"
+	msNamePrefix  = "e2e-test-ms-"
 )
 
 var (
@@ -87,7 +87,6 @@ func resetMicroservices(t *testing.T, dockerClient *docker.Client) {
 	if err != nil {
 		t.Fatalf("failed to pull image '%s:%s' for microservices: %v", msImage, msImageTag, err)
 	}
-
 	// remove any running microservices prior to starting a new test
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,
@@ -132,7 +131,7 @@ func (ms *microservice) exec(cmdName string, args ...string) (output string, err
 		Container:    ms.container.ID,
 	})
 	if err != nil {
-		ms.ctx.t.Fatalf("failed to create docker exec instance for ping: %v", err)
+		ms.ctx.t.Fatalf("failed to create docker exec instance: %v", err)
 	}
 
 	var stdout bytes.Buffer

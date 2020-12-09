@@ -15,7 +15,6 @@
 package e2e
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -23,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -103,9 +101,10 @@ const (
 )
 
 type TestCtx struct {
-	t             *testing.T
-	VPP           *exec.Cmd
-	agent         *exec.Cmd
+	t *testing.T
+	//VPP           *exec.Cmd
+	//agent         *exec.Cmd
+	vppAgent      *vppAgent
 	dockerClient  *docker.Client
 	microservices map[string]*microservice
 	nsCalls       nslinuxcalls.NetworkNamespaceAPI
@@ -118,9 +117,14 @@ type TestCtx struct {
 }
 
 func Setup(t *testing.T) *TestCtx {
+	var err error
+
 	// TODO: Do not use global test registration.
 	//  It is now deprecated and you should use NewWithT() instead.
 	RegisterTestingT(t)
+
+	SetDefaultEventuallyPollingInterval(checkPollingInterval)
+	SetDefaultEventuallyTimeout(checkTimeout)
 
 	testCtx := &TestCtx{
 		t:             t,
@@ -129,46 +133,6 @@ func Setup(t *testing.T) *TestCtx {
 		outputBuf:     new(bytes.Buffer),
 	}
 	testCtx.logger = log.New(testCtx.outputBuf, "e2e-test: ", log.Lshortfile)
-
-	// if setupE2E fails we need to stop started processes
-	defer func() {
-		if testCtx.t.Failed() || *debug {
-			testCtx.dumpLog()
-		}
-		if testCtx.t.Failed() {
-			if testCtx.agent != nil {
-				stopProcess(testCtx.t, testCtx.agent, "VPP-Agent")
-			}
-			if testCtx.VPP != nil {
-				stopProcess(testCtx.t, testCtx.VPP, "VPP")
-			}
-		}
-	}()
-
-	var err error
-
-	// check if VPP process is not running already
-	assertProcessNotRunning(t, "vpp", "vpp_main", *vppPath)
-
-	// remove binapi files from previous run
-	if *vppSockAddr != "" {
-		removeFile(t, *vppSockAddr)
-	}
-	if err := os.Mkdir("/run/vpp", 0755); err != nil && !os.IsExist(err) {
-		t.Logf("mkdir failed: %v", err)
-	}
-
-	// start VPP process
-	var vppArgs []string
-	if *vppConfig != "" {
-		vppArgs = []string{"-c", *vppConfig}
-	} else {
-		vppArgs = []string{vppConf}
-	}
-	testCtx.VPP = startProcess(t, "VPP", nil, testCtx.outputBuf, testCtx.outputBuf, *vppPath, vppArgs...)
-
-	SetDefaultEventuallyPollingInterval(checkPollingInterval)
-	SetDefaultEventuallyTimeout(checkTimeout)
 
 	// connect to the docker daemon
 	testCtx.dockerClient, err = docker.NewClientFromEnv()
@@ -179,22 +143,69 @@ func Setup(t *testing.T) *TestCtx {
 		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
 	}
 
-	// make sure there are no microservices left from the previous run
+	// make sure there are no containers left from the previous run
+	resetVppAgents(t, testCtx.dockerClient)
 	resetMicroservices(t, testCtx.dockerClient)
 
-	// start the agent
-	assertProcessNotRunning(t, "vpp_agent")
+	// if setupE2E fails we need to stop started processes
+	defer func() {
+		if testCtx.t.Failed() || *debug {
+			testCtx.dumpLog()
+		}
+		if testCtx.t.Failed() {
+			if testCtx.vppAgent != nil {
+				if err := testCtx.vppAgent.stop(); err != nil {
+					t.Logf("failed to stop vpp-agent: %v", err)
+				}
+			}
+			/*if testCtx.agent != nil {
+				stopProcess(testCtx.t, testCtx.agent, "VPP-Agent")
+			}
+			if testCtx.VPP != nil {
+				stopProcess(testCtx.t, testCtx.VPP, "VPP")
+			}*/
+		}
+	}()
 
-	var agentArgs []string
+	testCtx.vppAgent = runVppAgent(testCtx, "agent0")
+	agentAddr := testCtx.vppAgent.container.NetworkSettings.IPAddress
 
-	if *covPath != "" {
-		e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
-		agentArgs = []string{"-test.coverprofile", e2eCovPath}
-	}
-	testCtx.agent = startProcess(t, "VPP-Agent", nil, testCtx.outputBuf, testCtx.outputBuf, "/vpp-agent", agentArgs...)
+	/*
+		// check if VPP process is not running already
+		assertProcessNotRunning(t, "vpp", "vpp_main", *vppPath)
+
+		// remove binapi files from previous run
+		if *vppSockAddr != "" {
+			removeFile(t, *vppSockAddr)
+		}
+		if err := os.Mkdir("/run/vpp", 0755); err != nil && !os.IsExist(err) {
+			t.Logf("mkdir failed: %v", err)
+		}
+
+		// start VPP process
+		var vppArgs []string
+		if *vppConfig != "" {
+			vppArgs = []string{"-c", *vppConfig}
+		} else {
+			vppArgs = []string{vppConf}
+		}
+		testCtx.VPP = startProcess(t, "VPP", nil, testCtx.outputBuf, testCtx.outputBuf, *vppPath, vppArgs...)
+
+		// start the agent
+		assertProcessNotRunning(t, "vpp_agent")
+
+		var agentArgs []string
+
+		if *covPath != "" {
+			e2eCovPath := fmt.Sprintf("%s/%d.out", *covPath, time.Now().Unix())
+			agentArgs = []string{"-test.coverprofile", e2eCovPath}
+		}
+		testCtx.agent = startProcess(t, "VPP-Agent", nil, testCtx.outputBuf, testCtx.outputBuf, "/vpp-agent", agentArgs...)
+	*/
 
 	// prepare HTTP client for access to REST API of the agent
-	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
+	httpAddr := fmt.Sprintf("%s:%d", agentAddr, *agentHTTPPort)
+
 	testCtx.httpClient = utils.NewHTTPClient(httpAddr)
 
 	if *debugHTTP {
@@ -202,11 +213,11 @@ func Setup(t *testing.T) *TestCtx {
 		testCtx.httpClient.Log.SetLevel(logging.DebugLevel)
 	}
 
-	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).
-		Should(Succeed())
+	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
 
 	// connect with agent via GRPC
-	grpcAddr := fmt.Sprintf(":%d", *agentGrpcPort)
+	grpcAddr := fmt.Sprintf("%s:%d", agentAddr, *agentGrpcPort)
+
 	testCtx.grpcConn, err = grpc.Dial(grpcAddr, grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
@@ -257,11 +268,17 @@ func (ctx *TestCtx) Teardown() {
 		ctx.t.Logf("closing grpc connection failed: %v", err)
 	}
 
-	// terminate agent
-	stopProcess(ctx.t, ctx.agent, "VPP-Agent")
+	if err := ctx.vppAgent.stop(); err != nil {
+		ctx.t.Logf("failed to stop vpp-agent: %v", err)
+	}
 
-	// terminate VPP
-	stopProcess(ctx.t, ctx.VPP, "VPP")
+	/*
+		// terminate agent
+		stopProcess(ctx.t, ctx.agent, "VPP-Agent")
+
+		// terminate VPP
+		stopProcess(ctx.t, ctx.VPP, "VPP")
+	*/
 }
 
 func (ctx *TestCtx) StartEtcd() string {
@@ -346,7 +363,7 @@ func (ctx *TestCtx) AgentInSync() bool {
 func (ctx *TestCtx) ExecCmd(cmd string, args ...string) (string, string, error) {
 	ctx.t.Helper()
 	ctx.logger.Printf("exec: '%s %s'", cmd, strings.Join(args, " "))
-	var stdout, stderr bytes.Buffer
+	/*var stdout, stderr bytes.Buffer
 	c := exec.Command(cmd, args...)
 	c.Stdout = &stdout
 	c.Stderr = &stderr
@@ -359,16 +376,20 @@ func (ctx *TestCtx) ExecCmd(cmd string, args ...string) (string, string, error) 
 			ctx.logger.Printf(" stderr:\n%s", stderr.String())
 		}
 	}
-	return stdout.String(), stderr.String(), err
+	return stdout.String(), stderr.String(), err*/
+	return ctx.vppAgent.exec(cmd, args...)
 }
 
 // ExecVppctl returns output from vppctl for given action and arguments.
 func (ctx *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	ctx.t.Helper()
-	command := append([]string{action}, args...)
+	command := append([]string{"-s", "127.0.0.1:5002", action}, args...)
 	stdout, _, err := ctx.ExecCmd("vppctl", command...)
 	if err != nil {
 		return "", fmt.Errorf("could not execute `vppctl %s`: %v", strings.Join(command, " "), err)
+	}
+	if *debug {
+		ctx.t.Logf("vppctl output: %q", stdout)
 	}
 	return stdout, nil
 }
@@ -707,251 +728,6 @@ func stopProcess(t *testing.T, cmd *exec.Cmd, name string) {
 		if err := cmd.Process.Signal(syscall.SIGKILL); err != nil {
 			t.Errorf("sending SIGKILL to %s failed: %v", name, err)
 		}
-	}
-}
-
-// TCP or UDP connection request
-type connectionRequest struct {
-	conn net.Conn
-	err  error
-}
-
-func simpleTCPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
-	// move to the network namespace where server should listen
-	exitNetNs := ms.enterNetNs()
-	defer exitNetNs()
-
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		done <- err
-		return
-	}
-	defer listener.Close()
-
-	// accept single connection
-	newConn := make(chan connectionRequest, 1)
-	go func() {
-		conn, err := listener.Accept()
-		newConn <- connectionRequest{conn: conn, err: err}
-		close(newConn)
-	}()
-
-	// wait for connection
-	var cr connectionRequest
-	select {
-	case <-ctx.Done():
-		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
-		return
-	case cr = <-newConn:
-		if cr.err != nil {
-			done <- fmt.Errorf("accept failed with: %v", cr.err)
-			return
-		}
-		defer cr.conn.Close()
-	}
-
-	// communicate with the client
-	commRv := make(chan error, 1)
-	go func() {
-		defer close(commRv)
-		// receive message from the client
-		message, err := bufio.NewReader(cr.conn).ReadString('\n')
-		if err != nil {
-			commRv <- fmt.Errorf("failed to read data from client: %v", err)
-			return
-		}
-		// send response to the client
-		_, err = cr.conn.Write([]byte(respMsg + "\n"))
-		if err != nil {
-			commRv <- fmt.Errorf("failed to send data to client: %v", err)
-			return
-		}
-		// check if the exchanged data are as expected
-		message = strings.TrimRight(message, "\n")
-		if message != expReqMsg {
-			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
-				message, expReqMsg)
-			return
-		}
-		commRv <- nil
-	}()
-
-	// wait for the message exchange to execute
-	select {
-	case <-ctx.Done():
-		done <- fmt.Errorf("tcp server listening on %s was canceled", addr)
-		return
-	case err = <-commRv:
-		done <- err
-	}
-
-	// do not close until client confirms reception of the message
-	<-ctx.Done()
-}
-
-func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
-	const maxBufferSize = 1024
-	// move to the network namespace where server should listen
-	exitNetNs := ms.enterNetNs()
-	defer exitNetNs()
-
-	conn, err := net.ListenPacket("udp", addr)
-	if err != nil {
-		done <- err
-		return
-	}
-	defer conn.Close()
-
-	// communicate with the client
-	commRv := make(chan error, 1)
-	go func() {
-		defer close(commRv)
-		// receive message from the client
-		buffer := make([]byte, maxBufferSize)
-		n, addr, err := conn.ReadFrom(buffer)
-		if err != nil {
-			commRv <- fmt.Errorf("failed to read data from client: %v", err)
-			return
-		}
-		message := string(buffer[:n])
-		// send response to the client
-		_, err = conn.WriteTo([]byte(respMsg+"\n"), addr)
-		if err != nil {
-			commRv <- fmt.Errorf("failed to send data to client: %v", err)
-			return
-		}
-		// check if the exchanged data are as expected
-		message = strings.TrimRight(message, "\n")
-		if message != expReqMsg {
-			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
-				message, expReqMsg)
-			return
-		}
-		commRv <- nil
-	}()
-
-	// wait for the message exchange to execute
-	select {
-	case <-ctx.Done():
-		done <- fmt.Errorf("udp server listening on %s was canceled", addr)
-		return
-	case err = <-commRv:
-		done <- err
-	}
-
-	// do not close until client confirms reception of the message
-	<-ctx.Done()
-}
-
-func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
-	// try to connect with the server
-	newConn := make(chan connectionRequest, 1)
-	go func() {
-		// move to the network namespace from which the connection should be initiated
-		exitNetNs := ms.enterNetNs()
-		defer exitNetNs()
-		start := time.Now()
-		for {
-			conn, err := net.Dial("tcp", addr)
-			if err != nil && time.Since(start) < timeout {
-				time.Sleep(checkPollingInterval)
-				continue
-			}
-			newConn <- connectionRequest{conn: conn, err: err}
-			break
-		}
-		close(newConn)
-	}()
-
-	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
-}
-
-func simpleUDPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
-	// try to connect with the server
-	newConn := make(chan connectionRequest, 1)
-	go func() {
-		// move to the network namespace from which the connection should be initiated
-		exitNetNs := ms.enterNetNs()
-		defer exitNetNs()
-		udpAddr, err := net.ResolveUDPAddr("udp", addr)
-		if err != nil {
-			newConn <- connectionRequest{conn: nil, err: err}
-		} else {
-			start := time.Now()
-			for {
-				conn, err := net.DialUDP("udp", nil, udpAddr)
-				if err != nil && time.Since(start) < timeout {
-					time.Sleep(checkPollingInterval)
-					continue
-				}
-				newConn <- connectionRequest{conn: conn, err: err}
-				break
-			}
-		}
-		close(newConn)
-	}()
-
-	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
-}
-
-func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespMsg string,
-	timeout time.Duration, done chan<- error) {
-
-	// wait for connection
-	var cr connectionRequest
-	select {
-	case <-time.After(timeout):
-		done <- fmt.Errorf("connection to %s timed out", addr)
-		return
-	case cr = <-newConn:
-		if cr.err != nil {
-			done <- fmt.Errorf("dial failed with: %v", cr.err)
-			return
-		}
-		defer cr.conn.Close()
-	}
-
-	// communicate with the server
-	commRv := make(chan error, 1)
-	go func() {
-		defer close(commRv)
-		// send message to the server
-		_, err := cr.conn.Write([]byte(reqMsg + "\n"))
-		if err != nil {
-			commRv <- fmt.Errorf("failed to send data to the server: %v", err)
-			return
-		}
-		// listen for reply
-		start := time.Now()
-		var message string
-		for {
-			message, err = bufio.NewReader(cr.conn).ReadString('\n')
-			if err != nil && time.Since(start) < timeout {
-				time.Sleep(checkPollingInterval)
-				continue
-			}
-			if err != nil {
-				commRv <- fmt.Errorf("failed to read data from server: %v", err)
-				return
-			}
-			break
-		}
-		// check if the exchanged data are as expected
-		message = strings.TrimRight(message, "\n")
-		if message != expRespMsg {
-			commRv <- fmt.Errorf("unexpected message received from server ('%s' vs. '%s')",
-				message, expRespMsg)
-			return
-		}
-		commRv <- nil
-	}()
-
-	// wait for the message exchange to execute
-	select {
-	case <-time.After(timeout):
-		done <- fmt.Errorf("communication with %s timed out", addr)
-	case err := <-commRv:
-		done <- err
 	}
 }
 
