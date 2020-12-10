@@ -111,9 +111,9 @@ func (p *Aggregator) Watch(
 		//  for initial call of DoResync() to do initial Agent resync must be delayed as well SOMEHOW (can't use
 		//  init or after init of plugins).
 
-		// localregistry.NBInitFileRegistry can also be watcher that never sends anything (i.e. if misconfigured
-		// or no default NB init file is present or loading of data fails or ... -> check for Empty())
-		if initRegistry, ok := w.(*localregistry.NBInitFileRegistry); ok && initRegistry.Empty() {
+		// localregistry.InitFileRegistry can also be watcher that never sends anything (i.e. if misconfigured
+		// or no default init file is present or loading of data fails or ... -> check for Empty())
+		if initRegistry, ok := w.(*localregistry.InitFileRegistry); ok && initRegistry.Empty() {
 			continue
 		}
 

@@ -101,7 +101,7 @@ func New() *VPPAgent {
 	)
 
 	// Set watcher for KVScheduler.
-	initFileRegistry := localregistry.NewNBInitFileRegistryPlugin()
+	initFileRegistry := localregistry.NewInitFileRegistryPlugin()
 	watchers := watcher.NewPlugin(watcher.UseWatchers(
 		local.DefaultRegistry,
 		initFileRegistry,

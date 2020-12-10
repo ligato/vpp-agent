@@ -65,13 +65,13 @@ func TestStartStopAgent(t *testing.T) {
 	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }
 
-// TestNBInitFromFile test configuring initial state of NB from file
-func TestNBInitFromFile(t *testing.T) {
+// TestInitFromFile tests configuring initial state of NB from file
+func TestInitFromFile(t *testing.T) {
 	ctx := Setup(t, WithoutVPPAgent())
 	defer ctx.Teardown() // will teardown also VPP-Agent created later
 
-	// create NB init file content
-	initialNBConfig := `
+	// create init file content
+	initialConfig := `
 netallocConfig: {}
 linuxConfig: {}
 vppConfig:
@@ -83,22 +83,22 @@ vppConfig:
         - 10.10.1.1/24
       mtu: 1500
 `
-	initialNBConfigFileName := CreateFile(t, "nb-init-file.yaml", initialNBConfig)
+	initialConfigFileName := CreateFile(t, "initial-config.yaml", initialConfig)
 
-	// create config content for NB init file usage
-	nbInitFileRegistryConfig := `
-disable-nb-initial-configuration: false
-nb-initial-configuration-file-path: %v
+	// create config content for init file usage
+	initFileRegistryConfig := `
+disable-initial-configuration: false
+initial-configuration-file-path: %v
 `
-	nbInitFileRegistryConfig = fmt.Sprintf(nbInitFileRegistryConfig, initialNBConfigFileName)
+	initFileRegistryConfig = fmt.Sprintf(initFileRegistryConfig, initialConfigFileName)
 
 	// create VPP-Agent
 	SetupVPPAgent(t, ctx,
-		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "nbinitfileregistry", nbInitFileRegistryConfig)),
+		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
 
-	// check whether NB initial configuration inside file is correctly loaded in running VPP-Agent
+	// check whether initial configuration inside file is correctly loaded in running VPP-Agent
 	initInterfaceConfigState := func() kvscheduler.ValueState {
 		return ctx.GetValueStateByKey("vpp/interface/loop-test-from-init-file/address/static/10.10.1.1/24")
 	}
@@ -106,8 +106,8 @@ nb-initial-configuration-file-path: %v
 		"loopback from init file was not properly created")
 }
 
-// TestNBInitFromEtcd test configuring initial state of NB from Etcd
-func TestNBInitFromEtcd(t *testing.T) {
+// TestInitFromEtcd tests configuring initial state of NB from Etcd
+func TestInitFromEtcd(t *testing.T) {
 	ctx := Setup(t,
 		WithEtcd(),
 		WithoutVPPAgent(),
@@ -142,8 +142,8 @@ endpoints:
 		"loopback from etcd was not properly created")
 }
 
-// TestNBInitFromFileAndEtcd test configuring initial state of NB from Etcd and from file
-func TestNBInitFromFileAndEtcd(t *testing.T) {
+// TestInitFromFileAndEtcd tests configuring initial state of NB from Etcd and from file
+func TestInitFromFileAndEtcd(t *testing.T) {
 	ctx := Setup(t,
 		WithEtcd(),
 		WithoutVPPAgent(),
@@ -180,8 +180,8 @@ func TestNBInitFromFileAndEtcd(t *testing.T) {
 	}
 }`)).To(Succeed(), "can't insert data2 into ETCD")
 
-	// create NB init file content
-	initialNBConfig := `
+	// create init file content
+	initialConfig := `
 netallocConfig: {}
 linuxConfig: {}
 vppConfig:
@@ -207,14 +207,14 @@ vppConfig:
          id: 4
          socketFilename: /run/vpp/default.sock
 `
-	initialNBConfigFileName := CreateFile(t, "nb-init-file.yaml", initialNBConfig)
+	initialConfigFileName := CreateFile(t, "initial-config.yaml", initialConfig)
 
 	// create config content for NB init file usage
-	nbInitFileRegistryConfig := `
-disable-nb-initial-configuration: false
-nb-initial-configuration-file-path: %v
+	initFileRegistryConfig := `
+disable-initial-configuration: false
+initial-configuration-file-path: %v
 `
-	nbInitFileRegistryConfig = fmt.Sprintf(nbInitFileRegistryConfig, initialNBConfigFileName)
+	initFileRegistryConfig = fmt.Sprintf(initFileRegistryConfig, initialConfigFileName)
 
 	// create config content for etcd connection
 	etcdConfig := `insecure-transport: true
@@ -227,11 +227,11 @@ endpoints:
 	// create VPP-Agent
 	SetupVPPAgent(t, ctx,
 		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "etcd", etcdConfig),
-			WithPluginConfigArg(t, "nbinitfileregistry", nbInitFileRegistryConfig)),
+			WithPluginConfigArg(t, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
 
-	// check whether NB initial configuration is correctly loaded from Etcd in running VPP-Agent
+	// check whether initial configuration is correctly loaded from Etcd and file in running VPP-Agent
 	initInterfaceConfigState := func(interfaceName string, ipAddress string) kvscheduler.ValueState {
 		return ctx.GetValueStateByKey(
 			fmt.Sprintf("vpp/interface/%v/address/static/%v/32", interfaceName, ipAddress))

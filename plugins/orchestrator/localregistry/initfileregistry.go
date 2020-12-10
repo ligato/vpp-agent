@@ -35,13 +35,13 @@ import (
 )
 
 const (
-	registryName          = "nb-init-file-registry"
-	defaultNBInitFilePath = "nb-initial-config.yaml"
+	registryName        = "init-file-registry"
+	defaultInitFilePath = "initial-config.yaml"
 )
 
-type Option func(*NBInitFileRegistry)
+type Option func(*InitFileRegistry)
 
-// NBInitFileRegistry is local read-only NB configuration provider with exclusive data source from a file
+// InitFileRegistry is local read-only NB configuration provider with exclusive data source from a file
 // given by a file path (InitConfigFilePath). Its purpose is to seamlessly integrated NB configuration
 // from file as another NB configuration provider (to existing providers: etcd, consul, redis) and integrate
 // it's configuration into agent in the same standard way(datasync.KeyValProtoWatcher). The content of this
@@ -49,14 +49,14 @@ type Option func(*NBInitFileRegistry)
 // inside given file after initial content loading.
 //
 // The NB configuration provisioning process and how this registry fits into it:
-// 	1. NB data sources register to default resync plugin (NBInitFileRegistry registers too in watchNBResync(),
+// 	1. NB data sources register to default resync plugin (InitFileRegistry registers too in watchNBResync(),
 //	   but only when there are some NB config data from file, otherwise it makes no sense to register because
 //	   there is nothing to forward. This also means that before register to resync plugin, the NB config from
 //	   file will be preloaded)
-// 	2. Call to resync plugin's DoResync triggers resync to NB configuration sources (NBInitFileRegistry takes
+// 	2. Call to resync plugin's DoResync triggers resync to NB configuration sources (InitFileRegistry takes
 //	   its preloaded NB config and stores it into another inner local registry)
 // 	3. NB configuration sources are also watchable (datasync.KeyValProtoWatcher) and the resync data is
-//	   collected by the watcher.Aggregator (NBInitFileRegistry is also watchable/forwards data to watcher.Aggregator,
+//	   collected by the watcher.Aggregator (InitFileRegistry is also watchable/forwards data to watcher.Aggregator,
 //	   it relies on the watcher capabilities of its inner local registry. This is the cause why to preloaded
 //	   the NB config from file([]proto.Message storage) and push it to another inner local storage later
 //	   (syncbase.Registry). If we used only one storage (syncbase.Registry for its watch capabilities), we
@@ -66,7 +66,7 @@ type Option func(*NBInitFileRegistry)
 // 	4. watcher.Aggregator merges all collected resync data and forwards them its watch clients (it also implements
 //	   datasync.KeyValProtoWatcher just like the NB data sources).
 //  5. Clients of Aggregator (currently orchestrator and ifplugin) handle the NB changes/resync properly.
-type NBInitFileRegistry struct {
+type InitFileRegistry struct {
 	infra.PluginDeps
 
 	initialized             bool
@@ -76,17 +76,17 @@ type NBInitFileRegistry struct {
 	preloadedNBConfigs      []proto.Message
 }
 
-// Config holds the NBInitFileRegistry configuration.
+// Config holds the InitFileRegistry configuration.
 type Config struct {
-	DisableNBInitialConfiguration  bool   `json:"disable-nb-initial-configuration"`
-	NBInitialConfigurationFilePath string `json:"nb-initial-configuration-file-path"`
+	DisableInitialConfiguration  bool   `json:"disable-initial-configuration"`
+	InitialConfigurationFilePath string `json:"initial-configuration-file-path"`
 }
 
-// NewNBInitFileRegistryPlugin creates a new Plugin with the provides Options
-func NewNBInitFileRegistryPlugin(opts ...Option) *NBInitFileRegistry {
-	p := &NBInitFileRegistry{}
+// NewInitFileRegistryPlugin creates a new InitFileRegistry Plugin with the provided Options
+func NewInitFileRegistryPlugin(opts ...Option) *InitFileRegistry {
+	p := &InitFileRegistry{}
 
-	p.PluginName = "nbinitfileregistry"
+	p.PluginName = "initfileregistry"
 	p.watchedRegistry = syncbase.NewRegistry()
 
 	for _, o := range opts {
@@ -94,7 +94,7 @@ func NewNBInitFileRegistryPlugin(opts ...Option) *NBInitFileRegistry {
 	}
 	if p.Cfg == nil {
 		p.Cfg = config.ForPlugin(p.String(),
-			config.WithCustomizedFlag(config.FlagName(p.String()), "nbinitfileregistryplugin.conf"),
+			config.WithCustomizedFlag(config.FlagName(p.String()), "initfileregistry.conf"),
 		)
 	}
 	p.PluginDeps.SetupLog()
@@ -103,7 +103,7 @@ func NewNBInitFileRegistryPlugin(opts ...Option) *NBInitFileRegistry {
 }
 
 // Init initialize registry
-func (r *NBInitFileRegistry) Init() error {
+func (r *InitFileRegistry) Init() error {
 	if !r.initialized {
 		return r.initialize()
 	}
@@ -114,10 +114,10 @@ func (r *NBInitFileRegistry) Init() error {
 // (readonly, will be filled only once from initial file import), this method directly indicates whether
 // the watchers of this registry will receive any data (Empty() == false, receive initial resync) or
 // won't receive anything at all (Empty() == true)
-func (r *NBInitFileRegistry) Empty() bool {
+func (r *InitFileRegistry) Empty() bool {
 	if !r.initialized { // could be called from init of other plugins -> possibly before this plugin init
 		if err := r.initialize(); err != nil {
-			r.Log.Errorf("can't initialize NBInitFileRegistry due to: %v", err)
+			r.Log.Errorf("can't initialize InitFileRegistry due to: %v", err)
 		}
 	}
 	return len(r.preloadedNBConfigs) == 0
@@ -127,14 +127,14 @@ func (r *NBInitFileRegistry) Empty() bool {
 // whether any data will be pushed to them at all (i.e. watcher.Aggregator). They should use the
 // Empty() method to find out whether there are (=ever will be do to nature of this registry) any
 // data for pushing to watchers.
-func (r *NBInitFileRegistry) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
+func (r *InitFileRegistry) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 	return r.watchedRegistry.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 }
 
 // initialize will try to pre-load the NB initial data
 // (watchers of this registry will receive it only after call to resync)
-func (r *NBInitFileRegistry) initialize() error {
+func (r *InitFileRegistry) initialize() error {
 	defer func() {
 		r.initialized = true
 	}()
@@ -147,34 +147,34 @@ func (r *NBInitFileRegistry) initialize() error {
 	}
 
 	// Initial NB configuration loaded from file
-	if !r.config.DisableNBInitialConfiguration {
+	if !r.config.DisableInitialConfiguration {
 		// preload NB config data from file
-		if err := r.preloadNBConfigs(r.config.NBInitialConfigurationFilePath); err != nil {
+		if err := r.preloadNBConfigs(r.config.InitialConfigurationFilePath); err != nil {
 			return errors.Errorf("can't preload initial NB configuration from file due to: %v", err)
 		}
 		if len(r.preloadedNBConfigs) != 0 {
 			// watch for resync.DefaultPlugin.DoResync() that will trigger pushing of preloaded
 			// NB config data from file into NB aggregator watcher
-			// (see NBInitFileRegistry struct docs for detailed explanation)
+			// (see InitFileRegistry struct docs for detailed explanation)
 			r.watchNBResync()
 		}
 	}
 	return nil
 }
 
-// retrieveConfig loads NBInitFileRegistry plugin configuration file.
-func (r *NBInitFileRegistry) retrieveConfig() (*Config, error) {
+// retrieveConfig loads InitFileRegistry plugin configuration file.
+func (r *InitFileRegistry) retrieveConfig() (*Config, error) {
 	config := &Config{
 		// default configuration
-		DisableNBInitialConfiguration:  false,
-		NBInitialConfigurationFilePath: defaultNBInitFilePath,
+		DisableInitialConfiguration:  false,
+		InitialConfigurationFilePath: defaultInitFilePath,
 	}
 	found, err := r.Cfg.LoadValue(config)
 	if !found {
 		if err == nil {
-			r.Log.Debug("NBInitFileRegistry plugin config not found")
+			r.Log.Debug("InitFileRegistry plugin config not found")
 		} else {
-			r.Log.Debugf("NBInitFileRegistry plugin config can't be loaded due to: %v", err)
+			r.Log.Debugf("InitFileRegistry plugin config can't be loaded due to: %v", err)
 		}
 		return config, err
 	}
@@ -186,14 +186,14 @@ func (r *NBInitFileRegistry) retrieveConfig() (*Config, error) {
 
 // watchNBResync will watch to default resync plugin's resync call(resync.DefaultPlugin.DoResync()) and will
 // load NB initial config from file (already preloaded from initialize()) when the first resync will be fired.
-func (r *NBInitFileRegistry) watchNBResync() {
+func (r *InitFileRegistry) watchNBResync() {
 	registration := resync.DefaultPlugin.Register(registryName)
 	go r.watchResync(registration)
 }
 
 // watchResync will listen to resync plugin resync signals and at first resync will push the preloaded
 // NB initial config into internal local register (p.registry)
-func (r *NBInitFileRegistry) watchResync(resyncReg resync.Registration) {
+func (r *InitFileRegistry) watchResync(resyncReg resync.Registration) {
 	for resyncStatus := range resyncReg.StatusChan() {
 		// resyncReg.StatusChan == Started => resync
 		if resyncStatus.ResyncStatus() == resync.Started && !r.pushedToWatchedRegistry {
@@ -216,14 +216,14 @@ func (r *NBInitFileRegistry) watchResync(resyncReg resync.Registration) {
 // preloadNBConfigs imports NB configuration from file(filepath) into preloadedNBConfigs. If file is not found,
 // it is not considered as error, but as a sign that the NB-configuration-loading-from-file feature should be
 // not used (inner registry remains empty and watchers of this registry get no data).
-func (r *NBInitFileRegistry) preloadNBConfigs(filePath string) error {
+func (r *InitFileRegistry) preloadNBConfigs(filePath string) error {
 	// check existence of NB init file
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		filePath := filePath
 		if absFilePath, err := filepath.Abs(filePath); err == nil {
 			filePath = absFilePath
 		}
-		r.Log.Debugf("Initialization NB configuration file(%v) not found. "+
+		r.Log.Debugf("Initialization configuration file(%v) not found. "+
 			"Skipping its preloading.", filePath)
 		return nil
 	}
@@ -253,14 +253,14 @@ func (r *NBInitFileRegistry) preloadNBConfigs(filePath string) error {
 	}
 	err = protojson.Unmarshal(bj, config)
 	if err != nil {
-		return errors.Errorf("can't unmarshall NB init file data into dynamic config due to: %v", err)
+		return errors.Errorf("can't unmarshall init file data into dynamic config due to: %v", err)
 	}
 
 	// extracting proto messages from dynamic config structure
 	// (generic client wants single proto messages and not one big hierarchical config)
 	configMessages, err := client.DynamicConfigExport(config)
 	if err != nil {
-		return errors.Errorf("can't extract single NB init configuration proto messages "+
+		return errors.Errorf("can't extract single init configuration proto messages "+
 			"from one big configuration proto message due to: %v", err)
 	}
 
