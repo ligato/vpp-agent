@@ -625,5 +625,7 @@ func TestExistingLinuxVRF(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.DeleteInterface(vrfIface1HostName)
+	Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.DeleteInterface(vrfHostName)
+	Expect(err).ToNot(HaveOccurred())
 }

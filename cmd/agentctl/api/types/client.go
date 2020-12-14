@@ -26,6 +26,7 @@ type SchedulerDumpOptions struct {
 
 type SchedulerValuesOptions struct {
 	KeyPrefix string
+	Key       string
 }
 
 type SchedulerResyncOptions struct {

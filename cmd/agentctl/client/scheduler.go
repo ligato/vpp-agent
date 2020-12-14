@@ -64,13 +64,20 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 func (c *Client) SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*kvscheduler.BaseValueStatus, error) {
 	query := url.Values{}
 	query.Set("key-prefix", opts.KeyPrefix)
+	query.Set("key", opts.Key)
 
 	resp, err := c.get(ctx, "/scheduler/status", query, nil)
 	if err != nil {
 		return nil, err
 	}
 	var status []*kvscheduler.BaseValueStatus
-	if err := json.NewDecoder(resp.body).Decode(&status); err != nil {
+	if opts.Key != "" {
+		status = []*kvscheduler.BaseValueStatus{{}}
+		err = json.NewDecoder(resp.body).Decode(status[0])
+	} else {
+		err = json.NewDecoder(resp.body).Decode(&status)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}
 

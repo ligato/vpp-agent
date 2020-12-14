@@ -18,13 +18,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
-	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -37,19 +35,16 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
-	"go.ligato.io/cn-infra/v2/health/probe"
 	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
-	"go.ligato.io/cn-infra/v2/logging"
-	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/client"
-	"go.ligato.io/vpp-agent/v3/client/remoteclient"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	agentctl "go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"go.ligato.io/vpp-agent/v3/tests/e2e/utils"
 )
 
 var (
@@ -59,7 +54,6 @@ var (
 	covPath       = flag.String("cov", "", "Path to collect coverage data")
 	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
 	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
-	debugHTTP     = flag.Bool("debug-http", false, "Enable HTTP client debugging")
 	debug         = flag.Bool("debug", false, "Turn on debug mode.")
 )
 
@@ -108,11 +102,9 @@ type TestCtx struct {
 	VPP           *exec.Cmd
 	agent         *exec.Cmd
 	dockerClient  *docker.Client
+	agentctl      agentctl.APIClient
 	microservices map[string]*microservice
 	nsCalls       nslinuxcalls.NetworkNamespaceAPI
-	httpClient    *utils.HTTPClient
-	grpcConn      *grpc.ClientConn
-	grpcClient    client.GenericClient
 	vppVersion    string
 	outputBuf     *bytes.Buffer
 	logger        *log.Logger
@@ -194,31 +186,20 @@ func Setup(t *testing.T) *TestCtx {
 	}
 	testCtx.agent = startProcess(t, "VPP-Agent", nil, testCtx.outputBuf, testCtx.outputBuf, "/vpp-agent", agentArgs...)
 
-	// prepare HTTP client for access to REST API of the agent
-	httpAddr := fmt.Sprintf(":%d", *agentHTTPPort)
-	testCtx.httpClient = utils.NewHTTPClient(httpAddr)
-
-	if *debugHTTP {
-		testCtx.httpClient.Log = logrus.NewLogger("http-client")
-		testCtx.httpClient.Log.SetLevel(logging.DebugLevel)
+	// interact with the agent using the client from agentctl
+	testCtx.agentctl, err = agentctl.NewClientWithOpts(
+		agentctl.WithHost(agentctl.DefaultAgentHost),
+		agentctl.WithGrpcPort(*agentGrpcPort),
+		agentctl.WithHTTPPort(*agentHTTPPort))
+	if err != nil {
+		t.Fatalf("Failed to create VPP-agent client: %v", err)
 	}
 
 	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).
 		Should(Succeed())
 
-	// connect with agent via GRPC
-	grpcAddr := fmt.Sprintf(":%d", *agentGrpcPort)
-	testCtx.grpcConn, err = grpc.Dial(grpcAddr, grpc.WithInsecure())
-	if err != nil {
-		t.Fatalf("Failed to connect to VPP-agent via gRPC: %v", err)
-	}
-	testCtx.grpcClient, err = remoteclient.NewClientGRPC(testCtx.grpcConn)
-	if err != nil {
-		t.Fatalf("Failed to create remote GRPC client: %v", err)
-	}
-
 	// run initial resync
-	syncAgent(t, testCtx.httpClient)
+	testCtx.syncAgent()
 
 	if version, err := testCtx.ExecVppctl("show version"); err != nil {
 		t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
@@ -240,7 +221,19 @@ func (ctx *TestCtx) VppRelease() string {
 }
 
 func (ctx *TestCtx) GenericClient() client.GenericClient {
-	return ctx.grpcClient
+	client, err := ctx.agentctl.GenericClient()
+	if err != nil {
+		ctx.t.Fatalf("Failed to get generic VPP-agent client: %v", err)
+	}
+	return client
+}
+
+func (ctx *TestCtx) GRPCConn() *grpc.ClientConn {
+	conn, err := ctx.agentctl.GRPCConn()
+	if err != nil {
+		ctx.t.Fatalf("Failed to get gRPC connection: %v", err)
+	}
+	return conn
 }
 
 func (ctx *TestCtx) Teardown() {
@@ -253,9 +246,9 @@ func (ctx *TestCtx) Teardown() {
 		ctx.StopMicroservice(msName)
 	}
 
-	// close gRPC connection
-	if err := ctx.grpcConn.Close(); err != nil {
-		ctx.t.Logf("closing grpc connection failed: %v", err)
+	// close the agentctl client
+	if err := ctx.agentctl.Close(); err != nil {
+		ctx.t.Logf("closing the client failed: %v", err)
 	}
 
 	// terminate agent
@@ -328,7 +321,16 @@ func (ctx *TestCtx) StopEtcd(id string) {
 
 // syncAgent runs downstream resync and returns the list of executed operations.
 func (ctx *TestCtx) syncAgent() (executed kvs.RecordedTxnOps) {
-	return syncAgent(ctx.t, ctx.httpClient)
+	txn, err := ctx.agentctl.SchedulerResync(context.Background(), types.SchedulerResyncOptions{
+		Retry: true,
+	})
+	if err != nil {
+		ctx.t.Fatalf("Downstream resync request has failed: %v", err)
+	}
+	if txn.Start.IsZero() {
+		ctx.t.Fatalf("Downstream resync returned empty transaction record: %v", txn)
+	}
+	return txn.Executed
 }
 
 // AgentInSync checks if the agent NB config and the SB state (VPP+Linux)
@@ -548,15 +550,16 @@ func (ctx *TestCtx) GetDerivedValueState(baseValue proto.Message, derivedKey str
 }
 
 func (ctx *TestCtx) getValueStateByKey(key, derivedKey string) kvscheduler.ValueState {
-	q := fmt.Sprintf(`/scheduler/status?key=%s`, url.QueryEscape(key))
-	resp, err := ctx.httpClient.GET(q)
+	values, err := ctx.agentctl.SchedulerValues(context.Background(), types.SchedulerValuesOptions{
+		Key: key,
+	})
 	if err != nil {
 		ctx.t.Fatalf("Request to obtain value status has failed: %v", err)
 	}
-	st := kvscheduler.BaseValueStatus{}
-	if err := json.Unmarshal(resp, &st); err != nil {
-		ctx.t.Fatalf("Reply with value status cannot be decoded: %v", err)
+	if len(values) != 1 {
+		ctx.t.Fatalf("Expected single value status, got status for %d values", len(values))
 	}
+	st := values[0]
 	if st.GetValue().GetKey() != key {
 		ctx.t.Fatalf("Received value status for unexpected key: %v", st)
 	}
@@ -589,10 +592,6 @@ func (ctx *TestCtx) GetDerivedValueStateClb(baseValue proto.Message, derivedKey 
 
 // GetValueMetadata retrieves metadata associated with the given value.
 func (ctx *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metadata interface{}) {
-	type KeyWithMetadata struct {
-		Key      string
-		Metadata interface{}
-	}
 	key, err := models.GetKey(value)
 	if err != nil {
 		ctx.t.Fatalf("Failed to get key for value %v: %v", value, err)
@@ -601,18 +600,16 @@ func (ctx *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metada
 	if err != nil {
 		ctx.t.Fatalf("Failed to get model for value %v: %v", value, err)
 	}
-	q := fmt.Sprintf(`/scheduler/dump?key-prefix=%s&view=%v`, url.QueryEscape(model.KeyPrefix()), view)
-	resp, err := ctx.httpClient.GET(q)
+	kvDump, err := ctx.agentctl.SchedulerDump(context.Background(), types.SchedulerDumpOptions{
+		KeyPrefix: model.KeyPrefix(),
+		View:      view.String(),
+	})
 	if err != nil {
 		ctx.t.Fatalf("Request to dump values failed: %v", err)
 	}
-	var kmDump []KeyWithMetadata
-	if err := json.Unmarshal(resp, &kmDump); err != nil {
-		ctx.t.Fatalf("Reply with dumped values cannot be decoded: %v", err)
-	}
-	for _, km := range kmDump {
-		if km.Key == key {
-			return km.Metadata
+	for _, kv := range kvDump {
+		if kv.Key == key {
+			return kv.Metadata
 		}
 	}
 	return nil
@@ -649,29 +646,10 @@ func (ctx *TestCtx) dumpLog() {
 	ctx.t.Logf("OUTPUT:\n-----------------\n%s\n------------------\n\n", ctx.outputBuf)
 }
 
-func syncAgent(t *testing.T, httpClient *utils.HTTPClient) (executed kvs.RecordedTxnOps) {
-	resp, err := httpClient.POST("/scheduler/downstream-resync?retry=true", struct{}{})
-	if err != nil {
-		t.Fatalf("Downstream resync request has failed: %v", err)
-	}
-	txn := kvs.RecordedTxn{}
-	if err := json.Unmarshal(resp, &txn); err != nil {
-		t.Fatalf("Downstream resync reply cannot be decoded: %v", err)
-	}
-	if txn.Start.IsZero() {
-		t.Fatalf("Downstream resync returned empty transaction record: %v", txn)
-	}
-	return txn.Executed
-}
-
 func (ctx *TestCtx) checkAgentReady() error {
-	resp, err := ctx.httpClient.GET("/readiness")
+	agentStatus, err := ctx.agentctl.Status(context.Background())
 	if err != nil {
-		return err
-	}
-	var agentStatus probe.ExposedStatus
-	if err := json.Unmarshal(resp, &agentStatus); err != nil {
-		return fmt.Errorf("decoding reply from /readiness failed: %w", err)
+		return fmt.Errorf("query to get agent status failed: %v", err)
 	}
 	agent, ok := agentStatus.PluginStatus["VPPAgent"]
 	if !ok {
