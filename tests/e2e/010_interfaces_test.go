@@ -16,9 +16,8 @@ package e2e
 
 import (
 	"context"
-	"testing"
-
 	. "github.com/onsi/gomega"
+	"testing"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"

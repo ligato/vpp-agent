@@ -15,11 +15,13 @@
 package descriptor
 
 import (
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/ifaceidx"
 	iflinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
@@ -32,7 +34,8 @@ const (
 	InterfaceVrfDescriptorName = "linux-interface-vrf"
 
 	// dependency labels
-	vrfDeviceDep = "vrf-device-is-created"
+	vrfDeviceDep   = "vrf-device-is-created"
+	externalVrfDep = "inserted-into-vrf-externally"
 )
 
 // InterfaceVrfDescriptor (un)assigns Linux interface to/from VRF.
@@ -52,13 +55,20 @@ func NewInterfaceVrfDescriptor(nsPlugin nsplugin.API,
 		nsPlugin:  nsPlugin,
 		log:       log.NewLogger("interface-vrf-descriptor"),
 	}
-	descr = &kvs.KVDescriptor{
+	typedDescr := &adapter.InterfaceVrfDescriptor{
 		Name:         InterfaceVrfDescriptorName,
 		KeySelector:  ctx.IsInterfaceVrfKey,
+		ValueComparator: func(_ string, _, _ *interfaces.Interface) bool {
+			// compare VRF assignments based on keys, not values that contain also other interface attributes
+			// needed by the descriptor
+			// FIXME: we can get rid of this hack once we add Context to descriptor methods
+			return true
+		},
 		Create:       ctx.Create,
 		Delete:       ctx.Delete,
 		Dependencies: ctx.Dependencies,
 	}
+	descr = adapter.NewInterfaceVrfDescriptor(typedDescr)
 	return
 }
 
@@ -84,10 +94,9 @@ func (d *InterfaceVrfDescriptor) Validate(key string, emptyVal proto.Message) (e
 }
 
 // Create puts interface into a VRF.
-func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
-	iface, vrf, _, _ := interfaces.ParseInterfaceVrfKey(key)
-
-	ifMeta, found := d.intfIndex.LookupByName(iface)
+func (d *InterfaceVrfDescriptor) Create(key string, iface *interfaces.Interface) (metadata interface{}, err error) {
+	ifaceName, vrf, _, _ := interfaces.ParseInterfaceVrfKey(key)
+	ifMeta, found := d.intfIndex.LookupByName(ifaceName)
 	if !found {
 		err = errors.Errorf("failed to find interface %s", iface)
 		d.log.Error(err)
@@ -98,6 +107,27 @@ func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (met
 		err = errors.Errorf("failed to find VRF device %s", vrf)
 		d.log.Error(err)
 		return nil, err
+	}
+
+	if iface.Type == interfaces.Interface_EXISTING {
+		// Interface is managed externally, including its assignment into the VRF.
+		// While dependencies allow us to require that the interface and the VRF both exist
+		// and that the interface is inside *some* VRF, it is not possible to express requirement
+		// that the actual VRF is the same as the desired one. Therefore we check the condition here
+		// and return error if it is not the case, thus preventing items depending on this
+		// from being created. Once the interface is re-assigned to the proper VRF, this kv will be
+		// re-created with success.
+		ifaceLink, err := d.ifHandler.GetLinkByIndex(ifMeta.LinuxIfIndex)
+		if err != nil {
+			err = fmt.Errorf("failed to obtain interface %s link: %w", iface, err)
+			d.log.Error(err)
+			return nil, err
+		}
+		if ifaceLink.Attrs().MasterIndex != vrfMeta.LinuxIfIndex {
+			err = fmt.Errorf("existing interface %s is not inside VRF %s", iface, vrf)
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	// switch to the namespace with the interface
@@ -118,10 +148,13 @@ func (d *InterfaceVrfDescriptor) Create(key string, emptyVal proto.Message) (met
 }
 
 // Delete removes interface from VRF.
-func (d *InterfaceVrfDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) (err error) {
-	iface, vrf, _, _ := interfaces.ParseInterfaceVrfKey(key)
+func (d *InterfaceVrfDescriptor) Delete(key string, iface *interfaces.Interface, metadata interface{}) (err error) {
+	ifaceName, vrf, _, _ := interfaces.ParseInterfaceVrfKey(key)
+	if iface.Type == interfaces.Interface_EXISTING {
+		// interface is managed externally, nothing to do here
+	}
 
-	ifMeta, found := d.intfIndex.LookupByName(iface)
+	ifMeta, found := d.intfIndex.LookupByName(ifaceName)
 	if !found {
 		err = errors.Errorf("failed to find interface %s", iface)
 		d.log.Error(err)
@@ -159,12 +192,29 @@ func (d *InterfaceVrfDescriptor) Delete(key string, emptyVal proto.Message, meta
 }
 
 // Dependencies lists the VRF device as the only dependency.
-func (d *InterfaceVrfDescriptor) Dependencies(key string, emptyVal proto.Message) (deps []kvs.Dependency) {
+func (d *InterfaceVrfDescriptor) Dependencies(key string, iface *interfaces.Interface) (deps []kvs.Dependency) {
 	_, vrf, _, _ := interfaces.ParseInterfaceVrfKey(key)
 	if vrf != "" {
 		deps = append(deps, kvs.Dependency{
 			Label: vrfDeviceDep,
 			Key:   interfaces.InterfaceKey(vrf),
+		})
+	}
+	if iface.Type == interfaces.Interface_EXISTING {
+		// Interface is added into the VRF externally.
+		// KV dependencies do not allow us to fully express this dependency - we can express requirement
+		// that the interface is inside *some* VRF, but it not may be the desired one. This is because
+		// the VRF host name is not yet known at this point and therefore it is not possible to build the
+		// key to depend on.
+		// Verification that the desired and actual VRFs are the same is therefore done in the Create method
+		// and error is returned if it is not the case.
+		deps = append(deps, kvs.Dependency{
+			Label: externalVrfDep,
+			AnyOf: kvs.AnyOfDependency{
+				KeyPrefixes: []string{
+					interfaces.InterfaceHostNameWithVrfKey(getHostIfName(iface), ""),
+				},
+			},
 		})
 	}
 	return deps

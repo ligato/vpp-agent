@@ -15,7 +15,7 @@
 package e2e
 
 import (
-	"encoding/json"
+	"context"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -25,21 +25,7 @@ func TestInfoVersionHandler(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	resp, err := ctx.httpClient.GET("/info/version")
-	Expect(err).ToNot(HaveOccurred())
-	var version = struct {
-		App       string
-		Version   string
-		GitCommit string
-		GitBranch string
-		BuildUser string
-		BuildHost string
-		BuildTime int64
-		GoVersion string
-		OS        string
-		Arch      string
-	}{}
-	err = json.Unmarshal(resp, &version)
+	version, err := ctx.agentctl.AgentVersion(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	Expect(version.App).ToNot(BeEmpty())
 	Expect(version.Version).ToNot(BeEmpty())

@@ -25,8 +25,6 @@ func TestInterfaceAddressKey(t *testing.T) {
 		name        string
 		iface       string
 		address     string
-		vrf         string
-		hostName    string
 		source      netalloc.IPAddressSource
 		expectedKey string
 	}{
@@ -106,47 +104,14 @@ func TestInterfaceAddressKey(t *testing.T) {
 			source:      netalloc.IPAddressSource_STATIC,
 			expectedKey: "linux/interface/memif0/address/alloc_ref/alloc:net1/IPV6_ADDR",
 		},
-		{
-			name:        "IPv4 address inside VRF",
-			iface:       "memif0",
-			address:     "192.168.1.12/24",
-			vrf:         "blue",
-			source:      netalloc.IPAddressSource_STATIC,
-			expectedKey: "linux/interface/memif0/address/static/192.168.1.12/24/vrf/blue",
-		},
-		{
-			name:        "IPv6 address inside VRF",
-			iface:       "memif0",
-			address:     "2001:db8::/32",
-			vrf:         "red",
-			source:      netalloc.IPAddressSource_STATIC,
-			expectedKey: "linux/interface/memif0/address/static/2001:db8::/32/vrf/red",
-		},
-		{
-			name:        "existing IPv4 address",
-			iface:       "my-tap0",
-			address:     "192.168.1.12/24",
-			source:      netalloc.IPAddressSource_EXISTING,
-			hostName:    "tap0",
-			expectedKey: "linux/interface/my-tap0/address/existing/192.168.1.12/24/host-name/tap0",
-		},
-		{
-			name:        "existing IPv4 address inside VRF",
-			iface:       "my-tap0",
-			address:     "192.168.1.12/24",
-			vrf:         "blue",
-			source:      netalloc.IPAddressSource_EXISTING,
-			hostName:    "tap0",
-			expectedKey: "linux/interface/my-tap0/address/existing/192.168.1.12/24/vrf/blue/host-name/tap0",
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			key := InterfaceAddressKey(test.iface, test.address, test.vrf, test.hostName, test.source)
+			key := InterfaceAddressKey(test.iface, test.address, test.source)
 			if key != test.expectedKey {
-				t.Errorf("failed for: iface=%s address=%s vrf=%s hostName=%s source=%s\n"+
+				t.Errorf("failed for: iface=%s address=%s source=%s\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
-					test.iface, test.address, test.vrf, test.hostName, string(test.source), test.expectedKey, key)
+					test.iface, test.address, string(test.source), test.expectedKey, key)
 			}
 		})
 	}
@@ -158,8 +123,6 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 		key                string
 		expectedIface      string
 		expectedIfaceAddr  string
-		expectedIfaceVrf   string
-		expectedHostName   string
 		expectedSource     netalloc.IPAddressSource
 		expectedInvalidKey bool
 		expectedIsAddrKey  bool
@@ -210,43 +173,6 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			expectedIface:     "tap1",
 			expectedIfaceAddr: "2001:db8:85a3::8a2e:370:7334/48",
 			expectedSource:    netalloc.IPAddressSource_FROM_DHCP,
-			expectedIsAddrKey: true,
-		},
-		{
-			name:              "IPv4 address inside VRF",
-			key:               "linux/interface/memif0/address/static/192.168.1.12/24/vrf/blue",
-			expectedIface:     "memif0",
-			expectedIfaceAddr: "192.168.1.12/24",
-			expectedIfaceVrf:  "blue",
-			expectedSource:    netalloc.IPAddressSource_STATIC,
-			expectedIsAddrKey: true,
-		},
-		{
-			name:              "existing IPv4 address",
-			key:               "linux/interface/my-tap0/address/existing/192.168.1.12/24/host-name/tap0",
-			expectedIface:     "my-tap0",
-			expectedIfaceAddr: "192.168.1.12/24",
-			expectedHostName:  "tap0",
-			expectedSource:    netalloc.IPAddressSource_EXISTING,
-			expectedIsAddrKey: true,
-		},
-		{
-			name:              "existing IPv4 address inside VRF",
-			key:               "linux/interface/my-tap0/address/existing/192.168.1.12/24/vrf/blue/host-name/tap0",
-			expectedIface:     "my-tap0",
-			expectedIfaceAddr: "192.168.1.12/24",
-			expectedIfaceVrf:  "blue",
-			expectedHostName:  "tap0",
-			expectedSource:    netalloc.IPAddressSource_EXISTING,
-			expectedIsAddrKey: true,
-		},
-		{
-			name:              "IPv6 address",
-			key:               "linux/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48/vrf/red",
-			expectedIface:     "tap1",
-			expectedIfaceAddr: "2001:db8:85a3::8a2e:370:7334/48",
-			expectedIfaceVrf:  "red",
-			expectedSource:    netalloc.IPAddressSource_STATIC,
 			expectedIsAddrKey: true,
 		},
 		{
@@ -348,7 +274,7 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, ipAddr, vrf, hostName, source, invalidKey, isAddrKey := ParseInterfaceAddressKey(test.key)
+			iface, ipAddr, source, invalidKey, isAddrKey := ParseInterfaceAddressKey(test.key)
 			if isAddrKey != test.expectedIsAddrKey {
 				t.Errorf("expected isAddrKey: %v\tgot: %v", test.expectedIsAddrKey, isAddrKey)
 			}
@@ -363,12 +289,6 @@ func TestParseInterfaceAddressKey(t *testing.T) {
 			}
 			if ipAddr != test.expectedIfaceAddr {
 				t.Errorf("expected ipAddr: %s\tgot: %s", test.expectedIfaceAddr, ipAddr)
-			}
-			if vrf != test.expectedIfaceVrf {
-				t.Errorf("expected vrf: %s\tgot: %s", test.expectedIfaceVrf, vrf)
-			}
-			if hostName != test.expectedHostName {
-				t.Errorf("expected hostName: %s\tgot: %s", test.expectedHostName, hostName)
 			}
 		})
 	}
@@ -458,14 +378,14 @@ func TestParseInterfaceVrfKey(t *testing.T) {
 			expectedIsVrfKey:   true,
 		},
 		{
-			name:               "not interface VRF key",
-			key:                "linux/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48",
-			expectedIsVrfKey:   false,
+			name:             "not interface VRF key",
+			key:              "linux/interface/tap1/address/static/2001:db8:85a3::8a2e:370:7334/48",
+			expectedIsVrfKey: false,
 		},
 		{
-			name:               "not interface VRF key #2",
-			key:                "linux/interface/tap1/address/static/192.168.1.1/32/vrf/blue",
-			expectedIsVrfKey:   false,
+			name:             "not interface VRF key #2",
+			key:              "linux/interface/tap1/address/static/192.168.1.1/32/vrf/blue",
+			expectedIsVrfKey: false,
 		},
 	}
 	for _, test := range tests {

@@ -16,12 +16,13 @@ package e2e
 
 import (
 	"context"
+	. "github.com/onsi/gomega"
 	"testing"
 	"time"
 
-	. "github.com/onsi/gomega"
-	"github.com/vishvananda/netlink"
+	"go.ligato.io/cn-infra/v2/logging"
 
+	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -129,8 +130,11 @@ func TestExistingInterface(t *testing.T) {
 		HostIfName:  ifaceHostName,
 	}
 
-	hasIP := func(link netlink.Link, ipAddr string) bool {
-		addrs, err := netlink.AddrList(link, netlink.FAMILY_ALL)
+	ifHandler := linuxcalls.NewNetLinkHandler(
+		nil, nil, "", 0, logging.DefaultLogger)
+
+	hasIP := func(ifName, ipAddr string) bool {
+		addrs, err := ifHandler.GetAddressList(ifName)
 		Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
 			if addr.IP.String() == ipAddr {
@@ -142,7 +146,7 @@ func TestExistingInterface(t *testing.T) {
 
 	addrKey := func(addr string) string {
 		return linux_interfaces.InterfaceAddressKey(
-			ifaceName, addr, "", "", netalloc_api.IPAddressSource_STATIC)
+			ifaceName, addr, netalloc_api.IPAddressSource_STATIC)
 	}
 
 	req := ctx.GenericClient().ChangeRequest()
@@ -154,17 +158,10 @@ func TestExistingInterface(t *testing.T) {
 	// referenced interface does not exist yet
 	Expect(ctx.GetValueState(existingIface)).To(Equal(kvscheduler.ValueState_PENDING))
 
-	// create referenced host interface using netlink
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = ifaceHostName
-	dummyLink := &netlink.Dummy{
-		LinkAttrs: attrs,
-	}
-	err = netlink.LinkAdd(dummyLink)
+	// create referenced host interface using linuxcalls
+	err = ifHandler.AddDummyInterface(ifaceHostName)
 	Expect(err).ToNot(HaveOccurred())
-	ifaceLink, err := netlink.LinkByName(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
-	err = netlink.LinkSetUp(ifaceLink)
+	err = ifHandler.SetInterfaceUp(ifaceHostName)
 	Expect(err).ToNot(HaveOccurred())
 
 	Eventually(ctx.GetValueStateClb(existingIface)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
@@ -175,20 +172,20 @@ func TestExistingInterface(t *testing.T) {
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// check that the IP addresses have been configured
-	Expect(hasIP(ifaceLink, ipAddr1)).To(BeTrue())
-	Expect(hasIP(ifaceLink, ipAddr2)).To(BeTrue())
+	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeTrue())
+	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
 
 	// add third IP address externally, it should get removed by resync
 	ipAddr, _, err := utils.ParseIPAddr(ipAddr3+netMask, nil)
 	Expect(err).ToNot(HaveOccurred())
-	err = netlink.AddrAdd(ifaceLink, &netlink.Addr{IPNet: ipAddr})
+	err = ifHandler.AddInterfaceIP(ifaceHostName, ipAddr)
 	Expect(err).ToNot(HaveOccurred())
 
 	// resync should remove the address that was added externally
 	Expect(ctx.AgentInSync()).To(BeFalse())
-	Expect(hasIP(ifaceLink, ipAddr1)).To(BeTrue())
-	Expect(hasIP(ifaceLink, ipAddr2)).To(BeTrue())
-	Expect(hasIP(ifaceLink, ipAddr3)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeTrue())
+	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
+	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 
 	// remove the EXISTING interface (IP addresses should be unassigned)
 	req = ctx.GenericClient().ChangeRequest()
@@ -197,14 +194,12 @@ func TestExistingInterface(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	Expect(ctx.GetValueState(existingIface)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
-	ifaceLink, err = netlink.LinkByName(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(hasIP(ifaceLink, ipAddr1)).To(BeFalse())
-	Expect(hasIP(ifaceLink, ipAddr2)).To(BeFalse())
-	Expect(hasIP(ifaceLink, ipAddr3)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 
 	// cleanup
-	err = netlink.LinkDel(ifaceLink)
+	err = ifHandler.DeleteInterface(ifaceHostName)
 	Expect(err).ToNot(HaveOccurred())
 }
 
@@ -213,7 +208,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	SetDefaultConsistentlyDuration(3*time.Second)
+	SetDefaultConsistentlyDuration(3 * time.Second)
 	SetDefaultConsistentlyPollingInterval(time.Second)
 
 	const (
@@ -234,8 +229,11 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 		LinkOnly:    true, // <- agent does not configure IP addresses (they are also "existing")
 	}
 
-	hasIP := func(link netlink.Link, ipAddr string) bool {
-		addrs, err := netlink.AddrList(link, netlink.FAMILY_ALL)
+	ifHandler := linuxcalls.NewNetLinkHandler(
+		nil, nil, "", 0, logging.DefaultLogger)
+
+	hasIP := func(ifName, ipAddr string) bool {
+		addrs, err := ifHandler.GetAddressList(ifName)
 		Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
 			if addr.IP.String() == ipAddr {
@@ -247,7 +245,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 
 	addrKey := func(addr string) string {
 		return linux_interfaces.InterfaceAddressKey(
-			ifaceName, addr, "", ifaceHostName, netalloc_api.IPAddressSource_EXISTING)
+			ifaceName, addr, netalloc_api.IPAddressSource_EXISTING)
 	}
 
 	req := ctx.GenericClient().ChangeRequest()
@@ -259,17 +257,10 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 	// the referenced interface does not exist yet
 	Expect(ctx.GetValueState(existingIface)).To(Equal(kvscheduler.ValueState_PENDING))
 
-	// create referenced host interface using netlink (without IPs for now)
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = ifaceHostName
-	dummyLink := &netlink.Dummy{
-		LinkAttrs: attrs,
-	}
-	err = netlink.LinkAdd(dummyLink)
+	// create referenced host interface using linuxcalls (without IPs for now)
+	err = ifHandler.AddDummyInterface(ifaceHostName)
 	Expect(err).ToNot(HaveOccurred())
-	ifaceLink, err := netlink.LinkByName(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
-	err = netlink.LinkSetUp(ifaceLink)
+	err = ifHandler.SetInterfaceUp(ifaceHostName)
 	Expect(err).ToNot(HaveOccurred())
 
 	Eventually(ctx.GetValueStateClb(existingIface)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
@@ -281,17 +272,17 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 		Should(Equal(kvscheduler.ValueState_PENDING))
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
-	// add IP addresses via netlink (except ipAddr3)
-	Expect(hasIP(ifaceLink, ipAddr1)).To(BeFalse())
-	Expect(hasIP(ifaceLink, ipAddr2)).To(BeFalse())
-	Expect(hasIP(ifaceLink, ipAddr3)).To(BeFalse())
+	// add IP addresses using linuxcalls (except ipAddr3)
+	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 	ipAddr, _, err := utils.ParseIPAddr(ipAddr1+netMask, nil)
 	Expect(err).ToNot(HaveOccurred())
-	err = netlink.AddrAdd(ifaceLink, &netlink.Addr{IPNet: ipAddr})
+	err = ifHandler.AddInterfaceIP(ifaceHostName, ipAddr)
 	Expect(err).ToNot(HaveOccurred())
 	ipAddr, _, err = utils.ParseIPAddr(ipAddr2+netMask, nil)
 	Expect(err).ToNot(HaveOccurred())
-	err = netlink.AddrAdd(ifaceLink, &netlink.Addr{IPNet: ipAddr})
+	err = ifHandler.AddInterfaceIP(ifaceHostName, ipAddr)
 	Expect(err).ToNot(HaveOccurred())
 
 	// ipAddr1 and ipAddr2 should be eventually marked as configured
@@ -306,7 +297,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 	// remove one IP address
 	ipAddr, _, err = utils.ParseIPAddr(ipAddr1+netMask, nil)
 	Expect(err).ToNot(HaveOccurred())
-	err = netlink.AddrDel(ifaceLink, &netlink.Addr{IPNet: ipAddr})
+	err = ifHandler.DelInterfaceIP(ifaceHostName, ipAddr)
 	Expect(err).ToNot(HaveOccurred())
 	Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
@@ -322,13 +313,11 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	Expect(ctx.GetValueState(existingIface)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
-	ifaceLink, err = netlink.LinkByName(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(hasIP(ifaceLink, ipAddr1)).To(BeFalse())
-	Expect(hasIP(ifaceLink, ipAddr2)).To(BeTrue())
-	Expect(hasIP(ifaceLink, ipAddr3)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
+	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
+	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 
 	// cleanup
-	err = netlink.LinkDel(ifaceLink)
+	err = ifHandler.DeleteInterface(ifaceHostName)
 	Expect(err).ToNot(HaveOccurred())
 }

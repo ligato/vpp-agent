@@ -127,7 +127,7 @@ func TestTelemetryStatsPoller(t *testing.T) {
 	Expect(ctx.PingFromVPP("10.20.1.1")).To(Succeed())
 	Expect(ctx.PingFromMs(msName, "10.20.1.2")).To(Succeed())
 
-	pollerClient := configurator.NewStatsPollerServiceClient(ctx.grpcConn)
+	pollerClient := configurator.NewStatsPollerServiceClient(ctx.GRPCConn())
 
 	t.Run("periodSec=0", func(tt *testing.T) {
 		RegisterTestingT(tt)
