@@ -49,6 +49,7 @@ const (
 	InterfaceHostNameKeyPrefix = "linux/interface/host-name/"
 
 	interfaceHostNameWithAddrKeyTmpl = InterfaceHostNameKeyPrefix + "{host-name}/address/{address}"
+	interfaceHostNameWithVrfKeyTmpl = InterfaceHostNameKeyPrefix + "{host-name}/vrf-host-name/{vrf-host-name}"
 
 	/* Interface State (derived) */
 
@@ -73,15 +74,6 @@ const (
 	// interfaceAddrKeyTmpl is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a Linux interface (referenced by the logical name).
 	interfaceAddrKeyTmpl = interfaceAddrKeyPrefix + "{address-source}/{address}"
-
-	// interfaceAddrVrfKeyPart is added to key representing IP address assignment
-	// if the interface is inside a VRF.
-	interfaceAddrVrfKeyPart = "/vrf/{vrf}"
-
-	// interfaceAddrHostnameKeyPart is added to key representing IP address assignment
-	// if the host-name of the interface is needed, which is for example the case for EXISTING
-	// IP addresses (i.e. added externally and being waited for by the agent).
-	interfaceAddrHostnameKeyPart = "/host-name/{host-name}"
 
 	/* Interface VRF (derived) */
 
@@ -112,6 +104,19 @@ func InterfaceHostNameWithAddrKey(hostName, address string) string {
 	tmpl := interfaceHostNameWithAddrKeyTmpl
 	key := strings.Replace(tmpl, "{host-name}", hostName, 1)
 	key = strings.Replace(key, "{address}", address, 1)
+	return key
+}
+
+// InterfaceHostNameWithVrfKey returns key representing association between Linux
+// interface and Linux VRF, both referenced by host names.
+// If vrf is empty, the function returns key prefix matching any VRF.
+func InterfaceHostNameWithVrfKey(hostName, vrf string) string {
+	if hostName == "" {
+		hostName = InvalidKeyPart
+	}
+	tmpl := interfaceHostNameWithVrfKeyTmpl
+	key := strings.Replace(tmpl, "{host-name}", hostName, 1)
+	key = strings.Replace(key, "{vrf-host-name}", vrf, 1)
 	return key
 }
 
@@ -161,7 +166,7 @@ func InterfaceAddressPrefix(iface string) string {
 // InterfaceAddressKey returns key representing IP address assigned to Linux interface.
 // With undefined vrf the returned key can be also used as a key prefix, matching derived
 // interface address key regardless of the VRF to which it belongs.
-func InterfaceAddressKey(iface, address, vrf, hostName string, source netalloc.IPAddressSource) string {
+func InterfaceAddressKey(iface, address string, source netalloc.IPAddressSource) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
@@ -177,44 +182,32 @@ func InterfaceAddressKey(iface, address, vrf, hostName string, source netalloc.I
 
 	// construct key without validating the IP address
 	tmpl := interfaceAddrKeyTmpl
-	if vrf != "" {
-		tmpl += interfaceAddrVrfKeyPart
-	}
-	if hostName != "" {
-		tmpl += interfaceAddrHostnameKeyPart
-	}
 	key := strings.Replace(tmpl, "{iface}", iface, 1)
 	key = strings.Replace(key, "{address-source}", src, 1)
 	key = strings.Replace(key, "{address}", address, 1)
-	if vrf != "" {
-		key = strings.Replace(key, "{vrf}", vrf, 1)
-	}
-	if hostName != "" {
-		key = strings.Replace(key, "{host-name}", hostName, 1)
-	}
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (iface, address, vrf, hostName string, source netalloc.IPAddressSource,
+func ParseInterfaceAddressKey(key string) (iface, address string, source netalloc.IPAddressSource,
 	invalidKey, isAddrKey bool) {
 	parts := strings.Split(key, "/")
 	if len(parts) < 4 || parts[0] != "linux" || parts[1] != "interface" {
 		return
 	}
+	if parts[2] == "state" || parts[2] == "host-name" {
+		return
+	}
 
 	addrIdx := -1
-	vrfIdx := len(parts)
-	hostNameIdx := len(parts)
 	for idx, part := range parts {
 		switch part {
+		case "vrf":
+			// avoid collision with InterfaceVrfKey
+			return
 		case "address":
 			addrIdx = idx
-		case "vrf":
-			vrfIdx = idx
-		case "host-name":
-			hostNameIdx = idx
 		}
 	}
 	if addrIdx == -1 {
@@ -229,12 +222,6 @@ func ParseInterfaceAddressKey(key string) (iface, address, vrf, hostName string,
 		invalidKey = true
 	}
 
-	// parse address type
-	if addrIdx == len(parts)-1 {
-		invalidKey = true
-		return
-	}
-
 	// parse address source
 	src := strings.ToUpper(parts[addrIdx+1])
 	srcInt, validSrc := netalloc.IPAddressSource_value[src]
@@ -245,37 +232,19 @@ func ParseInterfaceAddressKey(key string) (iface, address, vrf, hostName string,
 	source = netalloc.IPAddressSource(srcInt)
 
 	// return address as is (not parsed - this is done by the netalloc plugin)
-	addrEnd := vrfIdx
-	if hostNameIdx < vrfIdx {
-		addrEnd = hostNameIdx
+	if addrIdx == len(parts)-1 {
+		invalidKey = true
+		return
 	}
-	address = strings.Join(parts[addrIdx+2:addrEnd], "/")
+	address = strings.Join(parts[addrIdx+2:], "/")
 	if address == "" {
 		invalidKey = true
-	}
-
-	// parse vrf
-	if vrfIdx < len(parts) {
-		if vrfIdx == len(parts)-1 {
-			invalidKey = true
-			return
-		}
-		vrf = parts[vrfIdx+1]
-	}
-
-	// parse host-name
-	if hostNameIdx < len(parts) {
-		if hostNameIdx == len(parts)-1 {
-			invalidKey = true
-			return
-		}
-		hostName = parts[hostNameIdx+1]
 	}
 	return
 }
 
 // InterfaceVrfKey returns key representing assignment of a Linux interface into a VRF.
-func InterfaceVrfKey(iface, vrf string) string {
+func InterfaceVrfKey(iface string, vrf string) string {
 	if iface == "" {
 		iface = InvalidKeyPart
 	}
@@ -283,16 +252,20 @@ func InterfaceVrfKey(iface, vrf string) string {
 		vrf = InvalidKeyPart
 	}
 
-	key := strings.Replace(interfaceVrfKeyTmpl, "{iface}", iface, 1)
+	tmpl := interfaceVrfKeyTmpl
+	key := strings.Replace(tmpl, "{iface}", iface, 1)
 	key = strings.Replace(key, "{vrf}", vrf, 1)
 	return key
 }
 
 // ParseInterfaceVrfKey parses interface VRF from key derived
 // from interface by InterfaceVrfKey().
-func ParseInterfaceVrfKey(key string) (iface, vrf string, invalidKey, isVrfKey bool) {
+func ParseInterfaceVrfKey(key string) (iface string, vrf string, invalidKey, isVrfKey bool) {
 	parts := strings.Split(key, "/")
 	if len(parts) < 4 || parts[0] != "linux" || parts[1] != "interface" {
+		return
+	}
+	if parts[2] == "state" || parts[2] == "host-name" {
 		return
 	}
 

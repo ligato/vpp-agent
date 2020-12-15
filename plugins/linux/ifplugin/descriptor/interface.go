@@ -202,15 +202,13 @@ func (d *InterfaceDescriptor) SetInterfaceHandler(ifHandler iflinuxcalls.Netlink
 	d.ifHandler = ifHandler
 }
 
-// EquivalentInterfaces is case-insensitive comparison function for
-// interfaces.LinuxInterface, also ignoring the order of assigned IP addresses.
+// EquivalentInterfaces is case-insensitive comparison function for interfaces.LinuxInterface.
 func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf *interfaces.Interface) bool {
 	// attributes compared as usually:
 	if oldIntf.Name != newIntf.Name ||
 		oldIntf.Type != newIntf.Type ||
 		oldIntf.Enabled != newIntf.Enabled ||
 		oldIntf.LinkOnly != newIntf.LinkOnly ||
-		oldIntf.VrfMasterInterface != newIntf.VrfMasterInterface ||
 		getHostIfName(oldIntf) != getHostIfName(newIntf) {
 		return false
 	}
@@ -238,6 +236,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return false
 	}
 
+	// for existing interfaces all the other parameters are not managed by the agent
+	if oldIntf.Type == interfaces.Interface_EXISTING {
+		return true
+	}
+
 	// handle default MTU
 	if getInterfaceMTU(oldIntf) != getInterfaceMTU(newIntf) {
 		return false
@@ -253,6 +256,8 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
 		return false
 	}
+
+	// IP addresses and VRFs are derived out and therefore not compared here
 
 	return true
 }
@@ -358,18 +363,21 @@ func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) 
 	case interfaces.Interface_EXISTING:
 		// We expect that the interface already exists, therefore nothing needs to be done.
 		// We just get the metadata for the interface.
-		getMetadata := func(linuxIf *interfaces.Interface) (*ifaceidx.LinuxIfMetadata, error) {
-			link, err := d.ifHandler.GetLinkByName(getHostIfName(linuxIf))
-			if err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
-			return &ifaceidx.LinuxIfMetadata{
-				Namespace:    linuxIf.GetNamespace(),
-				LinuxIfIndex: link.Attrs().Index,
-			}, nil
+		link, err := d.ifHandler.GetLinkByName(getHostIfName(linuxIf))
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
 		}
-		metadata, err = getMetadata(linuxIf)
+		metadata = &ifaceidx.LinuxIfMetadata{
+			Namespace:    linuxIf.GetNamespace(),
+			HostIfName:   link.Attrs().Name,
+			LinuxIfIndex: link.Attrs().Index,
+			VrfMasterIf:  linuxIf.VrfMasterInterface,
+		}
+		if vrfDev, isVrf := link.(*netlink.Vrf); isVrf {
+			metadata.VrfDevRT = vrfDev.Table
+		}
+		return metadata, nil
 	case interfaces.Interface_VRF_DEVICE:
 		metadata, err = d.createVRF(nsCtx, linuxIf)
 	case interfaces.Interface_DUMMY:
@@ -486,6 +494,20 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 	oldHostName := getHostIfName(oldLinuxIf)
 	newHostName := getHostIfName(newLinuxIf)
 
+	// update metadata
+	link, err := d.ifHandler.GetLinkByName(newHostName)
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+	oldMetadata.LinuxIfIndex = link.Attrs().Index
+	oldMetadata.HostIfName = newHostName
+	oldMetadata.VrfMasterIf = newLinuxIf.VrfMasterInterface
+	if oldLinuxIf.Type == interfaces.Interface_EXISTING {
+		// with existing interface only metadata needs to be updated
+		return oldMetadata, nil
+	}
+
 	// move to the namespace with the interface
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, oldLinuxIf.Namespace)
@@ -561,16 +583,6 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 			}
 		}
 	}
-
-	// update metadata
-	link, err := d.ifHandler.GetLinkByName(newHostName)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-	oldMetadata.LinuxIfIndex = link.Attrs().Index
-	oldMetadata.HostIfName = newHostName
-	oldMetadata.VrfMasterIf = newLinuxIf.VrfMasterInterface
 	return oldMetadata, nil
 }
 
@@ -608,7 +620,6 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 			Key:   interfaces.InterfaceHostNameKey(getHostIfName(linuxIf)),
 		})
 	}
-
 	if linuxIf.Type == interfaces.Interface_TAP_TO_VPP {
 		// dependency on VPP TAP
 		dependencies = append(dependencies, kvs.Dependency{
@@ -650,35 +661,42 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 	})
 	if linuxIf.GetVrfMasterInterface() != "" {
 		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   interfaces.InterfaceVrfKey(linuxIf.Name, linuxIf.VrfMasterInterface),
-			Value: &prototypes.Empty{},
+			Key: interfaces.InterfaceVrfKey(linuxIf.Name, linuxIf.VrfMasterInterface),
+			// only fields accessed by VRF descriptor are included in the derived value
+			// FIXME: we can get rid of this hack once we add Context to descriptor methods
+			Value: &interfaces.Interface{
+				Name:               linuxIf.Name,
+				Type:               linuxIf.Type,
+				HostIfName:         linuxIf.HostIfName,
+				VrfMasterInterface: linuxIf.VrfMasterInterface,
+			},
 		})
 	}
 	if !linuxIf.GetLinkOnly() || linuxIf.GetType() == interfaces.Interface_EXISTING {
 		var ipSource netalloc_api.IPAddressSource
-		var hostName string
 		if linuxIf.GetLinkOnly() { // interface type = EXISTING
 			ipSource = netalloc_api.IPAddressSource_EXISTING
-			hostName = getHostIfName(linuxIf)
 		} else {
 			ipSource = netalloc_api.IPAddressSource_STATIC
 		}
 		// IP addresses
 		for _, ipAddr := range linuxIf.IpAddresses {
 			derValues = append(derValues, kvs.KeyValuePair{
-				Key:   interfaces.InterfaceAddressKey(
-					linuxIf.Name, ipAddr, linuxIf.VrfMasterInterface, hostName, ipSource),
-				Value: &prototypes.Empty{},
+				Key: interfaces.InterfaceAddressKey(
+					linuxIf.Name, ipAddr, ipSource),
+				// only fields accessed by address descriptor are included in the derived value
+				// FIXME: we can get rid of this hack once we add Context to descriptor methods
+				Value: &interfaces.Interface{
+					Name:               linuxIf.Name,
+					Type:               linuxIf.Type,
+					HostIfName:         linuxIf.HostIfName,
+					VrfMasterInterface: linuxIf.VrfMasterInterface,
+					IpAddresses:        []string{ipAddr},
+				},
 			})
 		}
 	}
 	return derValues
-}
-
-// retrievedIfaces is used as the return value sent via channel by retrieveInterfaces().
-type retrievedIfaces struct {
-	interfaces []adapter.InterfaceKVWithMetadata
-	err        error
 }
 
 func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
@@ -691,6 +709,7 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 // Retrieve returns all Linux interfaces managed by this agent, attached to the default namespace
 // or to one of the configured non-default namespaces.
 func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetadata) ([]adapter.InterfaceKVWithMetadata, error) {
+	var retrieved []adapter.InterfaceKVWithMetadata
 	nsList := []*namespace.NetNamespace{nil}              // nil = default namespace, which always should be listed for interfaces
 	ifCfg := make(map[string]*interfaces.Interface)       // interface logical name -> interface config (as expected by correlate)
 	expExisting := make(map[string]*interfaces.Interface) // EXISTING interface host name -> expected interface config
@@ -716,6 +735,15 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
+	// retrieve EXISTING interfaces first
+	existingIfaces, err := d.retrieveExistingInterfaces(expExisting)
+	if err != nil {
+		return nil, err
+	}
+	for _, kv := range existingIfaces {
+		retrieved = append(retrieved, kv)
+	}
+
 	// Obtain interface details - all interfaces with metadata
 	ifDetails, err := d.ifHandler.DumpInterfacesFromNamespaces(nsList)
 	if err != nil {
@@ -731,6 +759,12 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		var vrfDevRT uint32
 		if ifDetail.Interface.Type == interfaces.Interface_VRF_DEVICE {
 			vrfDevRT = ifDetail.Interface.GetVrfDev().GetRoutingTable()
+		}
+		// Handle reference to existing (i.e. not managed) VRF from managed interface
+		if ifDetail.Interface.Namespace == nil {
+			if vrf, existingVrf := existingIfaces[ifDetail.Meta.MasterIndex]; existingVrf {
+				ifDetail.Interface.VrfMasterInterface = vrf.Value.Name
+			}
 		}
 		kv := adapter.InterfaceKVWithMetadata{
 			Origin: kvs.FromNB,
@@ -784,8 +818,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		ifaces[kv.Value.Name] = kv
 	}
 
-	// first collect VETHs with duplicate logical names
-	var values []adapter.InterfaceKVWithMetadata
+	// collect VETHs with duplicate logical names
 	for ifName, kv := range ifaces {
 		if kv.Value.Type == interfaces.Interface_VETH {
 			isDuplicate := strings.Contains(ifName, vethDuplicateSuffix)
@@ -801,7 +834,7 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				// as standalone
 				kv.Value.Link = &interfaces.Interface_Veth{}
 				delete(ifaces, ifName)
-				values = append(values, kv)
+				retrieved = append(retrieved, kv)
 			}
 		}
 	}
@@ -809,8 +842,8 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 	// next collect VETHs with missing peer
 	for ifName, kv := range ifaces {
 		if kv.Value.Type == interfaces.Interface_VETH {
-			peer, retrieved := ifaces[kv.Value.GetVeth().GetPeerIfName()]
-			if !retrieved || peer.Value.GetVeth().GetPeerIfName() != kv.Value.Name {
+			peer, known := ifaces[kv.Value.GetVeth().GetPeerIfName()]
+			if !known || peer.Value.GetVeth().GetPeerIfName() != kv.Value.Name {
 				// append vethMissingPeerSuffix to the logical name so that VETH
 				// will get removed during resync
 				kv.Value.Name = ifName + vethMissingPeerSuffix
@@ -819,27 +852,18 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 				// as standalone
 				kv.Value.Link = &interfaces.Interface_Veth{}
 				delete(ifaces, ifName)
-				values = append(values, kv)
+				retrieved = append(retrieved, kv)
 			}
 		}
 	}
 
 	// collect AUTO-TAPs and valid VETHs
 	for _, kv := range ifaces {
-		values = append(values, kv)
-	}
-
-	// retrieve EXISTING interfaces
-	existingIfaces, err := d.retrieveExistingInterfaces(expExisting)
-	if err != nil {
-		return nil, err
-	}
-	for _, kv := range existingIfaces {
-		values = append(values, kv)
+		retrieved = append(retrieved, kv)
 	}
 
 	// correlate IP addresses with netalloc references from the expected config
-	for _, kv := range values {
+	for _, kv := range retrieved {
 		if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
 			kv.Value.IpAddresses = d.addrAlloc.CorrelateRetrievedIPs(
 				expCfg.IpAddresses, kv.Value.IpAddresses,
@@ -847,13 +871,14 @@ func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
-	return values, nil
+	return retrieved, nil
 }
 
 // retrieveExistingInterfaces retrieves already created Linux interface - i.e. not created
 // by this agent = type EXISTING.
-func (d *InterfaceDescriptor) retrieveExistingInterfaces(expected map[string]*interfaces.Interface) ([]adapter.InterfaceKVWithMetadata, error) {
-	var retrieved []adapter.InterfaceKVWithMetadata
+func (d *InterfaceDescriptor) retrieveExistingInterfaces(expected map[string]*interfaces.Interface) (
+	existing map[int]adapter.InterfaceKVWithMetadata, err error) {
+	existing = make(map[int]adapter.InterfaceKVWithMetadata)
 
 	// get all links in the default namespace
 	links, err := d.ifHandler.GetLinkList()
@@ -876,22 +901,37 @@ func (d *InterfaceDescriptor) retrieveExistingInterfaces(expected map[string]*in
 			LinkOnly:    expCfg.LinkOnly,
 		}
 
+		// retrieve VRF config
+		var vrfDevRT uint32
+		if vrfDev, isVrf := link.(*netlink.Vrf); isVrf {
+			vrfDevRT = vrfDev.Table
+		}
+		master := link.Attrs().MasterIndex
+		if master != 0 {
+			if masterLink, err := d.ifHandler.GetLinkByIndex(master); err == nil {
+				if vrfExpCfg, isVrfExp := expected[masterLink.Attrs().Name]; isVrfExp {
+					iface.VrfMasterInterface = vrfExpCfg.GetName()
+				}
+			}
+		}
+
 		// retrieve addresses, MTU, etc.
 		d.retrieveLinkDetails(link, iface, nil)
 
 		// build key-value pair for the retrieved interface
-		retrieved = append(retrieved, adapter.InterfaceKVWithMetadata{
+		existing[link.Attrs().Index] = adapter.InterfaceKVWithMetadata{
 			Key:    models.Key(iface),
 			Value:  iface,
 			Origin: kvs.FromNB,
 			Metadata: &ifaceidx.LinuxIfMetadata{
 				LinuxIfIndex: link.Attrs().Index,
 				HostIfName:   link.Attrs().Name,
+				VrfMasterIf:  iface.VrfMasterInterface,
+				VrfDevRT:     vrfDevRT,
 			},
-		})
+		}
 	}
-
-	return retrieved, nil
+	return existing, nil
 }
 
 // retrieveLinkDetails retrieves link details common to all interface types (e.g. addresses).
