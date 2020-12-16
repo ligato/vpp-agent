@@ -26,7 +26,7 @@ import (
 
 // GetLinkByName calls netlink API to get Link type from interface name
 func (h *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
-	link, err := netlink.LinkByName(ifName)
+	link, err := h.LinkByName(ifName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "LinkByName %q", ifName)
 	}
@@ -35,7 +35,7 @@ func (h *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
 
 // GetLinkByIndex calls netlink API to get Link type from interface index
 func (h *NetLinkHandler) GetLinkByIndex(ifIdx int) (netlink.Link, error) {
-	link, err := netlink.LinkByIndex(ifIdx)
+	link, err := h.LinkByIndex(ifIdx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "LinkByIndex %q", ifIdx)
 	}
@@ -44,12 +44,12 @@ func (h *NetLinkHandler) GetLinkByIndex(ifIdx int) (netlink.Link, error) {
 
 // GetLinkList calls netlink API to get all Links in namespace
 func (h *NetLinkHandler) GetLinkList() ([]netlink.Link, error) {
-	return netlink.LinkList()
+	return h.LinkList()
 }
 
 // SetLinkNamespace puts link into a network namespace.
 func (h *NetLinkHandler) SetLinkNamespace(link netlink.Link, ns netns.NsHandle) (err error) {
-	if err := netlink.LinkSetNsFd(link, int(ns)); err != nil {
+	if err := h.LinkSetNsFd(link, int(ns)); err != nil {
 		return errors.Wrapf(err, "LinkSetNsFd %v", ns)
 	}
 	return nil
@@ -58,13 +58,13 @@ func (h *NetLinkHandler) SetLinkNamespace(link netlink.Link, ns netns.NsHandle) 
 // LinkSubscribe takes a channel to which notifications will be sent
 // when links change. Close the 'done' chan to stop subscription.
 func (h *NetLinkHandler) LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error {
-	return netlink.LinkSubscribe(ch, done)
+	return netlink.LinkSubscribeAt(h.nsHandle, ch, done)
 }
 
 // AddrSubscribe takes a channel to which notifications will be sent
 // when addresses change. Close the 'done' chan to stop subscription.
 func (h *NetLinkHandler) AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan struct{}) error {
-	return netlink.AddrSubscribe(ch, done)
+	return netlink.AddrSubscribeAt(h.nsHandle, ch, done)
 }
 
 // GetInterfaceType returns the type (string representation) of a given interface.
@@ -90,12 +90,11 @@ func (h *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
 
 // IsInterfaceUp checks if the interface is UP.
 func (h *NetLinkHandler) IsInterfaceUp(ifName string) (bool, error) {
-	intf, err := net.InterfaceByName(ifName)
+	link, err := h.LinkByName(ifName)
 	if err != nil {
-		return false, errors.Wrapf(err, "InterfaceByName %s", ifName)
+		return false, errors.Wrapf(err, "LinkByName %s", ifName)
 	}
-	isUp := (intf.Flags & net.FlagUp) == net.FlagUp
-	return isUp, nil
+	return isLinkUp(link), nil
 }
 
 // DeleteInterface removes the given interface.
@@ -104,7 +103,7 @@ func (h *NetLinkHandler) DeleteInterface(ifName string) error {
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkDel(link); err != nil {
+	if err := h.LinkDel(link); err != nil {
 		return errors.Wrapf(err, "LinkDel %s", link)
 	}
 	return nil
@@ -117,17 +116,17 @@ func (h *NetLinkHandler) RenameInterface(ifName string, newName string) error {
 		return err
 	}
 	var wasUp bool
-	if (link.Attrs().Flags & net.FlagUp) == net.FlagUp {
+	if isLinkUp(link) {
 		wasUp = true
-		if err = netlink.LinkSetDown(link); err != nil {
+		if err = h.LinkSetDown(link); err != nil {
 			return errors.Wrapf(err, "LinkSetDown %v", link)
 		}
 	}
-	if err = netlink.LinkSetName(link, newName); err != nil {
+	if err = h.LinkSetName(link, newName); err != nil {
 		return errors.Wrapf(err, "LinkSetName %s", newName)
 	}
 	if wasUp {
-		if err = netlink.LinkSetUp(link); err != nil {
+		if err = h.LinkSetUp(link); err != nil {
 			return errors.Wrapf(err, "LinkSetUp %v", link)
 		}
 	}
@@ -141,7 +140,7 @@ func (h *NetLinkHandler) SetInterfaceAlias(ifName, alias string) error {
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetAlias(link, alias); err != nil {
+	if err := h.LinkSetAlias(link, alias); err != nil {
 		return errors.Wrapf(err, "LinkSetAlias %s", alias)
 	}
 	return nil
@@ -153,7 +152,7 @@ func (h *NetLinkHandler) SetInterfaceDown(ifName string) error {
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetDown(link); err != nil {
+	if err := h.LinkSetDown(link); err != nil {
 		return errors.Wrapf(err, "LinkSetDown %v", link)
 	}
 	return nil
@@ -165,7 +164,7 @@ func (h *NetLinkHandler) SetInterfaceUp(ifName string) error {
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetUp(link); err != nil {
+	if err := h.LinkSetUp(link); err != nil {
 		return errors.Wrapf(err, "LinkSetUp %v", link)
 	}
 	return nil
@@ -177,7 +176,7 @@ func (h *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
 	if err != nil {
 		return nil, err
 	}
-	return netlink.AddrList(link, netlink.FAMILY_ALL)
+	return h.AddrList(link, netlink.FAMILY_ALL)
 }
 
 // AddInterfaceIP calls AddrAdd Netlink API.
@@ -187,7 +186,7 @@ func (h *NetLinkHandler) AddInterfaceIP(ifName string, ip *net.IPNet) error {
 		return err
 	}
 	addr := &netlink.Addr{IPNet: ip}
-	if err := netlink.AddrAdd(link, addr); err != nil {
+	if err := h.AddrAdd(link, addr); err != nil {
 		return errors.Wrapf(err, "AddrAdd %v", addr)
 	}
 	return nil
@@ -200,7 +199,7 @@ func (h *NetLinkHandler) DelInterfaceIP(ifName string, ip *net.IPNet) error {
 		return err
 	}
 	addr := &netlink.Addr{IPNet: ip}
-	if err := netlink.AddrDel(link, addr); err != nil {
+	if err := h.AddrDel(link, addr); err != nil {
 		return errors.Wrapf(err, "AddrDel %v", addr)
 	}
 	return nil
@@ -212,7 +211,7 @@ func (h *NetLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetMTU(link, mtu); err != nil {
+	if err := h.LinkSetMTU(link, mtu); err != nil {
 		return errors.Wrapf(err, "LinkSetMTU %v", mtu)
 	}
 	return nil
@@ -228,7 +227,7 @@ func (h *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetHardwareAddr(link, hwAddr); err != nil {
+	if err := h.LinkSetHardwareAddr(link, hwAddr); err != nil {
 		return errors.Wrapf(err, "LinkSetHardwareAddr %v", hwAddr)
 	}
 	return nil
@@ -236,13 +235,11 @@ func (h *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error
 
 // AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
 func (h *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = ifName
 	link := &netlink.Veth{
-		LinkAttrs: attrs,
+		LinkAttrs: newLinkAttrs(ifName),
 		PeerName:  peerIfName,
 	}
-	if err := netlink.LinkAdd(link); err != nil {
+	if err := h.LinkAdd(link); err != nil {
 		return errors.Wrapf(err, "LinkAdd %v", link)
 	}
 	return nil
@@ -250,12 +247,10 @@ func (h *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
 
 // AddDummyInterface configures dummy interface (effectively additional loopback).
 func (h *NetLinkHandler) AddDummyInterface(ifName string) error {
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = ifName
 	link := &netlink.Dummy{
-		LinkAttrs: attrs,
+		LinkAttrs: newLinkAttrs(ifName),
 	}
-	if err := netlink.LinkAdd(link); err != nil {
+	if err := h.LinkAdd(link); err != nil {
 		return errors.Wrapf(err, "LinkAdd (dummy-ifName=%s)", ifName)
 	}
 	return nil
@@ -263,13 +258,11 @@ func (h *NetLinkHandler) AddDummyInterface(ifName string) error {
 
 // AddVRFDevice configures new VRF network device.
 func (h *NetLinkHandler) AddVRFDevice(vrfDevName string, routingTable uint32) error {
-	attrs := netlink.NewLinkAttrs()
-	attrs.Name = vrfDevName
 	link := &netlink.Vrf{
-		LinkAttrs: attrs,
+		LinkAttrs: newLinkAttrs(vrfDevName),
 		Table:     routingTable,
 	}
-	if err := netlink.LinkAdd(link); err != nil {
+	if err := h.LinkAdd(link); err != nil {
 		return errors.Wrapf(err, "LinkAdd (vrf=%s, rt=%d)",
 			vrfDevName, routingTable)
 	}
@@ -286,7 +279,7 @@ func (h *NetLinkHandler) PutInterfaceIntoVRF(ifName, vrfDevName string) error {
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetMasterByIndex(ifLink, vrfLink.Attrs().Index); err != nil {
+	if err := h.LinkSetMasterByIndex(ifLink, vrfLink.Attrs().Index); err != nil {
 		return errors.Wrapf(err, "LinkSetMasterByIndex (interface=%s, vrf=%s, vrf-index=%d)",
 			ifName, vrfDevName, vrfLink.Attrs().Index)
 	}
@@ -299,9 +292,19 @@ func (h *NetLinkHandler) RemoveInterfaceFromVRF(ifName, vrfDevName string) error
 	if err != nil {
 		return err
 	}
-	if err := netlink.LinkSetNoMaster(ifLink); err != nil {
+	if err := h.LinkSetNoMaster(ifLink); err != nil {
 		return errors.Wrapf(err, "LinkSetNoMaster (interface=%s, vrf=%s)",
 			ifName, vrfDevName)
 	}
 	return nil
+}
+
+func isLinkUp(link netlink.Link) bool {
+	return (link.Attrs().Flags & net.FlagUp) == net.FlagUp
+}
+
+func newLinkAttrs(name string) netlink.LinkAttrs {
+	attrs := netlink.NewLinkAttrs()
+	attrs.Name = name
+	return attrs
 }

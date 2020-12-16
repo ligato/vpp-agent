@@ -34,7 +34,7 @@ type InterfaceDetails struct {
 	Meta      *InterfaceMeta        `json:"interface_meta"`
 }
 
-// Statistics are represented here since
+// InterfaceStatistics are represented here since
 // there is currently no model
 type InterfaceStatistics struct {
 	Name         string                    `json:"interface_name"`
@@ -148,14 +148,17 @@ type NetlinkAPIRead interface {
 
 // NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
-	nsPlugin    nsplugin.API
-	ifIndexes   ifaceidx.LinuxIfMetadataIndex
+	*netlink.Handle
+	nsHandle netns.NsHandle
+
+	nsPlugin  nsplugin.API
+	ifIndexes ifaceidx.LinuxIfMetadataIndex
+
 	agentPrefix string
 
 	// parallelization of the Retrieve operation
 	goRoutineCount int
-
-	log logging.Logger
+	log            logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of Netlink handler.
@@ -167,10 +170,24 @@ func NewNetLinkHandler(
 	log logging.Logger,
 ) *NetLinkHandler {
 	return &NetLinkHandler{
+		Handle:         new(netlink.Handle),
+		nsHandle:       netns.None(),
 		nsPlugin:       nsPlugin,
 		ifIndexes:      ifIndexes,
 		agentPrefix:    agentPrefix,
 		goRoutineCount: goRoutineCount,
 		log:            log,
+	}
+}
+
+func NewNetLinkHandlerNs(ns netns.NsHandle, log logging.Logger) *NetLinkHandler {
+	handle, err := netlink.NewHandleAt(ns)
+	if err != nil {
+		log.Errorf("netlink.NewHandleAt(NS %v): %v", ns, err)
+	}
+	return &NetLinkHandler{
+		Handle:   handle,
+		nsHandle: ns,
+		log:      log,
 	}
 }
