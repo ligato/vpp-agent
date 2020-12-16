@@ -24,23 +24,39 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
-// viperSetConfigFile setups viper to handle config file.
-func viperSetConfigFile(name string, dir string) {
-	viper.SetConfigName(name)
+const (
+	configFileDir  = ".agentctl"
+	configFileName = "config"
+)
 
-	// If "config-dir" was set then use only that path.
-	if cfgDir := viper.GetString("config-dir"); cfgDir != "" {
-		viper.AddConfigPath(cfgDir)
+func init() {
+	viper.SupportedExts = append(viper.SupportedExts, "conf")
+}
+
+// viperSetConfigFile setups viper to handle config file.
+func viperSetConfigFile() {
+	// If "config" is set then use it and skip searching for config.
+	if cfgFile := viper.GetString("config"); cfgFile != "" {
+		// Set config type explicitely
+		if filepath.Ext(cfgFile) == ".conf" {
+			viper.SetConfigType("yaml")
+		}
+		viper.SetConfigFile(cfgFile)
 		return
 	}
 
-	if uhd, err := os.UserHomeDir(); err == nil {
-		viper.AddConfigPath(
-			filepath.Join(uhd, dir),
-		)
+	viper.SetConfigName(configFileName)
+
+	// If "config-dir" is set use it as first config path.
+	if cfgDir := viper.GetString("config-dir"); cfgDir != "" {
+		viper.AddConfigPath(cfgDir)
 	}
 
+	// Add current working directory and dir in home directory as fallback.
 	viper.AddConfigPath(".")
+	if uhd, err := os.UserHomeDir(); err == nil {
+		viper.AddConfigPath(filepath.Join(uhd, configFileDir))
+	}
 }
 
 // viperReadInConfig wraps viper.ReadInConfig with more logs.
@@ -49,7 +65,7 @@ func viperReadInConfig() {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			logging.Debugf("unable to find config file: %v", err)
 		} else {
-			logging.Debugf("config file was found but another error was produced: %v", err)
+			logging.Errorf("config file was found but another error was produced: %v", err)
 		}
 		return
 	}
