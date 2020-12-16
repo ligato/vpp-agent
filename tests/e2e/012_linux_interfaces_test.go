@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"go.ligato.io/cn-infra/v2/logging"
+	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
@@ -130,8 +130,7 @@ func TestExistingInterface(t *testing.T) {
 		HostIfName:  ifaceHostName,
 	}
 
-	ifHandler := linuxcalls.NewNetLinkHandler(
-		nil, nil, "", 0, logging.DefaultLogger)
+	ifHandler := ctx.vppAgent.LinuxInterfaceHandler()
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)
@@ -229,8 +228,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 		LinkOnly:    true, // <- agent does not configure IP addresses (they are also "existing")
 	}
 
-	ifHandler := linuxcalls.NewNetLinkHandler(
-		nil, nil, "", 0, logging.DefaultLogger)
+	ifHandler := ctx.vppAgent.LinuxInterfaceHandler()
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)

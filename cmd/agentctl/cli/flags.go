@@ -46,6 +46,10 @@ func NewClientOptions() *ClientOptions {
 func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	// TODO: consider using viper.AutomaticEnv with some prefix like `AGENTCTL`
 
+	flags.BoolVarP(&opts.Debug, "debug", "D", false, "Enable debug mode")
+
+	flags.StringVarP(&opts.LogLevel, "log-level", "l", "", `Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")`)
+
 	flags.StringP("host", "H", client.DefaultAgentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
 	_ = viper.BindPFlag("host", flags.Lookup("host"))
 	_ = viper.BindEnv("host", "AGENT_HOST")
@@ -73,6 +77,10 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 
 	flags.String("config-dir", "", "Path to directory with config file.")
 	_ = viper.BindPFlag("config-dir", flags.Lookup("config-dir"))
+	_ = viper.BindEnv("config-dir", "CONFIG_DIR")
+
+	flags.String("config", "", "Path to config file.")
+	_ = viper.BindPFlag("config", flags.Lookup("config"))
 
 	_ = viper.BindEnv("ligato-api-version", "LIGATO_API_VERSION")
 }

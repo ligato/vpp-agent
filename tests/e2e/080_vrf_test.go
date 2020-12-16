@@ -24,7 +24,6 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -538,8 +537,9 @@ func TestExistingLinuxVRF(t *testing.T) {
 	Expect(ctx.GetValueState(iface2)).To(Equal(kvscheduler.ValueState_CONFIGURED)) // created but not in VRF yet
 	Expect(ctx.GetDerivedValueState(iface2, iface2InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
 
+	ifHandler := ctx.vppAgent.LinuxInterfaceHandler()
+
 	// create referenced VRF using netlink (without the interface inside it for now)
-	ifHandler := linuxcalls.NewNetLinkHandler(nil, nil, "", 0, logging.DefaultLogger)
 	err = ifHandler.AddVRFDevice(vrfHostName, vrfRT)
 	Expect(err).To(BeNil())
 	err = ifHandler.SetInterfaceUp(vrfHostName)
