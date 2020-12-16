@@ -227,7 +227,11 @@ func TestAgentCtlCommands(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			stdout, stderr, err = ctx.ExecCmd("/agentctl", strings.Split(test.cmd, " ")...)
+			// we need to register again for each subtest
+			// TODO: remove this after migration to NewWithT
+			RegisterTestingT(t)
+
+			stdout, stderr, err = ctx.ExecCmd("agentctl", strings.Split(test.cmd, " ")...)
 
 			if test.expectErr {
 				Expect(err).To(Not(BeNil()),
@@ -329,40 +333,34 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	// to establish connection because it's not configured for this
 	// secure case.
 
-	t.Log("Replacing `GRPC_CONFIG` value with /etc/grpc-secure.conf")
+	t.Log("Replacing `GRPC_CONFIG` value with /testdata/grpc-secure.conf")
 	defer func(oldVal string) {
 		t.Logf("Setting `GRPC_CONFIG` back to %q", oldVal)
 		os.Setenv("GRPC_CONFIG", oldVal)
 	}(os.Getenv("GRPC_CONFIG"))
-	os.Setenv("GRPC_CONFIG", "/etc/grpc-secure.conf")
+	os.Setenv("GRPC_CONFIG", "/testdata/grpc-secure.conf")
 
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
+	ctx.ExecCmd("bash", "-c", "set -x; ls /testdata; cat /testdata/agentctl.conf")
+
 	t.Log("Try without any TLS")
 	_, stderr, err := ctx.ExecCmd(
-		"/agentctl", "--debug", "dump", "vpp.interfaces",
-	)
+		"agentctl", "--debug", "dump", "vpp.interfaces")
 	Expect(err).To(Not(BeNil()))
-	Expect(stderr).To(ContainSubstring("rpc error"),
-		"Expected string not found in stderr")
+	Expect(stderr).To(ContainSubstring("rpc error"), "Expected string not found in stderr")
 
 	t.Log("Try with TLS enabled via flag --insecure-tls. Should work because server is not configured to check client certs.")
 	stdout, stderr, err := ctx.ExecCmd(
-		"/agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces",
-	)
-	Expect(err).To(BeNil(),
-		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
-	)
+		"agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces")
+	Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
 	Expect(len(stdout)).To(Not(BeZero()))
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err = ctx.ExecCmd(
-		"/agentctl", "--debug", "--config-dir=/etc/.agentctl", "dump", "vpp.interfaces",
-	)
-	Expect(err).To(BeNil(),
-		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
-	)
+		"agentctl", "--debug", "--config=/testdata/agentctl.conf", "dump", "vpp.interfaces")
+	Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
 	Expect(stdout).ToNot(BeEmpty())
 }
 
@@ -374,13 +372,13 @@ func TestAgentCtlSecureETCD(t *testing.T) {
 
 	// test without any TLS
 	t.Run("no TLS", func(t *testing.T) {
-		_, _, err := ctx.ExecCmd("/agentctl", "--debug", "kvdb", "list")
+		_, _, err := ctx.ExecCmd("agentctl", "--debug", "kvdb", "list")
 		Expect(err).To(Not(BeNil()))
 	})
 
 	// test with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)
 	t.Run("insecure TLS", func(t *testing.T) {
-		_, _, err := ctx.ExecCmd("/agentctl", "--debug", "--insecure-tls", "kvdb", "list")
+		_, _, err := ctx.ExecCmd("agentctl", "--debug", "--insecure-tls", "kvdb", "list")
 		Expect(err).To(Not(BeNil()))
 	})
 

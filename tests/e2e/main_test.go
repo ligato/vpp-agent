@@ -30,6 +30,8 @@ func TestMain(m *testing.M) {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
 	if *debug {
+		logrus.SetLevel(logrus.DebugLevel)
+		logrus.Debugf("Environ:\n%q\n", os.Environ())
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}
 	if testutils.RunTestSuite("e2e") {

@@ -159,6 +159,7 @@ func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqM
 func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
+
 	go func() {
 		// move to the network namespace from which the connection should be initiated
 		exitNetNs := ms.enterNetNs()
@@ -182,6 +183,7 @@ func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, t
 func simpleUDPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
+
 	go func() {
 		// move to the network namespace from which the connection should be initiated
 		exitNetNs := ms.enterNetNs()
@@ -228,6 +230,7 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 	commRv := make(chan error, 1)
 	go func() {
 		defer close(commRv)
+
 		// send message to the server
 		_, err := cr.conn.Write([]byte(reqMsg + "\n"))
 		if err != nil {
@@ -256,6 +259,7 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 				message, expRespMsg)
 			return
 		}
+
 		commRv <- nil
 	}()
 
