@@ -128,6 +128,7 @@ func (d *InterfaceVrfDescriptor) Create(key string, iface *interfaces.Interface)
 			d.log.Error(err)
 			return nil, err
 		}
+		return nil, nil
 	}
 
 	// switch to the namespace with the interface
@@ -152,6 +153,7 @@ func (d *InterfaceVrfDescriptor) Delete(key string, iface *interfaces.Interface,
 	ifaceName, vrf, _, _ := interfaces.ParseInterfaceVrfKey(key)
 	if iface.Type == interfaces.Interface_EXISTING {
 		// interface is managed externally, nothing to do here
+		return nil
 	}
 
 	ifMeta, found := d.intfIndex.LookupByName(ifaceName)
