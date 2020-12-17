@@ -59,10 +59,10 @@ func TestStartStopAgent(t *testing.T) {
 	}
 
 	ctx.StartAgent(agent1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED)) // FIXME testing agent0 and not agent1
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
 
 	ctx.StopAgent(agent1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT)) // FIXME testing agent0 and not agent1 , did this test even passed with previous e2e changes?
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }
 
 // TestInitFromFile tests configuring initial state of NB from file
