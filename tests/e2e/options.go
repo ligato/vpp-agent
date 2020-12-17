@@ -48,8 +48,8 @@ type AgentOpt struct {
 
 // EtcdOpt is options data holder for customizing setup of ETCD
 type EtcdOpt struct {
-	UseHTTPS                       bool
-	UseAgentContainerForNetworking bool
+	UseHTTPS                      bool
+	UseTestContainerForNetworking bool
 }
 
 // SetupOptModifier is function customizing general setup options
@@ -75,8 +75,8 @@ func DefaultSetupOpt() *SetupOpt {
 // DefaultEtcdOpt creates default values for EtcdOpt
 func DefaultEtcdOpt() *EtcdOpt {
 	return &EtcdOpt{
-		UseHTTPS:                       false,
-		UseAgentContainerForNetworking: false,
+		UseHTTPS:                      false,
+		UseTestContainerForNetworking: false,
 	}
 }
 
@@ -173,11 +173,11 @@ func WithEtcdHTTPsConnection() EtcdOptModifier {
 	}
 }
 
-// WithEtcdVPPAgentContainerNetworking is ETCD test setup option that will use VPP-Agent test container for
+// WithEtcdTestContainerNetworking is ETCD test setup option that will use main Test container for
 // networking (by default the ETCD has separate networking)
-func WithEtcdVPPAgentContainerNetworking() EtcdOptModifier {
+func WithEtcdTestContainerNetworking() EtcdOptModifier {
 	return func(o *EtcdOpt) {
-		o.UseAgentContainerForNetworking = true
+		o.UseTestContainerForNetworking = true
 	}
 }
 

@@ -16,8 +16,7 @@ package e2e
 
 import (
 	"bytes"
-	"fmt"
-	"os"
+	"path/filepath"
 
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/go-errors/errors"
@@ -105,15 +104,15 @@ func (ec *EtcdContainer) create(options ...EtcdOptModifier) (*docker.Container, 
 			"--advertise-client-urls=https://127.0.0.1:2379",
 			"--listen-client-urls=https://127.0.0.1:2379",
 		)
-		hostConfig.Binds = []string{os.Getenv("CERTS_PATH") + ":/etc/certs"}
+		hostConfig.Binds = []string{filepath.Join(ec.ctx.testDataDir, "certs") + ":/etc/certs:ro"}
 	} else { // HTTP connection
 		cmd = append(cmd,
 			"--advertise-client-urls=http://0.0.0.0:2379",
 			"--listen-client-urls=http://0.0.0.0:2379",
 		)
 	}
-	if opts.UseAgentContainerForNetworking {
-		hostConfig.NetworkMode = fmt.Sprintf("container:e2e-test-vppagent-%v", AgentInstanceName(ec.ctx))
+	if opts.UseTestContainerForNetworking {
+		hostConfig.NetworkMode = "container:vpp-agent-e2e-test"
 	} else { // separate container networking (default)
 		hostConfig.PortBindings = map[docker.Port][]docker.PortBinding{
 			"2379/tcp": {{HostIP: "0.0.0.0", HostPort: "2379"}},
@@ -139,12 +138,13 @@ func (ec *EtcdContainer) create(options ...EtcdOptModifier) (*docker.Container, 
 func (ec *EtcdContainer) start(container *docker.Container) error {
 	err := ec.ctx.dockerClient.StartContainer(container.ID, nil)
 	if err != nil {
-		err = ec.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+		errRemove := ec.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
 			ID:    container.ID,
 			Force: true,
 		})
-		if err != nil {
-			return errors.Errorf("failed to remove ETCD container: %v", err)
+		if errRemove != nil {
+			return errors.Errorf("failed to remove ETCD container: %v "+
+				"(after failed start due to: %v)", errRemove, err)
 		}
 		return errors.Errorf("failed to start ETCD container: %v", err)
 	}
