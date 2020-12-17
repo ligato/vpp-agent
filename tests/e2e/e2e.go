@@ -19,11 +19,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -55,13 +53,14 @@ var (
 )
 
 const (
-	etcdImage = "gcr.io/etcd-development/etcd"
-
 	agentInitTimeout     = time.Second * 15
 	processExitTimeout   = time.Second * 3
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
 	execTimeout          = 10 * time.Second
+	defaultTestShareDir  = "/test-share"
+	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
+	nameOfDefaultAgent   = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
 	tapv2InputNode = "virtio-input"
@@ -85,7 +84,8 @@ type TestCtx struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	testDataDir string
+	testDataDir  string
+	testShareDir string
 
 	agent         *agent
 	agents        map[string]*agent
@@ -99,21 +99,13 @@ type TestCtx struct {
 	logger    *log.Logger
 }
 
-// Option is key-value pair for customizing setup of tests
-type Option struct {
-	key   string
-	value interface{}
-}
-// TODO recheck options due to rebasing mess
-func NewTest(t *testing.T, options ...*Option) *TestCtx {
+func NewTest(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 	// TODO: Do not use global test registration.
 	//  It is now deprecated and you should use NewWithT() instead.
 	//g := NewWithT(t)
 
 	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
-
-	optionsMap := optionsMap(options)
 
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
@@ -124,6 +116,7 @@ func NewTest(t *testing.T, options ...*Option) *TestCtx {
 	te := &TestCtx{
 		t:             t,
 		testDataDir:   os.Getenv("TESTDATA_DIR"),
+		testShareDir:  defaultTestShareDir,
 		agents:        make(map[string]*agent),
 		microservices: make(map[string]*microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
@@ -134,21 +127,15 @@ func NewTest(t *testing.T, options ...*Option) *TestCtx {
 	return te
 }
 
-// TODO resolver vppagent mess
-//if _, found := optionsMap[DontSetupVPPAgent]; !found {
-//  SetupVPPAgent(t, testCtx, options...)
-//}
-//
-//optionsMap := optionsMap(options)
-//
-//var agentArgs []string
-//if additionalParams, found := optionsMap[AdditionalAgentProcessParams]; found {
-//agentArgs = additionalParams.([]string)
-//}
+// Option is key-value pair for customizing setup of tests
+type Option struct {
+	key   string
+	value interface{}
+}
 
-
-func Setup(t *testing.T) *TestCtx {
+func Setup(t *testing.T, options ...*Option) *TestCtx {
 	var err error
+	optionsMap := optionsMap(options)
 
 	testCtx := NewTest(t)
 
@@ -165,7 +152,7 @@ func Setup(t *testing.T) *TestCtx {
 	removeDanglingAgents(t, testCtx.dockerClient)
 	removeDanglingMicroservices(t, testCtx.dockerClient)
 
-	// if setupE2E fails we need to stop started processes
+	// if setupE2E fails we need to stop started containers
 	defer func() {
 		if testCtx.t.Failed() || *debug {
 			testCtx.dumpLog()
@@ -176,46 +163,79 @@ func Setup(t *testing.T) *TestCtx {
 					t.Logf("failed to stop vpp-agent: %v", err)
 				}
 			}
+			if testCtx.Etcd != nil {
+				if err := testCtx.Etcd.Terminate(); err != nil {
+					t.Logf("failed to terminate etcd due to: %v", err)
+				}
+			}
 		}
 	}()
-
-	testCtx.agent = testCtx.StartAgent("agent0")
-	agentAddr := testCtx.agent.IPAddress()
-
-	// interact with the agent using the client from agentctl
-	testCtx.agentClient, err = agentctl.NewClientWithOpts(
-		agentctl.WithHost(agentAddr),
-		agentctl.WithGrpcPort(*agentGrpcPort),
-		agentctl.WithHTTPPort(*agentHTTPPort))
-	if err != nil {
-		t.Fatalf("Failed to create VPP-agent client: %v", err)
-	}
-
-	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
-
-	// run initial resync
-	if _, found := optionsMap[NoManualInitialAgentResync]; !found {
-		testCtx.syncAgent()
-	}
-
-	if version, err := testCtx.ExecVppctl("show version"); err != nil {
-		t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
-	} else {
-		versionParts := strings.SplitN(version, " ", 3)
-		if len(versionParts) > 1 {
-			testCtx.vppVersion = version
-			t.Logf("VPP version: %v", testCtx.vppVersion)
-		} else {
-			t.Logf("invalid VPP version: %q", version)
-		}
-	}
 
 	// setup Etcd
 	if _, found := optionsMap[SetupEtcdContainer]; found {
 		testCtx.Etcd = NewEtcdContainer(testCtx, options...)
 	}
 
+	if _, found := optionsMap[DontSetupVPPAgent]; !found {
+		SetupVPPAgent(testCtx)
+	}
+
 	return testCtx
+}
+
+func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
+	// prepare options
+	options := DefaultAgentOpt()
+	for _, optionsModifier := range opts {
+		optionsModifier(options)
+	}
+
+	// start agent container
+	testCtx.agent = testCtx.StartAgent(nameOfDefaultAgent, opts...) // not passing prepared options due to public visibility
+
+	// interact with the agent using the client from agentctl
+	agentAddr := testCtx.agent.IPAddress()
+	var err error
+	testCtx.agentClient, err = agentctl.NewClientWithOpts(
+		agentctl.WithHost(agentAddr),
+		agentctl.WithGrpcPort(*agentGrpcPort),
+		agentctl.WithHTTPPort(*agentHTTPPort))
+	if err != nil {
+		testCtx.t.Fatalf("Failed to create VPP-agent client: %v", err)
+	}
+
+	// wait to agent to start properly
+	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
+
+	// run initial resync
+	if !options.NoManualInitialResync {
+		testCtx.syncAgent()
+	}
+
+	// fill VPP version (this depends on agentctl and that depends on agent to be set up)
+	if version, err := testCtx.ExecVppctl("show version"); err != nil {
+		testCtx.t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
+	} else {
+		versionParts := strings.SplitN(version, " ", 3)
+		if len(versionParts) > 1 {
+			testCtx.vppVersion = version
+			testCtx.t.Logf("VPP version: %v", testCtx.vppVersion)
+		} else {
+			testCtx.t.Logf("invalid VPP version: %q", version)
+		}
+	}
+}
+
+// AgentInstanceName provides instance name of VPP-Agent that is created by setup by default. This name is
+// used i.e. in ETCD key prefix.
+func AgentInstanceName(testCtx *TestCtx) string {
+	//TODO API boundaries becomes blurry as tests and support structures are in the same package and there
+	// is strong temptation to misuse it and create an unmaintainable dependency mesh -> create different
+	// package for test supporting files (setup/teardown/util stuff) and define clear boundaries
+	if testCtx.agent != nil {
+		return testCtx.agent.name
+	}
+	return nameOfDefaultAgent
 }
 
 func optionsMap(options []*Option) map[string]interface{} {
@@ -254,7 +274,7 @@ func (test *TestCtx) Teardown() {
 
 	// terminate etcd
 	if test.Etcd != nil {
-		test.Etcd.Terminate(test)
+		test.Etcd.Terminate()
 	}
 }
 
@@ -273,32 +293,35 @@ func (test *TestCtx) VppRelease() string {
 }
 
 // WithoutManualInitialAgentResync is test setup option disabling manual agent resync just after agent setup
-func WithoutManualInitialAgentResync() *Option {
-	return &Option{
-		key:   NoManualInitialAgentResync,
-		value: struct{}{}, // only presence is needed
+func WithoutManualInitialAgentResync() func(o *AgentOpt) {
+	return func(o *AgentOpt) {
+		o.NoManualInitialResync = true
 	}
 }
 
-// WithAdditionalAgentProcessParams is test setup option adding additional parameters to executing vpp-agent process
-func WithAdditionalAgentProcessParams(params ...string) *Option {
-	return &Option{
-		key:   AdditionalAgentProcessParams,
-		value: params,
+// WithAdditionalAgentCmdParams is test setup option adding additional command line parameters to executing vpp-agent
+func WithAdditionalAgentCmdParams(params ...string) func(o *AgentOpt) {
+	return func(o *AgentOpt) {
+		o.Env = append(o.Env, params...)
 	}
 }
 
 // WithPluginConfigArg persists configContent for give VPP-Agent plugin (expecting generic plugin config name)
 // and returns argument for VPP-Agent executable to use this plugin configuration file.
-func WithPluginConfigArg(t *testing.T, pluginName string, configContent string) string {
-	configFilePath := CreateFile(t, fmt.Sprintf("%v.config", pluginName), configContent)
-	return fmt.Sprintf("-%v-config=%v", pluginName, configFilePath)
+func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) string {
+	configFilePath := CreateFileOnSharedVolume(ctx, fmt.Sprintf("%v.config", pluginName), configContent)
+	return fmt.Sprintf("%v_CONFIG=%v", strings.ToUpper(pluginName), configFilePath)
 }
 
-// CreateFile persists fileContent to file in OS temp directory. It returns the absolute path to the newly
-// created file.
-func CreateFile(t *testing.T, simpleFileName string, fileContent string) string {
-	filePath, err := filepath.Abs(filepath.Join(os.TempDir(), fmt.Sprintf("e2e-test-%v-%v", t.Name(), simpleFileName)))
+// FIXME container that will use it can have it mounted in different location as seen by the container where
+//  it is created (this works now due to the same mountpoint of shared volume in every container)
+
+// CreateFileOnSharedVolume persists fileContent to file in mounted shared volume used for sharing file
+// between containers. It returns the absolute path to the newly created file as seen by the container
+// that creates it.
+func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent string) string {
+	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
+		fmt.Sprintf("e2e-test-%v-%v", ctx.t.Name(), simpleFileName)))
 	Expect(err).To(Not(HaveOccurred()))
 	Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
 
@@ -322,7 +345,6 @@ func WithEtcd() *Option {
 		value: struct{}{}, // only presence is needed
 	}
 }
-
 
 func (test *TestCtx) GenericClient() client.GenericClient {
 	c, err := test.agentClient.GenericClient()
@@ -427,7 +449,7 @@ func (test *TestCtx) StopMicroservice(name string) {
 	delete(test.microservices, name)
 }
 
-func (test *TestCtx) StartAgent(name string, o ...*AgentOpt) *agent {
+func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *agent {
 	test.t.Helper()
 
 	if _, ok := test.agents[name]; ok {
@@ -436,8 +458,8 @@ func (test *TestCtx) StartAgent(name string, o ...*AgentOpt) *agent {
 
 	// prepare agent options
 	opt := DefaultAgentOpt()
-	if len(o) > 0 {
-		opt = o[0]
+	for _, optModifier := range opts {
+		optModifier(opt)
 	}
 	opt.Env = append(opt.Env, "MICROSERVICE_LABEL="+name)
 

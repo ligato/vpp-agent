@@ -59,10 +59,10 @@ func TestStartStopAgent(t *testing.T) {
 	}
 
 	ctx.StartAgent(agent1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED)) // FIXME testing agent0 and not agent1
 
 	ctx.StopAgent(agent1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT)) // FIXME testing agent0 and not agent1 , did this test even passed with previous e2e changes?
 }
 
 // TestInitFromFile tests configuring initial state of NB from file
@@ -83,7 +83,7 @@ vppConfig:
         - 10.10.1.1/24
       mtu: 1500
 `
-	initialConfigFileName := CreateFile(t, "initial-config.yaml", initialConfig)
+	initialConfigFileName := CreateFileOnSharedVolume(ctx, "initial-config.yaml", initialConfig)
 
 	// create config content for init file usage
 	initFileRegistryConfig := `
@@ -93,8 +93,8 @@ initial-configuration-file-path: %v
 	initFileRegistryConfig = fmt.Sprintf(initFileRegistryConfig, initialConfigFileName)
 
 	// create VPP-Agent
-	SetupVPPAgent(t, ctx,
-		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "initfileregistry", initFileRegistryConfig)),
+	SetupVPPAgent(ctx,
+		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
 
@@ -116,7 +116,7 @@ func TestInitFromEtcd(t *testing.T) {
 
 	// put NB config into Etcd
 	Expect(ctx.Etcd.Put(
-		"/vnf-agent/vpp1/config/vpp/v2/interfaces/loop-test-from-etcd",
+		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/loop-test-from-etcd", AgentInstanceName(ctx)),
 		`{"name":"loop-test-from-etcd","type":"SOFTWARE_LOOPBACK","enabled":true,"ip_addresses":["10.10.1.2/24"], "mtu":1500}`)).
 		To(Succeed(), "can't insert data into ETCD")
 
@@ -129,8 +129,8 @@ endpoints:
 	etcdConfig = fmt.Sprintf(etcdConfig, ctx.Etcd.Inspect().NetworkSettings.IPAddress)
 
 	// create VPP-Agent
-	SetupVPPAgent(t, ctx,
-		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "etcd", etcdConfig)),
+	SetupVPPAgent(ctx,
+		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig)),
 		WithoutManualInitialAgentResync(),
 	)
 
@@ -152,7 +152,7 @@ func TestInitFromFileAndEtcd(t *testing.T) {
 
 	// put NB config into Etcd
 	Expect(ctx.Etcd.Put(
-		"/vnf-agent/vpp1/config/vpp/v2/interfaces/memif-from-etcd",
+		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/memif-from-etcd", AgentInstanceName(ctx)),
 		`{
 "name":"memif-from-etcd",
 "type":"MEMIF",
@@ -166,7 +166,7 @@ func TestInitFromFileAndEtcd(t *testing.T) {
 	}
 }`)).To(Succeed(), "can't insert data1 into ETCD")
 	Expect(ctx.Etcd.Put(
-		"/vnf-agent/vpp1/config/vpp/v2/interfaces/memif-from-both-sources",
+		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/memif-from-both-sources", AgentInstanceName(ctx)),
 		`{
 "name":"memif-from-both-sources",
 "type":"MEMIF",
@@ -207,7 +207,7 @@ vppConfig:
          id: 4
          socketFilename: /run/vpp/default.sock
 `
-	initialConfigFileName := CreateFile(t, "initial-config.yaml", initialConfig)
+	initialConfigFileName := CreateFileOnSharedVolume(ctx, "initial-config.yaml", initialConfig)
 
 	// create config content for NB init file usage
 	initFileRegistryConfig := `
@@ -225,9 +225,9 @@ endpoints:
 	etcdConfig = fmt.Sprintf(etcdConfig, ctx.Etcd.Inspect().NetworkSettings.IPAddress)
 
 	// create VPP-Agent
-	SetupVPPAgent(t, ctx,
-		WithAdditionalAgentProcessParams(WithPluginConfigArg(t, "etcd", etcdConfig),
-			WithPluginConfigArg(t, "initfileregistry", initFileRegistryConfig)),
+	SetupVPPAgent(ctx,
+		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig),
+			WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
 

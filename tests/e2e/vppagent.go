@@ -38,11 +38,14 @@ const (
 )
 
 type AgentOpt struct {
-	Image             string
-	Env               []string
-	UseEtcd           bool
-	ContainerOptsHook func(*docker.CreateContainerOptions)
+	Image                 string
+	Env                   []string
+	UseEtcd               bool
+	NoManualInitialResync bool
+	ContainerOptsHook     func(*docker.CreateContainerOptions)
 }
+
+type AgentOptModifier func(*AgentOpt)
 
 func DefaultAgentOpt() *AgentOpt {
 	agentImg := vppAgentDefaultImg
@@ -58,8 +61,9 @@ func DefaultAgentOpt() *AgentOpt {
 		etcdConfig = val
 	}
 	opt := &AgentOpt{
-		Image:   agentImg,
-		UseEtcd: false,
+		Image:                 agentImg,
+		UseEtcd:               false,
+		NoManualInitialResync: false,
 		Env: []string{
 			"INITIAL_LOGLVL=" + logging.DefaultLogger.GetLevel().String(),
 			"ETCD_CONFIG=" + etcdConfig,
@@ -102,6 +106,7 @@ func startAgent(ctx *TestCtx, name string, opt *AgentOpt) (*agent, error) {
 				"/var/run/docker.sock:/var/run/docker.sock",
 				ctx.testDataDir + ":/testdata:ro",
 				filepath.Join(ctx.testDataDir, "certs") + ":/etc/certs:ro",
+				shareVolumeName + ":" + ctx.testShareDir,
 			},
 		},
 	}

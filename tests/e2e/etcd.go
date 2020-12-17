@@ -19,6 +19,12 @@ import (
 	"os"
 
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/go-errors/errors"
+)
+
+const (
+	etcdImage       = "gcr.io/etcd-development/etcd"
+	etcdStopTimeout = 1 // seconds
 )
 
 // Setup options constants
@@ -26,6 +32,8 @@ const (
 	HTTPsConnection             = "HTTPsConnection"
 	VPPAgentContainerNetworking = "VPPAgentContainerNetworking"
 )
+
+// TODO unify whether return errors or use test context's log fatal
 
 // EtcdContainer is represents running ETCD container
 type EtcdContainer struct {
@@ -38,8 +46,8 @@ func NewEtcdContainer(ctx *TestCtx, options ...*Option) *EtcdContainer {
 	ec := &EtcdContainer{
 		ctx: ctx,
 	}
-	container := ec.create(ctx, options...)
-	ec.start(ctx, container)
+	container := ec.create(options...)
+	ec.start(container)
 	ec.containerID = container.ID
 	return ec
 }
@@ -70,16 +78,16 @@ func (ec *EtcdContainer) Inspect() *docker.Container {
 	return container
 }
 
-func (ec *EtcdContainer) create(ctx *TestCtx, options ...*Option) *docker.Container {
+func (ec *EtcdContainer) create(options ...*Option) *docker.Container {
 	optionsMap := optionsMap(options)
 
 	// pull image
-	err := ctx.dockerClient.PullImage(docker.PullImageOptions{
+	err := ec.ctx.dockerClient.PullImage(docker.PullImageOptions{
 		Repository: etcdImage,
 		Tag:        "latest",
 	}, docker.AuthConfiguration{})
 	if err != nil {
-		ctx.t.Fatalf("failed to pull ETCD image: %v", err)
+		ec.ctx.t.Fatalf("failed to pull ETCD image: %v", err)
 	}
 
 	// construct command string and container host config
@@ -112,7 +120,7 @@ func (ec *EtcdContainer) create(ctx *TestCtx, options ...*Option) *docker.Contai
 	}
 
 	// create container
-	container, err := ctx.dockerClient.CreateContainer(docker.CreateContainerOptions{
+	container, err := ec.ctx.dockerClient.CreateContainer(docker.CreateContainerOptions{
 		Name: "e2e-test-etcd",
 		Config: &docker.Config{
 			Env:   []string{"ETCDCTL_API=3"},
@@ -122,7 +130,7 @@ func (ec *EtcdContainer) create(ctx *TestCtx, options ...*Option) *docker.Contai
 		HostConfig: hostConfig,
 	})
 	if err != nil {
-		ctx.t.Fatalf("failed to create ETCD container: %v", err)
+		ec.ctx.t.Fatalf("failed to create ETCD container: %v", err)
 	}
 	return container
 }
@@ -145,43 +153,50 @@ func WithEtcdVPPAgentContainerNetworking() *Option {
 	}
 }
 
-func (ec *EtcdContainer) start(ctx *TestCtx, container *docker.Container) {
-	err := ctx.dockerClient.StartContainer(container.ID, nil)
+func (ec *EtcdContainer) start(container *docker.Container) {
+	err := ec.ctx.dockerClient.StartContainer(container.ID, nil)
 	if err != nil {
-		err = ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+		err = ec.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
 			ID:    container.ID,
 			Force: true,
 		})
 		if err != nil {
-			ctx.t.Errorf("failed to remove ETCD container: %v", err)
+			ec.ctx.t.Errorf("failed to remove ETCD container: %v", err)
 		}
-		ctx.t.Fatalf("failed to start ETCD container: %v", err)
+		ec.ctx.t.Fatalf("failed to start ETCD container: %v", err)
 	}
-	ctx.t.Logf("started ETCD container %v", container.ID)
+	ec.ctx.t.Logf("started ETCD container %v", container.ID)
 }
 
 // Terminate stops and removes the ETCD container
-func (ec *EtcdContainer) Terminate(ctx *TestCtx) {
-	ec.stop(ctx)
-	ec.remove(ctx)
-}
-
-func (ec *EtcdContainer) stop(ctx *TestCtx) {
-	err := ctx.dockerClient.StopContainer(ec.containerID, msStopTimeout)
-	if err != nil {
-		ctx.t.Logf("failed to stop ETCD container: %v", err)
+func (ec *EtcdContainer) Terminate() error {
+	if err := ec.stop(); err != nil {
+		return err
 	}
+	if err := ec.remove(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (ec *EtcdContainer) remove(ctx *TestCtx) {
-	err := ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
+func (ec *EtcdContainer) stop() error {
+	err := ec.ctx.dockerClient.StopContainer(ec.containerID, etcdStopTimeout)
+	if err != nil {
+		return errors.Errorf("failed to stop ETCD container: %v", err)
+	}
+	return nil
+}
+
+func (ec *EtcdContainer) remove() error {
+	err := ec.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
 		ID:    ec.containerID,
 		Force: true,
 	})
 	if err != nil {
-		ctx.t.Fatalf("failed to remove ETCD container: %v", err)
+		return errors.Errorf("failed to remove ETCD container: %v", err)
 	}
-	ctx.t.Logf("removed ETCD container %v", ec.containerID)
+	ec.ctx.t.Logf("removed ETCD container %v", ec.containerID)
+	return nil
 }
 
 // exec executes command inside Etcd container
