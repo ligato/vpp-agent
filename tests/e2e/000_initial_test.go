@@ -126,7 +126,9 @@ dial-timeout: 1s
 endpoints:
     - "%v:2379"
 `
-	etcdConfig = fmt.Sprintf(etcdConfig, ctx.Etcd.Inspect().NetworkSettings.IPAddress)
+	etcdContainer, err := ctx.Etcd.Inspect()
+	Expect(err).ShouldNot(HaveOccurred())
+	etcdConfig = fmt.Sprintf(etcdConfig, etcdContainer.NetworkSettings.IPAddress)
 
 	// create VPP-Agent
 	SetupVPPAgent(ctx,
@@ -222,7 +224,9 @@ dial-timeout: 1s
 endpoints:
     - "%v:2379"
 `
-	etcdConfig = fmt.Sprintf(etcdConfig, ctx.Etcd.Inspect().NetworkSettings.IPAddress)
+	etcdContainer, err := ctx.Etcd.Inspect()
+	Expect(err).ShouldNot(HaveOccurred())
+	etcdConfig = fmt.Sprintf(etcdConfig, etcdContainer.NetworkSettings.IPAddress)
 
 	// create VPP-Agent
 	SetupVPPAgent(ctx,

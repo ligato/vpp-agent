@@ -28,8 +28,6 @@ const (
 	etcdStopTimeout = 1 // seconds
 )
 
-// TODO unify whether return errors or use test context's log fatal
-
 // EtcdContainer is represents running ETCD container
 type EtcdContainer struct {
 	ctx         *TestCtx
@@ -37,14 +35,19 @@ type EtcdContainer struct {
 }
 
 // NewEtcdContainer creates and starts new ETCD container
-func NewEtcdContainer(ctx *TestCtx, options ...EtcdOptModifier) *EtcdContainer {
+func NewEtcdContainer(ctx *TestCtx, options ...EtcdOptModifier) (*EtcdContainer, error) {
 	ec := &EtcdContainer{
 		ctx: ctx,
 	}
-	container := ec.create(options...)
-	ec.start(container)
+	container, err := ec.create(options...)
+	if err != nil {
+		return nil, errors.Errorf("can't create ETCD container due to: %v", err)
+	}
+	if err := ec.start(container); err != nil {
+		return nil, errors.Errorf("can't start ETCD container due to: %v", err)
+	}
 	ec.containerID = container.ID
-	return ec
+	return ec, nil
 }
 
 // Put inserts key-value pair into the ETCD inside its running docker container
@@ -65,15 +68,15 @@ func (ec *EtcdContainer) GetAll() (string, error) {
 
 // Inspect provides docker.Container of running ETCD container that can be
 // used to inspect various things about ETCD container
-func (ec *EtcdContainer) Inspect() *docker.Container {
+func (ec *EtcdContainer) Inspect() (*docker.Container, error) {
 	container, err := ec.ctx.dockerClient.InspectContainer(ec.containerID)
 	if err != nil {
-		ec.ctx.t.Fatalf("failed to inspect container with ID %v due to: %v", ec.containerID, err)
+		return nil, errors.Errorf("failed to inspect container with ID %v due to: %v", ec.containerID, err)
 	}
-	return container
+	return container, nil
 }
 
-func (ec *EtcdContainer) create(options ...EtcdOptModifier) *docker.Container {
+func (ec *EtcdContainer) create(options ...EtcdOptModifier) (*docker.Container, error) {
 	opts := DefaultEtcdOpt()
 	for _, optionModifier := range options {
 		optionModifier(opts)
@@ -85,7 +88,7 @@ func (ec *EtcdContainer) create(options ...EtcdOptModifier) *docker.Container {
 		Tag:        "latest",
 	}, docker.AuthConfiguration{})
 	if err != nil {
-		ec.ctx.t.Fatalf("failed to pull ETCD image: %v", err)
+		return nil, errors.Errorf("failed to pull ETCD image: %v", err)
 	}
 
 	// construct command string and container host config
@@ -128,12 +131,12 @@ func (ec *EtcdContainer) create(options ...EtcdOptModifier) *docker.Container {
 		HostConfig: hostConfig,
 	})
 	if err != nil {
-		ec.ctx.t.Fatalf("failed to create ETCD container: %v", err)
+		return nil, errors.Errorf("failed to create ETCD container: %v", err)
 	}
-	return container
+	return container, nil
 }
 
-func (ec *EtcdContainer) start(container *docker.Container) {
+func (ec *EtcdContainer) start(container *docker.Container) error {
 	err := ec.ctx.dockerClient.StartContainer(container.ID, nil)
 	if err != nil {
 		err = ec.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
@@ -141,11 +144,12 @@ func (ec *EtcdContainer) start(container *docker.Container) {
 			Force: true,
 		})
 		if err != nil {
-			ec.ctx.t.Errorf("failed to remove ETCD container: %v", err)
+			return errors.Errorf("failed to remove ETCD container: %v", err)
 		}
-		ec.ctx.t.Fatalf("failed to start ETCD container: %v", err)
+		return errors.Errorf("failed to start ETCD container: %v", err)
 	}
 	ec.ctx.t.Logf("started ETCD container %v", container.ID)
+	return nil
 }
 
 // Terminate stops and removes the ETCD container
@@ -187,7 +191,8 @@ func (ec *EtcdContainer) exec(cmdName string, args ...string) (output string, er
 		Container:    ec.containerID,
 	})
 	if err != nil {
-		ec.ctx.t.Fatalf("failed to create docker exec instance for exec in etcd container: %v", err)
+		return "", errors.Errorf(
+			"failed to create docker exec instance for exec in etcd container: %v", err)
 	}
 
 	var stdout bytes.Buffer

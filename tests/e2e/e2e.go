@@ -161,7 +161,8 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 
 	// setup Etcd
 	if opt.SetupEtcd {
-		testCtx.Etcd = NewEtcdContainer(testCtx, extractEtcdOptions(opt))
+		testCtx.Etcd, err = NewEtcdContainer(testCtx, extractEtcdOptions(opt))
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	if opt.SetupAgent {
@@ -253,7 +254,9 @@ func (test *TestCtx) Teardown() {
 
 	// terminate etcd
 	if test.Etcd != nil {
-		test.Etcd.Terminate()
+		if err := test.Etcd.Terminate(); err != nil {
+			test.t.Logf("failed to terminate ETCD: %v", err)
+		}
 	}
 }
 
