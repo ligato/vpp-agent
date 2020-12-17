@@ -47,7 +47,7 @@ func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client
 				msLabelKey: msName,
 			},
 			Env: []string{"MICROSERVICE_LABEL=" + msLabel},
-			Cmd: []string{"sleep", "600"},
+			Cmd: []string{"tail", "-f", "/dev/null"},
 		},
 		HostConfig: &docker.HostConfig{
 			// networking configured via VPP in E2E tests
@@ -81,7 +81,7 @@ func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client
 	}, nil
 }
 
-func resetMicroservices(t *testing.T, dockerClient *docker.Client) {
+func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 	// remove any running microservices prior to starting a new test
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,

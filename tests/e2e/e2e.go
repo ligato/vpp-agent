@@ -29,6 +29,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
@@ -72,7 +73,8 @@ type TestCtx struct {
 
 	testDataDir string
 
-	vppAgent      *vppAgent
+	agent         *agent
+	agents        map[string]*agent
 	dockerClient  *docker.Client
 	agentClient   agentctl.APIClient
 	microservices map[string]*microservice
@@ -89,6 +91,8 @@ func NewTest(t *testing.T) *TestCtx {
 	//  It is now deprecated and you should use NewWithT() instead.
 	//g := NewWithT(t)
 
+	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
+
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
 
@@ -98,6 +102,7 @@ func NewTest(t *testing.T) *TestCtx {
 	te := &TestCtx{
 		t:             t,
 		testDataDir:   os.Getenv("TESTDATA_DIR"),
+		agents:        make(map[string]*agent),
 		microservices: make(map[string]*microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
 		outputBuf:     outputBuf,
@@ -121,14 +126,9 @@ func Setup(t *testing.T) *TestCtx {
 		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
 	}
 
-	agentImg := vppAgentDefaultImg
-	if img := os.Getenv("VPP_AGENT"); img != "" {
-		agentImg = img
-	}
-
 	// make sure there are no containers left from the previous run
-	resetVppAgents(t, testCtx.dockerClient)
-	resetMicroservices(t, testCtx.dockerClient)
+	removeDanglingAgents(t, testCtx.dockerClient)
+	removeDanglingMicroservices(t, testCtx.dockerClient)
 
 	// if setupE2E fails we need to stop started processes
 	defer func() {
@@ -136,33 +136,16 @@ func Setup(t *testing.T) *TestCtx {
 			testCtx.dumpLog()
 		}
 		if testCtx.t.Failed() {
-			if testCtx.vppAgent != nil {
-				if err := testCtx.vppAgent.Stop(); err != nil {
+			if testCtx.agent != nil {
+				if err := testCtx.agent.stop(); err != nil {
 					t.Logf("failed to stop vpp-agent: %v", err)
 				}
 			}
 		}
 	}()
 
-	grpcConfig := "grpc.conf"
-	if val := os.Getenv("GRPC_CONFIG"); val != "" {
-		grpcConfig = val
-	}
-	etcdConfig := "DISABLED"
-	if val := os.Getenv("ETCD_CONFIG"); val != "" {
-		etcdConfig = val
-	}
-	opt := &vppAgentOpt{
-		Image:   agentImg,
-		UseEtcd: false,
-		Env: []string{
-			"INITIAL_LOGLVL=" + logging.DefaultLogger.GetLevel().String(),
-			"ETCD_CONFIG=" + etcdConfig,
-			"GRPC_CONFIG=" + grpcConfig,
-		},
-	}
-	testCtx.vppAgent = RunVppAgent(testCtx, "agent0", opt)
-	agentAddr := testCtx.vppAgent.IPAddress()
+	testCtx.agent = testCtx.StartAgent("agent0")
+	agentAddr := testCtx.agent.IPAddress()
 
 	// interact with the agent using the client from agentctl
 	testCtx.agentClient, err = agentctl.NewClientWithOpts(
@@ -213,7 +196,7 @@ func (test *TestCtx) Teardown() {
 		test.t.Logf("closing the client failed: %v", err)
 	}
 
-	if err := test.vppAgent.Stop(); err != nil {
+	if err := test.agent.stop(); err != nil {
 		test.t.Logf("failed to stop vpp-agent: %v", err)
 	}
 }
@@ -278,7 +261,7 @@ func (test *TestCtx) AgentInSync() bool {
 func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
 	test.t.Helper()
 
-	stdout, stderr, err = test.vppAgent.Exec(cmd, args...)
+	stdout, stderr, err = test.agent.Exec(cmd, args...)
 	test.logger.Printf("exec: '%s %s':\nstdout: %v\nstderr: %v",
 		cmd, strings.Join(args, " "), stdout, stderr)
 	if err != nil {
@@ -306,28 +289,76 @@ func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	return stdout, nil
 }
 
-func (test *TestCtx) StartMicroservice(msName string) (ms *microservice) {
-	var err error
-	ms, err = createMicroservice(test, msName, test.dockerClient, test.nsCalls)
-	if err != nil {
-		test.t.Fatalf("failed to create microservice '%s': %v", msName, err)
+func (test *TestCtx) StartMicroservice(name string) *microservice {
+	test.t.Helper()
+
+	if _, ok := test.microservices[name]; ok {
+		test.t.Fatalf("microservice %q already started", name)
 	}
-	test.microservices[msName] = ms
+	ms, err := createMicroservice(test, name, test.dockerClient, test.nsCalls)
+	if err != nil {
+		test.t.Fatalf("creating microservice %q failed: %v", name, err)
+	}
+	test.microservices[name] = ms
 	return ms
 }
 
-func (test *TestCtx) StopMicroservice(msName string) {
+func (test *TestCtx) StopMicroservice(name string) {
 	test.t.Helper()
 
-	ms, found := test.microservices[msName]
+	ms, found := test.microservices[name]
 	if !found {
 		// bug inside a test
-		test.t.Logf("ERROR: cannot stop unknown microservice '%s'", msName)
+		test.t.Logf("ERROR: cannot stop unknown microservice %q", name)
 	}
+
 	if err := ms.stop(); err != nil {
-		test.t.Logf("ERROR: stopping microservice failed '%s': %v", msName, err)
+		test.t.Logf("ERROR: stopping microservice %q failed: %v", name, err)
 	}
-	delete(test.microservices, msName)
+	delete(test.microservices, name)
+}
+
+func (test *TestCtx) StartAgent(name string, o ...*AgentOpt) *agent {
+	test.t.Helper()
+
+	if _, ok := test.agents[name]; ok {
+		test.t.Fatalf("agent %q already started", name)
+	}
+
+	// prepare agent options
+	opt := DefaultAgentOpt()
+	if len(o) > 0 {
+		opt = o[0]
+	}
+	opt.Env = append(opt.Env, "MICROSERVICE_LABEL="+name)
+
+	agent, err := startAgent(test, name, opt)
+	if err != nil {
+		test.t.Fatalf("creating agent %q failed: %v", name, err)
+	}
+	if test.agent == nil {
+		test.agent = agent
+	}
+	test.agents[name] = agent
+
+	return agent
+}
+
+func (test *TestCtx) StopAgent(name string) {
+	test.t.Helper()
+
+	agent, found := test.agents[name]
+	if !found {
+		// bug inside a test
+		test.t.Logf("ERROR: cannot stop unknown agent %q", name)
+	}
+	if err := agent.stop(); err != nil {
+		test.t.Logf("ERROR: stopping agent %q failed: %v", name, err)
+	}
+	if test.agent.name == name {
+		test.agent = nil
+	}
+	delete(test.agents, name)
 }
 
 // PingFromMs pings <dstAddress> from the microservice <msName>

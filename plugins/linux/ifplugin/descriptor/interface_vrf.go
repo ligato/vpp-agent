@@ -16,6 +16,7 @@ package descriptor
 
 import (
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
@@ -56,8 +57,8 @@ func NewInterfaceVrfDescriptor(nsPlugin nsplugin.API,
 		log:       log.NewLogger("interface-vrf-descriptor"),
 	}
 	typedDescr := &adapter.InterfaceVrfDescriptor{
-		Name:         InterfaceVrfDescriptorName,
-		KeySelector:  ctx.IsInterfaceVrfKey,
+		Name:        InterfaceVrfDescriptorName,
+		KeySelector: ctx.IsInterfaceVrfKey,
 		ValueComparator: func(_ string, _, _ *interfaces.Interface) bool {
 			// compare VRF assignments based on keys, not values that contain also other interface attributes
 			// needed by the descriptor
