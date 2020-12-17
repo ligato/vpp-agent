@@ -26,6 +26,7 @@ import (
 func TestAgentInSync(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
+
 	Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
@@ -33,14 +34,32 @@ func TestStartStopMicroservice(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	const msName = "microservice1"
-	key := ns.MicroserviceKey(msNamePrefix + msName)
+	const ms1 = "microservice1"
+	key := ns.MicroserviceKey(msNamePrefix + ms1)
 	msState := func() kvscheduler.ValueState {
 		return ctx.GetValueStateByKey(key)
 	}
 
-	ctx.StartMicroservice(msName)
+	ctx.StartMicroservice(ms1)
 	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
-	ctx.StopMicroservice(msName)
+
+	ctx.StopMicroservice(ms1)
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
+}
+
+func TestStartStopAgent(t *testing.T) {
+	ctx := Setup(t)
+	defer ctx.Teardown()
+
+	const agent1 = "agent1"
+	key := ns.MicroserviceKey(agent1)
+	msState := func() kvscheduler.ValueState {
+		return ctx.GetValueStateByKey(key)
+	}
+
+	ctx.StartAgent(agent1)
+	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
+
+	ctx.StopAgent(agent1)
 	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }

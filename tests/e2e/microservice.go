@@ -15,11 +15,10 @@ import (
 )
 
 const (
-	msImage       = "busybox"
-	msImageTag    = "1.31"
-	msStopTimeout = 3 // seconds
-	msLabelKey    = "e2e.test.ms"
-	msNamePrefix  = "e2e-test-"
+	msDefaultImage = "busybox:1.31"
+	msStopTimeout  = 1 // seconds
+	msLabelKey     = "e2e.test.ms"
+	msNamePrefix   = "e2e-test-ms-"
 )
 
 var (
@@ -27,67 +26,62 @@ var (
 )
 
 type microservice struct {
-	ctx          *TestCtx
-	name         string
+	ctx *TestCtx
+
+	name string
+
 	dockerClient *docker.Client
 	container    *docker.Container
 	nsCalls      nslinuxcalls.NetworkNamespaceAPI
 }
 
-type pingOpts struct {
-	allowedLoss int
-	outIface    string
-}
-
-type pingOpt func(opts *pingOpts)
-
-func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) *microservice {
+func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) (*microservice, error) {
 	msLabel := msNamePrefix + msName
-	container, err := dockerClient.CreateContainer(docker.CreateContainerOptions{
-		Name: msLabel,
+
+	opts := docker.CreateContainerOptions{
+		Context: ctx.ctx,
+		Name:    msLabel,
 		Config: &docker.Config{
-			Env:   []string{"MICROSERVICE_LABEL=" + msLabel},
-			Image: msImage + ":" + msImageTag,
-			Cmd:   []string{"tail", "-f", "/dev/null"},
+			Image: msDefaultImage,
 			Labels: map[string]string{
 				msLabelKey: msName,
 			},
+			Env: []string{"MICROSERVICE_LABEL=" + msLabel},
+			Cmd: []string{"tail", "-f", "/dev/null"},
 		},
 		HostConfig: &docker.HostConfig{
 			// networking configured via VPP in E2E tests
 			NetworkMode: "none",
 		},
-	})
-	if err != nil {
-		ctx.t.Fatalf("failed to create microservice '%s': %v", msName, err)
 	}
+
+	container, err := dockerClient.CreateContainer(opts)
+	if err != nil {
+		return nil, fmt.Errorf("create container '%s' error: %w", msName, err)
+	}
+
 	err = dockerClient.StartContainer(container.ID, nil)
 	if err != nil {
-		ctx.t.Fatalf("failed to start microservice '%s': %v", msName, err)
+		return nil, fmt.Errorf("start container '%s' error: %w", msName, err)
 	}
-	container, err = dockerClient.InspectContainer(container.ID)
+	container, err = dockerClient.InspectContainerWithOptions(docker.InspectContainerOptions{
+		Context: ctx.ctx,
+		ID:      container.ID,
+	})
 	if err != nil {
-		ctx.t.Fatalf("failed to inspect microservice '%s': %v", msName, err)
+		return nil, fmt.Errorf("inspect container '%s' error: %w", msName, err)
 	}
+
 	return &microservice{
 		ctx:          ctx,
 		name:         msName,
 		container:    container,
 		dockerClient: dockerClient,
 		nsCalls:      nsCalls,
-	}
+	}, nil
 }
 
-func resetMicroservices(t *testing.T, dockerClient *docker.Client) {
-	// pull image for microservices
-	err := dockerClient.PullImage(docker.PullImageOptions{
-		Repository: msImage,
-		Tag:        msImageTag,
-	}, docker.AuthConfiguration{})
-	if err != nil {
-		t.Fatalf("failed to pull image '%s:%s' for microservices: %v", msImage, msImageTag, err)
-	}
-
+func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 	// remove any running microservices prior to starting a new test
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,
@@ -122,17 +116,17 @@ func (ms *microservice) stop() error {
 	})
 }
 
-// exec allows to execute command **inside** the microservice - i.e. not just
+// execCmd allows to execute command **inside** the microservice - i.e. not just
 // inside the network namespace of the microservice, but inside the container
 // as a whole.
-func (ms *microservice) exec(cmdName string, args ...string) (output string, err error) {
+func (ms *microservice) execCmd(cmdName string, args ...string) (output string, err error) {
 	execCtx, err := ms.dockerClient.CreateExec(docker.CreateExecOptions{
 		AttachStdout: true,
 		Cmd:          append([]string{cmdName}, args...),
 		Container:    ms.container.ID,
 	})
 	if err != nil {
-		ms.ctx.t.Fatalf("failed to create docker exec instance for ping: %v", err)
+		ms.ctx.t.Fatalf("failed to create docker exec instance: %v", err)
 	}
 
 	var stdout bytes.Buffer
@@ -172,14 +166,52 @@ func (ms *microservice) enterNetNs() (exitNetNs func()) {
 	}
 }
 
+type pingOptions struct {
+	allowedLoss int    // percentage of allowed loss for success
+	outIface    string // outgoing interface name
+	maxTimeout  int    // timeout in seconds before ping exits
+	count       int    // number of pings
+}
+
+func newPingOpts(opts ...pingOpt) *pingOptions {
+	popts := &pingOptions{
+		allowedLoss: 49, // by default at least half of the packets should get through
+		maxTimeout:  4,
+	}
+	popts.init(opts...)
+	return popts
+}
+
+func (ping *pingOptions) init(opts ...pingOpt) {
+	for _, o := range opts {
+		o(ping)
+	}
+}
+
+func (ping *pingOptions) args() []string {
+	var args []string
+	if ping.maxTimeout > 0 {
+		args = append(args, "-w", fmt.Sprint(ping.maxTimeout))
+	}
+	if ping.count > 0 {
+		args = append(args, "-c", fmt.Sprint(ping.count))
+	}
+	if ping.outIface != "" {
+		args = append(args, "-I", ping.outIface)
+	}
+	return args
+}
+
+type pingOpt func(opts *pingOptions)
+
 func pingWithAllowedLoss(maxLoss int) pingOpt {
-	return func(opts *pingOpts) {
+	return func(opts *pingOptions) {
 		opts.allowedLoss = maxLoss
 	}
 }
 
 func pingWithOutInterface(iface string) pingOpt {
-	return func(opts *pingOpts) {
+	return func(opts *pingOptions) {
 		opts.outIface = iface
 	}
 }
@@ -187,19 +219,11 @@ func pingWithOutInterface(iface string) pingOpt {
 // ping <destAddress> from inside of the microservice.
 func (ms *microservice) ping(destAddress string, opts ...pingOpt) error {
 	ms.ctx.t.Helper()
-	params := &pingOpts{
-		allowedLoss: 49, // by default at least half of the packets should get through
-	}
-	for _, o := range opts {
-		o(params)
-	}
 
-	args := []string{"-w", "4"}
-	if params.outIface != "" {
-		args = append(args, "-I", params.outIface)
-	}
-	args = append(args, destAddress)
-	stdout, err := ms.exec("ping", args...)
+	ping := newPingOpts(opts...)
+	args := append(ping.args(), destAddress)
+
+	stdout, err := ms.execCmd("ping", args...)
 	if err != nil {
 		return err
 	}
@@ -212,7 +236,7 @@ func (ms *microservice) ping(destAddress string, opts ...pingOpt) error {
 	ms.ctx.logger.Printf("Linux ping %s: sent=%d, received=%d, loss=%d%%",
 		destAddress, sent, recv, loss)
 
-	if sent == 0 || loss > params.allowedLoss {
+	if sent == 0 || loss > ping.allowedLoss {
 		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
 	}
 	return nil

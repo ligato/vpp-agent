@@ -23,11 +23,6 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
-const (
-	configFileDir  = ".agentctl"
-	configFileName = "config"
-)
-
 // TLSConfig represents configuration for TLS.
 type TLSConfig struct {
 	Disabled   bool   `json:"disabled"`
@@ -56,13 +51,12 @@ type Config struct {
 // MakeConfig returns new Config with values from Viper.
 func MakeConfig() (*Config, error) {
 	// Prepare Viper.
-	viperSetConfigFile(configFileName, configFileDir)
+	viperSetConfigFile()
 	viperReadInConfig()
 
 	// Put configuration into "Config" struct.
-	cfg := &Config{}
-	err := viperUnmarshal(cfg)
-	if err != nil {
+	cfg := new(Config)
+	if err := viperUnmarshal(cfg); err != nil {
 		return nil, err
 	}
 

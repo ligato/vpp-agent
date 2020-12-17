@@ -36,6 +36,7 @@ BUILD_DIR := .build
 endif
 
 export GO111MODULE=on
+export DOCKER_BUILDKIT=1
 
 include vpp.env
 
@@ -53,6 +54,10 @@ SKIP_CHECK?=
 
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
+endif
+
+ifeq ($(NOTRIM),)
+GO_BUILD_ARGS += -trimpath
 endif
 
 ifeq ($(BUILDPIE),y)
@@ -177,14 +182,9 @@ integration-tests: test-tools ## Run integration tests
 	@echo "# running integration tests"
 	VPP_IMG=$(VPP_IMG) ./tests/integration/run_integration.sh
 
-e2e-tests: test-tools ## Run end-to-end tests
+e2e-tests: images test-tools ## Run end-to-end tests
 	@echo "# running end-to-end tests"
-	VPP_IMG=$(VPP_IMG) ./tests/e2e/run_e2e.sh
-
-e2e-tests-cover: ## Run end-to-end tests with coverage
-	@echo "# running end-to-end tests with coverage"
-	VPP_IMG=$(VPP_IMG) COVER_DIR=$(COVER_DIR) ./tests/e2e/run_e2e.sh
-	@echo "# coverage report generated into ${COVER_DIR}/e2e-cov.out"
+	VPP_AGENT=prod_vpp_agent ./tests/e2e/run_e2e.sh
 
 # -------------------------------
 #  Code generation
@@ -265,7 +265,7 @@ test-tools: ## install test tools
 ifndef gotestsumcmd
 	go get -v gotest.tools/gotestsum
 endif
-	env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
+	@env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
 
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 

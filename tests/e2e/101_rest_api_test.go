@@ -25,7 +25,7 @@ func TestInfoVersionHandler(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	version, err := ctx.agentctl.AgentVersion(context.Background())
+	version, err := ctx.agentClient.AgentVersion(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 	Expect(version.App).ToNot(BeEmpty())
 	Expect(version.Version).ToNot(BeEmpty())

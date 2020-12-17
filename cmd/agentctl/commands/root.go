@@ -68,8 +68,6 @@ func NewRootNamed(name string, agentCli *cli.AgentCli) *Root {
 	opts, flags, helpCmd = SetupRootCommand(cmd)
 
 	flags.BoolP("version", "v", false, "Print version info and quit")
-	flags.BoolVarP(&opts.Debug, "debug", "D", false, "Enable debug mode")
-	flags.StringVarP(&opts.LogLevel, "log-level", "l", "", `Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")`)
 
 	cmd.SetHelpCommand(helpCmd)
 	cmd.SetOut(agentCli.Out())

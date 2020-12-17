@@ -16,13 +16,11 @@ package e2e
 
 import (
 	"context"
-	. "github.com/onsi/gomega"
 	"testing"
 	"time"
 
-	"go.ligato.io/cn-infra/v2/logging"
+	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -130,8 +128,7 @@ func TestExistingInterface(t *testing.T) {
 		HostIfName:  ifaceHostName,
 	}
 
-	ifHandler := linuxcalls.NewNetLinkHandler(
-		nil, nil, "", 0, logging.DefaultLogger)
+	ifHandler := ctx.agent.LinuxInterfaceHandler()
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)
@@ -229,8 +226,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 		LinkOnly:    true, // <- agent does not configure IP addresses (they are also "existing")
 	}
 
-	ifHandler := linuxcalls.NewNetLinkHandler(
-		nil, nil, "", 0, logging.DefaultLogger)
+	ifHandler := ctx.agent.LinuxInterfaceHandler()
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)
