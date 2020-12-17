@@ -19,10 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -67,14 +65,6 @@ const (
 	//tapv1InputNode    = "tapcli-rx"
 	//afPacketInputNode = "af-packet-input"
 	//memifInputNode    = "memif-input"
-)
-
-// Setup options constants
-const (
-	NoManualInitialAgentResync   = "NoManualInitialAgentResync"
-	AdditionalAgentProcessParams = "AdditionalAgentProcessParams"
-	DontSetupVPPAgent            = "DontSetupVPPAgent"
-	SetupEtcdContainer           = "SetupEtcdContainer"
 )
 
 type TestCtx struct {
@@ -127,19 +117,17 @@ func NewTest(t *testing.T) *TestCtx {
 	return te
 }
 
-// Option is key-value pair for customizing setup of tests
-type Option struct {
-	key   string
-	value interface{}
-}
-
-func Setup(t *testing.T, options ...*Option) *TestCtx {
-	var err error
-	optionsMap := optionsMap(options)
+func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
+	// prepare setup options
+	opt := DefaultSetupOpt()
+	for _, optModifier := range options {
+		optModifier(opt)
+	}
 
 	testCtx := NewTest(t)
 
 	// connect to the docker daemon
+	var err error
 	testCtx.dockerClient, err = docker.NewClientFromEnv()
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
@@ -172,12 +160,12 @@ func Setup(t *testing.T, options ...*Option) *TestCtx {
 	}()
 
 	// setup Etcd
-	if _, found := optionsMap[SetupEtcdContainer]; found {
-		testCtx.Etcd = NewEtcdContainer(testCtx, options...)
+	if opt.SetupEtcd {
+		testCtx.Etcd = NewEtcdContainer(testCtx, extractEtcdOptions(opt))
 	}
 
-	if _, found := optionsMap[DontSetupVPPAgent]; !found {
-		SetupVPPAgent(testCtx)
+	if opt.SetupAgent {
+		SetupVPPAgent(testCtx, extractAgentOptions(opt))
 	}
 
 	return testCtx
@@ -238,15 +226,6 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	return nameOfDefaultAgent
 }
 
-func optionsMap(options []*Option) map[string]interface{} {
-	// convert options to map
-	optionsMap := make(map[string]interface{})
-	for _, option := range options {
-		optionsMap[option.key] = option.value
-	}
-	return optionsMap
-}
-
 func (test *TestCtx) Teardown() {
 	if test.t.Failed() || *debug {
 		defer test.dumpLog()
@@ -290,60 +269,6 @@ func (test *TestCtx) VppRelease() string {
 		return version[1:6]
 	}
 	return test.vppVersion
-}
-
-// WithoutManualInitialAgentResync is test setup option disabling manual agent resync just after agent setup
-func WithoutManualInitialAgentResync() func(o *AgentOpt) {
-	return func(o *AgentOpt) {
-		o.NoManualInitialResync = true
-	}
-}
-
-// WithAdditionalAgentCmdParams is test setup option adding additional command line parameters to executing vpp-agent
-func WithAdditionalAgentCmdParams(params ...string) func(o *AgentOpt) {
-	return func(o *AgentOpt) {
-		o.Env = append(o.Env, params...)
-	}
-}
-
-// WithPluginConfigArg persists configContent for give VPP-Agent plugin (expecting generic plugin config name)
-// and returns argument for VPP-Agent executable to use this plugin configuration file.
-func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) string {
-	configFilePath := CreateFileOnSharedVolume(ctx, fmt.Sprintf("%v.config", pluginName), configContent)
-	return fmt.Sprintf("%v_CONFIG=%v", strings.ToUpper(pluginName), configFilePath)
-}
-
-// FIXME container that will use it can have it mounted in different location as seen by the container where
-//  it is created (this works now due to the same mountpoint of shared volume in every container)
-
-// CreateFileOnSharedVolume persists fileContent to file in mounted shared volume used for sharing file
-// between containers. It returns the absolute path to the newly created file as seen by the container
-// that creates it.
-func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent string) string {
-	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
-		fmt.Sprintf("e2e-test-%v-%v", ctx.t.Name(), simpleFileName)))
-	Expect(err).To(Not(HaveOccurred()))
-	Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
-
-	// TODO register in context and delete in teardown? this doesn't matter
-	//  that much because file names contain unique test names so no file collision can happen
-	return filePath
-}
-
-// WithoutVPPAgent is test setup option disabling vpp-agent setup
-func WithoutVPPAgent() *Option {
-	return &Option{
-		key:   DontSetupVPPAgent,
-		value: struct{}{}, // only presence is needed
-	}
-}
-
-// WithEtcd is test setup option enabling vpp-agent setup
-func WithEtcd() *Option {
-	return &Option{
-		key:   SetupEtcdContainer,
-		value: struct{}{}, // only presence is needed
-	}
 }
 
 func (test *TestCtx) GenericClient() client.GenericClient {

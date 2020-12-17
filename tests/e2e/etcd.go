@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	docker "github.com/fsouza/go-dockerclient"
@@ -27,12 +28,6 @@ const (
 	etcdStopTimeout = 1 // seconds
 )
 
-// Setup options constants
-const (
-	HTTPsConnection             = "HTTPsConnection"
-	VPPAgentContainerNetworking = "VPPAgentContainerNetworking"
-)
-
 // TODO unify whether return errors or use test context's log fatal
 
 // EtcdContainer is represents running ETCD container
@@ -42,7 +37,7 @@ type EtcdContainer struct {
 }
 
 // NewEtcdContainer creates and starts new ETCD container
-func NewEtcdContainer(ctx *TestCtx, options ...*Option) *EtcdContainer {
+func NewEtcdContainer(ctx *TestCtx, options ...EtcdOptModifier) *EtcdContainer {
 	ec := &EtcdContainer{
 		ctx: ctx,
 	}
@@ -78,8 +73,11 @@ func (ec *EtcdContainer) Inspect() *docker.Container {
 	return container
 }
 
-func (ec *EtcdContainer) create(options ...*Option) *docker.Container {
-	optionsMap := optionsMap(options)
+func (ec *EtcdContainer) create(options ...EtcdOptModifier) *docker.Container {
+	opts := DefaultEtcdOpt()
+	for _, optionModifier := range options {
+		optionModifier(opts)
+	}
 
 	// pull image
 	err := ec.ctx.dockerClient.PullImage(docker.PullImageOptions{
@@ -95,7 +93,7 @@ func (ec *EtcdContainer) create(options ...*Option) *docker.Container {
 		"/usr/local/bin/etcd",
 	}
 	hostConfig := &docker.HostConfig{}
-	if _, found := optionsMap[HTTPsConnection]; found {
+	if opts.UseHTTPS {
 		cmd = append(cmd,
 			"--client-cert-auth",
 			"--trusted-ca-file=/etc/certs/ca.pem",
@@ -111,8 +109,8 @@ func (ec *EtcdContainer) create(options ...*Option) *docker.Container {
 			"--listen-client-urls=http://0.0.0.0:2379",
 		)
 	}
-	if _, found := optionsMap[VPPAgentContainerNetworking]; found {
-		hostConfig.NetworkMode = "container:vpp-agent-e2e-test"
+	if opts.UseAgentContainerForNetworking {
+		hostConfig.NetworkMode = fmt.Sprintf("container:e2e-test-vppagent-%v", AgentInstanceName(ec.ctx))
 	} else { // separate container networking (default)
 		hostConfig.PortBindings = map[docker.Port][]docker.PortBinding{
 			"2379/tcp": {{HostIP: "0.0.0.0", HostPort: "2379"}},
@@ -133,24 +131,6 @@ func (ec *EtcdContainer) create(options ...*Option) *docker.Container {
 		ec.ctx.t.Fatalf("failed to create ETCD container: %v", err)
 	}
 	return container
-}
-
-// WithEtcdHTTPsConnection is ETCD test setup option that will use HTTPS connection to ETCD (by default it is used
-// unsecure HTTP connection)
-func WithEtcdHTTPsConnection() *Option {
-	return &Option{
-		key:   HTTPsConnection,
-		value: struct{}{}, // only presence is needed
-	}
-}
-
-// WithEtcdVPPAgentContainerNetworking is ETCD test setup option that will use VPP-Agent test container for
-// networking (by default the ETCD has separate networking)
-func WithEtcdVPPAgentContainerNetworking() *Option {
-	return &Option{
-		key:   VPPAgentContainerNetworking,
-		value: struct{}{}, // only presence is needed
-	}
 }
 
 func (ec *EtcdContainer) start(container *docker.Container) {

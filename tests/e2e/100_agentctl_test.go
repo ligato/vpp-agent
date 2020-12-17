@@ -365,7 +365,7 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 }
 
 func TestAgentCtlSecureETCD(t *testing.T) {
-	ctx := Setup(t, WithEtcd(), WithEtcdHTTPsConnection(), WithEtcdVPPAgentContainerNetworking())
+	ctx := Setup(t, WithEtcd(WithEtcdHTTPsConnection(), WithEtcdVPPAgentContainerNetworking()))
 	defer ctx.Teardown()
 
 	// test without any TLS

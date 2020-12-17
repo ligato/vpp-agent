@@ -72,10 +72,10 @@ trap 'cleanup' EXIT
 echo "Creating volume for sharing files between containers.."
 if docker volume create "${sharevolumename}"
 then
-	echo >&2 -e " \e[32m...created\e[0m"
+	echo >&2 -e "\e[32m...created\e[0m"
 else
 	res=$?
-	echo >&2 -e " \e[31m...volume creation failed!\e[0m (exit code: $res)"
+	echo >&2 -e "\e[31m...volume creation failed!\e[0m (exit code: $res)"
 	exit $res
 fi
 
