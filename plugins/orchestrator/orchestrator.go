@@ -19,18 +19,20 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/reflection"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -149,17 +151,23 @@ func (p *Plugin) Close() (err error) {
 	return nil
 }
 
-// InitialSync will start initial synchronization with downstream.
-func (p *Plugin) InitialSync() {
-	// FIXME: KVScheduler needs to have some type of sync that only refreshes state from SB
-	p.Log.Debugf("starting initial sync")
+// InitialSync will start initial synchronization.
+func (p *Plugin) InitialSync() error {
+	// SB resync
+	p.Log.Debugf("starting initial SB sync")
 	txn := p.KVScheduler.StartNBTransaction()
 	ctx := kvs.WithResync(context.Background(), kvs.DownstreamResync, true)
 	if _, err := txn.Commit(ctx); err != nil {
-		p.Log.Warnf("initial sync failed: %v", err)
-	} else {
-		p.Log.Infof("initial sync complete")
+		return errors.Errorf("initial SB sync failed: %v", err)
 	}
+	p.Log.Infof("initial SB sync complete")
+
+	// NB resync
+	p.Log.Debugf("starting initial NB sync")
+	resync.DefaultPlugin.DoResync() // NB init file data is also resynced here
+	p.Log.Infof("initial NB sync complete")
+
+	return nil
 }
 
 func (p *Plugin) watchEvents() {
@@ -202,9 +210,9 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			_, withDataSrc := DataSrcFromContext(ctx)
+			_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
 			if !withDataSrc {
-				ctx = DataSrcContext(ctx, "datasync")
+				ctx = contextdecorator.DataSrcContext(ctx, "datasync")
 			}
 			ctx = kvs.WithRetryDefault(ctx)
 
@@ -248,9 +256,9 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			_, withDataSrc := DataSrcFromContext(ctx)
+			_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
 			if !withDataSrc {
-				ctx = DataSrcContext(ctx, "datasync")
+				ctx = contextdecorator.DataSrcContext(ctx, "datasync")
 			}
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)

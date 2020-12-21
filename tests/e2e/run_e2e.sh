@@ -14,6 +14,8 @@ export DOCKER_BUILDKIT=1
 
 testname="vpp-agent-e2e-test"
 imgname="vpp-agent-e2e-tests"
+etcdcontainername="e2e-test-etcd"
+sharevolumename="share-for-vpp-agent-e2e-tests"
 
 # Compile agentctl for testing
 go build -o ./tests/e2e/agentctl.test \
@@ -46,9 +48,36 @@ cleanup() {
 	set -x
 	docker stop -t 1 "${testname}" 2>/dev/null
 	docker rm -v "${testname}" 2>/dev/null
+	set +x
+
+  echo "Stopping etcd container if running"
+  if [ "$(docker ps -a | grep "${etcdcontainername}")" ]; then
+    set -x
+    docker stop -t 1 "${etcdcontainername}" 2>/dev/null
+    docker rm -v "${etcdcontainername}" 2>/dev/null
+    set +x
+  fi
+
+  echo "Removing volume for sharing files between containers"
+  if [ "$(docker volume ls | grep "${sharevolumename}")" ]; then
+    set -x
+    docker volume rm -f "${sharevolumename}"
+    set +x
+  fi
+
 }
 
 trap 'cleanup' EXIT
+
+echo "Creating volume for sharing files between containers.."
+if docker volume create "${sharevolumename}"
+then
+	echo >&2 -e "\e[32m...created\e[0m"
+else
+	res=$?
+	echo >&2 -e "\e[31m...volume creation failed!\e[0m (exit code: $res)"
+	exit $res
+fi
 
 vppver=$(docker run --rm -i "$VPP_AGENT" dpkg-query -f '${Version}' -W vpp)
 
@@ -71,6 +100,7 @@ if docker run -it \
 	--label io.ligato.vpp-agent.testname="${testname}" \
 	--volume "${TESTDATA_DIR}":/testdata:ro \
 	--volume /var/run/docker.sock:/var/run/docker.sock \
+	--volume "${sharevolumename}":/test-share \
 	--env TESTDATA_DIR \
 	--env INITIAL_LOGLVL \
 	--env VPP_AGENT \

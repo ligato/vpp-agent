@@ -23,6 +23,7 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -118,7 +119,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		})
 	}
 
-	ctx = DataSrcContext(ctx, "grpc")
+	ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 	if req.OverwriteAll {
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}

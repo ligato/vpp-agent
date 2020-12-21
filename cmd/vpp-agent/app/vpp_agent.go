@@ -15,11 +15,11 @@
 package app
 
 import (
+	"github.com/go-errors/errors"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/msgsync"
-	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/db/keyval/consul"
 	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
 	"go.ligato.io/cn-infra/v2/db/keyval/redis"
@@ -28,7 +28,6 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging/logmanager"
 	"go.ligato.io/cn-infra/v2/messaging/kafka"
-
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
 	linux_iptablesplugin "go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin"
@@ -36,6 +35,8 @@ import (
 	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/localregistry"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/watcher"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin"
@@ -100,12 +101,14 @@ func New() *VPPAgent {
 	)
 
 	// Set watcher for KVScheduler.
-	watchers := datasync.KVProtoWatchers{
+	initFileRegistry := localregistry.NewInitFileRegistryPlugin()
+	watchers := watcher.NewPlugin(watcher.UseWatchers(
 		local.DefaultRegistry,
+		initFileRegistry,
 		etcdDataSync,
 		consulDataSync,
 		redisDataSync,
-	}
+	))
 	orchestrator.DefaultPlugin.Watcher = watchers
 	orchestrator.DefaultPlugin.StatusPublisher = writers
 	orchestrator.EnabledGrpcMetrics()
@@ -157,9 +160,9 @@ func (a *VPPAgent) Init() error {
 
 // AfterInit executes resync.
 func (a *VPPAgent) AfterInit() error {
-	// manually start resync after all plugins started
-	resync.DefaultPlugin.DoResync()
-	//orchestrator.DefaultPlugin.InitialSync()
+	if err := orchestrator.DefaultPlugin.InitialSync(); err != nil {
+		return errors.Errorf("failure in initial sync: %v", err)
+	}
 	a.StatusCheck.ReportStateChange(a.PluginName, statuscheck.OK, nil)
 	return nil
 }

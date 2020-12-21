@@ -150,5 +150,5 @@ func (m *LocallyKnownModel) InstanceName(x interface{}) (string, error) {
 	if m.nameFunc == nil {
 		return "", nil
 	}
-	return m.nameFunc(x)
+	return m.nameFunc(x, m.goType)
 }

@@ -36,18 +36,20 @@ var (
 // LocalRegistry defines model registry for managing registered local models. Local models are locally compiled into
 // the program binary and hence some additional information in compare to remote models, i.e. go type.
 type LocalRegistry struct {
-	registeredTypes map[reflect.Type]*LocallyKnownModel
-	modelNames      map[string]*LocallyKnownModel
-	ordered         []reflect.Type
-	proxied         *RemoteRegistry
+	registeredModelsByGoType    map[reflect.Type]*LocallyKnownModel
+	registeredModelsByProtoName map[string]*LocallyKnownModel
+	modelNames                  map[string]*LocallyKnownModel
+	ordered                     []reflect.Type
+	proxied                     *RemoteRegistry
 }
 
 // NewRegistry returns initialized Registry.
 func NewRegistry() *LocalRegistry {
 	return &LocalRegistry{
-		registeredTypes: make(map[reflect.Type]*LocallyKnownModel),
-		modelNames:      make(map[string]*LocallyKnownModel),
-		proxied:         NewRemoteRegistry(),
+		registeredModelsByGoType:    make(map[reflect.Type]*LocallyKnownModel),
+		registeredModelsByProtoName: make(map[string]*LocallyKnownModel),
+		modelNames:                  make(map[string]*LocallyKnownModel),
+		proxied:                     NewRemoteRegistry(),
 	}
 }
 
@@ -66,12 +68,35 @@ func (r *LocalRegistry) GetModel(name string) (KnownModel, error) {
 
 // GetModelFor returns registered model for the given proto message.
 func (r *LocalRegistry) GetModelFor(x interface{}) (KnownModel, error) {
+	// find model by Go type
 	t := reflect.TypeOf(x)
-	model, found := r.registeredTypes[t]
+	model, found := r.registeredModelsByGoType[t]
 	if !found {
+		// check remotely retrieved models registered in local registry
 		if proxModel, err := r.proxied.GetModelFor(x); err == nil {
 			return proxModel, nil
 		}
+
+		// find model by Proto name
+		// (useful when using dynamically generated config instead of configurator.Config => go type of proto
+		// messages is in such case always dynamicpb.Message and never the go type of registered (generated)
+		// proto message)
+		if len(r.registeredModelsByProtoName) == 0 && len(r.registeredModelsByGoType) > 0 {
+			r.lazyInitRegisteredTypesByProtoName()
+		}
+		var protoName string
+		if pb, ok := x.(protoreflect.ProtoMessage); ok {
+			protoName = string(pb.ProtoReflect().Descriptor().FullName())
+		} else if v1, ok := x.(proto.Message); ok {
+			protoName = string(proto.MessageV2(v1).ProtoReflect().Descriptor().FullName())
+		}
+		if protoName != "" {
+			if model, found = r.registeredModelsByProtoName[protoName]; found {
+				return model, nil
+			}
+		}
+
+		// find model by checking proto options
 		if model = r.checkProtoOptions(x); model == nil {
 			return &LocallyKnownModel{}, fmt.Errorf("no model registered for type %v", t)
 		}
@@ -79,9 +104,23 @@ func (r *LocalRegistry) GetModelFor(x interface{}) (KnownModel, error) {
 	return model, nil
 }
 
+// lazyInitRegisteredTypesByProtoName performs lazy initialization of registeredModelsByProtoName. The reason
+// why initialization can't happen while registration (call of func Register(...)) is that some proto reflect
+// functionality is not available during this time. The registration happens as variable initialization, but
+// the reflection is initialized in init() func and that happens after variable initialization.
+//
+// Alternative solution would be to change when the models are registered (VPP-Agent have it like described
+// above and 3rd party model are probably copying the same behaviour). So to not break anything, the lazy
+// initialization seems like the best solution for now.
+func (r *LocalRegistry) lazyInitRegisteredTypesByProtoName() {
+	for _, model := range r.registeredModelsByGoType {
+		r.registeredModelsByProtoName[model.ProtoName()] = model // ProtoName() == ProtoReflect().Descriptor().FullName()
+	}
+}
+
 // GetModelForKey returns registered model for the given key or error.
 func (r *LocalRegistry) GetModelForKey(key string) (KnownModel, error) {
-	for _, model := range r.registeredTypes {
+	for _, model := range r.registeredModelsByGoType {
 		if model.IsKeyValid(key) {
 			return model, nil
 		}
@@ -96,7 +135,7 @@ func (r *LocalRegistry) GetModelForKey(key string) (KnownModel, error) {
 func (r *LocalRegistry) RegisteredModels() []KnownModel {
 	var models []KnownModel
 	for _, typ := range r.ordered {
-		models = append(models, r.registeredTypes[typ])
+		models = append(models, r.registeredModelsByGoType[typ])
 	}
 	models = append(models, r.proxied.RegisteredModels()...)
 	return models
@@ -109,7 +148,7 @@ func (r *LocalRegistry) MessageTypeRegistry() *protoregistry.Types {
 		typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.proto.ProtoReflect().Descriptor()))
 	}
 	proxiedTypes := r.proxied.MessageTypeRegistry()
-	proxiedTypes.RangeMessages(func (mt protoreflect.MessageType) bool {
+	proxiedTypes.RangeMessages(func(mt protoreflect.MessageType) bool {
 		typeRegistry.RegisterMessage(mt)
 		return true
 	})
@@ -135,7 +174,7 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 
 	goType := reflect.TypeOf(x)
 	// Check go type duplicate registration
-	if m, ok := r.registeredTypes[goType]; ok {
+	if m, ok := r.registeredModelsByGoType[goType]; ok {
 		return nil, fmt.Errorf("go type %v already registered for model %v", goType, m.Name())
 	}
 
@@ -173,7 +212,15 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 
 	// Use GetName as fallback for generating name
 	if _, ok := x.(named); ok {
-		model.nameFunc = func(obj interface{}) (s string, e error) {
+		model.nameFunc = func(obj interface{}, messageGoType reflect.Type) (s string, e error) {
+			// handling dynamic messages (they don't implement named interface)
+			if dynMessage, ok := obj.(*dynamicpb.Message); ok {
+				obj, e = dynamicMessageToGeneratedMessage(dynMessage, messageGoType)
+				if e != nil {
+					return "", e
+				}
+			}
+			// handling other proto message
 			return obj.(named).GetName(), nil
 		}
 		model.nameTemplate = namedTemplate
@@ -184,7 +231,7 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 		opt(&model.modelOptions)
 	}
 
-	r.registeredTypes[goType] = model
+	r.registeredModelsByGoType[goType] = model
 	r.modelNames[model.Name()] = model
 	r.ordered = append(r.ordered, goType)
 

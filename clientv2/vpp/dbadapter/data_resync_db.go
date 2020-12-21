@@ -18,11 +18,10 @@ import (
 	"context"
 
 	"go.ligato.io/cn-infra/v2/db/keyval"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 
 	vppclient "go.ligato.io/vpp-agent/v3/clientv2/vpp"
-	orch "go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	abf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf"
 	acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -367,7 +366,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 	}
 
 	ctx := context.Background()
-	ctx = orch.DataSrcContext(ctx, "localclient")
+	ctx = contextdecorator.DataSrcContext(ctx, "localclient")
 	err := dsl.txn.Commit(ctx)
 
 	return &Reply{err: err}

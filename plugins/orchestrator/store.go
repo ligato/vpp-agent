@@ -15,7 +15,6 @@
 package orchestrator
 
 import (
-	"context"
 	"sort"
 
 	"github.com/golang/protobuf/proto"
@@ -82,17 +81,4 @@ func (s *memStore) Delete(dataSrc, key string) {
 // Reset clears all key-value data.
 func (s *memStore) Reset(dataSrc string) {
 	delete(s.db, dataSrc)
-}
-
-type dataSrcKeyT string
-
-var dataSrcKey = dataSrcKeyT("dataSrc")
-
-func DataSrcContext(ctx context.Context, dataSrc string) context.Context {
-	return context.WithValue(ctx, dataSrcKey, dataSrc)
-}
-
-func DataSrcFromContext(ctx context.Context) (dataSrc string, ok bool) {
-	dataSrc, ok = ctx.Value(dataSrcKey).(string)
-	return
 }

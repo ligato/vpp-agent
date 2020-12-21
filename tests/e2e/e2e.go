@@ -51,13 +51,14 @@ var (
 )
 
 const (
-	etcdImage = "gcr.io/etcd-development/etcd"
-
 	agentInitTimeout     = time.Second * 15
 	processExitTimeout   = time.Second * 3
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
 	execTimeout          = 10 * time.Second
+	defaultTestShareDir  = "/test-share"
+	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
+	nameOfDefaultAgent   = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
 	tapv2InputNode = "virtio-input"
@@ -67,11 +68,14 @@ const (
 )
 
 type TestCtx struct {
+	Etcd *EtcdContainer // TODO change?
+
 	t      *testing.T
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	testDataDir string
+	testDataDir  string
+	testShareDir string
 
 	agent         *agent
 	agents        map[string]*agent
@@ -102,6 +106,7 @@ func NewTest(t *testing.T) *TestCtx {
 	te := &TestCtx{
 		t:             t,
 		testDataDir:   os.Getenv("TESTDATA_DIR"),
+		testShareDir:  defaultTestShareDir,
 		agents:        make(map[string]*agent),
 		microservices: make(map[string]*microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
@@ -112,12 +117,17 @@ func NewTest(t *testing.T) *TestCtx {
 	return te
 }
 
-func Setup(t *testing.T) *TestCtx {
-	var err error
+func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
+	// prepare setup options
+	opt := DefaultSetupOpt()
+	for _, optModifier := range options {
+		optModifier(opt)
+	}
 
 	testCtx := NewTest(t)
 
 	// connect to the docker daemon
+	var err error
 	testCtx.dockerClient, err = docker.NewClientFromEnv()
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
@@ -130,7 +140,7 @@ func Setup(t *testing.T) *TestCtx {
 	removeDanglingAgents(t, testCtx.dockerClient)
 	removeDanglingMicroservices(t, testCtx.dockerClient)
 
-	// if setupE2E fails we need to stop started processes
+	// if setupE2E fails we need to stop started containers
 	defer func() {
 		if testCtx.t.Failed() || *debug {
 			testCtx.dumpLog()
@@ -141,39 +151,80 @@ func Setup(t *testing.T) *TestCtx {
 					t.Logf("failed to stop vpp-agent: %v", err)
 				}
 			}
+			if testCtx.Etcd != nil {
+				if err := testCtx.Etcd.Terminate(); err != nil {
+					t.Logf("failed to terminate etcd due to: %v", err)
+				}
+			}
 		}
 	}()
 
-	testCtx.agent = testCtx.StartAgent("agent0")
-	agentAddr := testCtx.agent.IPAddress()
+	// setup Etcd
+	if opt.SetupEtcd {
+		testCtx.Etcd, err = NewEtcdContainer(testCtx, extractEtcdOptions(opt))
+		Expect(err).ShouldNot(HaveOccurred())
+	}
+
+	if opt.SetupAgent {
+		SetupVPPAgent(testCtx, extractAgentOptions(opt))
+	}
+
+	return testCtx
+}
+
+func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
+	// prepare options
+	options := DefaultAgentOpt()
+	for _, optionsModifier := range opts {
+		optionsModifier(options)
+	}
+
+	// start agent container
+	testCtx.agent = testCtx.StartAgent(nameOfDefaultAgent, opts...) // not passing prepared options due to public visibility
 
 	// interact with the agent using the client from agentctl
+	agentAddr := testCtx.agent.IPAddress()
+	var err error
 	testCtx.agentClient, err = agentctl.NewClientWithOpts(
 		agentctl.WithHost(agentAddr),
 		agentctl.WithGrpcPort(*agentGrpcPort),
 		agentctl.WithHTTPPort(*agentHTTPPort))
 	if err != nil {
-		t.Fatalf("Failed to create VPP-agent client: %v", err)
+		testCtx.t.Fatalf("Failed to create VPP-agent client: %v", err)
 	}
 
+	// wait to agent to start properly
 	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
 
 	// run initial resync
-	testCtx.syncAgent()
+	if !options.NoManualInitialResync {
+		testCtx.syncAgent()
+	}
 
+	// fill VPP version (this depends on agentctl and that depends on agent to be set up)
 	if version, err := testCtx.ExecVppctl("show version"); err != nil {
-		t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
+		testCtx.t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
 	} else {
 		versionParts := strings.SplitN(version, " ", 3)
 		if len(versionParts) > 1 {
 			testCtx.vppVersion = version
-			t.Logf("VPP version: %v", testCtx.vppVersion)
+			testCtx.t.Logf("VPP version: %v", testCtx.vppVersion)
 		} else {
-			t.Logf("invalid VPP version: %q", version)
+			testCtx.t.Logf("invalid VPP version: %q", version)
 		}
 	}
+}
 
-	return testCtx
+// AgentInstanceName provides instance name of VPP-Agent that is created by setup by default. This name is
+// used i.e. in ETCD key prefix.
+func AgentInstanceName(testCtx *TestCtx) string {
+	//TODO API boundaries becomes blurry as tests and support structures are in the same package and there
+	// is strong temptation to misuse it and create an unmaintainable dependency mesh -> create different
+	// package for test supporting files (setup/teardown/util stuff) and define clear boundaries
+	if testCtx.agent != nil {
+		return testCtx.agent.name
+	}
+	return nameOfDefaultAgent
 }
 
 func (test *TestCtx) Teardown() {
@@ -196,8 +247,16 @@ func (test *TestCtx) Teardown() {
 		test.t.Logf("closing the client failed: %v", err)
 	}
 
+	// TODO check fon non-nil?
 	if err := test.agent.stop(); err != nil {
 		test.t.Logf("failed to stop vpp-agent: %v", err)
+	}
+
+	// terminate etcd
+	if test.Etcd != nil {
+		if err := test.Etcd.Terminate(); err != nil {
+			test.t.Logf("failed to terminate ETCD: %v", err)
+		}
 	}
 }
 
@@ -318,7 +377,7 @@ func (test *TestCtx) StopMicroservice(name string) {
 	delete(test.microservices, name)
 }
 
-func (test *TestCtx) StartAgent(name string, o ...*AgentOpt) *agent {
+func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *agent {
 	test.t.Helper()
 
 	if _, ok := test.agents[name]; ok {
@@ -327,8 +386,8 @@ func (test *TestCtx) StartAgent(name string, o ...*AgentOpt) *agent {
 
 	// prepare agent options
 	opt := DefaultAgentOpt()
-	if len(o) > 0 {
-		opt = o[0]
+	for _, optModifier := range opts {
+		optModifier(opt)
 	}
 	opt.Env = append(opt.Env, "MICROSERVICE_LABEL="+name)
 

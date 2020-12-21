@@ -16,10 +16,13 @@ package models
 
 import (
 	"path"
+	"reflect"
 	"strings"
 
 	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
+	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 // Register registers model in DefaultRegistry.
@@ -135,4 +138,35 @@ func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
 		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
 	}
 	return keyPrefix
+}
+
+// dynamicMessageToGeneratedMessage converts proto dynamic message to corresponding generated proto message
+// (identified by go type).
+// This conversion method should help handling dynamic proto messages in mostly protoc-generated proto message
+// oriented codebase (i.e. help for type conversions to named, help handle missing data fields as seen
+// in generated proto messages,...)
+func dynamicMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message,
+	goTypeOfGeneratedMessage reflect.Type) (proto.Message, error) {
+
+	// create empty proto message of the same type as it was used for registration
+	var registeredGoType interface{}
+	if goTypeOfGeneratedMessage.Kind() == reflect.Ptr {
+		registeredGoType = reflect.New(goTypeOfGeneratedMessage.Elem()).Interface()
+	} else {
+		registeredGoType = reflect.Zero(goTypeOfGeneratedMessage).Interface()
+	}
+	message, isProtoV1 := registeredGoType.(proto.Message)
+	if !isProtoV1 {
+		messageV2, isProtoV2 := registeredGoType.(protoV2.Message)
+		if !isProtoV2 {
+			return nil, errors.Errorf("registered go type(%T) is not proto.Message", registeredGoType)
+		}
+		message = proto.MessageV1(messageV2)
+	}
+
+	// fill empty proto message with data from its dynamic proto message counterpart
+	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
+	proto.Merge(message, dynamicMessage)
+
+	return message, nil
 }

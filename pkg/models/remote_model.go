@@ -29,7 +29,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-// RemotelyKnownModel represents a registered remnote model (remote model has only information about model
+// RemotelyKnownModel represents a registered remote model (remote model has only information about model
 // from remote source, i.e. missing go type because VPP-Agent meta service doesn't provide it)
 type RemotelyKnownModel struct {
 	model *ModelInfo
@@ -155,7 +155,7 @@ func (m *RemotelyKnownModel) InstanceName(x interface{}) (string, error) {
 		return "", errors.Errorf("can't load json of marshalled "+
 			"message to generic map due to: %v (json=%v)", err, jsonData)
 	}
-	name, err := NameTemplate(nameTemplate)(mapData)
+	name, err := NameTemplate(nameTemplate)(mapData, nil)
 	if err != nil {
 		return "", errors.Errorf("can't compute name from name template by applying generic map "+
 			"due to: %v (name template=%v, generic map=%v)", err, nameTemplate, mapData)

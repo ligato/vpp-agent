@@ -24,6 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -102,7 +103,7 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 
 	pr := trace.StartRegion(ctx, "prepare kv data")
 
-	dataSrc, ok := DataSrcFromContext(ctx)
+	dataSrc, ok := contextdecorator.DataSrcFromContext(ctx)
 	if !ok {
 		dataSrc = "global"
 	}

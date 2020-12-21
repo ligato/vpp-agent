@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -32,42 +31,9 @@ import (
 )
 
 const (
-	vppAgentDefaultImg = "ligato/vpp-agent:latest"
 	vppAgentLabelKey   = "e2e.test.vppagent"
 	vppAgentNamePrefix = "e2e-test-vppagent-"
 )
-
-type AgentOpt struct {
-	Image             string
-	Env               []string
-	UseEtcd           bool
-	ContainerOptsHook func(*docker.CreateContainerOptions)
-}
-
-func DefaultAgentOpt() *AgentOpt {
-	agentImg := vppAgentDefaultImg
-	if img := os.Getenv("VPP_AGENT"); img != "" {
-		agentImg = img
-	}
-	grpcConfig := "grpc.conf"
-	if val := os.Getenv("GRPC_CONFIG"); val != "" {
-		grpcConfig = val
-	}
-	etcdConfig := "DISABLED"
-	if val := os.Getenv("ETCD_CONFIG"); val != "" {
-		etcdConfig = val
-	}
-	opt := &AgentOpt{
-		Image:   agentImg,
-		UseEtcd: false,
-		Env: []string{
-			"INITIAL_LOGLVL=" + logging.DefaultLogger.GetLevel().String(),
-			"ETCD_CONFIG=" + etcdConfig,
-			"GRPC_CONFIG=" + grpcConfig,
-		},
-	}
-	return opt
-}
 
 type agent struct {
 	*AgentOpt
@@ -102,6 +68,7 @@ func startAgent(ctx *TestCtx, name string, opt *AgentOpt) (*agent, error) {
 				"/var/run/docker.sock:/var/run/docker.sock",
 				ctx.testDataDir + ":/testdata:ro",
 				filepath.Join(ctx.testDataDir, "certs") + ":/etc/certs:ro",
+				shareVolumeName + ":" + ctx.testShareDir,
 			},
 		},
 	}

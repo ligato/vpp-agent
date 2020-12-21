@@ -33,6 +33,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	pb "go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
@@ -110,7 +111,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 
-	ctx = orchestrator.DataSrcContext(ctx, "grpc")
+	ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 	results, err := svc.dispatch.PushData(ctx, kvPairs)
 
 	header := map[string]string{}
@@ -181,7 +182,7 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *pb.DeleteRequest
 		})
 	}
 
-	ctx = orchestrator.DataSrcContext(ctx, "grpc")
+	ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 	results, err := svc.dispatch.PushData(ctx, kvPairs)
 
 	header := map[string]string{}

@@ -20,12 +20,14 @@ import (
 	"strings"
 
 	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/utils/safeclose"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/localregistry"
 )
 
 // Option is a function that acts on a Plugin to inject Dependencies or configuration
@@ -92,6 +94,29 @@ func (p *Aggregator) Watch(
 			p.Log.Warn("found local registry (localclient) in watchers, ignoring it..")
 			continue
 		}
+		// ignoring watchers that have data sources that will be never used and
+		// therefore never send configuration data to this aggregator
+		if syncer, ok := w.(*kvdbsync.Plugin); ok {
+			if syncer.KvPlugin != nil && syncer.KvPlugin.Disabled() {
+				continue
+			}
+		}
+		// TODO Handle kvdbsync.Plugin watchers that are not disabled, but won't transmit any resync data.
+		//  This aggregator collects resyncs from all watchers, but if one or more resync from watcher don't happen,
+		//  the agregator resyncing won't be triggered. This might happen when one of watchers is not registered
+		//  to resync plugin and that is usually due to not connecting to data source as the registration to
+		//  resync plugin happen in OnConnect callback function.
+		//  To properly handle the situation, OnConnect callback must be used to distinguish what watched is
+		//  reached by resync trigger. That might lead to delayed readiness of all watchers and hence the trigger
+		//  for initial call of DoResync() to do initial Agent resync must be delayed as well SOMEHOW (can't use
+		//  init or after init of plugins).
+
+		// localregistry.InitFileRegistry can also be watcher that never sends anything (i.e. if misconfigured
+		// or no default init file is present or loading of data fails or ... -> check for Empty())
+		if initRegistry, ok := w.(*localregistry.InitFileRegistry); ok && initRegistry.Empty() {
+			continue
+		}
+
 		watchers = append(watchers, w)
 	}
 	p.Watchers = watchers
@@ -109,7 +134,7 @@ func (p *Aggregator) Watch(
 		partResync := make(chan datasync.ResyncEvent)
 
 		name := fmt.Sprint(adapter) + "/" + resyncName
-		watcherReg, err := adapter.Watch(name, changeChan, partResync, keyPrefixes...)
+		watcherReg, err := adapter.Watch(name, partChange, partResync, keyPrefixes...)
 		if err != nil {
 			return nil, err
 		}
@@ -286,7 +311,7 @@ func (p *Aggregator) watchLocalEvents(partChange, changeChan chan datasync.Chang
 			e.Done(nil)
 
 			p.Log.Debug("LOCAL watcher calling RESYNC")
-			p.Resync.DoResync()
+			p.Resync.DoResync() // execution will appear in p.watchAggrResync go routine where p.localKVs will handled
 		}
 	}
 }
