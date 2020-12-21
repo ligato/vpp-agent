@@ -70,7 +70,7 @@ var (
 		Type:    "dhcp-proxy",
 		Version: "v2",
 	}, models.WithNameTemplate(
-		`{{ protoip .SourceIpAddress}}`,
+		`{{ protoip .SourceIpAddress}}/rx-vrf/{{.RxVrfId}}`,
 	))
 
 	ModelL3XC = models.Register(&L3XConnect{}, models.Spec{
@@ -135,9 +135,10 @@ func VrfTableKey(id uint32, protocol VrfTable_Protocol) string {
 }
 
 // DHCPProxyKey returns key for DHCP proxy
-func DHCPProxyKey(srcIP string) string {
+func DHCPProxyKey(srcIP string, rxVrf uint32) string {
 	return models.Key(&DHCPProxy{
 		SourceIpAddress: srcIP,
+		RxVrfId:         rxVrf,
 	})
 }
 

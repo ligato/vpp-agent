@@ -176,7 +176,7 @@ func (m *RemotelyKnownModel) replaceFieldNamesInNameTemplate(messageDesc protore
 	for i := 0; i < messageDesc.Fields().Len(); i++ {
 		fieldDesc := messageDesc.Fields().Get(i)
 		pbJSONName := fieldDesc.JSONName()
-		nameTemplate = strings.ReplaceAll(nameTemplate, m.upperFirst(pbJSONName), pbJSONName)
+		nameTemplate = strings.ReplaceAll(nameTemplate, "." + m.upperFirst(pbJSONName), "." + pbJSONName)
 		if fieldDesc.Message() != nil {
 			nameTemplate = m.replaceFieldNamesInNameTemplate(fieldDesc.Message(), nameTemplate)
 		}

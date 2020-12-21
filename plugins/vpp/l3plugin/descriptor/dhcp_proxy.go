@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/pkg/errors"
@@ -32,7 +33,8 @@ const (
 	DHCPProxyDescriptorName = "dhcp-proxy"
 
 	//dependecy labels
-	vrfTableDependency = "vrf-table-exists"
+	rxVrfTableDependency = "rx-vrf-table-exists"
+	dhcpSrvVrfTableDependency = "vrf-table-%d-used-by-dhcp-server-exists"
 )
 
 // DHCPProxyDescriptor teaches KVScheduler how to configure VPP DHCP proxy.
@@ -99,7 +101,7 @@ func (d *DHCPProxyDescriptor) Dependencies(key string, value *l3.DHCPProxy) (dep
 
 	if value.RxVrfId != 0 {
 		deps = append(deps, kvs.Dependency{
-			Label: vrfTableDependency,
+			Label: rxVrfTableDependency,
 			Key:   l3.VrfTableKey(value.RxVrfId, protocol),
 		})
 	}
@@ -107,7 +109,7 @@ func (d *DHCPProxyDescriptor) Dependencies(key string, value *l3.DHCPProxy) (dep
 	for _, server := range value.Servers {
 		if server.VrfId != 0 {
 			deps = append(deps, kvs.Dependency{
-				Label: vrfTableDependency,
+				Label: fmt.Sprintf(dhcpSrvVrfTableDependency, server.VrfId),
 				Key:   l3.VrfTableKey(server.VrfId, protocol),
 			})
 		}
@@ -147,7 +149,7 @@ func (d *DHCPProxyDescriptor) Retrieve(correlate []adapter.DHCPProxyKVWithMetada
 
 	for _, detail := range dhcpProxyDetails {
 		retrieved = append(retrieved, adapter.DHCPProxyKVWithMetadata{
-			Key:    l3.DHCPProxyKey(detail.DHCPProxy.SourceIpAddress),
+			Key:    l3.DHCPProxyKey(detail.DHCPProxy.SourceIpAddress, detail.DHCPProxy.RxVrfId),
 			Value:  detail.DHCPProxy,
 			Origin: kvs.FromNB,
 		})
