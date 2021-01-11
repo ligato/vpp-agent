@@ -27,6 +27,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -119,7 +120,12 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		})
 	}
 
-	ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+	md, hasMeta := metadata.FromIncomingContext(ctx)
+	if hasMeta && len(md["datasrc"]) == 1 {
+		ctx = contextdecorator.DataSrcContext(ctx, md["datasrc"][0])
+	} else {
+		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+	}
 	if req.OverwriteAll {
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
