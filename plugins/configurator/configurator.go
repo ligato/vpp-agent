@@ -111,7 +111,12 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 
-	ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+	md, hasMeta := metadata.FromIncomingContext(ctx)
+	if hasMeta && len(md["datasrc"]) == 1 {
+		ctx = contextdecorator.DataSrcContext(ctx, md["datasrc"][0])
+	} else {
+		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+	}
 	results, err := svc.dispatch.PushData(ctx, kvPairs)
 
 	header := map[string]string{}
@@ -182,7 +187,12 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *pb.DeleteRequest
 		})
 	}
 
-	ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+	md, hasMeta := metadata.FromIncomingContext(ctx)
+	if hasMeta && len(md["datasrc"]) == 1 {
+		ctx = contextdecorator.DataSrcContext(ctx, md["datasrc"][0])
+	} else {
+		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+	}
 	results, err := svc.dispatch.PushData(ctx, kvPairs)
 
 	header := map[string]string{}
