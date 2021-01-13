@@ -14,7 +14,9 @@ export DOCKER_BUILDKIT=1
 
 testname="vpp-agent-e2e-test"
 imgname="vpp-agent-e2e-tests"
+vppagentcontainernameprefix="e2e-test-vppagent-agent"
 etcdcontainername="e2e-test-etcd"
+dnsservercontainername="e2e-test-dns"
 sharevolumename="share-for-vpp-agent-e2e-tests"
 
 # Compile agentctl for testing
@@ -50,11 +52,28 @@ cleanup() {
 	docker rm -v "${testname}" 2>/dev/null
 	set +x
 
+  echo "Stopping vpp-agent containers if running"
+  if [ "$(docker ps -a | grep "${vppagentcontainernameprefix}")" ]; then
+    vppagentContainerIDs=$(docker container ls -q --filter name=${vppagentcontainernameprefix})
+    set -x
+    docker stop -t 1 ${vppagentContainerIDs} 2>/dev/null
+    docker rm -v ${vppagentContainerIDs} 2>/dev/null
+    set +x
+  fi
+
   echo "Stopping etcd container if running"
   if [ "$(docker ps -a | grep "${etcdcontainername}")" ]; then
     set -x
     docker stop -t 1 "${etcdcontainername}" 2>/dev/null
     docker rm -v "${etcdcontainername}" 2>/dev/null
+    set +x
+  fi
+
+  echo "Stopping DNS server container if running"
+  if [ "$(docker ps -a | grep "${dnsservercontainername}")" ]; then
+    set -x
+    docker stop -t 1 "${dnsservercontainername}" 2>/dev/null
+    docker rm -v "${dnsservercontainername}" 2>/dev/null
     set +x
   fi
 

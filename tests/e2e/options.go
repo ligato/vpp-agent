@@ -33,8 +33,10 @@ const vppAgentDefaultImg = "ligato/vpp-agent:latest"
 type SetupOpt struct {
 	*AgentOpt
 	*EtcdOpt
-	SetupAgent bool
-	SetupEtcd  bool
+	*DNSOpt
+	SetupAgent     bool
+	SetupEtcd      bool
+	SetupDNSServer bool
 }
 
 // AgentOpt is options data holder for customizing setup of agent
@@ -52,14 +54,25 @@ type EtcdOpt struct {
 	UseTestContainerForNetworking bool
 }
 
+// DNSOpt is options data holder for customizing setup of DNS server
+type DNSOpt struct {
+	// DomainNameSuffix is common suffix of all static dns entries configured in hostsConfig
+	DomainNameSuffix string
+	// HostsConfig is content of configuration of static DNS entries in hosts file format
+	HostsConfig string
+}
+
 // SetupOptModifier is function customizing general setup options
 type SetupOptModifier func(*SetupOpt)
 
 // AgentOptModifier is function customizing Agent setup options
 type AgentOptModifier func(*AgentOpt)
 
-// EtcdOptModifier is function customizing ETCD seup options
+// EtcdOptModifier is function customizing ETCD setup options
 type EtcdOptModifier func(*EtcdOpt)
+
+// DNSOptModifier is function customizing DNS server setup options
+type DNSOptModifier func(*DNSOpt)
 
 // DefaultSetupOpt creates default values for SetupOpt
 func DefaultSetupOpt() *SetupOpt {
@@ -77,6 +90,14 @@ func DefaultEtcdOpt() *EtcdOpt {
 	return &EtcdOpt{
 		UseHTTPS:                      false,
 		UseTestContainerForNetworking: false,
+	}
+}
+
+// DefaultDNSOpt creates default values for DNSOpt
+func DefaultDNSOpt() *DNSOpt {
+	return &DNSOpt{
+		DomainNameSuffix: "", // no DNS entries => no common domain name suffix
+		HostsConfig:      "", // no DNS entries
 	}
 }
 
@@ -114,7 +135,7 @@ func WithoutVPPAgent() SetupOptModifier {
 	}
 }
 
-// WithEtcd is test setup option enabling vpp-agent setup
+// WithEtcd is test setup option enabling etcd setup
 func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
 	return func(o *SetupOpt) {
 		o.SetupEtcd = true
@@ -123,6 +144,19 @@ func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
 		}
 		for _, etcdOptModifier := range etcdOpts {
 			etcdOptModifier(o.EtcdOpt)
+		}
+	}
+}
+
+// WithDNSServer is test setup option enabling setup of container serving as dns server
+func WithDNSServer(dnsOpts ...DNSOptModifier) SetupOptModifier {
+	return func(o *SetupOpt) {
+		o.SetupDNSServer = true
+		if o.DNSOpt == nil {
+			o.DNSOpt = DefaultDNSOpt()
+		}
+		for _, dnsOptModifier := range dnsOpts {
+			dnsOptModifier(o.DNSOpt)
 		}
 	}
 }
@@ -138,6 +172,18 @@ func WithoutManualInitialAgentResync() AgentOptModifier {
 func WithAdditionalAgentCmdParams(params ...string) AgentOptModifier {
 	return func(o *AgentOpt) {
 		o.Env = append(o.Env, params...)
+	}
+}
+
+// WithZonedStaticEntries is test setup option configuring group of static dns cache entries that belong
+// to the same zone (have the same domain name suffix). The static dns cache entries are lines of config file
+// in linux /etc/hosts file format.
+// Currently supporting only one domain name suffix with static entries (even when DNS server solution supports
+// multiple "zones" that each of them can be configured by one file in hosts file format)
+func WithZonedStaticEntries(zoneDomainNameSuffix string, staticEntries ...string) DNSOptModifier {
+	return func(o *DNSOpt) {
+		o.DomainNameSuffix = zoneDomainNameSuffix
+		o.HostsConfig = strings.Join(staticEntries, "\n")
 	}
 }
 
@@ -184,6 +230,12 @@ func WithEtcdTestContainerNetworking() EtcdOptModifier {
 func extractEtcdOptions(opt *SetupOpt) EtcdOptModifier {
 	return func(etcdOpt *EtcdOpt) {
 		copyOptions(etcdOpt, opt.EtcdOpt)
+	}
+}
+
+func extractDNSOptions(opt *SetupOpt) DNSOptModifier {
+	return func(dnsOpt *DNSOpt) {
+		copyOptions(dnsOpt, opt.DNSOpt)
 	}
 }
 

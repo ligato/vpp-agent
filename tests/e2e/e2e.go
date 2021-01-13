@@ -55,7 +55,6 @@ const (
 	processExitTimeout   = time.Second * 3
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
-	execTimeout          = 10 * time.Second
 	defaultTestShareDir  = "/test-share"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
 	nameOfDefaultAgent   = "agent0"
@@ -68,7 +67,8 @@ const (
 )
 
 type TestCtx struct {
-	Etcd *EtcdContainer // TODO change?
+	Etcd      *EtcdContainer
+	DNSServer *DNSContainer
 
 	t      *testing.T
 	ctx    context.Context
@@ -147,17 +147,28 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 		}
 		if testCtx.t.Failed() {
 			if testCtx.agent != nil {
-				if err := testCtx.agent.stop(); err != nil {
-					t.Logf("failed to stop vpp-agent: %v", err)
+				if err := testCtx.agent.terminate(); err != nil {
+					t.Logf("failed to terminate vpp-agent: %v", err)
 				}
 			}
 			if testCtx.Etcd != nil {
-				if err := testCtx.Etcd.Terminate(); err != nil {
+				if err := testCtx.Etcd.terminate(); err != nil {
 					t.Logf("failed to terminate etcd due to: %v", err)
+				}
+			}
+			if testCtx.DNSServer != nil {
+				if err := testCtx.DNSServer.terminate(); err != nil {
+					t.Logf("failed to terminate DNS server due to: %v", err)
 				}
 			}
 		}
 	}()
+
+	// setup DNS server
+	if opt.SetupDNSServer {
+		testCtx.DNSServer, err = NewDNSContainer(testCtx, extractDNSOptions(opt))
+		Expect(err).ShouldNot(HaveOccurred())
+	}
 
 	// setup Etcd
 	if opt.SetupEtcd {
@@ -247,15 +258,24 @@ func (test *TestCtx) Teardown() {
 		test.t.Logf("closing the client failed: %v", err)
 	}
 
-	// TODO check fon non-nil?
-	if err := test.agent.stop(); err != nil {
-		test.t.Logf("failed to stop vpp-agent: %v", err)
+	// stop agent
+	if test.agent != nil {
+		if err := test.agent.terminate(); err != nil {
+			test.t.Logf("failed to terminate vpp-agent: %v", err)
+		}
 	}
 
 	// terminate etcd
 	if test.Etcd != nil {
-		if err := test.Etcd.Terminate(); err != nil {
+		if err := test.Etcd.terminate(); err != nil {
 			test.t.Logf("failed to terminate ETCD: %v", err)
+		}
+	}
+
+	// terminate DNS server
+	if test.DNSServer != nil {
+		if err := test.DNSServer.terminate(); err != nil {
+			test.t.Logf("failed to terminate DNS server: %v", err)
 		}
 	}
 }
@@ -320,9 +340,9 @@ func (test *TestCtx) AgentInSync() bool {
 func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
 	test.t.Helper()
 
-	stdout, stderr, err = test.agent.Exec(cmd, args...)
-	test.logger.Printf("exec: '%s %s':\nstdout: %v\nstderr: %v",
-		cmd, strings.Join(args, " "), stdout, stderr)
+	stdout, err = test.agent.execCmd(cmd, args...)
+	test.logger.Printf("exec: '%s %s':\nstdout: %v",
+		cmd, strings.Join(args, " "), stdout)
 	if err != nil {
 		logging.Errorf("exec cmd failed: %v", err)
 		return
@@ -371,8 +391,8 @@ func (test *TestCtx) StopMicroservice(name string) {
 		test.t.Logf("ERROR: cannot stop unknown microservice %q", name)
 	}
 
-	if err := ms.stop(); err != nil {
-		test.t.Logf("ERROR: stopping microservice %q failed: %v", name, err)
+	if err := ms.terminate(); err != nil {
+		test.t.Logf("ERROR: stopping/removing microservice %q failed: %v", name, err)
 	}
 	delete(test.microservices, name)
 }
@@ -411,8 +431,8 @@ func (test *TestCtx) StopAgent(name string) {
 		// bug inside a test
 		test.t.Logf("ERROR: cannot stop unknown agent %q", name)
 	}
-	if err := agent.stop(); err != nil {
-		test.t.Logf("ERROR: stopping agent %q failed: %v", name, err)
+	if err := agent.terminate(); err != nil {
+		test.t.Logf("ERROR: terminating agent %q failed: %v", name, err)
 	}
 	if test.agent.name == name {
 		test.agent = nil
