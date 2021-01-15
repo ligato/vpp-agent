@@ -104,6 +104,14 @@ func TestDummyInterface(t *testing.T) {
 	Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
 	Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
+
+	// Disable dummy1
+	dummyIf1.Enabled = false
+	req = ctx.GenericClient().ChangeRequest()
+	err = req.Update(
+		dummyIf1,
+	).Send(context.Background())
+	Expect(err).ToNot(HaveOccurred())
 }
 
 // Test interfaces created externally but with IP addresses assigned by the agent.

@@ -494,17 +494,16 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 	oldHostName := getHostIfName(oldLinuxIf)
 	newHostName := getHostIfName(newLinuxIf)
 
-	// update metadata
-	link, err := d.ifHandler.GetLinkByName(newHostName)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-	oldMetadata.LinuxIfIndex = link.Attrs().Index
-	oldMetadata.HostIfName = newHostName
-	oldMetadata.VrfMasterIf = newLinuxIf.VrfMasterInterface
 	if oldLinuxIf.Type == interfaces.Interface_EXISTING {
 		// with existing interface only metadata needs to be updated
+		link, err := d.ifHandler.GetLinkByName(newHostName)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+		oldMetadata.LinuxIfIndex = link.Attrs().Index
+		oldMetadata.HostIfName = newHostName
+		oldMetadata.VrfMasterIf = newLinuxIf.VrfMasterInterface
 		return oldMetadata, nil
 	}
 
@@ -583,6 +582,10 @@ func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfa
 			}
 		}
 	}
+
+	// update metadata
+	oldMetadata.HostIfName = newHostName
+	oldMetadata.VrfMasterIf = newLinuxIf.VrfMasterInterface
 	return oldMetadata, nil
 }
 
