@@ -50,7 +50,7 @@ require (
 	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/genproto v0.0.0-20200601130524-0f60399e6634 // indirect
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.35.0
+	google.golang.org/grpc/examples v0.0.0-20210116000752-504caa93c539 // indirect
 	google.golang.org/protobuf v1.25.0
 )
