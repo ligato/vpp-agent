@@ -26,50 +26,60 @@ const (
 	etcdStopTimeout = 1 // seconds
 )
 
-// EtcdContainer is represents running ETCD container
-type EtcdContainer struct {
-	*Container
+// Etcd is represents running ETCD
+type Etcd struct {
+	ComponentRuntime
+	ctx *TestCtx
 }
 
-// NewEtcdContainer creates and starts new ETCD container
-func NewEtcdContainer(ctx *TestCtx, options ...EtcdOptModifier) (*EtcdContainer, error) {
-	ec := &EtcdContainer{
-		&Container{
-			ctx:         ctx,
-			logIdentity: "ETCD",
-			stopTimeout: etcdStopTimeout,
-		},
+// NewEtcd creates and starts new ETCD container
+func NewEtcd(ctx *TestCtx, options ...EtcdOptModifier) (*Etcd, error) {
+	// compute options
+	opts := DefaultEtcdOpt(ctx)
+	for _, optionModifier := range options {
+		optionModifier(opts)
 	}
-	_, err := ec.create(options...)
+
+	// create struct for ETCD server
+	etcd := &Etcd{
+		ComponentRuntime: opts.Runtime,
+		ctx:              ctx,
+	}
+
+	// get runtime specific options and start ETCD in runtime environment
+	startOpts, err := opts.RuntimeStartOptions(ctx, opts)
 	if err != nil {
-		return nil, errors.Errorf("can't create %s container due to: %v", ec.logIdentity, err)
+		return nil, errors.Errorf("can't get ETCD start option for runtime due to: %v", err)
 	}
-	if err := ec.start(); err != nil {
-		return nil, errors.Errorf("can't start %s container due to: %v", ec.logIdentity, err)
+	err = etcd.Start(startOpts)
+	if err != nil {
+		return nil, errors.Errorf("can't start ETCD due to: %v", err)
 	}
-	return ec, nil
+	return etcd, nil
 }
 
 // Put inserts key-value pair into the ETCD inside its running docker container
-func (ec *EtcdContainer) Put(key string, value string) error {
-	_, err := ec.execCmd("etcdctl", "put", key, value)
+func (ec *Etcd) Put(key string, value string) error {
+	_, _, err := ec.ExecCmd("etcdctl", "put", key, value)
 	return err
 }
 
 // Get retrieves value for the key from the ETCD that is running in its docker container
-func (ec *EtcdContainer) Get(key string) (string, error) {
-	return ec.execCmd("etcdctl", "get", key)
+func (ec *Etcd) Get(key string) (string, error) {
+	stdout, _, err := ec.ExecCmd("etcdctl", "get", key)
+	return stdout, err
 }
 
 // GetAll retrieves all key-value pairs from the ETCD that is running in its docker container
-func (ec *EtcdContainer) GetAll() (string, error) {
-	return ec.execCmd("etcdctl", "get", "", "--prefix=true")
+func (ec *Etcd) GetAll() (string, error) {
+	stdout, _, err := ec.ExecCmd("etcdctl", "get", "", "--prefix=true")
+	return stdout, err
 }
 
-func (ec *EtcdContainer) create(options ...EtcdOptModifier) (*docker.Container, error) {
-	opts := DefaultEtcdOpt()
-	for _, optionModifier := range options {
-		optionModifier(opts)
+func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
+	opts, ok := options.(*EtcdOpt)
+	if !ok {
+		return nil, errors.Errorf("expected EtcdOpt but got %+v", options)
 	}
 
 	// construct command string and container host config
@@ -86,7 +96,7 @@ func (ec *EtcdContainer) create(options ...EtcdOptModifier) (*docker.Container, 
 			"--advertise-client-urls=https://127.0.0.1:2379",
 			"--listen-client-urls=https://127.0.0.1:2379",
 		)
-		hostConfig.Binds = []string{filepath.Join(ec.ctx.testDataDir, "certs") + ":/etc/certs:ro"}
+		hostConfig.Binds = []string{filepath.Join(ctx.testDataDir, "certs") + ":/etc/certs:ro"}
 	} else { // HTTP connection
 		cmd = append(cmd,
 			"--advertise-client-urls=http://0.0.0.0:2379",
@@ -110,5 +120,8 @@ func (ec *EtcdContainer) create(options ...EtcdOptModifier) (*docker.Container, 
 		HostConfig: hostConfig,
 	}
 
-	return ec.Container.create(containerOptions, true)
+	return &ContainerStartOptions{
+		ContainerOptions: containerOptions,
+		Pull:             true,
+	}, nil
 }

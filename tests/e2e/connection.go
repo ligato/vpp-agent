@@ -29,7 +29,7 @@ type connectionRequest struct {
 	err  error
 }
 
-func simpleTCPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
 	// move to the network namespace where server should listen
 	exitNetNs := ms.enterNetNs()
 	defer exitNetNs()
@@ -102,7 +102,7 @@ func simpleTCPServer(ctx context.Context, ms *microservice, addr string, expReqM
 	<-ctx.Done()
 }
 
-func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
 	const maxBufferSize = 1024
 	// move to the network namespace where server should listen
 	exitNetNs := ms.enterNetNs()
@@ -156,7 +156,7 @@ func simpleUDPServer(ctx context.Context, ms *microservice, addr string, expReqM
 	<-ctx.Done()
 }
 
-func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+func simpleTCPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
 
@@ -180,7 +180,7 @@ func simpleTCPClient(ms *microservice, addr string, reqMsg, expRespMsg string, t
 	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
 }
 
-func simpleUDPClient(ms *microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+func simpleUDPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
 

@@ -99,7 +99,7 @@ func TestIPWithNeighGW(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -118,7 +118,7 @@ func TestIPWithNeighGW(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -293,7 +293,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -312,7 +312,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -486,7 +486,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -504,7 +504,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -516,7 +516,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 			"127.0.0.1/8", "alloc:" + network1Name, "alloc:" + network2Name},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 

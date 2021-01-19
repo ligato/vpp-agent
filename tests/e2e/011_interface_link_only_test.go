@@ -57,7 +57,7 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -76,7 +76,7 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 

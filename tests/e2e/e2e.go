@@ -20,8 +20,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -31,7 +31,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
-	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/client"
@@ -67,8 +66,11 @@ const (
 )
 
 type TestCtx struct {
-	Etcd      *EtcdContainer
-	DNSServer *DNSContainer
+	Agent     *Agent // the default agent (first agent in multi-agent test scenario)
+	Etcd      *Etcd
+	DNSServer *DNSServer
+
+	Logger *log.Logger
 
 	t      *testing.T
 	ctx    context.Context
@@ -77,16 +79,62 @@ type TestCtx struct {
 	testDataDir  string
 	testShareDir string
 
-	agent         *agent
-	agents        map[string]*agent
+	agents        map[string]*Agent
 	dockerClient  *docker.Client
 	agentClient   agentctl.APIClient
-	microservices map[string]*microservice
+	microservices map[string]*Microservice
 	nsCalls       nslinuxcalls.NetworkNamespaceAPI
 	vppVersion    string
 
 	outputBuf *bytes.Buffer
-	logger    *log.Logger
+}
+
+// ComponentRuntime represents running instance of test topology component. Different implementation can
+// handle test topology components in different environments (docker container, k8s pods, VMs,...)
+type ComponentRuntime interface {
+	CommandExecutor
+
+	// Start starts instance of test topology component
+	Start(options interface{}) error
+
+	// Stop stops instance of test topology component
+	Stop(options ...interface{}) error
+
+	// IPAddress provides ip address for connecting to the component
+	IPAddress() string
+
+	// TODO replace PID() this with some namespace handler(that is what it is used for) because this
+	//  won't help in certain runtime implementations (non-local runtimes)
+
+	// PID provides process id of the main process in component
+	PID() int
+}
+
+// CommandExecutor gives test topology components the ability to perform (linux) commands
+type CommandExecutor interface {
+	// ExecCmd executes command inside runtime environment
+	ExecCmd(cmd string, args ...string) (stdout, stderr string, err error)
+}
+
+// Pinger gives test topology components the ability to perform pinging (pinging from them to other places)
+type Pinger interface {
+	CommandExecutor
+
+	// Ping <destAddress> from inside of the container.
+	Ping(destAddress string, opts ...PingOptModifier) error
+
+	// PingAsCallback can be used to ping repeatedly inside the assertions "Eventually"
+	// and "Consistently" from Omega.
+	PingAsCallback(destAddress string, opts ...PingOptModifier) func() error
+}
+
+// Diger gives test topology components the ability to perform dig command (DNS-query linux tool)
+type Diger interface {
+	CommandExecutor
+
+	// Dig calls linux tool "dig" that query DNS server for domain name (queryDomain) and return records associated
+	// of given type (requestedInfo) associated with the domain name.
+	Dig(dnsServer net.IP, queryDomain string, requestedInfo DNSRecordType) ([]net.IP, error)
 }
 
 func NewTest(t *testing.T) *TestCtx {
@@ -107,24 +155,24 @@ func NewTest(t *testing.T) *TestCtx {
 		t:             t,
 		testDataDir:   os.Getenv("TESTDATA_DIR"),
 		testShareDir:  defaultTestShareDir,
-		agents:        make(map[string]*agent),
-		microservices: make(map[string]*microservice),
+		agents:        make(map[string]*Agent),
+		microservices: make(map[string]*Microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
 		outputBuf:     outputBuf,
-		logger:        logger,
+		Logger:        logger,
 	}
 	te.ctx, te.cancel = context.WithCancel(context.Background())
 	return te
 }
 
 func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
+	testCtx := NewTest(t)
+
 	// prepare setup options
-	opt := DefaultSetupOpt()
+	opt := DefaultSetupOpt(testCtx)
 	for _, optModifier := range options {
 		optModifier(opt)
 	}
-
-	testCtx := NewTest(t)
 
 	// connect to the docker daemon
 	var err error
@@ -146,19 +194,19 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 			testCtx.dumpLog()
 		}
 		if testCtx.t.Failed() {
-			if testCtx.agent != nil {
-				if err := testCtx.agent.terminate(); err != nil {
-					t.Logf("failed to terminate vpp-agent: %v", err)
+			if testCtx.Agent != nil {
+				if err := testCtx.Agent.Stop(); err != nil {
+					t.Logf("failed to stop vpp-agent: %v", err)
 				}
 			}
 			if testCtx.Etcd != nil {
-				if err := testCtx.Etcd.terminate(); err != nil {
-					t.Logf("failed to terminate etcd due to: %v", err)
+				if err := testCtx.Etcd.Stop(); err != nil {
+					t.Logf("failed to stop etcd due to: %v", err)
 				}
 			}
 			if testCtx.DNSServer != nil {
-				if err := testCtx.DNSServer.terminate(); err != nil {
-					t.Logf("failed to terminate DNS server due to: %v", err)
+				if err := testCtx.DNSServer.Stop(); err != nil {
+					t.Logf("failed to stop DNS server due to: %v", err)
 				}
 			}
 		}
@@ -166,13 +214,13 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 
 	// setup DNS server
 	if opt.SetupDNSServer {
-		testCtx.DNSServer, err = NewDNSContainer(testCtx, extractDNSOptions(opt))
+		testCtx.DNSServer, err = NewDNSServer(testCtx, extractDNSOptions(opt))
 		Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	// setup Etcd
 	if opt.SetupEtcd {
-		testCtx.Etcd, err = NewEtcdContainer(testCtx, extractEtcdOptions(opt))
+		testCtx.Etcd, err = NewEtcd(testCtx, extractEtcdOptions(opt))
 		Expect(err).ShouldNot(HaveOccurred())
 	}
 
@@ -185,16 +233,17 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 
 func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
 	// prepare options
-	options := DefaultAgentOpt()
+	name := nameOfDefaultAgent
+	options := DefaultAgentOpt(testCtx, name)
 	for _, optionsModifier := range opts {
 		optionsModifier(options)
 	}
 
 	// start agent container
-	testCtx.agent = testCtx.StartAgent(nameOfDefaultAgent, opts...) // not passing prepared options due to public visibility
+	testCtx.Agent = testCtx.StartAgent(name, opts...) // not passing prepared options due to public visibility
 
 	// interact with the agent using the client from agentctl
-	agentAddr := testCtx.agent.IPAddress()
+	agentAddr := testCtx.Agent.IPAddress()
 	var err error
 	testCtx.agentClient, err = agentctl.NewClientWithOpts(
 		agentctl.WithHost(agentAddr),
@@ -232,8 +281,8 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	//TODO API boundaries becomes blurry as tests and support structures are in the same package and there
 	// is strong temptation to misuse it and create an unmaintainable dependency mesh -> create different
 	// package for test supporting files (setup/teardown/util stuff) and define clear boundaries
-	if testCtx.agent != nil {
-		return testCtx.agent.name
+	if testCtx.Agent != nil {
+		return testCtx.Agent.name
 	}
 	return nameOfDefaultAgent
 }
@@ -259,23 +308,23 @@ func (test *TestCtx) Teardown() {
 	}
 
 	// stop agent
-	if test.agent != nil {
-		if err := test.agent.terminate(); err != nil {
-			test.t.Logf("failed to terminate vpp-agent: %v", err)
+	if test.Agent != nil {
+		if err := test.Agent.Stop(); err != nil {
+			test.t.Logf("failed to stop vpp-agent: %v", err)
 		}
 	}
 
 	// terminate etcd
 	if test.Etcd != nil {
-		if err := test.Etcd.terminate(); err != nil {
-			test.t.Logf("failed to terminate ETCD: %v", err)
+		if err := test.Etcd.Stop(); err != nil {
+			test.t.Logf("failed to stop ETCD: %v", err)
 		}
 	}
 
 	// terminate DNS server
 	if test.DNSServer != nil {
-		if err := test.DNSServer.terminate(); err != nil {
-			test.t.Logf("failed to terminate DNS server: %v", err)
+		if err := test.DNSServer.Stop(); err != nil {
+			test.t.Logf("failed to stop DNS server: %v", err)
 		}
 	}
 }
@@ -337,44 +386,29 @@ func (test *TestCtx) AgentInSync() bool {
 }
 
 // ExecCmd executes command in agent and returns stdout, stderr as strings and error.
+// Deprecated: use ctx.Agent.ExecCmd(...) instead
 func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
 	test.t.Helper()
 
-	stdout, err = test.agent.execCmd(cmd, args...)
-	test.logger.Printf("exec: '%s %s':\nstdout: %v",
-		cmd, strings.Join(args, " "), stdout)
-	if err != nil {
-		logging.Errorf("exec cmd failed: %v", err)
-		return
-	}
-
+	_, _, err = test.Agent.ExecCmd(cmd, args...)
 	return
 }
 
 // ExecVppctl returns output from vppctl for given action and arguments.
+// Deprecated: use ctx.Agent.ExecVppctl(...) instead
 func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	test.t.Helper()
 
-	cmd := append([]string{"-s", "127.0.0.1:5002", action}, args...)
-
-	stdout, _, err := test.ExecCmd("vppctl", cmd...)
-	if err != nil {
-		return "", fmt.Errorf("execute `vppctl %s` error: %v", strings.Join(cmd, " "), err)
-	}
-	if *debug {
-		test.t.Logf("executed (vppctl %v): %v", strings.Join(cmd, " "), stdout)
-	}
-
-	return stdout, nil
+	return test.Agent.ExecVppctl(action, args...)
 }
 
-func (test *TestCtx) StartMicroservice(name string) *microservice {
+func (test *TestCtx) StartMicroservice(name string, options ...MicroserviceOptModifier) *Microservice {
 	test.t.Helper()
 
 	if _, ok := test.microservices[name]; ok {
 		test.t.Fatalf("microservice %q already started", name)
 	}
-	ms, err := createMicroservice(test, name, test.dockerClient, test.nsCalls)
+	ms, err := createMicroservice(test, name, test.nsCalls, options...)
 	if err != nil {
 		test.t.Fatalf("creating microservice %q failed: %v", name, err)
 	}
@@ -391,13 +425,27 @@ func (test *TestCtx) StopMicroservice(name string) {
 		test.t.Logf("ERROR: cannot stop unknown microservice %q", name)
 	}
 
-	if err := ms.terminate(); err != nil {
-		test.t.Logf("ERROR: stopping/removing microservice %q failed: %v", name, err)
+	if err := ms.Stop(); err != nil {
+		test.t.Logf("ERROR: stopping microservice %q failed: %v", name, err)
 	}
 	delete(test.microservices, name)
 }
 
-func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *agent {
+func (test *TestCtx) TerminateDNSServer() {
+	test.t.Helper()
+
+	if test.DNSServer == nil {
+		// bug inside a test
+		test.t.Log("ERROR: cannot stop already stopped or not started at all DNS server")
+	}
+
+	if err := test.DNSServer.Stop(); err != nil {
+		test.t.Logf("ERROR: stopping DNS server failed: %v", err)
+	}
+	test.DNSServer = nil
+}
+
+func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 	test.t.Helper()
 
 	if _, ok := test.agents[name]; ok {
@@ -405,18 +453,19 @@ func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *agent {
 	}
 
 	// prepare agent options
-	opt := DefaultAgentOpt()
+	opt := DefaultAgentOpt(test, name)
 	for _, optModifier := range opts {
 		optModifier(opt)
 	}
 	opt.Env = append(opt.Env, "MICROSERVICE_LABEL="+name)
+	opt.Name = name
 
 	agent, err := startAgent(test, name, opt)
 	if err != nil {
 		test.t.Fatalf("creating agent %q failed: %v", name, err)
 	}
-	if test.agent == nil {
-		test.agent = agent
+	if test.Agent == nil {
+		test.Agent = agent
 	}
 	test.agents[name] = agent
 
@@ -431,69 +480,54 @@ func (test *TestCtx) StopAgent(name string) {
 		// bug inside a test
 		test.t.Logf("ERROR: cannot stop unknown agent %q", name)
 	}
-	if err := agent.terminate(); err != nil {
-		test.t.Logf("ERROR: terminating agent %q failed: %v", name, err)
+	if err := agent.Stop(); err != nil {
+		test.t.Logf("ERROR: stopping agent %q failed: %v", name, err)
 	}
-	if test.agent.name == name {
-		test.agent = nil
+	if test.Agent.name == name {
+		test.Agent = nil
 	}
 	delete(test.agents, name)
 }
 
-// PingFromMs pings <dstAddress> from the microservice <msName>
-func (test *TestCtx) PingFromMs(msName, dstAddress string, opts ...pingOpt) error {
-	test.t.Helper()
+// AlreadyRunningMicroservice retrieves already running microservice by its name.
+func (test *TestCtx) AlreadyRunningMicroservice(msName string) *Microservice {
 	ms, found := test.microservices[msName]
 	if !found {
 		// bug inside a test
 		test.t.Fatalf("cannot ping from unknown microservice '%s'", msName)
 	}
-	return ms.ping(dstAddress, opts...)
+	return ms
+}
+
+// PingFromMs pings <dstAddress> from the microservice <msName>
+// Deprecated: use ctx.AlreadyRunningMicroservice(msName).Ping(dstAddress, opts...) instead (or
+// ms := ctx.StartMicroservice; ms.Ping(dstAddress, opts...))
+func (test *TestCtx) PingFromMs(msName, dstAddress string, opts ...PingOptModifier) error {
+	test.t.Helper()
+	return test.AlreadyRunningMicroservice(msName).Ping(dstAddress, opts...)
 }
 
 // PingFromMsClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (test *TestCtx) PingFromMsClb(msName, dstAddress string, opts ...pingOpt) func() error {
-	return func() error {
-		return test.PingFromMs(msName, dstAddress, opts...)
-	}
+// Deprecated: use ctx.AlreadyRunningMicroservice(msName).PingAsCallback(dstAddress, opts...) instead (or
+// ms := ctx.StartMicroservice; ms.PingAsCallback(dstAddress, opts...))
+func (test *TestCtx) PingFromMsClb(msName, dstAddress string, opts ...PingOptModifier) func() error {
+	return test.AlreadyRunningMicroservice(msName).PingAsCallback(dstAddress, opts...)
 }
 
-var (
-	vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
-)
-
 // PingFromVPP pings <dstAddress> from inside the VPP.
+// Deprecated: use ctx.Agent.PingFromVPP(destAddress) instead
 func (test *TestCtx) PingFromVPP(destAddress string) error {
 	test.t.Helper()
 
-	// run ping on VPP using vppctl
-	stdout, err := test.ExecVppctl("ping", destAddress)
-	if err != nil {
-		return err
-	}
-
-	// parse output
-	matches := vppPingRegexp.FindStringSubmatch(stdout)
-	sent, recv, loss, err := parsePingOutput(stdout, matches)
-	if err != nil {
-		return err
-	}
-	test.logger.Printf("VPP ping %s: sent=%d, received=%d, loss=%d%%",
-		destAddress, sent, recv, loss)
-
-	if sent == 0 || loss >= 50 {
-		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
-	}
-	return nil
+	return test.Agent.PingFromVPP(destAddress)
 }
 
 // PingFromVPPClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
+// Deprecated: use ctx.Agent.PingFromVPPAsCallback(destAddress) instead
 func (test *TestCtx) PingFromVPPClb(destAddress string) func() error {
-	return func() error {
-		return test.PingFromVPP(destAddress)
-	}
+	return test.Agent.PingFromVPPAsCallback(destAddress)
 }
 
 func (test *TestCtx) TestConnection(
@@ -577,10 +611,10 @@ func (test *TestCtx) TestConnection(
 	if err != nil {
 		outcome = err.Error()
 	}
-	test.logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
+	test.Logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
 	stopPacketTrace()
-	test.logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
+	test.Logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 
 	return err
@@ -689,7 +723,7 @@ func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 			test.t.Errorf("Failed to show packet trace: %v", err)
 			return
 		}
-		test.logger.Printf("Packet trace:\n%s\n", traces)
+		test.Logger.Printf("Packet trace:\n%s\n", traces)
 	}
 }
 

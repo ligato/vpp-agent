@@ -17,6 +17,7 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -28,15 +29,130 @@ import (
 
 const execTimeout = 10 * time.Second
 
-// Container is represents running docker container
-type Container struct {
+// ContainerRuntime represents docker container environments for one component of test topology
+type ContainerRuntime struct {
 	ctx         *TestCtx
 	container   *docker.Container
 	logIdentity string
 	stopTimeout uint
 }
 
-func (c *Container) create(containerOptions *docker.CreateContainerOptions, pull bool) (*docker.Container, error) {
+type ContainerStartOptions struct {
+	ContainerOptions *docker.CreateContainerOptions
+	Pull             bool
+	AttachLogs       bool
+}
+
+// Start creates and starts container
+func (c *ContainerRuntime) Start(options interface{}) error {
+	// get options
+	if options == nil {
+		return errors.Errorf("can't start container without any information")
+	}
+	opts, ok := options.(*ContainerStartOptions)
+	if !ok {
+		return errors.Errorf("provided runtime start options "+
+			"are not for container component runtime (%v)", options)
+	}
+
+	// create and start container
+	_, err := c.createContainer(opts.ContainerOptions, opts.Pull)
+	if err != nil {
+		return errors.Errorf("can't create %s container due to: %v", c.logIdentity, err)
+	}
+	log := logrus.WithField("name", c.logIdentity)
+	log.Debugf("starting container: %+v", *opts)
+	if err := c.startContainer(); err != nil {
+		return errors.Errorf("can't start %s container due to: %v", c.logIdentity, err)
+	}
+	log = log.WithField("container", c.container.Name)
+	log = log.WithField("cid", c.container.ID)
+	log.Debugf("container started")
+
+	// attach logs (using one buffer from testctx -> all logs from all containers are merged together)
+	if opts.AttachLogs {
+		if err = c.attachLoggingToContainer(c.ctx.outputBuf); err != nil {
+			return errors.Errorf("can't attach logging to %s container due to: %v", c.logIdentity, err)
+		}
+	}
+	return nil
+}
+
+// Stop stops and removes container
+func (c *ContainerRuntime) Stop(options ...interface{}) error {
+	if err := c.stopContainer(); err != nil {
+		if errors.Is(err, &docker.NoSuchContainer{}) {
+			// container no longer exists -> nothing to do (state is the same as after successful termination)
+			return nil
+		}
+		return err
+	}
+	if err := c.removeContainer(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ExecCmd executes command inside docker container
+func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
+	opts := docker.CreateExecOptions{
+		Context:      c.ctx.ctx,
+		Container:    c.container.ID,
+		Cmd:          append([]string{cmd}, args...),
+		AttachStdout: true,
+		AttachStderr: true,
+	}
+	exec, err := c.ctx.dockerClient.CreateExec(opts)
+	if err != nil {
+		err = errors.Errorf("failed to create docker exec for command %v due to: %v", cmd, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.ctx.ctx, execTimeout)
+	defer cancel()
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	err = c.ctx.dockerClient.StartExec(exec.ID, docker.StartExecOptions{
+		Context:      ctx,
+		OutputStream: &stdoutBuf,
+		ErrorStream:  &stderrBuf,
+	})
+	stdout = stdoutBuf.String()
+	stderr = stderrBuf.String()
+
+	c.ctx.Logger.Printf("exec: '%s %s':\nstdout: %v\nstderr: %v",
+		cmd, strings.Join(args, " "), stdout, stderr)
+	if err != nil {
+		errMsg := fmt.Sprintf("starting of docker exec for command %v failed due to: %v", cmd, err)
+		c.ctx.Logger.Printf(errMsg)
+		err = errors.Errorf(errMsg)
+		return
+	}
+
+	if info, er := c.ctx.dockerClient.InspectExec(exec.ID); er != nil {
+		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmd, er)
+	} else {
+		c.ctx.Logger.Printf("exec details (ID %v, Cmd %s): %+v", exec.ID, cmd, info)
+		if info.ExitCode != 0 {
+			err = errors.Errorf("exec error (exit code %v): %v", info.ExitCode, stderr)
+		}
+	}
+
+	return
+}
+
+// IPAddress provides ip address for connecting to the component
+func (c *ContainerRuntime) IPAddress() string {
+	return c.container.NetworkSettings.IPAddress
+}
+
+// PID provides process id of the main process in component
+func (c *ContainerRuntime) PID() int {
+	return c.container.State.Pid
+}
+
+func (c *ContainerRuntime) createContainer(containerOptions *docker.CreateContainerOptions,
+	pull bool) (*docker.Container, error) {
 	// pull image
 	if pull {
 		repo, tag, err := c.parseImageName(containerOptions.Config.Image)
@@ -63,7 +179,7 @@ func (c *Container) create(containerOptions *docker.CreateContainerOptions, pull
 	return c.container, nil
 }
 
-func (c *Container) start() error {
+func (c *ContainerRuntime) startContainer() error {
 	if c.container == nil {
 		return errors.Errorf("Reference to docker client container is nil. " +
 			"Please use create() before start().")
@@ -86,7 +202,7 @@ func (c *Container) start() error {
 
 	// update container reference (some attributes of container change by starting the container)
 	id := c.container.ID
-	c.container, err = c.inspect(id)
+	c.container, err = c.inspectContainer(id)
 	if err != nil {
 		return errors.Errorf("can't update inner %s container reference for id %s "+
 			"due to failing container inspect due to: %v", c.logIdentity, id, err)
@@ -94,22 +210,7 @@ func (c *Container) start() error {
 	return nil
 }
 
-// terminate stops and removes the container
-func (c *Container) terminate() error {
-	if err := c.stop(); err != nil {
-		if errors.Is(err, &docker.NoSuchContainer{}) {
-			// container no longer exists -> nothing to do (state is the same as after successful termination)
-			return nil
-		}
-		return err
-	}
-	if err := c.remove(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *Container) stop() error {
+func (c *ContainerRuntime) stopContainer() error {
 	err := c.ctx.dockerClient.StopContainer(c.container.ID, c.stopTimeout)
 	if errors.Is(err, &docker.NoSuchContainer{}) {
 		return err
@@ -119,7 +220,7 @@ func (c *Container) stop() error {
 	return nil
 }
 
-func (c *Container) remove() error {
+func (c *ContainerRuntime) removeContainer() error {
 	err := c.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
 		ID:    c.container.ID,
 		Force: true,
@@ -131,53 +232,11 @@ func (c *Container) remove() error {
 	return nil
 }
 
-// execCmd executes command inside docker container
-func (c *Container) execCmd(cmd string, args ...string) (string, error) {
-	opts := docker.CreateExecOptions{
-		Context:      c.ctx.ctx,
-		Container:    c.container.ID,
-		Cmd:          append([]string{cmd}, args...),
-		AttachStdout: true,
-		AttachStderr: true,
-	}
-	exec, err := c.ctx.dockerClient.CreateExec(opts)
-	if err != nil {
-		return "", errors.Errorf("failed to create docker exec for command %v due to: %v", cmd, err)
-	}
-
-	ctx, cancel := context.WithTimeout(c.ctx.ctx, execTimeout)
-	defer cancel()
-
-	var stdout, stderr bytes.Buffer
-	err = c.ctx.dockerClient.StartExec(exec.ID, docker.StartExecOptions{
-		Context:      ctx,
-		OutputStream: &stdout,
-		ErrorStream:  &stderr,
-	})
-	if err != nil {
-		return "", errors.Errorf("starting of docker exec for command %v failed due to: %v", cmd, err)
-	}
-
-	if info, er := c.ctx.dockerClient.InspectExec(exec.ID); er != nil {
-		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmd, er)
-	} else {
-		c.ctx.logger.Printf("exec details (ID %v, Cmd %s): %+v", exec.ID, cmd, info)
-		if info.ExitCode != 0 {
-			err = errors.Errorf("exec error (exit code %v): %v", info.ExitCode, stderr.String())
-		}
-	}
-	if strings.TrimSpace(stderr.String()) != "" {
-		return "", errors.Errorf("failed exec command %s "+
-			"due to nonempty error output: %s", cmd, stderr.String())
-	}
-	return stdout.String(), err
-}
-
 // attachLoggingToContainer attaches nonblocking logging to current container. The logging doesn't use standard
 // log output, but it uses provided logOutput argument as its output. This provides more flexibility for
 // the caller of this method how the log output can be handled. The only exception is the final container exit
 // status that is logged using stadard output.
-func (c *Container) attachLoggingToContainer(logOutput io.Writer) error {
+func (c *ContainerRuntime) attachLoggingToContainer(logOutput io.Writer) error {
 	closeWaiter, err := c.ctx.dockerClient.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
 		Container:    c.container.ID,
 		Stdout:       true,
@@ -206,13 +265,7 @@ func (c *Container) attachLoggingToContainer(logOutput io.Writer) error {
 	return nil
 }
 
-// Inspect provides actual docker.Container of running container that can be
-// used to inspect various things about the container
-func (c *Container) Inspect() (*docker.Container, error) {
-	return c.inspect(c.container.ID)
-}
-
-func (c *Container) inspect(containerID string) (*docker.Container, error) {
+func (c *ContainerRuntime) inspectContainer(containerID string) (*docker.Container, error) {
 	container, err := c.ctx.dockerClient.InspectContainerWithOptions(docker.InspectContainerOptions{
 		Context: c.ctx.ctx,
 		ID:      containerID,
@@ -224,7 +277,7 @@ func (c *Container) inspect(containerID string) (*docker.Container, error) {
 	return container, nil
 }
 
-func (c *Container) parseImageName(imageName string) (repo, tag string, err error) {
+func (c *ContainerRuntime) parseImageName(imageName string) (repo, tag string, err error) {
 	repo = imageName
 	tag = "latest"
 	if strings.Contains(imageName, ":") {

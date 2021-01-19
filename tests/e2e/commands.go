@@ -36,96 +36,77 @@ var (
 		A:    "A",
 		AAAA: "AAAA",
 	}
-	linuxDigRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
+	digRecordRegexps = map[DNSRecordType]*regexp.Regexp{
+		A:    regexp.MustCompile(`\tA\t([^\n]*)\n`),
+		AAAA: regexp.MustCompile(`\tAAAA\t([^\n]*)\n`),
+	}
+	pingRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
 )
 
 // Dig calls linux tool "dig" that query DNS server for domain name (queryDomain) and return records associated
 // of given type (requestedInfo) associated with the domain name.
-func (c *Container) Dig(dnsServer net.IP, queryDomain string, requestedInfo DNSRecordType) ([]net.IP, error) {
+func (c *ContainerRuntime) Dig(dnsServer net.IP, queryDomain string, requestedInfo DNSRecordType) ([]net.IP, error) {
 	c.ctx.t.Helper()
 
-	args := []string{fmt.Sprintf("@%s", dnsServer), "-t", dnsRecordTypeNames[requestedInfo], queryDomain}
-	stdout, err := c.execCmd("dig", args...)
+	// call dig in container
+	args := []string{fmt.Sprintf("@%s", dnsServer), // target DNS server
+		"+time=1",                               // minimize max request time (for request that don't have answer)
+		"+tries=1",                              // minimize retries (try count = initial request + retries) (for request that don't have answers)
+		"-t", dnsRecordTypeNames[requestedInfo], // requested record type
+		queryDomain,
+	}
+	stdout, _, err := c.ExecCmd("dig", args...)
 	if err != nil {
 		return nil, errors.Errorf("execution of linux command dig failed due to: %v", err)
 	}
 
-	fmt.Print(stdout)
-	// TODO parse IP addresses from answer section of dig command output and return it as result
-	return nil, nil
+	// parse output of dig linux command
+	ipAddresses := make([]net.IP, 0)
+	for _, match := range digRecordRegexps[requestedInfo].FindAllSubmatch([]byte(stdout), -1) {
+		ipAddressStr := string(match[1])
+		ipAddress := net.ParseIP(ipAddressStr)
+		if ipAddress == nil {
+			return nil, errors.Errorf("can't parse %s record value %s as ip address. Probably regular "+
+				"expression matching issue for dig output:\n %s", dnsRecordTypeNames[requestedInfo],
+				ipAddressStr, stdout)
+		}
+		c.ctx.Logger.Printf("Linux dig command got for queried domain %s an %s record %s",
+			queryDomain, dnsRecordTypeNames[requestedInfo], ipAddressStr)
+
+		ipAddresses = append(ipAddresses, ipAddress)
+	}
+	return ipAddresses, nil
 }
 
-type pingOptions struct {
-	allowedLoss int    // percentage of allowed loss for success
-	outIface    string // outgoing interface name
-	maxTimeout  int    // timeout in seconds before ping exits
-	count       int    // number of pings
-}
-
-func newPingOpts(opts ...pingOpt) *pingOptions {
-	popts := &pingOptions{
-		allowedLoss: 49, // by default at least half of the packets should get through
-		maxTimeout:  4,
-	}
-	popts.init(opts...)
-	return popts
-}
-
-func (ping *pingOptions) init(opts ...pingOpt) {
-	for _, o := range opts {
-		o(ping)
-	}
-}
-
-func (ping *pingOptions) args() []string {
-	var args []string
-	if ping.maxTimeout > 0 {
-		args = append(args, "-w", fmt.Sprint(ping.maxTimeout))
-	}
-	if ping.count > 0 {
-		args = append(args, "-c", fmt.Sprint(ping.count))
-	}
-	if ping.outIface != "" {
-		args = append(args, "-I", ping.outIface)
-	}
-	return args
-}
-
-type pingOpt func(opts *pingOptions)
-
-func pingWithAllowedLoss(maxLoss int) pingOpt {
-	return func(opts *pingOptions) {
-		opts.allowedLoss = maxLoss
+// PingAsCallback can be used to ping repeatedly inside the assertions "Eventually"
+// and "Consistently" from Omega.
+func (c *ContainerRuntime) PingAsCallback(destAddress string, opts ...PingOptModifier) func() error {
+	return func() error {
+		return c.Ping(destAddress, opts...)
 	}
 }
 
-func pingWithOutInterface(iface string) pingOpt {
-	return func(opts *pingOptions) {
-		opts.outIface = iface
-	}
-}
-
-// ping <destAddress> from inside of the container.
-func (c *Container) ping(destAddress string, opts ...pingOpt) error {
+// Ping <destAddress> from inside of the container.
+func (c *ContainerRuntime) Ping(destAddress string, opts ...PingOptModifier) error {
 	c.ctx.t.Helper()
 
-	ping := newPingOpts(opts...)
+	ping := NewPingOpts(opts...)
 	args := append(ping.args(), destAddress)
 
-	stdout, err := c.execCmd("ping", args...)
+	stdout, _, err := c.ExecCmd("ping", args...)
 	if err != nil {
 		return err
 	}
 
-	matches := linuxPingRegexp.FindStringSubmatch(stdout)
+	matches := pingRegexp.FindStringSubmatch(stdout)
 	sent, recv, loss, err := parsePingOutput(stdout, matches)
 	if err != nil {
 		return err
 	}
-	c.ctx.logger.Printf("Linux ping from %s container to %s: sent=%d, received=%d, loss=%d%%",
+	c.ctx.Logger.Printf("Linux ping from %s container to %s: sent=%d, received=%d, loss=%d%%",
 		c.logIdentity, destAddress, sent, recv, loss)
 
-	if sent == 0 || loss > ping.allowedLoss {
+	if sent == 0 || loss > ping.AllowedLoss {
 		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
 	}
 	return nil

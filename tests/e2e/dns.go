@@ -27,34 +27,43 @@ const (
 	dnsStopTimeout          = 1 // seconds
 )
 
-// DNSContainer is represents running DNS server container
-type DNSContainer struct {
-	*Container
+// DNSServer is represents running DNS server
+type DNSServer struct {
+	ComponentRuntime
+	ctx *TestCtx
 }
 
-// NewDNSContainer creates and starts new DNS server container
-func NewDNSContainer(ctx *TestCtx, options ...DNSOptModifier) (*DNSContainer, error) {
-	c := &DNSContainer{
-		&Container{
-			ctx:         ctx,
-			logIdentity: "DNS server",
-			stopTimeout: dnsStopTimeout,
-		},
-	}
-	_, err := c.create(options...)
-	if err != nil {
-		return nil, errors.Errorf("can't create %s container due to: %v", c.logIdentity, err)
-	}
-	if err := c.start(); err != nil {
-		return nil, errors.Errorf("can't start %s container due to: %v", c.logIdentity, err)
-	}
-	return c, nil
-}
-
-func (c *DNSContainer) create(options ...DNSOptModifier) (*docker.Container, error) {
-	opts := DefaultDNSOpt()
+// NewDNSServer creates and starts new DNS server container
+func NewDNSServer(ctx *TestCtx, options ...DNSOptModifier) (*DNSServer, error) {
+	// compute options
+	opts := DefaultDNSOpt(ctx)
 	for _, optionModifier := range options {
 		optionModifier(opts)
+	}
+
+	// create struct for DNS server
+	dnsServer := &DNSServer{
+		ComponentRuntime: opts.Runtime,
+		ctx:              ctx,
+	}
+
+	// get runtime specific options and start DNS server in runtime environment
+	startOpts, err := opts.RuntimeStartOptions(ctx, opts)
+	if err != nil {
+		return nil, errors.Errorf("can't get DNSServer start option for runtime due to: %v", err)
+	}
+	err = dnsServer.Start(startOpts)
+	if err != nil {
+		return nil, errors.Errorf("can't start DNS server due to: %v", err)
+	}
+
+	return dnsServer, nil
+}
+
+func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
+	opts, ok := options.(*DNSOpt)
+	if !ok {
+		return nil, errors.Errorf("expected DNSOpt but got %+v", options)
 	}
 
 	// create configuration files on shared-files docker volume
@@ -63,7 +72,7 @@ func (c *DNSContainer) create(options ...DNSOptModifier) (*docker.Container, err
 # Place entries below in standard hosts file format: ipaddress hostname fqdn
 %s
 `, opts.DomainNameSuffix, opts.HostsConfig)
-	hostsFilepath := CreateFileOnSharedVolume(c.ctx, "staticHosts", hostFileContent)
+	hostsFilepath := CreateFileOnSharedVolume(ctx, "staticHosts", hostFileContent)
 	corefileContent := fmt.Sprintf(`%s {
     log
     errors
@@ -76,7 +85,7 @@ func (c *DNSContainer) create(options ...DNSOptModifier) (*docker.Container, err
     forward . 8.8.8.8:53
 }
 `, opts.DomainNameSuffix, hostsFilepath, opts.DomainNameSuffix)
-	coreFilepath := CreateFileOnSharedVolume(c.ctx, "Corefile", corefileContent)
+	coreFilepath := CreateFileOnSharedVolume(ctx, "Corefile", corefileContent)
 
 	// construct container options
 	containerOptions := &docker.CreateContainerOptions{
@@ -87,10 +96,13 @@ func (c *DNSContainer) create(options ...DNSOptModifier) (*docker.Container, err
 		},
 		HostConfig: &docker.HostConfig{
 			Binds: []string{
-				shareVolumeName + ":" + c.ctx.testShareDir, // needed for coredns configuration
+				shareVolumeName + ":" + ctx.testShareDir, // needed for coredns configuration
 			},
 		},
 	}
 
-	return c.Container.create(containerOptions, true)
+	return &ContainerStartOptions{
+		ContainerOptions: containerOptions,
+		Pull:             true,
+	}, nil
 }

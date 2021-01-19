@@ -51,7 +51,7 @@ func TestDummyInterface(t *testing.T) {
 		HostIfName:  dummy1Hostname,
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	dummyIf2 := &linux_interfaces.Interface{
@@ -62,7 +62,7 @@ func TestDummyInterface(t *testing.T) {
 		HostIfName:  dummy2Hostname,
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -136,7 +136,7 @@ func TestExistingInterface(t *testing.T) {
 		HostIfName:  ifaceHostName,
 	}
 
-	ifHandler := ctx.agent.LinuxInterfaceHandler()
+	ifHandler := ctx.Agent.LinuxInterfaceHandler()
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)
@@ -234,7 +234,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 		LinkOnly:    true, // <- agent does not configure IP addresses (they are also "existing")
 	}
 
-	ifHandler := ctx.agent.LinuxInterfaceHandler()
+	ifHandler := ctx.Agent.LinuxInterfaceHandler()
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)

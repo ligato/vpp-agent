@@ -8,6 +8,7 @@ args=($*)
 echo "Preparing e2e tests.."
 
 export VPP_AGENT="${VPP_AGENT:-ligato/vpp-agent:latest}"
+export VPP_AGENT_CUSTOM="vppagent.test.ligato.io:custom"
 export TESTDATA_DIR="$SCRIPT_DIR/resources"
 export GOTESTSUM_FORMAT="${GOTESTSUM_FORMAT:-testname}"
 export DOCKER_BUILDKIT=1
@@ -15,6 +16,7 @@ export DOCKER_BUILDKIT=1
 testname="vpp-agent-e2e-test"
 imgname="vpp-agent-e2e-tests"
 vppagentcontainernameprefix="e2e-test-vppagent-agent"
+microservicecontainernameprefix="e2e-test-ms"
 etcdcontainername="e2e-test-etcd"
 dnsservercontainername="e2e-test-dns"
 sharevolumename="share-for-vpp-agent-e2e-tests"
@@ -39,6 +41,12 @@ docker build \
     --tag "${imgname}" \
     ./tests/e2e
 
+# Build custom VPP-Agent image (needed in some tests)
+docker run -d -e ETCD_CONFIG="disabled" --name customVPPAgent ${VPP_AGENT}
+docker exec -it customVPPAgent sh -c "apt-get update && apt-get install -y iptables"
+docker commit customVPPAgent ${VPP_AGENT_CUSTOM}
+docker rm -f customVPPAgent
+
 run_e2e() {
     gotestsum --raw-command -- \
         go tool test2json -t -p "e2e" \
@@ -51,6 +59,15 @@ cleanup() {
 	docker stop -t 1 "${testname}" 2>/dev/null
 	docker rm -v "${testname}" 2>/dev/null
 	set +x
+
+  echo "Stopping microservice containers if running"
+  if [ "$(docker ps -a | grep "${microservicecontainernameprefix}")" ]; then
+    msContainerIDs=$(docker container ls -q --filter name=${microservicecontainernameprefix})
+    set -x
+    docker stop -t 1 ${msContainerIDs} 2>/dev/null
+    docker rm -v ${msContainerIDs} 2>/dev/null
+    set +x
+  fi
 
   echo "Stopping vpp-agent containers if running"
   if [ "$(docker ps -a | grep "${vppagentcontainernameprefix}")" ]; then

@@ -36,7 +36,7 @@ func TestStartStopMicroservice(t *testing.T) {
 	defer ctx.Teardown()
 
 	const ms1 = "microservice1"
-	key := ns.MicroserviceKey(msNamePrefix + ms1)
+	key := ns.MicroserviceKey(MsNamePrefix + ms1)
 	msState := func() kvscheduler.ValueState {
 		return ctx.GetValueStateByKey(key)
 	}
@@ -126,9 +126,9 @@ dial-timeout: 1s
 endpoints:
     - "%v:2379"
 `
-	etcdContainer, err := ctx.Etcd.Inspect()
-	Expect(err).ShouldNot(HaveOccurred())
-	etcdConfig = fmt.Sprintf(etcdConfig, etcdContainer.NetworkSettings.IPAddress)
+	etcdIPAddress := ctx.Etcd.IPAddress()
+	Expect(etcdIPAddress).ShouldNot(BeNil())
+	etcdConfig = fmt.Sprintf(etcdConfig, etcdIPAddress)
 
 	// create VPP-Agent
 	SetupVPPAgent(ctx,
@@ -224,9 +224,9 @@ dial-timeout: 1s
 endpoints:
     - "%v:2379"
 `
-	etcdContainer, err := ctx.Etcd.Inspect()
-	Expect(err).ShouldNot(HaveOccurred())
-	etcdConfig = fmt.Sprintf(etcdConfig, etcdContainer.NetworkSettings.IPAddress)
+	etcdIPAddress := ctx.Etcd.IPAddress()
+	Expect(etcdIPAddress).ShouldNot(BeNil())
+	etcdConfig = fmt.Sprintf(etcdConfig, etcdIPAddress)
 
 	// create VPP-Agent
 	SetupVPPAgent(ctx,

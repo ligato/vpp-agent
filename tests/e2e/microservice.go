@@ -1,10 +1,10 @@
 package e2e
 
 import (
-	"fmt"
-	"regexp"
 	"runtime"
 	"testing"
+
+	"github.com/go-errors/errors"
 
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/vishvananda/netns"
@@ -15,41 +15,73 @@ import (
 const (
 	msDefaultImage = "busybox:1.31"
 	msStopTimeout  = 1 // seconds
-	msLabelKey     = "e2e.test.ms"
-	msNamePrefix   = "e2e-test-ms-"
+	MsLabelKey     = "e2e.test.ms"
+	MsNamePrefix   = "e2e-test-ms-"
 )
 
-var (
-	linuxPingRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
-)
+type Microservice struct {
+	ComponentRuntime
+	Pinger
+	Diger
 
-type microservice struct {
-	*Container
-
+	ctx     *TestCtx
 	name    string
 	nsCalls nslinuxcalls.NetworkNamespaceAPI
 }
 
-func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client, nsCalls nslinuxcalls.NetworkNamespaceAPI) (*microservice, error) {
-	ms := &microservice{
-		Container: &Container{
-			ctx:         ctx,
-			logIdentity: "Microservice " + msName,
-			stopTimeout: msStopTimeout,
-		},
-		name:    msName,
-		nsCalls: nsCalls,
+func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.NetworkNamespaceAPI,
+	options ...MicroserviceOptModifier) (*Microservice, error) {
+	// compute options
+	opts := DefaultMicroserviceiOpt(ctx, msName)
+	for _, optionModifier := range options {
+		optionModifier(opts)
 	}
 
-	msLabel := msNamePrefix + msName
-	opts := &docker.CreateContainerOptions{
+	// create struct for ETCD server
+	ms := &Microservice{
+		ComponentRuntime: opts.Runtime,
+		ctx:              ctx,
+		name:             msName,
+		nsCalls:          nsCalls,
+	}
+	// Note: if runtime doesn't implement Pinger/Diger interface and test use it, then compilation
+	// will be ok but runtime will throw "panic: runtime error: invalid memory address or nil pointer
+	// dereference" when referencing Ping/Dig function
+	if pinger, ok := opts.Runtime.(Pinger); ok {
+		ms.Pinger = pinger
+	}
+	if diger, ok := opts.Runtime.(Diger); ok {
+		ms.Diger = diger
+	}
+
+	// get runtime specific options and start microservice in runtime environment
+	startOpts, err := opts.RuntimeStartOptions(ctx, opts)
+	if err != nil {
+		return nil, errors.Errorf("can't get microservice %s start option for runtime due to: %v", msName, err)
+	}
+	err = ms.Start(startOpts)
+	if err != nil {
+		return nil, errors.Errorf("can't start microservice %s due to: %v", msName, err)
+	}
+	return ms, nil
+}
+
+func MicroserviceStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
+	opts, ok := options.(*MicroserviceOpt)
+	if !ok {
+		return nil, errors.Errorf("expected MicroserviceOpt but got %+v", options)
+	}
+
+	msLabel := MsNamePrefix + opts.Name
+	createOpts := &docker.CreateContainerOptions{
 		Context: ctx.ctx,
 		Name:    msLabel,
 		Config: &docker.Config{
 			Image: msDefaultImage,
 			Labels: map[string]string{
-				msLabelKey: msName,
+				MsLabelKey: opts.Name,
 			},
+			//Entrypoint:
 			Env: []string{"MICROSERVICE_LABEL=" + msLabel},
 			Cmd: []string{"tail", "-f", "/dev/null"},
 		},
@@ -59,25 +91,23 @@ func createMicroservice(ctx *TestCtx, msName string, dockerClient *docker.Client
 		},
 	}
 
-	_, err := ms.create(opts, true)
-	if err != nil {
-		return nil, fmt.Errorf("create container '%s' error: %w", msName, err)
+	if opts.ContainerOptsHook != nil {
+		opts.ContainerOptsHook(createOpts)
 	}
 
-	err = ms.start()
-	if err != nil {
-		return nil, fmt.Errorf("start container '%s' error: %w", msName, err)
-	}
-
-	return ms, nil
+	return &ContainerStartOptions{
+		ContainerOptions: createOpts,
+		Pull:             true,
+	}, nil
 }
 
+// TODO this is runtime specific -> integrate it into runtime concept
 func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 	// remove any running microservices prior to starting a new test
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,
 		Filters: map[string][]string{
-			"label": {msLabelKey},
+			"label": {MsLabelKey},
 		},
 	})
 	if err != nil {
@@ -91,19 +121,20 @@ func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 		if err != nil {
 			t.Fatalf("failed to remove existing microservices: %v", err)
 		} else {
-			t.Logf("removed existing microservice: %s", container.Labels[msLabelKey])
+			t.Logf("removed existing microservice: %s", container.Labels[MsLabelKey])
 		}
 	}
 }
 
+// TODO this is runtime specific -> integrate it into runtime concept
 // enterNetNs enters the **network** namespace of the microservice (other namespaces
 // remain unchanged). Leave using the returned callback.
-func (ms *microservice) enterNetNs() (exitNetNs func()) {
+func (ms *Microservice) enterNetNs() (exitNetNs func()) {
 	origns, err := netns.Get()
 	if err != nil {
 		ms.ctx.t.Fatalf("failed to obtain current network namespace: %v", err)
 	}
-	nsHandle, err := ms.nsCalls.GetNamespaceFromPid(ms.container.State.Pid)
+	nsHandle, err := ms.nsCalls.GetNamespaceFromPid(ms.PID())
 	if err != nil {
 		ms.ctx.t.Fatalf("failed to obtain handle for network namespace of microservice '%s': %v",
 			ms.name, err)
