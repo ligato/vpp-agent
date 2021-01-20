@@ -15,13 +15,17 @@
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"testing"
 
 	docker "github.com/fsouza/go-dockerclient"
-
 	. "github.com/onsi/gomega"
+	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
@@ -38,17 +42,20 @@ func TestDnsCache(t *testing.T) {
 		ExpectedResolvedIPv6Address net.IP
 		SkipAAAARecordCheck         bool
 		SkipAll                     bool
+		SkipReason                  string
 	}{
 		{
 			Name:                    "Test VPP DNS Cache with google DNS as upstream DNS server",
 			PublicUpstreamDNSServer: net.ParseIP("8.8.8.8"),
 			QueryDomainName:         "www.google.com",
-			SkipAAAARecordCheck:     true, // TODO add VPP Jira task reference
+			SkipAAAARecordCheck:     true, // TODO remove skipping when VPP bug resolved
+			SkipReason:              "VPP bug https://jira.fd.io/browse/VPP-1963",
 		}, {
 			Name:                    "Test VPP DNS Cache with cloudflare DNS as upstream DNS server",
 			PublicUpstreamDNSServer: net.ParseIP("1.1.1.1"),
 			QueryDomainName:         "www.google.com",
-			SkipAll:                 true, // TODO add VPP Jira task reference
+			SkipAll:                 true, // TODO remove skipping when VPP bug resolved
+			SkipReason:              "VPP bug https://jira.fd.io/browse/VPP-1963",
 		}, {
 			Name:            "Test VPP DNS Cache with coredns container as upstream DNS server",
 			QueryDomainName: "dnscache." + LigatoDNSHostNameSuffix,
@@ -60,7 +67,8 @@ func TestDnsCache(t *testing.T) {
 			},
 			ExpectedResolvedIPv4Address: dnsIP4Result,
 			ExpectedResolvedIPv6Address: dnsIP6Result,
-			SkipAll:                     true, // TODO add VPP Jira task reference
+			SkipAll:                     true, // TODO remove skipping when VPP bug resolved
+			SkipReason:                  "VPP bug https://jira.fd.io/browse/VPP-1963",
 		},
 	}
 
@@ -68,14 +76,17 @@ func TestDnsCache(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			if td.SkipAll {
-				t.Skipf("Skipped due to VPP bugs")
+				t.Skipf("Skipped due to %s", td.SkipReason)
 			}
+			// test setup
 			td.SetupModifiers = append(td.SetupModifiers, WithCustomVPPAgent()) // need iptables to be installed
 			ctx := Setup(t, td.SetupModifiers...)
 			defer ctx.Teardown()
 
+			// start microservice
 			ms := ctx.StartMicroservice("microservice1", useMicroserviceWithDig())
 
+			// configure VPP-Agent container as DNS server
 			vppDNSServer := net.ParseIP(ctx.Agent.IPAddress())
 			Expect(vppDNSServer).ShouldNot(BeNil(), "VPP DNS Server container has no IP address")
 			upstreamDNSServer := td.PublicUpstreamDNSServer
@@ -84,39 +95,11 @@ func TestDnsCache(t *testing.T) {
 				Expect(upstreamDNSServer).ShouldNot(BeNil(),
 					"Local upstream DNS Server container (CoreDNS) has no IP address")
 			}
-
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "bin", "dns_name_server_add_del", upstreamDNSServer.String()) //"8.8.8.8") //upstreamDNSServer.String()) //TODO debug
-			//ctx.Agent.ExecCmd("vppctl", "-s", ":5002", " bin dns_name_server_add_del "2001:4860:4860::8888"
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "bin", "dns_enable_disable")
-			//ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "dns", "cache add test.ligato.io", "1.2.3.4")
-
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "create", "tap")
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "set", "interface", "state", "tap0", "up")
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "set", "interface", "ip", "addr", "tap0", "10.10.0.2/24")
-
-			ctx.Agent.ExecCmd("ip", "addr", "add", "10.10.0.3/24", "dev", "tap0")
-			ctx.Agent.ExecCmd("ip", "link", "set", "tap0", "up")
-
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "show", "dns", "cache", "verbose")
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "show", "dns", "servers")
-
-			// routing all packets out of vpp using tap0 (requesting upstream DNS server + responding to clients of VPP in role of DNS server)
-			//ctx.Agent.ExecCmd("vppctl", "-s", ":5002", " ip route add ${DNS_SERVER}/32 via 10.10.0.3
-			ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "ip", "route", "add", "0.0.0.0/0", "via", "10.10.0.3")
-
-			// NAT container IP to/from DNS service(tap IP address on VPP end side) (this could be also done by using iproute2: http://linux-ip.net/html/nat-dnat.html//ex-nat-dnat-full)
-			//// NAT for communication with client of VPP DNS server and VPP DNS server
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "PREROUTING", "-p", "tcp", "-d", vppDNSServer.String(), "--dport", "53", "-j", "DNAT", "--to-destination", "10.10.0.2")
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "PREROUTING", "-p", "udp", "-d", vppDNSServer.String(), "--dport", "53", "-j", "DNAT", "--to-destination", "10.10.0.2")
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "POSTROUTING", "-p", "tcp", "-s", "10.10.0.2", "--sport", "53", "-j", "SNAT", "--to-source", vppDNSServer.String())
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "POSTROUTING", "-p", "udp", "-s", "10.10.0.2", "--sport", "53", "-j", "SNAT", "--to-source", vppDNSServer.String())
-			//// NAT for communication with upstream DNS server
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "PREROUTING", "-p", "tcp", "-d", vppDNSServer.String(), "--dport", "53053", "-j", "DNAT", "--to-destination", "10.10.0.2")
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "PREROUTING", "-p", "udp", "-d", vppDNSServer.String(), "--dport", "53053", "-j", "DNAT", "--to-destination", "10.10.0.2")
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "POSTROUTING", "-p", "tcp", "-s", "10.10.0.2", "--sport", "53053", "-j", "SNAT", "--to-source", vppDNSServer.String())
-			ctx.Agent.ExecCmd("iptables", "-t", "nat", "-A", "POSTROUTING", "-p", "udp", "-s", "10.10.0.2", "--sport", "53053", "-j", "SNAT", "--to-source", vppDNSServer.String())
+			err := configureVPPAgentAsDNSServer(ctx, vppDNSServer, upstreamDNSServer)
+			Expect(err).ShouldNot(HaveOccurred(), "Configuring changes to VPP-Agent failed with err")
 
 			// Testing resolving DNS query by VPP (it should make request to upstream DNS server)
+			//// Testing A (IPv4) record
 			resolvedIPAddresses, err := ms.Dig(vppDNSServer, td.QueryDomainName, A)
 			Expect(err).ToNot(HaveOccurred())
 			if td.ExpectedResolvedIPv4Address != nil {
@@ -126,7 +109,7 @@ func TestDnsCache(t *testing.T) {
 				Expect(resolvedIPAddresses[0].To4() != nil).Should(BeTrue(), "is not ipv4 address")
 			}
 
-			// doesn't work due to VPP bug (TODO add link to VPP jira bug task)
+			//// Testing AAAA (IPv6) record
 			if !td.SkipAAAARecordCheck {
 				resolvedIPAddresses, err = ms.Dig(vppDNSServer, td.QueryDomainName, AAAA)
 				Expect(err).ToNot(HaveOccurred())
@@ -145,10 +128,11 @@ func TestDnsCache(t *testing.T) {
 				ctx.Agent.ExecCmd("iptables", "-A", "OUTPUT", "-j", "DROP", "-d", upstreamDNSServer.String())
 			} else {
 				// using local container as DNS server -> the easy way how to block it is to kill it
-				ctx.TerminateDNSServer() // TODO change call to ctx.DNSServer.Stop()
+				ctx.TerminateDNSServer() // TODO change call to ctx.DNSServer.Stop() + make TODO that stop should take ctx and clear it from its stop
 			}
 
 			// Testing resolving DNS query by VPP from its cache (upstream DNS server requests are blocked)
+			//// Testing A (IPv4) record
 			resolvedIPAddresses, err = ms.Dig(vppDNSServer, td.QueryDomainName, A)
 			Expect(err).ToNot(HaveOccurred())
 			if td.ExpectedResolvedIPv4Address != nil {
@@ -158,7 +142,7 @@ func TestDnsCache(t *testing.T) {
 				Expect(resolvedIPAddresses[0].To4() != nil).Should(BeTrue(), "is not ipv4 address")
 			}
 
-			// doesn't work due to VPP bug (TODO add link to VPP jira bug task)
+			//// Testing AAAA (IPv6) record
 			if !td.SkipAAAARecordCheck {
 				resolvedIPAddresses, err = ms.Dig(vppDNSServer, td.QueryDomainName, AAAA)
 				Expect(err).ToNot(HaveOccurred())
@@ -173,6 +157,136 @@ func TestDnsCache(t *testing.T) {
 	}
 }
 
+// configureVPPAgentAsDNSServer configures VPP-Agent container to act as DNS server.
+func configureVPPAgentAsDNSServer(ctx *TestCtx, vppDNSServer, upstreamDNSServer net.IP) error {
+	/* VPP-Agent as DNS Server topology:
+
+	   +--------------------------------------------+
+	   |                VPP-Agent container         |
+	   |                                            |
+	   |   +----------------+  +----------------+   |
+	   |   |    VPP-Agent   |  |      VPP       |   |
+	   |   |                |  |                |   |
+	   |   |                |  |                |   |
+	   |   |                |  |       + vppTap |   |
+	   |   |                |  |       |        |   |
+	   |   +------+---------+  +----------------+   |
+	   |          |                    |            |
+	   |          |                    + linuxTap   |
+	   |          |                    |            |
+	   |   +------------------------------------+   |
+	   |   |      |   Linux Kernel     |        |   |
+	   |   |  +---+--------------------+------+ |   |
+	   |   |  |            NAT                | |   |
+	   |   |  +--------------+----------------+ |   |
+	   |   |                 |                  |   |
+	   |   +------------------------------------+   |
+	   |                     |                      |
+	   +--------------------------------------------+
+	                         |
+	                         + Default container interface
+	*/
+
+	const (
+		vppTapName         = "tap1"
+		linuxTapName       = "tap1-host"
+		vppTapIP           = "10.10.0.2"
+		linuxTapIP         = "10.10.0.3"
+		vppTapIPWithMask   = vppTapIP + "/24"
+		linuxTapIPWithMask = linuxTapIP + "/24"
+	)
+
+	// TODO replace this with vpp-agent configuration when support for DNS server is ready in VPP-Agent
+	ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "bin", "dns_name_server_add_del", upstreamDNSServer.String())
+	ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "bin", "dns_enable_disable")
+
+	// tap tunnel from VPP to container linux environment
+	vppTap := &vpp_interfaces.Interface{
+		Name:        vppTapName,
+		Type:        vpp_interfaces.Interface_TAP,
+		Enabled:     true,
+		IpAddresses: []string{vppTapIPWithMask},
+		Link: &vpp_interfaces.Interface_Tap{
+			Tap: &vpp_interfaces.TapLink{
+				Version:    2,
+				HostIfName: linuxTapName,
+				//ToMicroservice: MsNamePrefix + msName,
+			},
+		},
+	}
+	linuxTap := &linux_interfaces.Interface{
+		Name:        linuxTapName,
+		Type:        linux_interfaces.Interface_TAP_TO_VPP,
+		Enabled:     true,
+		HostIfName:  linuxTapName,
+		IpAddresses: []string{linuxTapIPWithMask},
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
+				VppTapIfName: vppTapName,
+			},
+		},
+	}
+
+	// routing all packets out of vpp using tap tunnel
+	// (requesting upstream DNS server + responding to clients of VPP in role of DNS server)
+	vppRouteOut := &vpp_l3.Route{
+		DstNetwork:        "0.0.0.0/0",
+		NextHopAddr:       linuxTapIP,
+		OutgoingInterface: vppTapName,
+	}
+
+	// NAT translation so that VPP-Agent container IP address with standard DNS port (53) acts as DNS Server service.
+	// The VPP handles DNS packets from its inner tap tunnel end, but packets arrive at default container interface.
+	// So additional path to join these 2 places is done (tap + linux routing), but that is not enough due to
+	// using container ip address as DNS Server service address. The DNS packet must be forwarded to VPP, but it
+	// thinks that it has already arrived where it is supposed to be (external IP of container), so the destination
+	// address must be translated to arrive in VPP. This happens by configuring linux kernel's prerouting chain of
+	// NAT table. The answer to DNS request must be also translated (changed source IP) by using postrouting chain
+	// of NAT table. The DNS traffic should normally stay only on port 53, but VPP contacts upstream DNS server
+	// (to consult unknown DNS domain names) with source port 53053 and that makes trouble when answer return
+	// from these upstream DNS servers. Hence, the NAT also for 53053 port.
+	vppDNSCommunicationPrerouting := &linux_iptables.RuleChain{
+		Name:      "VPPDNSCommunicationPrerouting",
+		Protocol:  linux_iptables.RuleChain_IPV4,
+		Table:     linux_iptables.RuleChain_NAT,
+		ChainType: linux_iptables.RuleChain_PREROUTING,
+		Rules: []string{
+			// NAT for communication between client and VPP DNS server
+			fmt.Sprintf("-p tcp -d %s --dport 53 -j DNAT --to-destination %s", vppDNSServer.String(), vppTapIP),
+			fmt.Sprintf("-p udp -d %s --dport 53 -j DNAT --to-destination %s", vppDNSServer.String(), vppTapIP),
+			// NAT for communication with upstream DNS server
+			fmt.Sprintf("-p tcp -d %s --dport 53053 -j DNAT --to-destination %s", vppDNSServer.String(), vppTapIP),
+			fmt.Sprintf("-p udp -d %s --dport 53053 -j DNAT --to-destination %s", vppDNSServer.String(), vppTapIP),
+		},
+	}
+	vppDNSCommunicationPostrouting := &linux_iptables.RuleChain{
+		Name:      "VPPDNSCommunicationPostrouting",
+		Protocol:  linux_iptables.RuleChain_IPV4,
+		Table:     linux_iptables.RuleChain_NAT,
+		ChainType: linux_iptables.RuleChain_POSTROUTING,
+		Rules: []string{
+			// NAT for communication between client and VPP DNS server
+			fmt.Sprintf("-p tcp -s %s --sport 53 -j SNAT --to-source %s", vppTapIP, vppDNSServer.String()),
+			fmt.Sprintf("-p udp -s %s --sport 53 -j SNAT --to-source %s", vppTapIP, vppDNSServer.String()),
+			// NAT for communication with upstream DNS server
+			fmt.Sprintf("-p tcp -s %s --sport 53053 -j SNAT --to-source %s", vppTapIP, vppDNSServer.String()),
+			fmt.Sprintf("-p udp -s %s --sport 53053 -j SNAT --to-source %s", vppTapIP, vppDNSServer.String()),
+		},
+	}
+
+	// apply the configuration
+	req := ctx.GenericClient().ChangeRequest()
+	err := req.Update(
+		vppTap,
+		linuxTap,
+		vppRouteOut,
+		vppDNSCommunicationPrerouting,
+		vppDNSCommunicationPostrouting,
+	).Send(context.Background())
+	return err
+}
+
+// useMicroserviceWithDig provides modifier for using specialized microservice image for using linux dig tool
 func useMicroserviceWithDig() MicroserviceOptModifier {
 	return WithMSContainerStartHook(func(opts *docker.CreateContainerOptions) {
 		// use different image (+ entrypoint usage in image needs changes in container start)
