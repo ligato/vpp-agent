@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
+	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
 	. "github.com/onsi/gomega"
@@ -34,31 +35,35 @@ func TestDnsCache(t *testing.T) {
 	dnsIP6Result := net.ParseIP("fc::1") // fc::/7 is ipv6 private range (like 10.0.0.0/8 for ipv4)
 
 	cases := []struct {
-		Name                        string
-		PublicUpstreamDNSServer     net.IP
-		QueryDomainName             string
-		SetupModifiers              []SetupOptModifier
-		ExpectedResolvedIPv4Address net.IP
-		ExpectedResolvedIPv6Address net.IP
-		SkipAAAARecordCheck         bool
-		SkipAll                     bool
-		SkipReason                  string
+		Name                                 string
+		PublicUpstreamDNSServer              net.IP
+		QueryDomainName                      string
+		UnreachabilityVerificationDomainName string
+		SetupModifiers                       []SetupOptModifier
+		ExpectedResolvedIPv4Address          net.IP
+		ExpectedResolvedIPv6Address          net.IP
+		SkipAAAARecordCheck                  bool
+		SkipAll                              bool
+		SkipReason                           string
 	}{
 		{
-			Name:                    "Test VPP DNS Cache with google DNS as upstream DNS server",
-			PublicUpstreamDNSServer: net.ParseIP("8.8.8.8"),
-			QueryDomainName:         "www.google.com",
-			SkipAAAARecordCheck:     true, // TODO remove skipping when VPP bug resolved
-			SkipReason:              "VPP bug https://jira.fd.io/browse/VPP-1963",
+			Name:                                 "Test VPP DNS Cache with google DNS as upstream DNS server",
+			PublicUpstreamDNSServer:              net.ParseIP("8.8.8.8"),
+			QueryDomainName:                      "www.google.com",
+			UnreachabilityVerificationDomainName: "www.sme.sk",
+			SkipAAAARecordCheck:                  true, // TODO remove skipping when VPP bug resolved
+			SkipReason:                           "VPP bug https://jira.fd.io/browse/VPP-1963",
 		}, {
-			Name:                    "Test VPP DNS Cache with cloudflare DNS as upstream DNS server",
-			PublicUpstreamDNSServer: net.ParseIP("1.1.1.1"),
-			QueryDomainName:         "www.google.com",
-			SkipAll:                 true, // TODO remove skipping when VPP bug resolved
-			SkipReason:              "VPP bug https://jira.fd.io/browse/VPP-1963",
+			Name:                                 "Test VPP DNS Cache with cloudflare DNS as upstream DNS server",
+			PublicUpstreamDNSServer:              net.ParseIP("1.1.1.1"),
+			QueryDomainName:                      "www.google.com",
+			UnreachabilityVerificationDomainName: "ubuntu.com",
+			SkipAll:                              true, // TODO remove skipping when VPP bug resolved
+			SkipReason:                           "VPP bug https://jira.fd.io/browse/VPP-1963",
 		}, {
-			Name:            "Test VPP DNS Cache with coredns container as upstream DNS server",
-			QueryDomainName: "dnscache." + LigatoDNSHostNameSuffix,
+			Name:                                 "Test VPP DNS Cache with coredns container as upstream DNS server",
+			QueryDomainName:                      "dnscache." + LigatoDNSHostNameSuffix,
+			UnreachabilityVerificationDomainName: "unresolvable." + LigatoDNSHostNameSuffix,
 			SetupModifiers: []SetupOptModifier{
 				WithDNSServer(WithZonedStaticEntries(LigatoDNSHostNameSuffix,
 					fmt.Sprintf("%s %s", dnsIP4Result, "dnscache."+LigatoDNSHostNameSuffix),
@@ -125,11 +130,30 @@ func TestDnsCache(t *testing.T) {
 			// already cached and should not need the upstream DNS server anymore)
 			if td.PublicUpstreamDNSServer != nil {
 				// block request to upstream DNS server
-				ctx.Agent.ExecCmd("iptables", "-A", "OUTPUT", "-j", "DROP", "-d", upstreamDNSServer.String())
+				blockUpstreamDNSServer := &linux_iptables.RuleChain{
+					Name:      "blockUpstreamDNSServer",
+					Protocol:  linux_iptables.RuleChain_IPV4,
+					Table:     linux_iptables.RuleChain_FILTER,
+					ChainType: linux_iptables.RuleChain_FORWARD,
+					Rules: []string{
+						fmt.Sprintf("-j DROP -d %s", upstreamDNSServer.String()),
+					},
+				}
+				Expect(ctx.GenericClient().ChangeRequest().Update(blockUpstreamDNSServer).
+					Send(context.Background())).To(Succeed())
 			} else {
 				// using local container as DNS server -> the easy way how to block it is to kill it
 				ctx.DNSServer.Stop()
 			}
+
+			// verify the upstream DNS blocking (without it some mild test/container changes could introduce
+			// silent error when VPP will still access upstream DNS server due to ineffective(or still not
+			// effectively applied) blocking and therefore test of VPP caching will not test the cache at all)
+			Eventually(func() error {
+				_, err := ms.Dig(vppDNSServer, td.UnreachabilityVerificationDomainName, A)
+				return err
+			}, 3*time.Second).Should(HaveOccurred(),
+				"The connection to upstream DNS server is still not severed.")
 
 			// Testing resolving DNS query by VPP from its cache (upstream DNS server requests are blocked)
 			//// Testing A (IPv4) record
