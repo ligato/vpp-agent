@@ -128,7 +128,7 @@ func TestDnsCache(t *testing.T) {
 				ctx.Agent.ExecCmd("iptables", "-A", "OUTPUT", "-j", "DROP", "-d", upstreamDNSServer.String())
 			} else {
 				// using local container as DNS server -> the easy way how to block it is to kill it
-				ctx.TerminateDNSServer() // TODO change call to ctx.DNSServer.Stop() + make TODO that stop should take ctx and clear it from its stop
+				ctx.DNSServer.Stop()
 			}
 
 			// Testing resolving DNS query by VPP from its cache (upstream DNS server requests are blocked)

@@ -141,9 +141,10 @@ func DefaultEtcdOpt(ctx *TestCtx) *EtcdOpt {
 func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
 	return &DNSOpt{
 		Runtime: &ContainerRuntime{
-			ctx:         testCtx,
-			logIdentity: "DNS server",
-			stopTimeout: dnsStopTimeout,
+			ctx:            testCtx,
+			logIdentity:    "DNS server",
+			stopTimeout:    dnsStopTimeout,
+			stopCtxCleanup: testCtx.dnsServerStopCleanup,
 		},
 		RuntimeStartOptions: DNSServerStartOptionsForContainerRuntime,
 		DomainNameSuffix:    "", // no DNS entries => no common domain name suffix

@@ -81,7 +81,7 @@ type TestCtx struct {
 
 	agents        map[string]*Agent
 	dockerClient  *docker.Client
-	agentClient   agentctl.APIClient
+	agentClient   agentctl.APIClient // TODO move into Agent struct (multiple agents need multiple agentClients)
 	microservices map[string]*Microservice
 	nsCalls       nslinuxcalls.NetworkNamespaceAPI
 	vppVersion    string
@@ -415,6 +415,10 @@ func (test *TestCtx) StartMicroservice(name string, options ...MicroserviceOptMo
 	return ms
 }
 
+// TODO StopMicroservice and StopAgent are unnecessary at context level, use ctx cleanup callback function as
+//  in case of DNS server to change the usage to microservce1.Stop(), agent1.Stop()  (Note: the start of Agent
+//  or Microservice stays at ctx level though)
+
 func (test *TestCtx) StopMicroservice(name string) {
 	test.t.Helper()
 
@@ -430,17 +434,7 @@ func (test *TestCtx) StopMicroservice(name string) {
 	delete(test.microservices, name)
 }
 
-func (test *TestCtx) TerminateDNSServer() {
-	test.t.Helper()
-
-	if test.DNSServer == nil {
-		// bug inside a test
-		test.t.Log("ERROR: cannot stop already stopped or not started at all DNS server")
-	}
-
-	if err := test.DNSServer.Stop(); err != nil {
-		test.t.Logf("ERROR: stopping DNS server failed: %v", err)
-	}
+func (test *TestCtx) dnsServerStopCleanup() {
 	test.DNSServer = nil
 }
 
