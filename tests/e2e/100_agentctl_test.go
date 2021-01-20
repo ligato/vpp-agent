@@ -262,7 +262,8 @@ func TestAgentCtlCommands(t *testing.T) {
 			if test.expectReStdout != "" {
 				matched, err = regexp.MatchString(test.expectReStdout, stdout)
 				Expect(err).To(BeNil())
-				Expect(matched).To(BeTrue(), "Expect regexp %q to match stdout for command %q", test.expectReStdout, test.cmd)
+				Expect(matched).To(BeTrue(), "Expect regexp %q to match stdout "+
+					"for command %q, stdout:\n%s", test.expectReStdout, test.cmd, stdout)
 			}
 			// Check STDERR:
 			if test.expectInStderr != "" {

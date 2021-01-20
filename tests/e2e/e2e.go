@@ -390,8 +390,7 @@ func (test *TestCtx) AgentInSync() bool {
 func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
 	test.t.Helper()
 
-	_, _, err = test.Agent.ExecCmd(cmd, args...)
-	return
+	return test.Agent.ExecCmd(cmd, args...)
 }
 
 // ExecVppctl returns output from vppctl for given action and arguments.
