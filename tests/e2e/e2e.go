@@ -337,10 +337,11 @@ func (test *TestCtx) dumpLog() {
 
 func (test *TestCtx) VppRelease() string {
 	version := test.vppVersion
+	version = strings.TrimPrefix(version, "vpp ")
 	if len(version) > 5 {
 		return version[1:6]
 	}
-	return test.vppVersion
+	return version
 }
 
 func (test *TestCtx) GenericClient() client.GenericClient {
