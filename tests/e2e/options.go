@@ -286,8 +286,10 @@ func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) 
 // between containers. It returns the absolute path to the newly created file as seen by the container
 // that creates it.
 func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent string) string {
+	// subtest test names can container filepath.Separator
+	testName := strings.ReplaceAll(ctx.t.Name(), string(filepath.Separator), "-")
 	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
-		fmt.Sprintf("e2e-test-%v-%v", ctx.t.Name(), simpleFileName)))
+		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
 	Expect(err).To(Not(HaveOccurred()))
 	Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
 

@@ -96,7 +96,7 @@ func TestDnsCache(t *testing.T) {
 			Expect(vppDNSServer).ShouldNot(BeNil(), "VPP DNS Server container has no IP address")
 			upstreamDNSServer := td.PublicUpstreamDNSServer
 			if td.PublicUpstreamDNSServer == nil {
-				upstreamDNSServer := net.ParseIP(ctx.DNSServer.IPAddress())
+				upstreamDNSServer = net.ParseIP(ctx.DNSServer.IPAddress())
 				Expect(upstreamDNSServer).ShouldNot(BeNil(),
 					"Local upstream DNS Server container (CoreDNS) has no IP address")
 			}
