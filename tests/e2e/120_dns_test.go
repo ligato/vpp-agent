@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
+	vpp_dns "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/dns"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	. "go.ligato.io/vpp-agent/v3/tests/e2e"
@@ -220,9 +221,10 @@ func configureVPPAgentAsDNSServer(ctx *TestCtx, vppDNSServer, upstreamDNSServer 
 		linuxTapIPWithMask = linuxTapIP + "/24"
 	)
 
-	// TODO replace this with vpp-agent configuration when support for DNS server is ready in VPP-Agent
-	ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "bin", "dns_name_server_add_del", upstreamDNSServer.String())
-	ctx.Agent.ExecCmd("vppctl", "-s", ":5002", "bin", "dns_enable_disable")
+	// configure VPP to act as DNS server
+	dnsServer := &vpp_dns.DNSServer{
+		UpstreamDnsServers: []string{upstreamDNSServer.String()},
+	}
 
 	// tap tunnel from VPP to container linux environment
 	vppTap := &vpp_interfaces.Interface{
@@ -301,6 +303,7 @@ func configureVPPAgentAsDNSServer(ctx *TestCtx, vppDNSServer, upstreamDNSServer 
 	// apply the configuration
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
+		dnsServer,
 		vppTap,
 		linuxTap,
 		vppRouteOut,

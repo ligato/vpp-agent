@@ -22,6 +22,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/af_packet"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/bond"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dns"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/flowprobe"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gre"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
@@ -75,6 +76,7 @@ func init() {
 		Plugins: vpp.Messages(
 			abf.AllMessages,
 			acl.AllMessages,
+			dns.AllMessages,
 			flowprobe.AllMessages,
 			gtpu.AllMessages,
 			l3xc.AllMessages,
@@ -117,6 +119,7 @@ func init() {
 //go:generate binapigen --input-file=$VPP_API_DIR/core/ipip.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/abf.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/acl.api.json
+//go:generate binapigen --input-file=$VPP_API_DIR/plugins/dns.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/flowprobe.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/gtpu.api.json
 //go:generate binapigen --input-file=$VPP_API_DIR/plugins/dhcp.api.json

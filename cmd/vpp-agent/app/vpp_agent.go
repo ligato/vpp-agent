@@ -41,6 +41,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin"
@@ -176,6 +177,7 @@ func (a *VPPAgent) Close() error {
 type VPP struct {
 	ABFPlugin   *abfplugin.ABFPlugin
 	ACLPlugin   *aclplugin.ACLPlugin
+	DNSPlugin   *dnsplugin.DNSPlugin
 	IfPlugin    *ifplugin.IfPlugin
 	IPFIXPlugin *ipfixplugin.IPFIXPlugin
 	IPSecPlugin *ipsecplugin.IPSecPlugin
@@ -192,6 +194,7 @@ func DefaultVPP() VPP {
 	return VPP{
 		ABFPlugin:   &abfplugin.DefaultPlugin,
 		ACLPlugin:   &aclplugin.DefaultPlugin,
+		DNSPlugin:   &dnsplugin.DefaultPlugin,
 		IfPlugin:    &ifplugin.DefaultPlugin,
 		IPFIXPlugin: &ipfixplugin.DefaultPlugin,
 		IPSecPlugin: &ipsecplugin.DefaultPlugin,
