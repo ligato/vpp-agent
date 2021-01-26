@@ -37,6 +37,7 @@ const (
 
 var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
 
+// Agent represents running VPP-Agent test component
 type Agent struct {
 	ComponentRuntime
 	ctx  *TestCtx
@@ -63,6 +64,8 @@ func startAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
 	return agent, nil
 }
 
+// AgentStartOptionsForContainerRuntime translates AgentOpt to options for ComponentRuntime.Start(option)
+// method implemented by ContainerRuntime
 func AgentStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
 	opts, ok := options.(*AgentOpt)
 	if !ok {

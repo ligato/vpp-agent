@@ -4,11 +4,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/go-errors/errors"
-
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/go-errors/errors"
 	"github.com/vishvananda/netns"
-
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 )
 
@@ -19,6 +17,7 @@ const (
 	MsNamePrefix   = "e2e-test-ms-"
 )
 
+// Microservice represents running microservice
 type Microservice struct {
 	ComponentRuntime
 	Pinger
@@ -66,6 +65,8 @@ func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.Networ
 	return ms, nil
 }
 
+// MicroserviceStartOptionsForContainerRuntime translates MicroserviceOpt to options for ComponentRuntime.Start(option)
+// method implemented by ContainerRuntime
 func MicroserviceStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
 	opts, ok := options.(*MicroserviceOpt)
 	if !ok {

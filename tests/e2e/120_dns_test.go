@@ -31,6 +31,7 @@ import (
 	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
+// TestDnsCache tests ability of VPP to act as DNS server with cache capabilities (cache info from upstream DNS server)
 func TestDnsCache(t *testing.T) {
 	dnsIP4Result := net.ParseIP("10.100.0.1")
 	dnsIP6Result := net.ParseIP("fc::1") // fc::/7 is ipv6 private range (like 10.0.0.0/8 for ipv4)

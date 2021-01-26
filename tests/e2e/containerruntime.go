@@ -38,6 +38,7 @@ type ContainerRuntime struct {
 	stopCtxCleanup func()
 }
 
+// ContainerStartOptions are options for ComponentRuntime.Start(option) method implemented by ContainerRuntime
 type ContainerStartOptions struct {
 	ContainerOptions *docker.CreateContainerOptions
 	Pull             bool

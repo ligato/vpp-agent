@@ -76,6 +76,8 @@ func (ec *Etcd) GetAll() (string, error) {
 	return stdout, err
 }
 
+// ETCDStartOptionsForContainerRuntime translates EtcdOpt to options for ComponentRuntime.Start(option)
+// method implemented by ContainerRuntime
 func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
 	opts, ok := options.(*EtcdOpt)
 	if !ok {

@@ -65,6 +65,7 @@ const (
 	//memifInputNode    = "memif-input"
 )
 
+// TestCtx represents data context fur currently running test
 type TestCtx struct {
 	Agent     *Agent // the default agent (first agent in multi-agent test scenario)
 	Etcd      *Etcd
@@ -137,6 +138,7 @@ type Diger interface {
 	Dig(dnsServer net.IP, queryDomain string, requestedInfo DNSRecordType) ([]net.IP, error)
 }
 
+// NewTest creates new TestCtx for given runnin test
 func NewTest(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 	// TODO: Do not use global test registration.
@@ -165,6 +167,7 @@ func NewTest(t *testing.T) *TestCtx {
 	return te
 }
 
+// Setup setups the testing environment according to options
 func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 	testCtx := NewTest(t)
 
@@ -231,6 +234,8 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 	return testCtx
 }
 
+// SetupVPPAgent setups VPP-Agent test component according to options (for container runtime it means to
+// start VPP-Agent container)
 func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
 	// prepare options
 	name := nameOfDefaultAgent
@@ -287,6 +292,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	return nameOfDefaultAgent
 }
 
+// Teardown perform test cleanup
 func (test *TestCtx) Teardown() {
 	if test.t.Failed() || *debug {
 		defer test.dumpLog()
@@ -335,6 +341,7 @@ func (test *TestCtx) dumpLog() {
 	test.t.Logf("OUTPUT:\n-----------------\n%s\n------------------\n\n", output)
 }
 
+// VppRelease provides VPP version of VPP in default VPP-Agent test component
 func (test *TestCtx) VppRelease() string {
 	version := test.vppVersion
 	version = strings.TrimPrefix(version, "vpp ")
@@ -344,6 +351,7 @@ func (test *TestCtx) VppRelease() string {
 	return version
 }
 
+// GenericClient provides generic client for communication with default VPP-Agent test component
 func (test *TestCtx) GenericClient() client.GenericClient {
 	c, err := test.agentClient.GenericClient()
 	if err != nil {
@@ -352,6 +360,7 @@ func (test *TestCtx) GenericClient() client.GenericClient {
 	return c
 }
 
+// GRPCConn provides GRPC client connection for communication with default VPP-Agent test component
 func (test *TestCtx) GRPCConn() *grpc.ClientConn {
 	conn, err := test.agentClient.GRPCConn()
 	if err != nil {
@@ -402,6 +411,7 @@ func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	return test.Agent.ExecVppctl(action, args...)
 }
 
+// StartMicroservice starts microservice according to given options
 func (test *TestCtx) StartMicroservice(name string, options ...MicroserviceOptModifier) *Microservice {
 	test.t.Helper()
 
@@ -420,6 +430,7 @@ func (test *TestCtx) StartMicroservice(name string, options ...MicroserviceOptMo
 //  in case of DNS server to change the usage to microservce1.Stop(), agent1.Stop()  (Note: the start of Agent
 //  or Microservice stays at ctx level though)
 
+// StopMicroservice stops microservice with given name
 func (test *TestCtx) StopMicroservice(name string) {
 	test.t.Helper()
 
@@ -439,6 +450,7 @@ func (test *TestCtx) dnsServerStopCleanup() {
 	test.DNSServer = nil
 }
 
+// StartAgent starts new VPP-Agent with given name and according to options
 func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 	test.t.Helper()
 
@@ -466,6 +478,7 @@ func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 	return agent
 }
 
+// StopAgent stop VPP-Agent with given name
 func (test *TestCtx) StopAgent(name string) {
 	test.t.Helper()
 

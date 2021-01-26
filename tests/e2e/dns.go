@@ -60,6 +60,8 @@ func NewDNSServer(ctx *TestCtx, options ...DNSOptModifier) (*DNSServer, error) {
 	return dnsServer, nil
 }
 
+// DNSServerStartOptionsForContainerRuntime translates DNSOpt to options for ComponentRuntime.Start(option)
+// method implemented by ContainerRuntime
 func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
 	opts, ok := options.(*DNSOpt)
 	if !ok {

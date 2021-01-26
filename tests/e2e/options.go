@@ -152,6 +152,7 @@ func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
 	}
 }
 
+// DefaultMicroserviceiOpt creates default values for MicroserviceOpt
 func DefaultMicroserviceiOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
 	return &MicroserviceOpt{
 		Runtime: &ContainerRuntime{
