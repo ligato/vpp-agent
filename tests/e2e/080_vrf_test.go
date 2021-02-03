@@ -83,7 +83,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -100,7 +100,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	vrf2VppTap := &vpp_interfaces.Interface{
@@ -112,7 +112,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -129,7 +129,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -155,7 +155,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	linuxVrf2 := &linux_interfaces.Interface{
@@ -169,7 +169,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -194,8 +194,8 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	Expect(ctx.GetValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// try to ping in both VRFs
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
@@ -208,24 +208,24 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	ctx.StartMicroservice(msName)
 	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux VRF1
 	err = ctx.GenericClient().ChangeRequest().
 		Delete(linuxVrf1).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxVrf1,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromMsClb(msName, vrfVppIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Eventually(ctx.PingFromMsClb(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
+	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
@@ -286,7 +286,7 @@ func TestVRFRoutes(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -303,7 +303,7 @@ func TestVRFRoutes(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	vrf2VppTap := &vpp_interfaces.Interface{
@@ -315,7 +315,7 @@ func TestVRFRoutes(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -332,7 +332,7 @@ func TestVRFRoutes(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -358,7 +358,7 @@ func TestVRFRoutes(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	linuxVrf2 := &linux_interfaces.Interface{
@@ -372,7 +372,7 @@ func TestVRFRoutes(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -427,8 +427,8 @@ func TestVRFRoutes(t *testing.T) {
 	Expect(ctx.GetValueState(vrf2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// try to ping across VRFs
-	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
@@ -440,23 +440,23 @@ func TestVRFRoutes(t *testing.T) {
 	ctx.StartMicroservice(msName)
 	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux VRF1
 	err = ctx.GenericClient().ChangeRequest().
 		Delete(linuxVrf1).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).ToNot(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).ToNot(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxVrf1,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
-	Eventually(ctx.PingFromMsClb(msName, vrf2LinuxIP, pingWithOutInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, pingWithOutInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	Eventually(ctx.PingFromMsClb(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
+	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
@@ -536,7 +536,7 @@ func TestExistingLinuxVRF(t *testing.T) {
 	Expect(ctx.GetValueState(iface2)).To(Equal(kvscheduler.ValueState_CONFIGURED)) // created but not in VRF yet
 	Expect(ctx.GetDerivedValueState(iface2, iface2InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
 
-	ifHandler := ctx.agent.LinuxInterfaceHandler()
+	ifHandler := ctx.Agent.LinuxInterfaceHandler()
 
 	// create referenced VRF using netlink (without the interface inside it for now)
 	err = ifHandler.AddVRFDevice(vrfHostName, vrfRT)

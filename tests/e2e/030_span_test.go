@@ -33,7 +33,7 @@ func TestSpan(t *testing.T) {
 
 	const (
 		msName     = "microservice1"
-		fullMsName = msNamePrefix + msName
+		fullMsName = MsNamePrefix + msName
 		srcTapName = "vpp_span_src"
 		dstTapName = "vpp_span_dst"
 	)

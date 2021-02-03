@@ -17,13 +17,14 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
-	"testing"
+	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func TestDhcpProxy(t *testing.T) {
@@ -68,7 +69,7 @@ func TestDhcpProxy(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	linuxVrf2 := &linux_interfaces.Interface{
@@ -82,7 +83,7 @@ func TestDhcpProxy(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	vppTap1 := &vpp_interfaces.Interface{
@@ -94,7 +95,7 @@ func TestDhcpProxy(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -112,7 +113,7 @@ func TestDhcpProxy(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 	vppTap2 := &vpp_interfaces.Interface{
@@ -124,7 +125,7 @@ func TestDhcpProxy(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -142,7 +143,7 @@ func TestDhcpProxy(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -198,8 +199,8 @@ func TestDhcpProxy(t *testing.T) {
 	Eventually(ctx.GetValueStateClb(linuxTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	Eventually(ctx.GetValueStateClb(dhcpProxy1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	Eventually(ctx.GetValueStateClb(dhcpProxy2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, vppTapIP, pingWithOutInterface(linuxTap1Hostname))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP, pingWithOutInterface(linuxTap2Hostname))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppTapIP, PingWithSourceInterface(linuxTap1Hostname))).To(Succeed())
+	Expect(ctx.PingFromMs(msName, vppTapIP, PingWithSourceInterface(linuxTap2Hostname))).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf1ID)))

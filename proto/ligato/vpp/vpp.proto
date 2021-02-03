@@ -6,6 +6,7 @@ option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp";
 
 import "ligato/vpp/abf/abf.proto";
 import "ligato/vpp/acl/acl.proto";
+import "ligato/vpp/dns/dns.proto";
 import "ligato/vpp/ipfix/ipfix.proto";
 import "ligato/vpp/ipfix/flowprobe.proto";
 import "ligato/vpp/interfaces/interface.proto";
@@ -71,6 +72,9 @@ message ConfigData {
     repeated ipfix.FlowProbeFeature ipfix_flowprobes = 92;
 
     repeated wireguard.Peer wg_peers = 93;
+
+    dns.DNSCache dns_cache = 100;
+
 }
 
 message Notification {

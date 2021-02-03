@@ -15,48 +15,74 @@
 package e2e
 
 import (
-	"bytes"
-	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/go-errors/errors"
+
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netns"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 )
 
 const (
-	vppAgentLabelKey   = "e2e.test.vppagent"
-	vppAgentNamePrefix = "e2e-test-vppagent-"
+	vppAgentLabelKey               = "e2e.test.vppagent"
+	vppAgentNamePrefix             = "e2e-test-vppagent-"
+	defaultStopContainerTimeoutSec = 3
 )
 
-type agent struct {
-	*AgentOpt
-	ctx         *TestCtx
-	name        string
-	container   *docker.Container
-	closeWaiter docker.CloseWaiter
+var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
+
+// Agent represents running VPP-Agent test component
+type Agent struct {
+	ComponentRuntime
+	ctx  *TestCtx
+	name string
 }
 
-func startAgent(ctx *TestCtx, name string, opt *AgentOpt) (*agent, error) {
-	log := logrus.WithField("name", name)
+func startAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
+	// create struct for Agent
+	agent := &Agent{
+		ComponentRuntime: opts.Runtime,
+		ctx:              ctx,
+		name:             name,
+	}
 
-	agentLabel := vppAgentNamePrefix + name
+	// get runtime specific options and start agent in runtime environment
+	startOpts, err := opts.RuntimeStartOptions(ctx, opts)
+	if err != nil {
+		return nil, errors.Errorf("can't get agent %s start option for runtime due to: %v", name, err)
+	}
+	err = agent.Start(startOpts)
+	if err != nil {
+		return nil, errors.Errorf("can't start agent %s due to: %v", name, err)
+	}
+	return agent, nil
+}
 
-	opts := docker.CreateContainerOptions{
+// AgentStartOptionsForContainerRuntime translates AgentOpt to options for ComponentRuntime.Start(option)
+// method implemented by ContainerRuntime
+func AgentStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
+	opts, ok := options.(*AgentOpt)
+	if !ok {
+		return nil, errors.Errorf("expected AgentOpt but got %+v", options)
+	}
+
+	// construct vpp-agent container creation options
+	agentLabel := vppAgentNamePrefix + opts.Name
+	createOpts := &docker.CreateContainerOptions{
 		Context: ctx.ctx,
 		Name:    agentLabel,
 		Config: &docker.Config{
-			Image: opt.Image,
+			Image: opts.Image,
 			Labels: map[string]string{
-				vppAgentLabelKey: name,
+				vppAgentLabelKey: opts.Name,
 			},
-			Env:          opt.Env,
+			Env:          opts.Env,
 			AttachStderr: true,
 			AttachStdout: true,
 		},
@@ -72,75 +98,17 @@ func startAgent(ctx *TestCtx, name string, opt *AgentOpt) (*agent, error) {
 			},
 		},
 	}
-
-	if opt.ContainerOptsHook != nil {
-		log.Debugf("calling container opts hook")
-		opt.ContainerOptsHook(&opts)
+	if opts.ContainerOptsHook != nil {
+		opts.ContainerOptsHook(createOpts)
 	}
-
-	log.Debugf("starting vpp-agent: %+v", opts)
-
-	container, err := ctx.dockerClient.CreateContainer(opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create vpp-agent: %v", err)
-	}
-
-	err = ctx.dockerClient.StartContainer(container.ID, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start vpp-agent: %v", err)
-	}
-	container, err = ctx.dockerClient.InspectContainerWithOptions(docker.InspectContainerOptions{
-		Context: ctx.ctx,
-		ID:      container.ID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to inspect vpp-agent: %v", err)
-	}
-
-	log = log.WithField("container", container.Name)
-	log = log.WithField("cid", container.ID)
-
-	closeWaiter, err := ctx.dockerClient.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
-		Container:    container.ID,
-		Stdout:       true,
-		Stderr:       true,
-		Stream:       true,
-		Logs:         true,
-		OutputStream: ctx.outputBuf,
-		ErrorStream:  ctx.outputBuf,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to attach vpp-agent: %v", err)
-	}
-
-	log.Debugf("vpp-agent started")
-
-	go func() {
-		err := closeWaiter.Wait()
-		if err != nil {
-			log.Warnf("vpp-agent exited: %v", err)
-		} else {
-			log.Debugf("vpp-agent exited OK")
-		}
-	}()
-
-	return &agent{
-		ctx:         ctx,
-		name:        name,
-		container:   container,
-		closeWaiter: closeWaiter,
-		AgentOpt:    opt,
+	return &ContainerStartOptions{
+		ContainerOptions: createOpts,
+		Pull:             false,
+		AttachLogs:       true,
 	}, nil
 }
 
-func (agent *agent) IPAddress() string {
-	return agent.container.NetworkSettings.IPAddress
-}
-
-func (agent *agent) PID() int {
-	return agent.container.State.Pid
-}
-
+// TODO this is runtime specific -> integrate it into runtime concept
 func removeDanglingAgents(t *testing.T, dockerClient *docker.Client) {
 	// remove any running vpp-agents prior to starting a new test
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
@@ -165,107 +133,56 @@ func removeDanglingAgents(t *testing.T, dockerClient *docker.Client) {
 	}
 }
 
-func (agent *agent) removeContainer(force bool) error {
-	return agent.ctx.dockerClient.RemoveContainer(docker.RemoveContainerOptions{
-		ID:            agent.container.ID,
-		Force:         force,
-		RemoveVolumes: false,
-	})
-}
-
-const defaultStopContainerTimeoutSec = 3
-
-func (agent *agent) stop() error {
-	err := agent.ctx.dockerClient.StopContainer(agent.container.ID, defaultStopContainerTimeoutSec)
-	if errors.Is(err, &docker.NoSuchContainer{}) {
-		return nil // skip remove if not found
-	} else if err != nil {
-		return err
-	}
-	return agent.removeContainer(true)
-}
-
-// Exec allows to execute command **inside** the vpp-agent - i.e. not just
-// inside the network namespace of the vpp-agent, but inside the container
-// as a whole.
-func (agent *agent) Exec(cmd string, args ...string) (string, string, error) {
-	opts := docker.CreateExecOptions{
-		Context:      agent.ctx.ctx,
-		Container:    agent.container.ID,
-		Cmd:          append([]string{cmd}, args...),
-		AttachStdout: true,
-		AttachStderr: true,
-	}
-	exec, err := agent.ctx.dockerClient.CreateExec(opts)
-	if err != nil {
-		agent.ctx.t.Fatalf("docker create exec: %v", err)
-	}
-
-	ctx, cancel := context.WithTimeout(agent.ctx.ctx, execTimeout)
-	defer cancel()
-
-	var stdout, stderr bytes.Buffer
-	err = agent.ctx.dockerClient.StartExec(exec.ID, docker.StartExecOptions{
-		Context:      ctx,
-		OutputStream: &stdout,
-		ErrorStream:  &stderr,
-	})
-	if err != nil {
-		agent.ctx.t.Fatalf("start exec failed: %v", err)
-	}
-
-	if info, er := agent.ctx.dockerClient.InspectExec(exec.ID); er != nil {
-		agent.ctx.t.Logf("exec inspect failed (ID %v): %v", exec.ID, er)
-	} else {
-		agent.ctx.logger.Printf("exec details (ID %v): %+v", exec.ID, info)
-		if info.ExitCode != 0 {
-			err = fmt.Errorf("exec error (exit code %v): %v", info.ExitCode, stderr.String())
-		}
-	}
-	return stdout.String(), stderr.String(), err
-}
-
-// Ping <destAddress> from inside of the vpp-agent.
-func (agent *agent) Ping(targetAddr string, opts ...pingOpt) error {
-	agent.ctx.t.Helper()
-
-	params := &pingOptions{
-		allowedLoss: 49, // by default at least half of the packets should get through
-	}
-	for _, o := range opts {
-		o(params)
-	}
-
-	args := []string{"-w", "4"}
-	if params.outIface != "" {
-		args = append(args, "-I", params.outIface)
-	}
-	args = append(args, targetAddr)
-
-	stdout, _, err := agent.Exec("ping", args...)
-	if err != nil {
-		return err
-	}
-
-	matches := linuxPingRegexp.FindStringSubmatch(stdout)
-	sent, recv, loss, err := parsePingOutput(stdout, matches)
-	if err != nil {
-		return err
-	}
-	agent.ctx.logger.Printf("VPP-Agent ping %s: sent=%d, received=%d, loss=%d%%",
-		targetAddr, sent, recv, loss)
-
-	if sent == 0 || loss > params.allowedLoss {
-		return fmt.Errorf("failed to ping '%s': %s", targetAddr, matches[0])
-	}
-	return nil
-}
-
-func (agent *agent) LinuxInterfaceHandler() linuxcalls.NetlinkAPI {
+func (agent *Agent) LinuxInterfaceHandler() linuxcalls.NetlinkAPI {
 	ns, err := netns.GetFromPid(agent.PID())
 	if err != nil {
 		agent.ctx.t.Fatalf("unable to get netns (PID %v)", agent.PID())
 	}
 	ifHandler := linuxcalls.NewNetLinkHandlerNs(ns, logging.DefaultLogger)
 	return ifHandler
+}
+
+// ExecVppctl returns output from vppctl for given action and arguments.
+func (agent *Agent) ExecVppctl(action string, args ...string) (string, error) {
+	cmd := append([]string{"-s", "127.0.0.1:5002", action}, args...)
+	stdout, _, err := agent.ExecCmd("vppctl", cmd...)
+	if err != nil {
+		return "", fmt.Errorf("execute `vppctl %s` error: %v", strings.Join(cmd, " "), err)
+	}
+	if *debug {
+		agent.ctx.t.Logf("executed (vppctl %v): %v", strings.Join(cmd, " "), stdout)
+	}
+
+	return stdout, nil
+}
+
+// PingFromVPPAsCallback can be used to ping repeatedly inside the assertions "Eventually"
+// and "Consistently" from Omega.
+func (agent *Agent) PingFromVPPAsCallback(destAddress string) func() error {
+	return func() error {
+		return agent.PingFromVPP(destAddress)
+	}
+}
+
+// PingFromVPP pings <dstAddress> from inside the VPP.
+func (agent *Agent) PingFromVPP(destAddress string) error {
+	// run ping on VPP using vppctl
+	stdout, err := agent.ExecVppctl("ping", destAddress)
+	if err != nil {
+		return err
+	}
+
+	// parse output
+	matches := vppPingRegexp.FindStringSubmatch(stdout)
+	sent, recv, loss, err := parsePingOutput(stdout, matches)
+	if err != nil {
+		return err
+	}
+	agent.ctx.Logger.Printf("VPP ping %s: sent=%d, received=%d, loss=%d%%",
+		destAddress, sent, recv, loss)
+
+	if sent == 0 || loss >= 50 {
+		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
+	}
+	return nil
 }

@@ -69,7 +69,7 @@ func TestSourceNAT(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + ms1Name,
+				ToMicroservice: MsNamePrefix + ms1Name,
 			},
 		},
 	}
@@ -86,7 +86,7 @@ func TestSourceNAT(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms1Name,
+			Reference: MsNamePrefix + ms1Name,
 		},
 	}
 
@@ -98,7 +98,7 @@ func TestSourceNAT(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + ms2Name,
+				ToMicroservice: MsNamePrefix + ms2Name,
 			},
 		},
 	}
@@ -115,7 +115,7 @@ func TestSourceNAT(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms2Name,
+			Reference: MsNamePrefix + ms2Name,
 		},
 	}
 
@@ -396,7 +396,7 @@ func TestNATStaticMappings(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + ms1Name,
+				ToMicroservice: MsNamePrefix + ms1Name,
 			},
 		},
 	}
@@ -413,7 +413,7 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms1Name,
+			Reference: MsNamePrefix + ms1Name,
 		},
 	}
 
@@ -425,7 +425,7 @@ func TestNATStaticMappings(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + ms2Name,
+				ToMicroservice: MsNamePrefix + ms2Name,
 			},
 		},
 	}
@@ -442,7 +442,7 @@ func TestNATStaticMappings(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms2Name,
+			Reference: MsNamePrefix + ms2Name,
 		},
 	}
 
@@ -651,7 +651,7 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + ms1Name,
+				ToMicroservice: MsNamePrefix + ms1Name,
 			},
 		},
 	}
@@ -668,7 +668,7 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms1Name,
+			Reference: MsNamePrefix + ms1Name,
 		},
 	}
 
@@ -680,7 +680,7 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + ms2Name,
+				ToMicroservice: MsNamePrefix + ms2Name,
 			},
 		},
 	}
@@ -697,7 +697,7 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + ms2Name,
+			Reference: MsNamePrefix + ms2Name,
 		},
 	}
 

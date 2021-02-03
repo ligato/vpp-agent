@@ -33,12 +33,19 @@ const vppAgentDefaultImg = "ligato/vpp-agent:latest"
 type SetupOpt struct {
 	*AgentOpt
 	*EtcdOpt
-	SetupAgent bool
-	SetupEtcd  bool
+	*DNSOpt
+	SetupAgent     bool
+	SetupEtcd      bool
+	SetupDNSServer bool
+
+	ctx *TestCtx
 }
 
 // AgentOpt is options data holder for customizing setup of agent
 type AgentOpt struct {
+	Runtime               ComponentRuntime
+	RuntimeStartOptions   RuntimeStartOptionsFunc
+	Name                  string
 	Image                 string
 	Env                   []string
 	UseEtcd               bool
@@ -46,10 +53,42 @@ type AgentOpt struct {
 	ContainerOptsHook     func(*docker.CreateContainerOptions)
 }
 
+// MicroserviceOpt is options data holder for customizing setup of microservice
+type MicroserviceOpt struct {
+	Runtime             ComponentRuntime
+	RuntimeStartOptions RuntimeStartOptionsFunc
+	Name                string
+	ContainerOptsHook   func(*docker.CreateContainerOptions)
+}
+
 // EtcdOpt is options data holder for customizing setup of ETCD
 type EtcdOpt struct {
+	Runtime                       ComponentRuntime
+	RuntimeStartOptions           RuntimeStartOptionsFunc
 	UseHTTPS                      bool
 	UseTestContainerForNetworking bool
+}
+
+// DNSOpt is options data holder for customizing setup of DNS server
+type DNSOpt struct {
+	Runtime             ComponentRuntime
+	RuntimeStartOptions RuntimeStartOptionsFunc
+
+	// DomainNameSuffix is common suffix of all static dns entries configured in hostsConfig
+	DomainNameSuffix string
+	// HostsConfig is content of configuration of static DNS entries in hosts file format
+	HostsConfig string
+}
+
+// RuntimeStartOptionsFunc is function that provides component runtime start options
+type RuntimeStartOptionsFunc func(ctx *TestCtx, options interface{}) (interface{}, error)
+
+// PingOpt are options for pinging command.
+type PingOpt struct {
+	AllowedLoss int    // percentage of allowed loss for success
+	SourceIface string // outgoing interface name
+	MaxTimeout  int    // timeout in seconds before ping exits
+	Count       int    // number of pings
 }
 
 // SetupOptModifier is function customizing general setup options
@@ -58,30 +97,76 @@ type SetupOptModifier func(*SetupOpt)
 // AgentOptModifier is function customizing Agent setup options
 type AgentOptModifier func(*AgentOpt)
 
-// EtcdOptModifier is function customizing ETCD seup options
+// MicroserviceOptModifier is function customizing Microservice setup options
+type MicroserviceOptModifier func(opt *MicroserviceOpt)
+
+// EtcdOptModifier is function customizing ETCD setup options
 type EtcdOptModifier func(*EtcdOpt)
 
+// DNSOptModifier is function customizing DNS server setup options
+type DNSOptModifier func(*DNSOpt)
+
+// PingOptModifier is modifiers of pinging options
+type PingOptModifier func(opts *PingOpt)
+
 // DefaultSetupOpt creates default values for SetupOpt
-func DefaultSetupOpt() *SetupOpt {
+func DefaultSetupOpt(testCtx *TestCtx) *SetupOpt {
 	opt := &SetupOpt{
-		AgentOpt:   DefaultAgentOpt(),
-		EtcdOpt:    DefaultEtcdOpt(),
-		SetupAgent: true,
-		SetupEtcd:  false,
+		AgentOpt:       DefaultAgentOpt(testCtx, ""),
+		EtcdOpt:        DefaultEtcdOpt(testCtx),
+		DNSOpt:         DefaultDNSOpt(testCtx),
+		SetupAgent:     true,
+		SetupEtcd:      false,
+		SetupDNSServer: false,
+		ctx:            testCtx,
 	}
 	return opt
 }
 
 // DefaultEtcdOpt creates default values for EtcdOpt
-func DefaultEtcdOpt() *EtcdOpt {
+func DefaultEtcdOpt(ctx *TestCtx) *EtcdOpt {
 	return &EtcdOpt{
+		Runtime: &ContainerRuntime{
+			ctx:         ctx,
+			logIdentity: "ETCD",
+			stopTimeout: etcdStopTimeout,
+		},
+		RuntimeStartOptions:           ETCDStartOptionsForContainerRuntime,
 		UseHTTPS:                      false,
 		UseTestContainerForNetworking: false,
 	}
 }
 
+// DefaultDNSOpt creates default values for DNSOpt
+func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
+	return &DNSOpt{
+		Runtime: &ContainerRuntime{
+			ctx:            testCtx,
+			logIdentity:    "DNS server",
+			stopTimeout:    dnsStopTimeout,
+			stopCtxCleanup: testCtx.dnsServerStopCleanup,
+		},
+		RuntimeStartOptions: DNSServerStartOptionsForContainerRuntime,
+		DomainNameSuffix:    "", // no DNS entries => no common domain name suffix
+		HostsConfig:         "", // no DNS entries
+	}
+}
+
+// DefaultMicroserviceiOpt creates default values for MicroserviceOpt
+func DefaultMicroserviceiOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
+	return &MicroserviceOpt{
+		Runtime: &ContainerRuntime{
+			ctx:         testCtx,
+			logIdentity: "Microservice " + msName,
+			stopTimeout: msStopTimeout,
+		},
+		RuntimeStartOptions: MicroserviceStartOptionsForContainerRuntime,
+		Name:                msName,
+	}
+}
+
 // DefaultAgentOpt creates default values for AgentOpt
-func DefaultAgentOpt() *AgentOpt {
+func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
 	agentImg := vppAgentDefaultImg
 	if img := os.Getenv("VPP_AGENT"); img != "" {
 		agentImg = img
@@ -95,6 +180,13 @@ func DefaultAgentOpt() *AgentOpt {
 		etcdConfig = val
 	}
 	opt := &AgentOpt{
+		Runtime: &ContainerRuntime{
+			ctx:         testCtx,
+			logIdentity: "Agent " + agentName,
+			stopTimeout: defaultStopContainerTimeoutSec,
+		},
+		RuntimeStartOptions:   AgentStartOptionsForContainerRuntime,
+		Name:                  agentName,
 		Image:                 agentImg,
 		UseEtcd:               false,
 		NoManualInitialResync: false,
@@ -107,6 +199,14 @@ func DefaultAgentOpt() *AgentOpt {
 	return opt
 }
 
+// DefaultPingOpts creates default values for PingOpt
+func DefaultPingOpts() *PingOpt {
+	return &PingOpt{
+		AllowedLoss: 49, // by default at least half of the packets should get through
+		MaxTimeout:  4,
+	}
+}
+
 // WithoutVPPAgent is test setup option disabling vpp-agent setup
 func WithoutVPPAgent() SetupOptModifier {
 	return func(o *SetupOpt) {
@@ -114,15 +214,35 @@ func WithoutVPPAgent() SetupOptModifier {
 	}
 }
 
-// WithEtcd is test setup option enabling vpp-agent setup
+// WithCustomVPPAgent is test setup option using alternative vpp-agent image (customized original vpp-agent)
+func WithCustomVPPAgent() SetupOptModifier {
+	return func(o *SetupOpt) {
+		o.AgentOpt.Image = "vppagent.test.ligato.io:custom"
+	}
+}
+
+// WithEtcd is test setup option enabling etcd setup
 func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
 	return func(o *SetupOpt) {
 		o.SetupEtcd = true
 		if o.EtcdOpt == nil {
-			o.EtcdOpt = DefaultEtcdOpt()
+			o.EtcdOpt = DefaultEtcdOpt(o.ctx)
 		}
 		for _, etcdOptModifier := range etcdOpts {
 			etcdOptModifier(o.EtcdOpt)
+		}
+	}
+}
+
+// WithDNSServer is test setup option enabling setup of container serving as dns server
+func WithDNSServer(dnsOpts ...DNSOptModifier) SetupOptModifier {
+	return func(o *SetupOpt) {
+		o.SetupDNSServer = true
+		if o.DNSOpt == nil {
+			o.DNSOpt = DefaultDNSOpt(o.ctx)
+		}
+		for _, dnsOptModifier := range dnsOpts {
+			dnsOptModifier(o.DNSOpt)
 		}
 	}
 }
@@ -141,6 +261,18 @@ func WithAdditionalAgentCmdParams(params ...string) AgentOptModifier {
 	}
 }
 
+// WithZonedStaticEntries is test setup option configuring group of static dns cache entries that belong
+// to the same zone (have the same domain name suffix). The static dns cache entries are lines of config file
+// in linux /etc/hosts file format.
+// Currently supporting only one domain name suffix with static entries (even when DNS server solution supports
+// multiple "zones" that each of them can be configured by one file in hosts file format)
+func WithZonedStaticEntries(zoneDomainNameSuffix string, staticEntries ...string) DNSOptModifier {
+	return func(o *DNSOpt) {
+		o.DomainNameSuffix = zoneDomainNameSuffix
+		o.HostsConfig = strings.Join(staticEntries, "\n")
+	}
+}
+
 // WithPluginConfigArg persists configContent for give VPP-Agent plugin (expecting generic plugin config name)
 // and returns argument for VPP-Agent executable to use this plugin configuration file.
 func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) string {
@@ -155,14 +287,24 @@ func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) 
 // between containers. It returns the absolute path to the newly created file as seen by the container
 // that creates it.
 func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent string) string {
+	// subtest test names can container filepath.Separator
+	testName := strings.ReplaceAll(ctx.t.Name(), string(filepath.Separator), "-")
 	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
-		fmt.Sprintf("e2e-test-%v-%v", ctx.t.Name(), simpleFileName)))
+		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
 	Expect(err).To(Not(HaveOccurred()))
 	Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
 
 	// TODO register in context and delete in teardown? this doesn't matter
 	//  that much because file names contain unique test names so no file collision can happen
 	return filePath
+}
+
+// WithMSContainerStartHook is microservice test setup option that will set the microservice container start
+// hook that will modify the microservice start options.
+func WithMSContainerStartHook(hook func(*docker.CreateContainerOptions)) MicroserviceOptModifier {
+	return func(opt *MicroserviceOpt) {
+		opt.ContainerOptsHook = hook
+	}
 }
 
 // WithEtcdHTTPsConnection is ETCD test setup option that will use HTTPS connection to ETCD (by default it is used
@@ -181,9 +323,52 @@ func WithEtcdTestContainerNetworking() EtcdOptModifier {
 	}
 }
 
+// NewPingOpts create new PingOpt
+func NewPingOpts(opts ...PingOptModifier) *PingOpt {
+	options := DefaultPingOpts()
+	for _, o := range opts {
+		o(options)
+	}
+	return options
+}
+
+func (ping *PingOpt) args() []string {
+	var args []string
+	if ping.MaxTimeout > 0 {
+		args = append(args, "-w", fmt.Sprint(ping.MaxTimeout))
+	}
+	if ping.Count > 0 {
+		args = append(args, "-c", fmt.Sprint(ping.Count))
+	}
+	if ping.SourceIface != "" {
+		args = append(args, "-I", ping.SourceIface)
+	}
+	return args
+}
+
+// PingWithAllowedLoss sets max allowed packet loss for pinging to be considered successful.
+func PingWithAllowedLoss(maxLoss int) PingOptModifier {
+	return func(opts *PingOpt) {
+		opts.AllowedLoss = maxLoss
+	}
+}
+
+// PingWithSourceInterface set source interface for ping packets.
+func PingWithSourceInterface(iface string) PingOptModifier {
+	return func(opts *PingOpt) {
+		opts.SourceIface = iface
+	}
+}
+
 func extractEtcdOptions(opt *SetupOpt) EtcdOptModifier {
 	return func(etcdOpt *EtcdOpt) {
 		copyOptions(etcdOpt, opt.EtcdOpt)
+	}
+}
+
+func extractDNSOptions(opt *SetupOpt) DNSOptModifier {
+	return func(dnsOpt *DNSOpt) {
+		copyOptions(dnsOpt, opt.DNSOpt)
 	}
 }
 

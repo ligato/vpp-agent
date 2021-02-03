@@ -16,8 +16,9 @@ package e2e
 
 import (
 	"context"
-	. "github.com/onsi/gomega"
 	"testing"
+
+	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -48,7 +49,7 @@ func TestInterfaceConnTap(t *testing.T) {
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -65,7 +66,7 @@ func TestInterfaceConnTap(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -172,7 +173,7 @@ func TestInterfaceTapTunnel(t *testing.T) {
 			Tap: &vpp_interfaces.TapLink{
 				Version:        2,
 				EnableTunnel:   true,
-				ToMicroservice: msNamePrefix + msName,
+				ToMicroservice: MsNamePrefix + msName,
 			},
 		},
 	}
@@ -189,7 +190,7 @@ func TestInterfaceTapTunnel(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -340,7 +341,7 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
@@ -471,7 +472,7 @@ func TestInterfaceAfPacketWithLogicalReference(t *testing.T) {
 		},
 		Namespace: &linux_namespace.NetNamespace{
 			Type:      linux_namespace.NetNamespace_MICROSERVICE,
-			Reference: msNamePrefix + msName,
+			Reference: MsNamePrefix + msName,
 		},
 	}
 
