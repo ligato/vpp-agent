@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name DNSServer --value-type *vpp_dns.DNSServer --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/dns" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DNSCache --value-type *vpp_dns.DNSCache --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/dns" --output-dir "descriptor"
 
 package dnsplugin
 
@@ -34,7 +34,7 @@ type DNSPlugin struct {
 	Deps
 
 	dnsHandler    vppcalls.DNSVppAPI
-	dnsDescriptor *descriptor.DNSServerDescriptor
+	dnsDescriptor *descriptor.DNSCacheDescriptor
 }
 
 type Deps struct {
@@ -50,7 +50,7 @@ func (p *DNSPlugin) Init() error {
 	p.dnsHandler = vppcalls.CompatibleDNSHandler(p.VPP, p.Log)
 
 	// init & register descriptor
-	dnsDescriptor := descriptor.NewDNServerDescriptor(p.dnsHandler, p.Log)
+	dnsDescriptor := descriptor.NewDNSCacheDescriptor(p.dnsHandler, p.Log)
 	if err := p.Deps.Scheduler.RegisterKVDescriptor(dnsDescriptor); err != nil {
 		return err
 	}

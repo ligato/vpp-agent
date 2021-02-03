@@ -222,8 +222,8 @@ func configureVPPAgentAsDNSServer(ctx *TestCtx, vppDNSServer, upstreamDNSServer 
 		linuxTapIPWithMask = linuxTapIP + "/24"
 	)
 
-	// configure VPP to act as DNS server
-	dnsServer := &vpp_dns.DNSServer{
+	// configure VPP to act as DNS cache server
+	dnsCacheServer := &vpp_dns.DNSCache{
 		UpstreamDnsServers: []string{upstreamDNSServer.String()},
 	}
 
@@ -304,7 +304,7 @@ func configureVPPAgentAsDNSServer(ctx *TestCtx, vppDNSServer, upstreamDNSServer 
 	// apply the configuration
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
-		dnsServer,
+		dnsCacheServer,
 		vppTap,
 		linuxTap,
 		vppRouteOut,

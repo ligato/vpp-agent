@@ -21,10 +21,10 @@ const (
 )
 
 var (
-	// DNSServer is registered NB model of DNSServer
-	ModelDNSServer = models.Register(&DNSServer{}, models.Spec{
+	// DNSCache is registered NB model of DNSCache
+	ModelDNSCache = models.Register(&DNSCache{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "dnsserver",
-		Version: "v2",
+		Type:    "dnscache",
+		Version: "v1",
 	})
 )

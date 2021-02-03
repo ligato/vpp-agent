@@ -73,7 +73,7 @@ message ConfigData {
 
     repeated wireguard.Peer wg_peers = 93;
 
-    dns.DNSServer dns_server = 100;
+    dns.DNSCache dns_cache = 100;
 
 }
 

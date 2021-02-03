@@ -22,7 +22,7 @@ import (
 	vpp_dns "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/dns"
 )
 
-// EnableDNS make act VPP as DNS Server
+// EnableDNS make act VPP as DNS cache server
 func (h *DNSVppHandler) EnableDNS() error {
 	h.log.Debug("Enabling DNS functionality of VPP")
 	if err := h.enableDisableDNS(true); err != nil {
@@ -32,7 +32,7 @@ func (h *DNSVppHandler) EnableDNS() error {
 	return nil
 }
 
-// DisableDNS disables functionality that makes VPP act as DNS Server
+// DisableDNS disables functionality that makes VPP act as DNS cache server
 func (h *DNSVppHandler) DisableDNS() error {
 	h.log.Debug("Disabling DNS functionality of VPP")
 	if err := h.enableDisableDNS(false); err != nil {

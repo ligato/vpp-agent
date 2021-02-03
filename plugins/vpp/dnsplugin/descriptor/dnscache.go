@@ -26,44 +26,44 @@ import (
 )
 
 const (
-	// DNSServerDescriptorName is the name of the descriptor for VPP DNS server functionality
-	DNSServerDescriptorName = "vpp-dns-server"
+	// DNSCacheDescriptorName is the name of the descriptor for VPP DNS cache server functionality
+	DNSCacheDescriptorName = "vpp-dns-cache"
 )
 
-// DNSServerDescriptor teaches KVScheduler how to configure VPP to act as DNS server.
-type DNSServerDescriptor struct {
+// DNSCacheDescriptor teaches KVScheduler how to configure VPP to act as DNS cache server.
+type DNSCacheDescriptor struct {
 	// dependencies
 	log        logging.Logger
 	dnsHandler vppcalls.DNSVppAPI
 }
 
-// NewDNServerDescriptor creates a new instance of the DNSServer descriptor.
-func NewDNServerDescriptor(dnsHandler vppcalls.DNSVppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
-	ctx := &DNSServerDescriptor{
-		log:        log.NewLogger("dnsserver-descriptor"),
+// NewDNSCacheDescriptor creates a new instance of the DNSCache descriptor.
+func NewDNSCacheDescriptor(dnsHandler vppcalls.DNSVppAPI, log logging.PluginLogger) *scheduler.KVDescriptor {
+	ctx := &DNSCacheDescriptor{
+		log:        log.NewLogger("dnscache-descriptor"),
 		dnsHandler: dnsHandler,
 	}
 
-	typedDescr := &adapter.DNSServerDescriptor{
-		Name:          DNSServerDescriptorName,
-		KeySelector:   dns.ModelDNSServer.IsKeyValid,
-		ValueTypeName: dns.ModelDNSServer.ProtoName(),
-		KeyLabel:      dns.ModelDNSServer.StripKeyPrefix,
-		NBKeyPrefix:   dns.ModelDNSServer.KeyPrefix(),
-		Validate:      ctx.ValidateDNSServers,
+	typedDescr := &adapter.DNSCacheDescriptor{
+		Name:          DNSCacheDescriptorName,
+		KeySelector:   dns.ModelDNSCache.IsKeyValid,
+		ValueTypeName: dns.ModelDNSCache.ProtoName(),
+		KeyLabel:      dns.ModelDNSCache.StripKeyPrefix,
+		NBKeyPrefix:   dns.ModelDNSCache.KeyPrefix(),
+		Validate:      ctx.ValidateDNSCache,
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
 	}
-	return adapter.NewDNSServerDescriptor(typedDescr)
+	return adapter.NewDNSCacheDescriptor(typedDescr)
 }
 
-// ValidateDNSServers validates content of DNS server configuration
-func (d *DNSServerDescriptor) ValidateDNSServers(key string, dnsServer *dns.DNSServer) error {
-	if len(dnsServer.UpstreamDnsServers) == 0 {
+// ValidateDNSCache validates content of DNS cache server configuration
+func (d *DNSCacheDescriptor) ValidateDNSCache(key string, dnsCache *dns.DNSCache) error {
+	if len(dnsCache.UpstreamDnsServers) == 0 {
 		return scheduler.NewInvalidValueError(
 			errors.New("at least one upstream DNS server must be defined"), "upstreamDnsServers")
 	}
-	for _, serverIpAddress := range dnsServer.UpstreamDnsServers {
+	for _, serverIpAddress := range dnsCache.UpstreamDnsServers {
 		if net.ParseIP(serverIpAddress) == nil {
 			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse upstream DNS Server IP "+
 				"address %s, should be a valid ipv4/ipv6 address", serverIpAddress), "upstreamDnsServers")
@@ -73,7 +73,7 @@ func (d *DNSServerDescriptor) ValidateDNSServers(key string, dnsServer *dns.DNSS
 }
 
 // Create enables and configures DNS functionality in VPP using VPP's binary api
-func (d *DNSServerDescriptor) Create(key string, value *dns.DNSServer) (metadata interface{}, err error) {
+func (d *DNSCacheDescriptor) Create(key string, value *dns.DNSCache) (metadata interface{}, err error) {
 	for _, serverIPString := range value.UpstreamDnsServers {
 		// Note: net.ParseIP should be always successful thanks to validation
 		if err := d.dnsHandler.AddUpstreamDNSServer(net.ParseIP(serverIPString)); err != nil {
@@ -88,7 +88,7 @@ func (d *DNSServerDescriptor) Create(key string, value *dns.DNSServer) (metadata
 }
 
 // Delete disables (and removes configuration) DNS functionality in VPP using VPP's binary api
-func (d *DNSServerDescriptor) Delete(key string, value *dns.DNSServer, metadata interface{}) error {
+func (d *DNSCacheDescriptor) Delete(key string, value *dns.DNSCache, metadata interface{}) error {
 	if err := d.dnsHandler.DisableDNS(); err != nil {
 		return errors.Errorf("failed to disable DNS due to: %v", err)
 	}

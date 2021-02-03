@@ -28,12 +28,12 @@ type DNSVppAPI interface {
 	DNSVPPRead
 }
 
-// DNSVPPWrite provides write methods for DNS Server functionality
+// DNSVPPWrite provides write methods for DNS cache server functionality
 type DNSVPPWrite interface {
-	// EnableDNS make act VPP as DNS Server
+	// EnableDNS make act VPP as DNS cache server
 	EnableDNS() error
 
-	// DisableDNS disables functionality that makes VPP act as DNS Server
+	// DisableDNS disables functionality that makes VPP act as DNS cache server
 	DisableDNS() error
 
 	// AddUpstreamDNSServer adds new upstream DNS Server to the upstream DNS server list
@@ -43,13 +43,13 @@ type DNSVPPWrite interface {
 	DeleteUpstreamDNSServer(serverIPAddress net.IP) error
 }
 
-// DNSVPPRead provides read methods for DNS server functionality
+// DNSVPPRead provides read methods for DNS cache server functionality
 type DNSVPPRead interface {
 	// TODO check whether dump can be implemented(vppcalls + descriptor's retrieve) (currently there is
 	//   no dump binapi or VPP CLI check whether the functionality is enabled - dns cache is not good indicator
 	//   because it can't detect feature disabling after first enabling)
-	// DumpDNSServer retrieves DNSServer if DNS Server functionality is enabled, otherwise it returns nil
-	//DumpDNSServer() (dnsServer *dns.DNSServer, err error)
+	// DumpDNSCache retrieves DNSCache if DNS cache server functionality is enabled, otherwise it returns nil
+	//DumpDNSCache() (dnsCache *dns.DNSCache, err error)
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

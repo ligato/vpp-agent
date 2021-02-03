@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type DNSServerKVWithMetadata struct {
+type DNSCacheKVWithMetadata struct {
 	Key      string
-	Value    *vpp_dns.DNSServer
+	Value    *vpp_dns.DNSCache
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type DNSServerDescriptor struct {
+type DNSCacheDescriptor struct {
 	Name                 string
 	KeySelector          KeySelector
 	ValueTypeName        string
 	KeyLabel             func(key string) string
-	ValueComparator      func(key string, oldValue, newValue *vpp_dns.DNSServer) bool
+	ValueComparator      func(key string, oldValue, newValue *vpp_dns.DNSCache) bool
 	NBKeyPrefix          string
 	WithMetadata         bool
 	MetadataMapFactory   MetadataMapFactory
-	Validate             func(key string, value *vpp_dns.DNSServer) error
-	Create               func(key string, value *vpp_dns.DNSServer) (metadata interface{}, err error)
-	Delete               func(key string, value *vpp_dns.DNSServer, metadata interface{}) error
-	Update               func(key string, oldValue, newValue *vpp_dns.DNSServer, oldMetadata interface{}) (newMetadata interface{}, err error)
-	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_dns.DNSServer, metadata interface{}) bool
-	Retrieve             func(correlate []DNSServerKVWithMetadata) ([]DNSServerKVWithMetadata, error)
+	Validate             func(key string, value *vpp_dns.DNSCache) error
+	Create               func(key string, value *vpp_dns.DNSCache) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_dns.DNSCache, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_dns.DNSCache, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_dns.DNSCache, metadata interface{}) bool
+	Retrieve             func(correlate []DNSCacheKVWithMetadata) ([]DNSCacheKVWithMetadata, error)
 	IsRetriableFailure   func(err error) bool
-	DerivedValues        func(key string, value *vpp_dns.DNSServer) []KeyValuePair
-	Dependencies         func(key string, value *vpp_dns.DNSServer) []Dependency
+	DerivedValues        func(key string, value *vpp_dns.DNSCache) []KeyValuePair
+	Dependencies         func(key string, value *vpp_dns.DNSCache) []Dependency
 	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type DNSServerDescriptorAdapter struct {
-	descriptor *DNSServerDescriptor
+type DNSCacheDescriptorAdapter struct {
+	descriptor *DNSCacheDescriptor
 }
 
-func NewDNSServerDescriptor(typedDescriptor *DNSServerDescriptor) *KVDescriptor {
-	adapter := &DNSServerDescriptorAdapter{descriptor: typedDescriptor}
+func NewDNSCacheDescriptor(typedDescriptor *DNSCacheDescriptor) *KVDescriptor {
+	adapter := &DNSCacheDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:                 typedDescriptor.Name,
 		KeySelector:          typedDescriptor.KeySelector,
@@ -89,88 +89,88 @@ func NewDNSServerDescriptor(typedDescriptor *DNSServerDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *DNSServerDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castDNSServerValue(key, oldValue)
-	typedNewValue, err2 := castDNSServerValue(key, newValue)
+func (da *DNSCacheDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castDNSCacheValue(key, oldValue)
+	typedNewValue, err2 := castDNSCacheValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *DNSServerDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
-	typedValue, err := castDNSServerValue(key, value)
+func (da *DNSCacheDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castDNSCacheValue(key, value)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *DNSServerDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castDNSServerValue(key, value)
+func (da *DNSCacheDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castDNSCacheValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *DNSServerDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castDNSServerValue(key, oldValue)
+func (da *DNSCacheDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castDNSCacheValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castDNSServerValue(key, newValue)
+	newTypedValue, err := castDNSCacheValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castDNSServerMetadata(key, oldMetadata)
+	typedOldMetadata, err := castDNSCacheMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *DNSServerDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castDNSServerValue(key, value)
+func (da *DNSCacheDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castDNSCacheValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castDNSServerMetadata(key, metadata)
+	typedMetadata, err := castDNSCacheMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *DNSServerDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castDNSServerValue(key, oldValue)
+func (da *DNSCacheDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castDNSCacheValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castDNSServerValue(key, newValue)
+	newTypedValue, err := castDNSCacheValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castDNSServerMetadata(key, metadata)
+	typedMetadata, err := castDNSCacheMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *DNSServerDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []DNSServerKVWithMetadata
+func (da *DNSCacheDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []DNSCacheKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castDNSServerValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castDNSCacheValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castDNSServerMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castDNSCacheMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			DNSServerKVWithMetadata{
+			DNSCacheKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -195,16 +195,16 @@ func (da *DNSServerDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KV
 	return values, err
 }
 
-func (da *DNSServerDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castDNSServerValue(key, value)
+func (da *DNSCacheDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castDNSCacheValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *DNSServerDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castDNSServerValue(key, value)
+func (da *DNSCacheDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castDNSCacheValue(key, value)
 	if err != nil {
 		return nil
 	}
@@ -213,15 +213,15 @@ func (da *DNSServerDescriptorAdapter) Dependencies(key string, value proto.Messa
 
 ////////// Helper methods //////////
 
-func castDNSServerValue(key string, value proto.Message) (*vpp_dns.DNSServer, error) {
-	typedValue, ok := value.(*vpp_dns.DNSServer)
+func castDNSCacheValue(key string, value proto.Message) (*vpp_dns.DNSCache, error) {
+	typedValue, ok := value.(*vpp_dns.DNSCache)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castDNSServerMetadata(key string, metadata Metadata) (interface{}, error) {
+func castDNSCacheMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}
