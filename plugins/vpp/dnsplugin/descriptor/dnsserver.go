@@ -45,16 +45,14 @@ func NewDNServerDescriptor(dnsHandler vppcalls.DNSVppAPI, log logging.PluginLogg
 	}
 
 	typedDescr := &adapter.DNSServerDescriptor{
-		Name:            DNSServerDescriptorName,
-		KeySelector:     dns.ModelDNSServer.IsKeyValid,
-		ValueTypeName:   dns.ModelDNSServer.ProtoName(),
-		KeyLabel:        dns.ModelDNSServer.StripKeyPrefix,
-		NBKeyPrefix:     dns.ModelDNSServer.KeyPrefix(),
-		Validate:        ctx.ValidateDNSServers,
-		ValueComparator: ctx.EquivalentDNSServers,
-		Create:          ctx.Create,
-		Delete:          ctx.Delete,
-		Update:          ctx.Update,
+		Name:          DNSServerDescriptorName,
+		KeySelector:   dns.ModelDNSServer.IsKeyValid,
+		ValueTypeName: dns.ModelDNSServer.ProtoName(),
+		KeyLabel:      dns.ModelDNSServer.StripKeyPrefix,
+		NBKeyPrefix:   dns.ModelDNSServer.KeyPrefix(),
+		Validate:      ctx.ValidateDNSServers,
+		Create:        ctx.Create,
+		Delete:        ctx.Delete,
 	}
 	return adapter.NewDNSServerDescriptor(typedDescr)
 }
@@ -74,29 +72,14 @@ func (d *DNSServerDescriptor) ValidateDNSServers(key string, dnsServer *dns.DNSS
 	return nil
 }
 
-// EquivalentDNSServers determines whether 2 DNS servers are logically equal. This comparison takes
-// into consideration also semantics that couldn't be modeled into proto models (i.e. upstream servers are
-// IP addresses and not only strings)
-func (d *DNSServerDescriptor) EquivalentDNSServers(key string, oldDNSServer, newDNSServer *dns.DNSServer) bool {
-	if (oldDNSServer.UpstreamDnsServers == nil) != (newDNSServer.UpstreamDnsServers == nil) {
-		return false
-	}
-	if len(oldDNSServer.UpstreamDnsServers) != len(newDNSServer.UpstreamDnsServers) {
-		return false
-	}
-
-	for i := range newDNSServer.UpstreamDnsServers {
-		if newDNSServer.UpstreamDnsServers[i] != oldDNSServer.UpstreamDnsServers[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // Create enables and configures DNS functionality in VPP using VPP's binary api
 func (d *DNSServerDescriptor) Create(key string, value *dns.DNSServer) (metadata interface{}, err error) {
-	if err := d.updateUpstreamDNSServerList(nil, value.UpstreamDnsServers); err != nil {
-		return nil, err
+	for _, serverIPString := range value.UpstreamDnsServers {
+		// Note: net.ParseIP should be always successful thanks to validation
+		if err := d.dnsHandler.AddUpstreamDNSServer(net.ParseIP(serverIPString)); err != nil {
+			return nil, errors.Errorf("can't add upstream DNS server "+
+				"with IP %s due to: %v", serverIPString, err)
+		}
 	}
 	if err := d.dnsHandler.EnableDNS(); err != nil {
 		return nil, errors.Errorf("failed to enable DNS due to: %v", err)
@@ -109,40 +92,11 @@ func (d *DNSServerDescriptor) Delete(key string, value *dns.DNSServer, metadata 
 	if err := d.dnsHandler.DisableDNS(); err != nil {
 		return errors.Errorf("failed to disable DNS due to: %v", err)
 	}
-	if err := d.updateUpstreamDNSServerList(value.UpstreamDnsServers, nil); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Update updates DNS Server configuration of already enabled DNS functionality
-func (d *DNSServerDescriptor) Update(key string, oldValue, newValue *dns.DNSServer,
-	oldMetadata interface{}) (newMetadata interface{}, err error) {
-	if err := d.updateUpstreamDNSServerList(oldValue.UpstreamDnsServers, newValue.UpstreamDnsServers); err != nil {
-		return nil, errors.Errorf("can't update upstream DNS servers due to: %v", err)
-	}
-	return nil, nil
-}
-
-func (d *DNSServerDescriptor) updateUpstreamDNSServerList(oldServers, newServers []string) error {
-	// no insertion into existing upstream DNS Server list, just adding at the end of list  -> remove all
-	// and then add new servers one by one
-	if oldServers != nil {
-		for _, serverIPString := range oldServers {
-			// Note: net.ParseIP should be always successful thanks to validation
-			if err := d.dnsHandler.DeleteUpstreamDNSServer(net.ParseIP(serverIPString)); err != nil {
-				return errors.Errorf("can't remove upstream DNS server "+
-					"with IP %s due to: %v", serverIPString, err)
-			}
-		}
-	}
-	if newServers != nil {
-		for _, serverIPString := range newServers {
-			// Note: net.ParseIP should be always successful thanks to validation
-			if err := d.dnsHandler.AddUpstreamDNSServer(net.ParseIP(serverIPString)); err != nil {
-				return errors.Errorf("can't add upstream DNS server "+
-					"with IP %s due to: %v", serverIPString, err)
-			}
+	for _, serverIPString := range value.UpstreamDnsServers {
+		// Note: net.ParseIP should be always successful thanks to validation
+		if err := d.dnsHandler.DeleteUpstreamDNSServer(net.ParseIP(serverIPString)); err != nil {
+			return errors.Errorf("can't remove upstream DNS server "+
+				"with IP %s due to: %v", serverIPString, err)
 		}
 	}
 	return nil
