@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -27,6 +28,7 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/utils/safeclose"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/localregistry"
 )
 
@@ -48,10 +50,24 @@ type Aggregator struct {
 
 	keyPrefixes []string
 	localKVs    map[string]datasync.KeyVal
+	config      *Config
 
 	Resync   *resync.Plugin
 	Local    *syncbase.Registry
 	Watchers []datasync.KeyValProtoWatcher
+}
+
+// Config holds the Aggregator configuration.
+type Config struct {
+	// ResyncDataSourceOverride overrides default data source (empty in aggregator and later elsewhere
+	// set to "datasync") to support certain use cases where data sources must match otherwise resync doesn't
+	// affect the same set of data (i.e. using only initfile watcher to fill initial data and agentctl resync
+	// to clean them -> agentctl resync works only on 'grpc'-sourced data and default 'datasync'-sourced
+	// initfile data couldn't be handled)
+	// This is not a full solution covering all combinations of watchers and agentctl resync, but rather
+	// a possible fix for some use cases. The full solution should handle multiple resyncs (one per data source)
+	// and all its corner cases.
+	ResyncDataSourceOverride string `json:"resync-data-source-override"`
 }
 
 // NewPlugin creates a new Plugin with the provides Options
@@ -65,6 +81,11 @@ func NewPlugin(opts ...Option) *Aggregator {
 	for _, o := range opts {
 		o(p)
 	}
+	if p.Cfg == nil {
+		p.Cfg = config.ForPlugin(p.String(),
+			config.WithCustomizedFlag(config.FlagName(p.String()), "aggregator.conf"),
+		)
+	}
 	p.PluginDeps.SetupLog()
 
 	return p
@@ -72,6 +93,14 @@ func NewPlugin(opts ...Option) *Aggregator {
 
 func (p *Aggregator) Init() error {
 	p.localKVs = map[string]datasync.KeyVal{}
+
+	// parse configuration file
+	var err error
+	p.config, err = p.retrieveConfig()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -237,7 +266,12 @@ func (p *Aggregator) watchAggrResync(aggrResync, resyncCh chan datasync.ResyncEv
 			}
 			vals[prefix] = syncbase.NewKVIterator(data)
 		}
-		resEv := syncbase.NewResyncEventDB(context.Background(), vals)
+
+		ctx := context.Background()
+		if p.config.ResyncDataSourceOverride != "" {
+			ctx = contextdecorator.DataSrcContext(ctx, p.config.ResyncDataSourceOverride)
+		}
+		resEv := syncbase.NewResyncEventDB(ctx, vals)
 
 		p.Log.Debugf("sending aggregated resync event (%d prefixes) to original resync channel", len(vals))
 		resyncCh <- resEv
@@ -314,6 +348,27 @@ func (p *Aggregator) watchLocalEvents(partChange, changeChan chan datasync.Chang
 			p.Resync.DoResync() // execution will appear in p.watchAggrResync go routine where p.localKVs will handled
 		}
 	}
+}
+
+// retrieveConfig loads Aggregator plugin configuration file.
+func (p *Aggregator) retrieveConfig() (*Config, error) {
+	config := &Config{
+		// default configuration
+		ResyncDataSourceOverride: "", // don't override
+	}
+	found, err := p.Cfg.LoadValue(config)
+	if !found {
+		if err == nil {
+			p.Log.Debug("Aggregator plugin config not found")
+		} else {
+			p.Log.Debugf("Aggregator plugin config can't be loaded due to: %v", err)
+		}
+		return config, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	return config, err
 }
 
 // WatchRegistration is adapter that allows multiple
