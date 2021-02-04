@@ -68,14 +68,14 @@ type Plugin struct {
 	vpeHandler  vpevppcalls.VppCoreAPI
 	teleHandler telemetryvppcalls.TelemetryVppAPI
 	// VPP Handlers
-	abfHandler   abfvppcalls.ABFVppRead
-	aclHandler   aclvppcalls.ACLVppRead
-	ifHandler    ifvppcalls.InterfaceVppRead
-	natHandler   natvppcalls.NatVppRead
-	l2Handler    l2vppcalls.L2VppAPI
-	l3Handler    l3vppcalls.L3VppAPI
-	ipSecHandler ipsecvppcalls.IPSecVPPRead
-	puntHandler  puntvppcalls.PuntVPPRead
+	abfHandler       abfvppcalls.ABFVppRead
+	aclHandler       aclvppcalls.ACLVppRead
+	ifHandler        ifvppcalls.InterfaceVppRead
+	natHandler       natvppcalls.NatVppRead
+	l2Handler        l2vppcalls.L2VppAPI
+	l3Handler        l3vppcalls.L3VppAPI
+	ipSecHandler     ipsecvppcalls.IPSecVPPRead
+	puntHandler      puntvppcalls.PuntVPPRead
 	wireguardHandler wireguardvppcalls.WgVppRead
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
@@ -224,6 +224,7 @@ func getIndexPageItems() map[string][]indexItem {
 	idxMap := map[string][]indexItem{
 		"Info": {
 			{Name: "Version", Path: resturl.Version},
+			{Name: "JSONSchema", Path: resturl.JSONSchema},
 		},
 		"ACL plugin": {
 			{Name: "IP-type access lists", Path: resturl.ACLIP},
@@ -270,6 +271,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 		Permissions: []*access.PermissionGroup_Permissions{
 			newPermission("/", GET),
 			newPermission(resturl.Version, GET),
+			newPermission(resturl.JSONSchema, GET),
 		},
 	}
 	tracerPg := &access.PermissionGroup{
