@@ -1,7 +1,0 @@
-syntax = "proto3";
-package samples;
-
-message Foo {
-  string name      = 1;
-  repeated Foo bar = 2;
-}

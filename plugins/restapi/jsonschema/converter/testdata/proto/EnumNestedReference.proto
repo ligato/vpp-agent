@@ -1,8 +1,0 @@
-syntax = "proto3";
-package samples;
-
-import "PayloadMessage.proto";
-
-message Msg {
-  PayloadMessage.Topology nestedEnumField = 1;
-}
