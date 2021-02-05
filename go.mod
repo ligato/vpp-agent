@@ -7,7 +7,6 @@ require (
 	github.com/Shopify/sarama v1.20.1 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
-	github.com/chrusty/protoc-gen-jsonschema v0.0.0-20201201182816-de75f1b59c4e
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.13+incompatible
@@ -47,6 +46,8 @@ require (
 	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
 	github.com/vishvananda/netlink v0.0.0-20180910184128-56b1bd27a9a3
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
+	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
