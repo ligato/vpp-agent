@@ -107,9 +107,14 @@ func (c *Converter) convertEnumType(enum *descriptor.EnumDescriptorProto) (jsons
 		jsonSchemaType.Description = formatDescription(src)
 	}
 
+	// Note: not setting type specification(oneof string and integer), because explicitly saying which
+	// values are valid (and any other is invalid) is enough specification what can be used
+	// (this also overcome bug in example creator https://json-schema-faker.js.org/ that doesn't select
+	// correct type for enum value but rather chooses random type from oneof and cast value to that type)
+	//
 	// Allow both strings and integers:
-	jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "string"})
-	jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "integer"})
+	//jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "string"})
+	//jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "integer"})
 
 	// Add the allowed values:
 	for _, enumValue := range enum.Value {
