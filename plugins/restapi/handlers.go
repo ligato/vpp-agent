@@ -42,6 +42,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const internalErrorLogPrefix = "500 Internal server error: "
+
 var (
 	// ErrHandlerUnavailable represents error returned when particular
 	// handler is not available
@@ -332,17 +334,15 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		// create FileDescriptorProto for dynamic Config holding all VPP-Agent configuration
 		knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
 		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: "+
-				"can't get registered models: %v\n", err)
-			p.Log.Error(errMsg)
+			errMsg := fmt.Sprintf("can't get registered models: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
 			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		config, err := client.NewDynamicConfig(knownModels)
 		if err != nil {
-			errMsg := fmt.Sprintf("500 Internal server error: "+
-				"can't create dynamic config due to: %v\n", err)
-			p.Log.Error(errMsg)
+			errMsg := fmt.Sprintf("can't create dynamic config due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
 			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
@@ -365,10 +365,8 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		cgReqMarshalled, err := proto.Marshal(cgReq)
 		if err != nil {
-			fmt.Errorf("can't proto marshal to: %w", err)
-			errMsg := fmt.Sprintf("500 Internal server error: "+
-				"can't proto marshal CodeGeneratorRequest: %v\n", err)
-			p.Log.Error(errMsg)
+			errMsg := fmt.Sprintf("can't proto marshal CodeGeneratorRequest: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
 			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
@@ -379,15 +377,13 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
 		if err != nil {
 			if res == nil {
-				errMsg := fmt.Sprintf("500 Internal server error: "+
-					"failed to read registered model configuration input: %v\n", err)
-				p.Log.Error(errMsg)
+				errMsg := fmt.Sprintf("failed to read registered model configuration input: %v\n", err)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
 				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
-			errMsg := fmt.Sprintf("500 Internal server error: "+
-				"failed generate JSON schema: %v (%v)\n", res.Error, err)
-			p.Log.Error(errMsg)
+			errMsg := fmt.Sprintf("failed generate JSON schema: %v (%v)\n", res.Error, err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
 			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
