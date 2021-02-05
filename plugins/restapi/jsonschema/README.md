@@ -15,5 +15,6 @@ Initial commit changes:
   - convertor tests (they are dependent on protoc at test runtime)   
 - extracted convertor out of internal package to be able to use it
 - relaxed some info level logging to debug level logging (proto_package.go, lines 78 and 121)
+- removed "oneof" type from enums to provide compatibility with external json example generator (types.go line 137 and converter.go line 116)
 
 Other changes can be tracked by git changes in this package and its subpackages
