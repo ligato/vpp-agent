@@ -80,6 +80,13 @@ func Nat44InterfaceKey(name string) string {
 	})
 }
 
+/* NAT44 mode (derived) */
+
+const (
+	// key derived when NAT44 is configured in the endpoint-dependent mode
+	Nat44EndpointDepKey = "vpp/nat44/endpoint-dependent"
+)
+
 /* NAT44 interface (derived) */
 
 const (

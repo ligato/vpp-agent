@@ -19,7 +19,7 @@ import (
 	"net"
 	"time"
 
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/interface"
 
 	"git.fd.io/govpp.git/api"
 
@@ -77,7 +77,7 @@ func (p *HelloWorld) Init() (err error) {
 func (p *HelloWorld) syncVppCall() {
 	// prepare request
 	request := &interfaces.CreateLoopback{
-		MacAddress: macParser("00:00:00:00:00:01"),
+		MacAddress: parseMac("00:00:00:00:00:01"),
 	}
 	// prepare reply
 	reply := &interfaces.CreateLoopbackReply{}
@@ -97,10 +97,10 @@ func (p *HelloWorld) syncVppCall() {
 func (p *HelloWorld) asyncVppCall() {
 	// prepare requests
 	request1 := &interfaces.CreateLoopback{
-		MacAddress: macParser("00:00:00:00:00:02"),
+		MacAddress: parseMac("00:00:00:00:00:02"),
 	}
 	request2 := &interfaces.CreateLoopback{
-		MacAddress: macParser("00:00:00:00:00:03"),
+		MacAddress: parseMac("00:00:00:00:00:03"),
 	}
 
 	// obtain contexts
@@ -152,10 +152,11 @@ func (p *HelloWorld) Close() error {
 	return nil
 }
 
-func macParser(mac string) []byte {
+func parseMac(mac string) (parsedMac [6]uint8) {
 	hw, err := net.ParseMAC(mac)
 	if err != nil {
 		panic(err)
 	}
-	return hw
+	copy(parsedMac[:], hw[:])
+	return
 }

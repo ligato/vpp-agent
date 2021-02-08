@@ -29,10 +29,10 @@ import (
 )
 
 const (
-	vpp1908 = "19.08"
 	vpp2001 = "20.01"
 	vpp2005 = "20.05"
 	vpp2009 = "20.09"
+	vpp2101 = "21.01"
 )
 
 // TestNat44StaticMapping tests Create/Read/Delete operations for NAT44 static mappings
@@ -54,6 +54,9 @@ func TestNat44StaticMapping(t *testing.T) {
 	endOfIPPool := net.ParseIP("10.0.0.11").To4()
 
 	// setup twice NAT pool
+	if !natHandler.WithLegacyStartupConf() {
+		Expect(natHandler.EnableNAT44Plugin(nat_vppcalls.Nat44InitOpts{EndpointDependent: true})).Should(Succeed())
+	}
 	Expect(natHandler.AddNat44AddressPool(0, startOfIPPool.String(), endOfIPPool.String(), true)).Should(Succeed())
 
 	tests := []struct {
@@ -91,7 +94,7 @@ func TestNat44StaticMapping(t *testing.T) {
 		},
 		{
 			name:                          "NAT44 static mapping with twice nat and twice NAT pool IP",
-			excludeUnsupportedVPPVersions: []string{vpp1908, vpp2001, vpp2005},
+			excludeUnsupportedVPPVersions: []string{vpp2001, vpp2005},
 			input: &nat.DNat44_StaticMapping{
 				Protocol:     nat.DNat44_TCP,
 				ExternalIp:   externalIP.String(),

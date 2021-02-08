@@ -42,6 +42,7 @@ if docker run -i \
 	--label io.ligato.vpp-agent.testsuite=integration \
 	--label io.ligato.vpp-agent.testname="${testname}" \
 	--env INITIAL_LOGLVL \
+	--env VPPVER=${vppver:0:5} \
 	${DOCKER_ARGS-} \
 	"${imgname}" ${args[@]:-}
 then

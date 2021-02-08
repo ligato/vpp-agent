@@ -43,6 +43,7 @@ const (
 	// dependency labels
 	mappingInterfaceDep  = "interface-exists"
 	mappingVrfDep        = "vrf-table-exists"
+	mappingEpModeDep     = "nat44-is-in-endpoint-dependent-mode"
 	refTwiceNATPoolIPDep = "reference-to-twiceNATPoolIP"
 )
 
@@ -255,7 +256,7 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 	return retrieved, nil
 }
 
-// Dependencies lists external interfaces and non-zero VRFs from mappings as dependencies.
+// Dependencies lists endpoint-dependent mode, external interfaces and non-zero VRFs from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []kvs.Dependency) {
 	// collect referenced external interfaces and VRFs
 	externalIfaces := make(map[string]struct{})
@@ -320,7 +321,13 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 			})
 		}
 	}
-
+	// D-NAT mapping require the NAT plugin to be in the endpoint dependent mode
+	if !d.natHandler.WithLegacyStartupConf() {
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: mappingEpModeDep,
+			Key:   nat.Nat44EndpointDepKey,
+		})
+	}
 	return dependencies
 }
 
