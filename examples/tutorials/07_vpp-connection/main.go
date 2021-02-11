@@ -16,16 +16,15 @@ package main
 
 import (
 	"log"
-	"net"
 	"time"
-
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/interface"
 
 	"git.fd.io/govpp.git/api"
 
-	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
-
 	"go.ligato.io/cn-infra/v2/agent"
+
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/ethernet_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/interface"
 )
 
 func main() {
@@ -76,13 +75,17 @@ func (p *HelloWorld) Init() (err error) {
 
 func (p *HelloWorld) syncVppCall() {
 	// prepare request
+	mac, err := ethernet_types.ParseMacAddress("00:00:00:00:00:01")
+	if err != nil {
+		log.Panicf("ParseMacAddress failed: %v", err)
+	}
 	request := &interfaces.CreateLoopback{
-		MacAddress: parseMac("00:00:00:00:00:01"),
+		MacAddress: mac,
 	}
 	// prepare reply
 	reply := &interfaces.CreateLoopbackReply{}
 	// send request and obtain reply
-	err := p.vppChan.SendRequest(request).ReceiveReply(reply)
+	err = p.vppChan.SendRequest(request).ReceiveReply(reply)
 	if err != nil {
 		panic(err)
 	}
@@ -96,11 +99,19 @@ func (p *HelloWorld) syncVppCall() {
 
 func (p *HelloWorld) asyncVppCall() {
 	// prepare requests
+	mac1, err := ethernet_types.ParseMacAddress("00:00:00:00:00:02")
+	if err != nil {
+		log.Panicf("ParseMacAddress failed: %v", err)
+	}
+	mac2, err := ethernet_types.ParseMacAddress("00:00:00:00:00:03")
+	if err != nil {
+		log.Panicf("ParseMacAddress failed: %v", err)
+	}
 	request1 := &interfaces.CreateLoopback{
-		MacAddress: parseMac("00:00:00:00:00:02"),
+		MacAddress: mac1,
 	}
 	request2 := &interfaces.CreateLoopback{
-		MacAddress: parseMac("00:00:00:00:00:03"),
+		MacAddress: mac2,
 	}
 
 	// obtain contexts
@@ -150,13 +161,4 @@ func (p *HelloWorld) Close() error {
 	p.vppChan.Close()
 	log.Println("Goodbye World!")
 	return nil
-}
-
-func parseMac(mac string) (parsedMac [6]uint8) {
-	hw, err := net.ParseMAC(mac)
-	if err != nil {
-		panic(err)
-	}
-	copy(parsedMac[:], hw[:])
-	return
 }
