@@ -478,6 +478,13 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 				/*if event.State == govpp.Failed {
 					p.vppConn, p.vppConChan, _ = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 				}*/
+			} else if event.State == govpp.NotResponding {
+				p.infoMu.Lock()
+				p.vppInfo.Connected = false
+				p.infoMu.Unlock()
+
+				p.lastConnErr = errors.Errorf("VPP is not responding (event: %+v)", event)
+				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
 			} else {
 				p.Log.Warnf("unknown VPP connection state: %+v", event)
 			}
