@@ -325,6 +325,7 @@ func TestNATPools(t *testing.T) {
 			// create NAT pool
 			req := ctx.GenericClient().ChangeRequest()
 			err := req.Update(
+				&vpp_nat.Nat44Global{},
 				test.createNATPool,
 			).Send(context.Background())
 			Expect(err).ToNot(HaveOccurred(), "Transaction creating nat pool failed")

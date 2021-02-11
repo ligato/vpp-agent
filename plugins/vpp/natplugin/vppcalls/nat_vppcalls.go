@@ -28,6 +28,10 @@ import (
 type NatVppAPI interface {
 	NatVppRead
 
+	// Enable NAT44 plugin and apply the given set of options.
+	EnableNAT44Plugin(opts Nat44InitOpts) error
+	// DisableNAT44Plugin disables NAT44 plugin.
+	DisableNAT44Plugin() error
 	// SetNat44Forwarding configures NAT44 forwarding.
 	SetNat44Forwarding(enableFwd bool) error
 	// EnableNat44Interface enables NAT44 feature for provided interface
@@ -54,6 +58,9 @@ type NatVppAPI interface {
 
 // NatVppRead provides read methods for VPP NAT configuration.
 type NatVppRead interface {
+	// WithLegacyStartupConf returns true if the loaded VPP NAT plugin is still using
+	// the legacy startup NAT configuration (this is the case for VPP <= 20.09).
+	WithLegacyStartupConf() bool
 	// DefaultNat44GlobalConfig returns default global configuration.
 	DefaultNat44GlobalConfig() *nat.Nat44Global
 	// Nat44GlobalConfigDump dumps global NAT44 config in NB format.
@@ -65,6 +72,28 @@ type NatVppRead interface {
 	Nat44InterfacesDump() ([]*nat.Nat44Interface, error)
 	// Nat44AddressPoolsDump dumps all configured NAT44 address pools.
 	Nat44AddressPoolsDump() ([]*nat.Nat44AddressPool, error)
+}
+
+// Previously these options were configured for NAT44 plugin via the startup configuration file.
+// As of VPP 21.01 it is possible to configure/change them in run-time (by disabling and then
+// re-enabling the plugin with changed options).
+// These are just some of the supported options. For full list of what VPP allows to configure,
+// see nat44_plugin_enable_disable binary API.
+type Nat44InitOpts struct {
+	// Endpoint dependent mode uses 6-tuple: (source IP address, source port, target IP address,
+	// target port, protocol, FIB table index) as session hash table key, whereas
+	// in the endpoint independent mode only 4-tuple (source IP address, source port, protocol, FIB table index)
+	// is used.
+	EndpointDependent bool
+	// Track connection (e.g. TCP states, timeout).
+	// In the dynamic mode the connection tracking is essential and performed by default.
+	// With StaticMappingOnly=true it is disabled and has to be turned on explicitly if needed.
+	ConnectionTracking bool
+	// If enabled only static translations are performed (i.e. no dynamic session entries).
+	StaticMappingOnly bool
+	// Policy-based packet processing and address translation.
+	// Not supported in the endpoint-dependent mode.
+	OutToInDPO bool
 }
 
 var handler = vpp.RegisterHandler(vpp.HandlerDesc{

@@ -34,7 +34,8 @@ const (
 	NAT44GlobalAddressDescriptorName = "vpp-nat44-global-address"
 
 	// dependency labels
-	addressVrfDep = "vrf-table-exists"
+	addressVrfDep    = "vrf-table-exists"
+	addressEpModeDep = "nat44-is-in-endpoint-dependent-mode"
 )
 
 // A list of non-retriable errors:
@@ -107,15 +108,19 @@ func (d *NAT44GlobalAddressDescriptor) Delete(key string, natAddr *nat.Nat44Glob
 	return nil
 }
 
-// Dependencies lists non-zero VRF as the only dependency.
-func (d *NAT44GlobalAddressDescriptor) Dependencies(key string, natAddr *nat.Nat44Global_Address) []kvs.Dependency {
-	if natAddr.VrfId == 0 || natAddr.VrfId == ^uint32(0) {
-		return nil
-	}
-	return []kvs.Dependency{
-		{
+// Dependencies lists endpoint-dependent mode and non-zero VRF as dependencies.
+func (d *NAT44GlobalAddressDescriptor) Dependencies(key string, natAddr *nat.Nat44Global_Address) (deps []kvs.Dependency) {
+	if natAddr.VrfId != 0 && natAddr.VrfId != ^uint32(0) {
+		deps = append(deps, kvs.Dependency{
 			Label: addressVrfDep,
 			Key:   l3.VrfTableKey(natAddr.VrfId, l3.VrfTable_IPV4),
-		},
+		})
 	}
+	if !d.natHandler.WithLegacyStartupConf() {
+		deps = append(deps, kvs.Dependency{
+			Label: addressEpModeDep,
+			Key:   nat.Nat44EndpointDepKey,
+		})
+	}
+	return deps
 }

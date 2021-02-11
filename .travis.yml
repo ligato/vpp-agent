@@ -47,11 +47,6 @@ jobs:
         - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
         - bash <(curl -s https://codecov.io/bash) -f /tmp/coverage.out -F unittests
 
-    - stage: Integration
-      env: VPP_VERSION=1908
-      script:
-        - make verify-binapi
-        - make integration-tests
     - env: VPP_VERSION=2001
       script:
         - make verify-binapi
@@ -61,16 +56,14 @@ jobs:
         - make verify-binapi
         - make integration-tests
     - env: VPP_VERSION=2009
+      script:
+        - make verify-binapi
+        - make integration-tests
+    - env: VPP_VERSION=2101
       script:
         - make verify-binapi
         - make integration-tests
 
-    - stage: E2E
-      env: VPP_VERSION=1908
-      script:
-        - make e2e-tests-cover
-      after_success:
-        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=2001
       script:
         - make e2e-tests-cover
@@ -82,6 +75,11 @@ jobs:
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=2009
+      script:
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
+    - env: VPP_VERSION=2101
       script:
         - make e2e-tests-cover
       after_success:

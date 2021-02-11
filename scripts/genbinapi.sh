@@ -5,8 +5,7 @@ export VPP_API_DIR=${VPP_API_DIR:-/usr/share/vpp/api}
 export VPP_VERSION=
 
 binapidir=$(basename "$VPP_BINAPI")
-if [ "$binapidir" == "vpp2001" ] || \
-   [ "$binapidir" == "vpp1908" ]
+if [ "$binapidir" == "vpp2001" ]
 then
     (
      cd $(mktemp -d)

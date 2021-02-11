@@ -15,5 +15,5 @@ Quickest and simplest way to run VPP integration tests:
 make integration-tests
 
 # Run for different VPP version
-make integration-tests VPP_VERSION=1908
+make integration-tests VPP_VERSION=2005
 ```

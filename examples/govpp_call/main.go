@@ -26,7 +26,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
-	l2Api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/l2"
+	l2Api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/l2"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
@@ -178,21 +178,14 @@ func buildData(name string) *l2.BridgeDomain {
 // Auxiliary method to transform agent model data to binary api format
 func buildBinapiMessage(data *l2.BridgeDomain, id uint32) *l2Api.BridgeDomainAddDel {
 	req := &l2Api.BridgeDomainAddDel{}
-	req.IsAdd = 1
+	req.IsAdd = true
 	req.BdID = id
-	req.Flood = boolToInt(data.Flood)
-	req.UuFlood = boolToInt(data.UnknownUnicastFlood)
-	req.Forward = boolToInt(data.Forward)
-	req.Learn = boolToInt(data.Learn)
-	req.ArpTerm = boolToInt(data.ArpTermination)
+	req.Flood = data.Flood
+	req.UuFlood = data.UnknownUnicastFlood
+	req.Forward = data.Forward
+	req.Learn = data.Learn
+	req.ArpTerm = data.ArpTermination
 	req.MacAge = uint8(data.MacAge)
 
 	return req
-}
-
-func boolToInt(input bool) uint8 {
-	if input {
-		return uint8(1)
-	}
-	return uint8(0)
 }

@@ -67,7 +67,9 @@ const (
 		}
 		plugins {
 			plugin dpdk_plugin.so { disable }
-		}
+		}`
+	// in older versions of VPP (<=20.09), NAT plugin was also configured via the startup config file
+	withNatStartupConf = `
 		nat {
 			endpoint-dependent
 		}`
@@ -124,7 +126,11 @@ func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 	if *vppConfig != "" {
 		vppCmd.Args = append(vppCmd.Args, "-c", *vppConfig)
 	} else {
-		vppCmd.Args = append(vppCmd.Args, defaultVPPConfig)
+		config := defaultVPPConfig
+		if os.Getenv("VPPVER") <= "20.09" {
+			config += withNatStartupConf
+		}
+		vppCmd.Args = append(vppCmd.Args, config)
 	}
 	vppCmd.Stderr = stderr
 	vppCmd.Stdout = stdout
