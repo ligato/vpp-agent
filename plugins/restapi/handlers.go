@@ -20,18 +20,21 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"runtime"
 	"strings"
 
+	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
 	protoc_plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/unrolled/render"
-
-	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"github.com/golang/protobuf/proto"
 	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+	kvscheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/jsonschema/converter"
@@ -40,6 +43,9 @@ import (
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/encoding/protojson"
+	protoV2 "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -63,6 +69,10 @@ var (
 func (p *Plugin) registerInfoHandlers() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.Version, p.versionHandler, GET)
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.JSONSchema, p.jsonSchemaHandler, GET)
+}
+
+func (p *Plugin) registerConfigurationHandlers() {
+	p.HTTPHandlers.RegisterHTTPHandler(resturl.Validate, p.validationHandler, POST)
 }
 
 // Registers ABF REST handler
@@ -487,6 +497,166 @@ func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		p.logError(formatter.JSON(w, http.StatusOK, version))
 	}
+}
+
+// validationHandler validates yaml configuration for VPP-Agent. This is the same configuration as used
+// in agentctl configuration get/update.
+func (p *Plugin) validationHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		// reading input data (yaml-formatted dynamic config containing all VPP-Agent configuration)
+		yamlBytes, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't read request body due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+
+		// get empty dynamic Config able to hold all VPP-Agent configuration
+		knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
+		if err != nil {
+			errMsg := fmt.Sprintf("can't get registered models: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+		config, err := client.NewDynamicConfig(knownModels)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't create dynamic config due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+
+		// filling dynamically created config with data from request body
+		// (=syntax check of data + prepare for further processing)
+		bj, err := yaml2.YAMLToJSON(yamlBytes)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't convert yaml configuration "+
+				"from request body to JSON due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+		err = protojson.Unmarshal(bj, config)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't unmarshall string input data "+
+				"into dynamically created config due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+
+		// extracting proto messages from dynamically created config structure
+		configMessages, err := client.DynamicConfigExport(config)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't extract single proto message "+
+				"from one dynamic config to validate them per proto message due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+
+		// run Descriptor validators on config messages
+		err = p.kvscheduler.ValidateSemantically(convertToProtoV1(configMessages))
+		if err != nil {
+			if validationErrors, ok := err.(*kvscheduler.InvalidMessagesError); ok {
+				convertedValidationErrors := p.ConvertValidationErrorOutput(validationErrors, knownModels, config)
+				p.logError(formatter.JSON(w, http.StatusBadRequest, convertedValidationErrors))
+				return
+			}
+			errMsg := fmt.Sprintf("can't validate data due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+		p.logError(formatter.JSON(w, http.StatusOK, struct{}{}))
+	}
+}
+
+// ConvertValidationErrorOutput converts kvscheduler.ValidateSemantically(...) output to REST API output
+func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.InvalidMessagesError, knownModels []*models.ModelInfo, config *dynamicpb.Message) []interface{} {
+	// create helper mapping
+	nameToModel := make(map[protoreflect.FullName]*models.ModelInfo)
+	for _, knownModel := range knownModels {
+		nameToModel[knownModel.MessageDescriptor.FullName()] = knownModel
+	}
+
+	// define types for REST API output (could use map, but struct hold field ordering within each validation error)
+	type validationErrorForSingleConfig struct {
+		Path  string "json: path"
+		Error string "json: error"
+	}
+	type validationErrorForRepeatedConfig struct {
+		Path            string "json: path"
+		Error           string "json: error"
+		ErrorConfigPart string "json: error_config_part"
+	}
+
+	// convert each validation error to REST API output (data filled structs defined above)
+	convertedValidationErrors := make([]interface{}, 0, len(validationErrors.MessageErrors()))
+	for _, messageError := range validationErrors.MessageErrors() {
+		// get yaml names of messages/fields on path to configuration with error
+		messageModel := nameToModel[proto.MessageV2(messageError.Message()).
+			ProtoReflect().Descriptor().FullName()]
+		groupFieldName := client.DynamicConfigGroupFieldNaming(messageModel)
+		modelFieldProtoName, modelFieldName := client.DynamicConfigKnownModelFieldNaming(messageModel)
+		invalidMessageFields := messageError.InvalidFields()
+		invalidMessageFieldsStr := invalidMessageFields[0]
+		if len(invalidMessageFields) > 1 {
+			invalidMessageFieldsStr = fmt.Sprintf("[%s]", strings.Join(invalidMessageFields, ","))
+		}
+
+		// compute cardinality of field (in configGroup) referring to configuration with error
+		cardinality := protoreflect.Optional
+		if configGroupField := config.ProtoReflect().Descriptor().Fields().
+			ByName(protoreflect.Name(groupFieldName)); configGroupField != nil {
+			modelField := configGroupField.Message().Fields().ByName(protoreflect.Name(modelFieldProtoName))
+			if modelField != nil {
+				cardinality = modelField.Cardinality()
+			}
+		}
+
+		// fill correct struct for REST API output
+		var convertedValidationError interface{}
+		if cardinality == protoreflect.Repeated {
+			// compute again the string representation of error configuration (yaml is preferred)
+			// (no original reference to REST API string is remembered -> computing it from proto message)
+			configPart := messageError.Message().String()
+			json, err := protojson.Marshal(proto.MessageV2(messageError.Message()))
+			if err == nil {
+				configPart = string(json)
+				yaml, err := yaml2.JSONToYAML(json)
+				if err == nil {
+					configPart = string(yaml)
+				}
+			}
+
+			// fill struct for REST API output
+			convertedValidationError = validationErrorForRepeatedConfig{
+				Path: fmt.Sprintf("%s.%s*.%s",
+					groupFieldName, modelFieldName, invalidMessageFieldsStr),
+				Error:           messageError.ValidationError().Error(),
+				ErrorConfigPart: configPart,
+			}
+		} else { // fill struct for REST API output
+			convertedValidationError = validationErrorForSingleConfig{
+				Path:  fmt.Sprintf("%s.%s.%s", groupFieldName, modelFieldName, invalidMessageFieldsStr),
+				Error: messageError.ValidationError().Error(),
+			}
+		}
+
+		convertedValidationErrors = append(convertedValidationErrors, convertedValidationError)
+	}
+	return convertedValidationErrors
+}
+
+func convertToProtoV1(messages []protoV2.Message) []proto.Message {
+	result := make([]proto.Message, 0, len(messages))
+	for _, message := range messages {
+		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
+	}
+	return result
 }
 
 // telemetryHandler - returns various telemetry data

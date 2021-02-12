@@ -168,6 +168,72 @@ func (e *InvalidValueError) GetInvalidFields() []string {
 	return e.invalidFields
 }
 
+/***************************** Invalid Message ****************************/
+
+// InvalidMessageError is message validation error that links proto message with its
+// corresponding InvalidValueError returned from running KVDescriptor.Validate on the given proto message
+type InvalidMessageError struct {
+	message      proto.Message
+	invalidError *InvalidValueError
+}
+
+// NewInvalidMessageError is constructor for InvalidMessageError
+func NewInvalidMessageError(message proto.Message, invalidError *InvalidValueError) *InvalidMessageError {
+	return &InvalidMessageError{
+		message:      message,
+		invalidError: invalidError,
+	}
+}
+
+// Error returns string representation of the pair (proto message, its InvalidValueError)
+func (e *InvalidMessageError) Error() string {
+	return fmt.Sprintf("message is not valid due to: %v (message=%v)", e.invalidError.Error(), e.message)
+}
+
+// Message returns proto message to which the InvalidValueError is linked
+func (e *InvalidMessageError) Message() proto.Message {
+	return e.message
+}
+
+// InvalidFields return fields to which the InvalidValueError is referring
+func (e *InvalidMessageError) InvalidFields() []string {
+	return e.invalidError.GetInvalidFields()
+}
+
+// ValidationError return error message of linked InvalidValueError
+func (e *InvalidMessageError) ValidationError() error {
+	return e.invalidError.GetValidationError()
+}
+
+/***************************** Invalid Messages ****************************/
+
+// InvalidMessagesError is container for multiple InvalidMessageError instances
+type InvalidMessagesError struct {
+	messageErrors []*InvalidMessageError
+}
+
+// NewInvalidMessagesError is constructor for new InvalidMessagesError instances
+func NewInvalidMessagesError(messageErrors []*InvalidMessageError) *InvalidMessagesError {
+	return &InvalidMessagesError{
+		messageErrors: messageErrors,
+	}
+}
+
+// Error returns string representation of all contained InvalidMessageError instances
+func (e *InvalidMessagesError) Error() string {
+	var sb strings.Builder
+	sb.WriteString("some messages are invalid:\n")
+	for _, me := range e.messageErrors {
+		sb.WriteString(me.Error() + "\n")
+	}
+	return sb.String()
+}
+
+// MessageErrors returns all InvalidMessageError instances
+func (e *InvalidMessagesError) MessageErrors() []*InvalidMessageError {
+	return e.messageErrors
+}
+
 /***************************** Verification Failure ****************************/
 
 type VerificationErrorType int

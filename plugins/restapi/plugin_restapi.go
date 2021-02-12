@@ -26,6 +26,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	vpevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	kvscheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	linuxifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
 	iflinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	l3linuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin/linuxcalls"
@@ -80,6 +81,8 @@ type Plugin struct {
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
+
+	kvscheduler kvscheduler.KVScheduler
 
 	govppmux sync.Mutex
 }
@@ -193,6 +196,8 @@ func (p *Plugin) Init() (err error) {
 func (p *Plugin) AfterInit() (err error) {
 	// Info handlers.
 	p.registerInfoHandlers()
+	// configuration handlers
+	p.registerConfigurationHandlers()
 	// VPP handlers
 	p.registerTelemetryHandlers()
 	// core
@@ -225,6 +230,9 @@ func getIndexPageItems() map[string][]indexItem {
 		"Info": {
 			{Name: "Version", Path: resturl.Version},
 			{Name: "JSONSchema", Path: resturl.JSONSchema},
+		},
+		"Configuration": {
+			{Name: "Validation", Path: resturl.Validate},
 		},
 		"ACL plugin": {
 			{Name: "IP-type access lists", Path: resturl.ACLIP},
@@ -274,6 +282,13 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.JSONSchema, GET),
 		},
 	}
+	cfgValidationPg := &access.PermissionGroup{
+		Name: "configurationValidation",
+		Permissions: []*access.PermissionGroup_Permissions{
+			newPermission("/", GET),
+			newPermission(resturl.Validate, GET),
+		},
+	}
 	tracerPg := &access.PermissionGroup{
 		Name: "stats",
 		Permissions: []*access.PermissionGroup_Permissions{
@@ -315,7 +330,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 		},
 	}
 
-	return []*access.PermissionGroup{infoPg, tracerPg, telemetryPg, dumpPg}
+	return []*access.PermissionGroup{infoPg, cfgValidationPg, tracerPg, telemetryPg, dumpPg}
 }
 
 // Returns permission object with url and provided methods

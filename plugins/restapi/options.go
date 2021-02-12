@@ -17,6 +17,7 @@ package restapi
 import (
 	"go.ligato.io/cn-infra/v2/rpc/rest"
 	"go.ligato.io/cn-infra/v2/servicelabel"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	linuxifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
@@ -46,6 +47,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.VPPL3Plugin = &l3plugin.DefaultPlugin
 	p.LinuxIfPlugin = &linuxifplugin.DefaultPlugin
 	p.NsPlugin = &nsplugin.DefaultPlugin
+	p.kvscheduler = &kvscheduler.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
