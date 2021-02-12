@@ -42,7 +42,17 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-const internalErrorLogPrefix = "500 Internal server error: "
+const (
+	// URLFieldNamingParamName is URL parameter name for JSON schema http handler's setting
+	// to output field names using proto/json/both names for fields
+	URLFieldNamingParamName = "fieldnames"
+	// OnlyProtoFieldNames is URL parameter value for JSON schema http handler to use only proto names as field names
+	OnlyProtoFieldNames = "onlyproto"
+	// OnlyJSONFieldNames is URL parameter value for JSON schema http handler to use only JSON names as field names
+	OnlyJSONFieldNames = "onlyjson"
+
+	internalErrorLogPrefix = "500 Internal server error: "
+)
 
 var (
 	// ErrHandlerUnavailable represents error returned when particular
@@ -329,6 +339,12 @@ func (p *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, 
 }
 
 // jsonSchemaHandler returns JSON schema of VPP-Agent configuration.
+// This handler also accepts URL query parameters changing the exported field names of proto messages. By default,
+// proto message fields are exported twice in JSON scheme. Once with proto name and once with JSON name. This should
+// allow to use any of the 2 forms in JSON/YAML configuration when used JSON schema for validation. However,
+// this behaviour can be modified by URLFieldNamingParamName URL query parameter, that force to export only
+// proto named fields (OnlyProtoFieldNames URL query parameter value) or JSON named fields (OnlyJSONFieldNames
+// URL query parameter value).
 func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		// create FileDescriptorProto for dynamic Config holding all VPP-Agent configuration
@@ -354,13 +370,28 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 
 		// creating input for protoc's plugin (code extracted in plugins/restapi/jsonschema) that can convert
 		// FileDescriptorProtos to JSONSchema
-		params := "messages=[Dynamic_config]" + // targeting only the main config message (proto file has also other messages)
-			",disallow_additional_properties" + // additional unknown json fields makes configuration applying fail
-			",proto_and_json_fieldnames" // allow also proto names for fields
+		params := []string{
+			"messages=[Dynamic_config]",      // targeting only the main config message (proto file has also other messages)
+			"disallow_additional_properties", // additional unknown json fields makes configuration applying fail
+		}
+		fieldNamesConverterParam := "proto_and_json_fieldnames" // create proto and json named fields by default
+		if fieldNames, found := req.URL.Query()[URLFieldNamingParamName]; found && len(fieldNames) > 0 {
+			// converting REST API request params to 3rd party tool params
+			switch fieldNames[0] {
+			case OnlyProtoFieldNames:
+				fieldNamesConverterParam = ""
+			case OnlyJSONFieldNames:
+				fieldNamesConverterParam = "json_fieldnames"
+			}
+		}
+		if fieldNamesConverterParam != "" {
+			params = append(params, fieldNamesConverterParam)
+		}
+		paramsStr := strings.Join(params, ",")
 		cgReq := &protoc_plugin.CodeGeneratorRequest{
 			ProtoFile:       fileDescriptorProtos,
 			FileToGenerate:  []string{dynConfigFileDescProto.GetName()},
-			Parameter:       &params,
+			Parameter:       &paramsStr,
 			CompilerVersion: nil, // compiler version is not need in this protoc plugin
 		}
 		cgReqMarshalled, err := proto.Marshal(cgReq)
