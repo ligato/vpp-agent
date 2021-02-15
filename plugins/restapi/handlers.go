@@ -17,19 +17,41 @@
 package restapi
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"runtime"
+	"strings"
 
 	"github.com/go-errors/errors"
+	"github.com/golang/protobuf/proto"
+	protoc_plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/unrolled/render"
 
+	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
+	"go.ligato.io/vpp-agent/v3/plugins/restapi/jsonschema/converter"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+)
+
+const (
+	// URLFieldNamingParamName is URL parameter name for JSON schema http handler's setting
+	// to output field names using proto/json/both names for fields
+	URLFieldNamingParamName = "fieldnames"
+	// OnlyProtoFieldNames is URL parameter value for JSON schema http handler to use only proto names as field names
+	OnlyProtoFieldNames = "onlyproto"
+	// OnlyJSONFieldNames is URL parameter value for JSON schema http handler to use only JSON names as field names
+	OnlyJSONFieldNames = "onlyjson"
+
+	internalErrorLogPrefix = "500 Internal server error: "
 )
 
 var (
@@ -40,6 +62,7 @@ var (
 
 func (p *Plugin) registerInfoHandlers() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.Version, p.versionHandler, GET)
+	p.HTTPHandlers.RegisterHTTPHandler(resturl.JSONSchema, p.jsonSchemaHandler, GET)
 }
 
 // Registers ABF REST handler
@@ -313,6 +336,138 @@ func (p *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, 
 		}
 	}
 	p.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
+}
+
+// jsonSchemaHandler returns JSON schema of VPP-Agent configuration.
+// This handler also accepts URL query parameters changing the exported field names of proto messages. By default,
+// proto message fields are exported twice in JSON scheme. Once with proto name and once with JSON name. This should
+// allow to use any of the 2 forms in JSON/YAML configuration when used JSON schema for validation. However,
+// this behaviour can be modified by URLFieldNamingParamName URL query parameter, that force to export only
+// proto named fields (OnlyProtoFieldNames URL query parameter value) or JSON named fields (OnlyJSONFieldNames
+// URL query parameter value).
+func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		// create FileDescriptorProto for dynamic Config holding all VPP-Agent configuration
+		knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
+		if err != nil {
+			errMsg := fmt.Sprintf("can't get registered models: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+		config, err := client.NewDynamicConfig(knownModels)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't create dynamic config due to: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+		dynConfigFileDescProto := protodesc.ToFileDescriptorProto(config.ProtoReflect().Descriptor().ParentFile())
+
+		// create list of all FileDescriptorProtos (imports should be before converted proto file -> dynConfig is last)
+		fileDescriptorProtos := allFileDescriptorProtos(knownModels)
+		fileDescriptorProtos = append(fileDescriptorProtos, dynConfigFileDescProto)
+
+		// creating input for protoc's plugin (code extracted in plugins/restapi/jsonschema) that can convert
+		// FileDescriptorProtos to JSONSchema
+		params := []string{
+			"messages=[Dynamic_config]",      // targeting only the main config message (proto file has also other messages)
+			"disallow_additional_properties", // additional unknown json fields makes configuration applying fail
+		}
+		fieldNamesConverterParam := "proto_and_json_fieldnames" // create proto and json named fields by default
+		if fieldNames, found := req.URL.Query()[URLFieldNamingParamName]; found && len(fieldNames) > 0 {
+			// converting REST API request params to 3rd party tool params
+			switch fieldNames[0] {
+			case OnlyProtoFieldNames:
+				fieldNamesConverterParam = ""
+			case OnlyJSONFieldNames:
+				fieldNamesConverterParam = "json_fieldnames"
+			}
+		}
+		if fieldNamesConverterParam != "" {
+			params = append(params, fieldNamesConverterParam)
+		}
+		paramsStr := strings.Join(params, ",")
+		cgReq := &protoc_plugin.CodeGeneratorRequest{
+			ProtoFile:       fileDescriptorProtos,
+			FileToGenerate:  []string{dynConfigFileDescProto.GetName()},
+			Parameter:       &paramsStr,
+			CompilerVersion: nil, // compiler version is not need in this protoc plugin
+		}
+		cgReqMarshalled, err := proto.Marshal(cgReq)
+		if err != nil {
+			errMsg := fmt.Sprintf("can't proto marshal CodeGeneratorRequest: %v\n", err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+
+		// use JSON schema converter and handle error cases
+		p.Log.Debug("Processing code generator request")
+		protoConverter := converter.New(logrus.DefaultLogger().StandardLogger())
+		res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
+		if err != nil {
+			if res == nil {
+				errMsg := fmt.Sprintf("failed to read registered model configuration input: %v\n", err)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+				return
+			}
+			errMsg := fmt.Sprintf("failed generate JSON schema: %v (%v)\n", res.Error, err)
+			p.Log.Error(internalErrorLogPrefix + errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			return
+		}
+
+		// extract json schema
+		// (protoc_plugin.CodeGeneratorResponse could have cut the file content into multiple pieces
+		// for performance optimization (due to godoc), but we know that all pieces are only one file
+		// due to requesting one file -> join all content together)
+		var sb strings.Builder
+		for _, file := range res.File {
+			sb.WriteString(file.GetContent())
+		}
+
+		// writing response
+		// (jsonschema is in raw form (string) and non of the available format renders supports raw data output
+		// with customizable content type setting in header -> custom handling)
+		w.Header().Set(render.ContentType, render.ContentJSON+"; charset=UTF-8")
+		w.Write([]byte(sb.String())) // will also call WriteHeader(http.StatusOK) automatically
+	}
+}
+
+// allImports retrieves all imports from given FileDescriptor including transitive imports (import
+// duplication can occur)
+func allImports(fileDesc protoreflect.FileDescriptor) []protoreflect.FileDescriptor {
+	result := make([]protoreflect.FileDescriptor, 0)
+	imports := fileDesc.Imports()
+	for i := 0; i < imports.Len(); i++ {
+		currentImport := imports.Get(i).FileDescriptor
+		result = append(result, currentImport)
+		result = append(result, allImports(currentImport)...)
+	}
+	return result
+}
+
+// allFileDescriptorProtos retrieves all FileDescriptorProtos related to given models (including
+// all imported proto files)
+func allFileDescriptorProtos(knownModels []*client.ModelInfo) []*descriptorpb.FileDescriptorProto {
+	// extract all FileDescriptors for given known models (including direct and transitive file imports)
+	fileDescriptors := make(map[string]protoreflect.FileDescriptor) // using map for deduplication
+	for _, knownModel := range knownModels {
+		protoFile := knownModel.MessageDescriptor.ParentFile()
+		fileDescriptors[protoFile.Path()] = protoFile
+		for _, importProtoFile := range allImports(protoFile) {
+			fileDescriptors[importProtoFile.Path()] = importProtoFile
+		}
+	}
+
+	// convert retrieved FileDescriptors to FileDescriptorProtos
+	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, 0, len(knownModels))
+	for _, fileDescriptor := range fileDescriptors {
+		fileDescriptorProtos = append(fileDescriptorProtos, protodesc.ToFileDescriptorProto(fileDescriptor))
+	}
+	return fileDescriptorProtos
 }
 
 // versionHandler returns version of Agent.

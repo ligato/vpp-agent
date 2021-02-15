@@ -116,6 +116,10 @@ If you are interested in contributing, please see the [contribution guidelines][
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
+## Modified 3rd party tools included
+
+ - [protoc-gen-jsonschema][tool-included-jsonchema] ([code location in this repository][local-place-for-jsonchema])
+
 [agentctl]: cmd/agentctl
 [cn-infra]: https://github.com/ligato/cn-infra
 [contiv-vpp]: https://github.com/contiv/vpp
@@ -131,3 +135,5 @@ If you are interested in contributing, please see the [contribution guidelines][
 [vpp]: https://fd.io/vppproject/vpptech/
 [vpp-agent]: https://hub.docker.com/r/ligato/vpp-agent
 [vpp-agent-arm64]: https://hub.docker.com/r/ligato/vpp-agent-arm64
+[tool-included-jsonchema]: https://github.com/chrusty/protoc-gen-jsonschema/tree/de75f1b59c4e0f5d5edf7be2a18d1c8e4d81b17a
+[local-place-for-jsonchema]: plugins/restapi/jsonschema

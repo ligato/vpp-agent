@@ -18,6 +18,10 @@ package resturl
 const (
 	// Version is a path for retrieving information about version of Agent.
 	Version = "/info/version"
+
+	// JSONSchema is a path for retrieving JSON Schema for VPP-Agent configuration (dynamically created
+	// container of all registered configuration models).
+	JSONSchema = "/info/configuration/jsonschema"
 )
 
 // Linux Dumps
