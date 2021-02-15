@@ -63,17 +63,43 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 			return errors.Errorf("can't get message key due to: %v (message=%v)", err, message)
 		}
 		descriptor := s.registry.GetDescriptorForKey(key)
+		if descriptor == nil {
+			s.Log.Debug("Skipping validation for proto message key %s "+
+				"due to missing descriptor (proto message: %v)", key, message)
+			continue
+		}
 		descHandler := newDescriptorHandler(descriptor)
 
 		// validate and collect validation errors
-		err = descHandler.validate(key, message)
-		if err != nil {
+		if err = descHandler.validate(key, message); err != nil {
 			if ivError, ok := err.(*api.InvalidValueError); ok {
 				// only InvalidValueErrors are supposed to describe data invalidity
 				invalidMessageErrors = append(invalidMessageErrors,
-					api.NewInvalidMessageError(originalMessage, ivError))
+					api.NewInvalidMessageError(originalMessage, ivError, nil))
 			} else {
 				return errors.Errorf("can't validate message due to: %v (message=%v)", err, message)
+			}
+		}
+
+		// validate also derived values
+		for _, derivedValue := range descHandler.derivedValues(key, message) {
+			descriptor = s.registry.GetDescriptorForKey(derivedValue.Key)
+			if descriptor == nil {
+				s.Log.Debug("Skipping validation for proto message's derived value key %s "+
+					"due to missing descriptor (proto message: %v, derived value proto message: %v)",
+					derivedValue.Key, message, derivedValue.Value)
+				continue
+			}
+			descHandler = newDescriptorHandler(descriptor)
+			if err = descHandler.validate(derivedValue.Key, derivedValue.Value); err != nil {
+				if ivError, ok := err.(*api.InvalidValueError); ok {
+					// only InvalidValueErrors are supposed to describe data invalidity
+					invalidMessageErrors = append(invalidMessageErrors,
+						api.NewInvalidMessageError(derivedValue.Value, ivError, originalMessage))
+				} else {
+					return errors.Errorf("can't validate message due to: "+
+						"%v (message=%v)", err, derivedValue.Value)
+				}
 			}
 		}
 	}

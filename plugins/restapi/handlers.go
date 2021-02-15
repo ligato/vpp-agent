@@ -583,21 +583,36 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 	}
 
 	// define types for REST API output (could use map, but struct hold field ordering within each validation error)
-	type validationErrorForSingleConfig struct {
+	type singleConfig struct {
 		Path  string "json: path"
 		Error string "json: error"
 	}
-	type validationErrorForRepeatedConfig struct {
+	type repeatedConfig struct {
 		Path            string "json: path"
 		Error           string "json: error"
 		ErrorConfigPart string "json: error_config_part"
+	}
+	type singleConfigDerivedValue struct {
+		Path                   string "json: path"
+		Error                  string "json: error"
+		ErrorDerivedConfigPart string "json: error_derived_config_part"
+	}
+	type repeatedConfigDerivedValue struct {
+		Path                   string "json: path"
+		Error                  string "json: error"
+		ErrorDerivedConfigPart string "json: error_derived_config_part"
+		ErrorConfigPart        string "json: error_config_part"
 	}
 
 	// convert each validation error to REST API output (data filled structs defined above)
 	convertedValidationErrors := make([]interface{}, 0, len(validationErrors.MessageErrors()))
 	for _, messageError := range validationErrors.MessageErrors() {
 		// get yaml names of messages/fields on path to configuration with error
-		messageModel := nameToModel[proto.MessageV2(messageError.Message()).
+		nonDerivedMessage := messageError.Message()
+		if messageError.ParentMessage() != nil {
+			nonDerivedMessage = messageError.ParentMessage()
+		}
+		messageModel := nameToModel[proto.MessageV2(nonDerivedMessage).
 			ProtoReflect().Descriptor().FullName()]
 		groupFieldName := client.DynamicConfigGroupFieldNaming(messageModel)
 		modelFieldProtoName, modelFieldName := client.DynamicConfigKnownModelFieldNaming(messageModel)
@@ -617,32 +632,65 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 			}
 		}
 
+		// compute string representation of derived value configuration (yaml is preferred even when there is
+		// no direct yaml configuration for derived value)
+		var parentConfigPart string
+		if messageError.ParentMessage() != nil {
+			parentConfigPart = messageError.ParentMessage().String()
+			json, err := protojson.Marshal(proto.MessageV2(messageError.ParentMessage()))
+			if err == nil {
+				parentConfigPart = string(json)
+				yaml, err := yaml2.JSONToYAML(json)
+				if err == nil {
+					parentConfigPart = string(yaml)
+				}
+			}
+		}
+
+		// compute again the string representation of error configuration (yaml is preferred)
+		// (no original reference to REST API string is remembered -> computing it from proto message)
+		configPart := messageError.Message().String()
+		json, err := protojson.Marshal(proto.MessageV2(messageError.Message()))
+		if err == nil {
+			configPart = string(json)
+			yaml, err := yaml2.JSONToYAML(json)
+			if err == nil {
+				configPart = string(yaml)
+			}
+		}
+
 		// fill correct struct for REST API output
 		var convertedValidationError interface{}
 		if cardinality == protoreflect.Repeated {
-			// compute again the string representation of error configuration (yaml is preferred)
-			// (no original reference to REST API string is remembered -> computing it from proto message)
-			configPart := messageError.Message().String()
-			json, err := protojson.Marshal(proto.MessageV2(messageError.Message()))
-			if err == nil {
-				configPart = string(json)
-				yaml, err := yaml2.JSONToYAML(json)
-				if err == nil {
-					configPart = string(yaml)
+			if parentConfigPart == "" {
+				convertedValidationError = repeatedConfig{
+					Path: fmt.Sprintf("%s.%s*.%s",
+						groupFieldName, modelFieldName, invalidMessageFieldsStr),
+					Error:           messageError.ValidationError().Error(),
+					ErrorConfigPart: configPart,
+				}
+			} else { // problem in derived values
+				convertedValidationError = repeatedConfigDerivedValue{
+					Path: fmt.Sprintf("%s.%s*.[derivedConfiguration].%s",
+						groupFieldName, modelFieldName, invalidMessageFieldsStr),
+					Error:                  messageError.ValidationError().Error(),
+					ErrorConfigPart:        parentConfigPart,
+					ErrorDerivedConfigPart: configPart,
 				}
 			}
-
-			// fill struct for REST API output
-			convertedValidationError = validationErrorForRepeatedConfig{
-				Path: fmt.Sprintf("%s.%s*.%s",
-					groupFieldName, modelFieldName, invalidMessageFieldsStr),
-				Error:           messageError.ValidationError().Error(),
-				ErrorConfigPart: configPart,
-			}
-		} else { // fill struct for REST API output
-			convertedValidationError = validationErrorForSingleConfig{
-				Path:  fmt.Sprintf("%s.%s.%s", groupFieldName, modelFieldName, invalidMessageFieldsStr),
-				Error: messageError.ValidationError().Error(),
+		} else {
+			if parentConfigPart == "" {
+				convertedValidationError = singleConfig{
+					Path:  fmt.Sprintf("%s.%s.%s", groupFieldName, modelFieldName, invalidMessageFieldsStr),
+					Error: messageError.ValidationError().Error(),
+				}
+			} else { // problem in derived values
+				convertedValidationError = singleConfigDerivedValue{
+					Path: fmt.Sprintf("%s.%s.[derivedConfiguration].%s",
+						groupFieldName, modelFieldName, invalidMessageFieldsStr),
+					Error:                  messageError.ValidationError().Error(),
+					ErrorDerivedConfigPart: configPart,
+				}
 			}
 		}
 
