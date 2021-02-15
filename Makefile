@@ -326,7 +326,7 @@ dev-image: ## Build developer image
 
 prod-image: ## Build production image
 	@echo "# building prod image"
-	IMAGE_TAG=$(IMAGE_TAG) ./docker/prod/build.sh
+	IMAGE_TAG=$(IMAGE_TAG) VPP_VERSION=$(VPP_VERSION) ./docker/prod/build.sh
 
 
 .PHONY: help \

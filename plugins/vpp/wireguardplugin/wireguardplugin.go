@@ -28,6 +28,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
 
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2009"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2101"
 )
 
 type WgPlugin struct {

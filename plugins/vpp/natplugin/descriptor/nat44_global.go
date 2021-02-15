@@ -19,6 +19,7 @@ import (
 	"net"
 
 	"github.com/golang/protobuf/proto"
+	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
 
@@ -78,6 +79,7 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 		Create:               ctx.Create,
 		Delete:               ctx.Delete,
 		Update:               ctx.Update,
+		UpdateWithRecreate:   ctx.UpdateWithRecreate,
 		Retrieve:             ctx.Retrieve,
 		DerivedValues:        ctx.DerivedValues,
 		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
@@ -89,6 +91,11 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, newGlobalCfg *nat.Nat44Global) bool {
 	if oldGlobalCfg.Forwarding != newGlobalCfg.Forwarding {
 		return false
+	}
+	if !d.natHandler.WithLegacyStartupConf() {
+		if oldGlobalCfg.EndpointIndependent != newGlobalCfg.EndpointIndependent {
+			return false
+		}
 	}
 	if !proto.Equal(d.getVirtualReassembly(oldGlobalCfg), d.getVirtualReassembly(newGlobalCfg)) {
 		return false
@@ -166,13 +173,35 @@ func (d *NAT44GlobalDescriptor) Validate(key string, globalCfg *nat.Nat44Global)
 
 // Create applies NAT44 global options.
 func (d *NAT44GlobalDescriptor) Create(key string, globalCfg *nat.Nat44Global) (metadata interface{}, err error) {
+	if !d.natHandler.WithLegacyStartupConf() {
+		err = d.natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{
+			EndpointDependent: !globalCfg.EndpointIndependent,
+		})
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	}
 	return d.Update(key, d.defaultGlobalCfg, globalCfg, nil)
 }
 
 // Delete sets NAT44 global options back to the defaults.
 func (d *NAT44GlobalDescriptor) Delete(key string, globalCfg *nat.Nat44Global, metadata interface{}) error {
 	_, err := d.Update(key, globalCfg, d.defaultGlobalCfg, metadata)
-	return err
+	if err != nil {
+		d.log.Error(err)
+		return err
+	}
+	if d.natHandler.WithLegacyStartupConf() {
+		return nil
+	}
+	return d.natHandler.DisableNAT44Plugin()
+}
+
+// Change in the endpoint-dependency mode requires NAT44 plugin to be disabled and re-enabled.
+func (d *NAT44GlobalDescriptor) UpdateWithRecreate(key string, oldGlobalCfg, newGlobalCfg *nat.Nat44Global, metadata interface{}) bool {
+	return !d.natHandler.WithLegacyStartupConf() &&
+		oldGlobalCfg.EndpointIndependent != newGlobalCfg.EndpointIndependent
 }
 
 // Update updates NAT44 global options.
@@ -216,8 +245,16 @@ func (d *NAT44GlobalDescriptor) Retrieve(correlate []adapter.NAT44GlobalKVWithMe
 	}
 
 	origin := kvs.FromNB
-	if proto.Equal(globalCfg, d.defaultGlobalCfg) {
-		origin = kvs.FromSB
+	if d.EquivalentNAT44Global(nat.GlobalNAT44Key(), globalCfg, d.defaultGlobalCfg) {
+		if !d.natHandler.WithLegacyStartupConf() {
+			if len(correlate) == 0 {
+				// It is not possible to find out if the NAT44 plugin is enabled or disabled.
+				// If it is not expected to be enabled then we will assume that to be the case.
+				return nil, nil
+			}
+		} else {
+			origin = kvs.FromSB
+		}
 	}
 
 	retrieved := []adapter.NAT44GlobalKVWithMetadata{{
@@ -225,13 +262,13 @@ func (d *NAT44GlobalDescriptor) Retrieve(correlate []adapter.NAT44GlobalKVWithMe
 		Value:  globalCfg,
 		Origin: origin,
 	}}
-
 	return retrieved, nil
 }
 
 // DerivedValues derives:
 //   - nat.NatAddress for every IP address to be added into the NAT address pool,
 //   - nat.NatInterface for every interface with assigned NAT configuration.
+//   - empty proto value if NAT44 runs in the endpoint-dependent mode
 func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []kvs.KeyValuePair) {
 	// NAT addresses
 	for _, natAddr := range globalCfg.AddressPool {
@@ -245,6 +282,12 @@ func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Gl
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   nat.DerivedInterfaceNAT44Key(natIface.Name, natIface.IsInside),
 			Value: natIface,
+		})
+	}
+	if !globalCfg.EndpointIndependent {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   nat.Nat44EndpointDepKey,
+			Value: &prototypes.Empty{},
 		})
 	}
 	return derValues

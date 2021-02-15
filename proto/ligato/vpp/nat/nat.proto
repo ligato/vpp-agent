@@ -5,9 +5,28 @@ package ligato.vpp.nat;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat;vpp_nat";
 
 // Nat44Global defines global NAT44 configuration.
+// In VPP version 21.01 and newer the NAT44 plugin has to be explicitly enabled (by default it is
+// disabled so that it doesn't consume any computational resources). With ligato control-plane
+// the NAT44 plugin is enabled by submitting the NAT44Global configuration (even default values
+// will make the plugin enabled). Without Nat44Global, all other NAT44 configuration items
+// (DNat44, Nat44Interface and Nat44AddressPool) will be in the PENDING state.
 message Nat44Global {
-    // Enable/disable forwarding.
+    // Enable/disable forwarding. By default it is disabled.
     bool forwarding = 1;
+    // Enable/disable endpoint-independent mode.
+    // In endpoint-independent (also known as "simple") mode the VPP NAT plugin holds
+    // less information for each session, but only works with outbound NAT and static mappings.
+    // In endpoint-dependent mode, which ligato selects as the default, the VPP NAT plugin uses
+    // more information to track each session, which in turn enables additional features
+    // such as out-to-in-only and twice-nat.
+    // In older versions of VPP (<= 20.09) this field is ignored because mode at which the NAT44 plugin
+    // operates is given by the VPP startup configuration file (i.e. config created before VPP even starts,
+    // therefore not managed by ligato). The endpoint-independent mode is the default and the dependent mode
+    // is turned on with this config stanza (included in vpp.conf used by ligato for older VPPs):
+    //     nat {
+    //         endpoint-dependent
+    //     }
+    bool endpoint_independent = 5;
 
     // Interface defines a network interface enabled for NAT.
     message Interface {

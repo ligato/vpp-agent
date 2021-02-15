@@ -31,7 +31,8 @@ const (
 	NAT44GlobalInterfaceDescriptorName = "vpp-nat44-global-interface"
 
 	// dependency labels
-	natInterfaceDep = "interface-exists"
+	natInterfaceGlobalCfgDep = "nat44-global-config-exists"
+	natInterfaceDep          = "interface-exists"
 )
 
 // NAT44GlobalInterfaceDescriptor teaches KVScheduler how to configure VPP NAT interface

@@ -139,17 +139,21 @@ func (d *NAT44AddressPoolDescriptor) Retrieve(correlate []adapter.NAT44AddressPo
 	return
 }
 
-// Dependencies lists non-zero and non-all-ones VRF as the only dependency.
-func (d *NAT44AddressPoolDescriptor) Dependencies(key string, natAddr *nat.Nat44AddressPool) []kvs.Dependency {
-	if natAddr.VrfId == 0 || natAddr.VrfId == ^uint32(0) {
-		return nil
-	}
-	return []kvs.Dependency{
-		{
+// Dependencies lists endpoint-dependent mode and non-zero/non-all-ones VRF as dependencies.
+func (d *NAT44AddressPoolDescriptor) Dependencies(key string, natAddr *nat.Nat44AddressPool) (deps []kvs.Dependency) {
+	if natAddr.VrfId != 0 && natAddr.VrfId != ^uint32(0) {
+		deps = append(deps, kvs.Dependency{
 			Label: addressVrfDep,
 			Key:   l3.VrfTableKey(natAddr.VrfId, l3.VrfTable_IPV4),
-		},
+		})
 	}
+	if !d.natHandler.WithLegacyStartupConf() {
+		deps = append(deps, kvs.Dependency{
+			Label: addressEpModeDep,
+			Key:   nat.Nat44EndpointDepKey,
+		})
+	}
+	return deps
 }
 
 // DerivedValues derives:

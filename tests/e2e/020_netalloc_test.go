@@ -567,8 +567,10 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping
-	Expect(ctx.PingFromVPP(linuxLoopNet1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	if ctx.VppRelease() < "21.01" { // ping is broken in VPP>=21.01 (https://jira.fd.io/browse/VPP-1970)
+		Expect(ctx.PingFromVPP(linuxLoopNet1IP)).To(Succeed())
+		Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	}
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
@@ -577,10 +579,12 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
-	ctx.PingFromVPP(linuxLoopNet1IP)
-	ctx.PingFromVPP(linuxLoopNet2IP)
-	Expect(ctx.PingFromVPP(linuxLoopNet1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	if ctx.VppRelease() < "21.01" {
+		ctx.PingFromVPP(linuxLoopNet1IP)
+		ctx.PingFromVPP(linuxLoopNet2IP)
+		Expect(ctx.PingFromVPP(linuxLoopNet1IP)).To(Succeed())
+		Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	}
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// change IP addresses - the network items should be re-created
@@ -596,9 +600,11 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured(false, true)
 
 	// check connection with ping
-	Expect(ctx.PingFromVPP(linuxLoopNet1IP)).NotTo(Succeed())
-	Expect(ctx.PingFromVPP(linuxLoopNet1IP2)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	if ctx.VppRelease() < "21.01" {
+		Expect(ctx.PingFromVPP(linuxLoopNet1IP)).NotTo(Succeed())
+		Expect(ctx.PingFromVPP(linuxLoopNet1IP2)).To(Succeed())
+		Expect(ctx.PingFromVPP(linuxLoopNet2IP)).To(Succeed())
+	}
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// de-allocate loopback IP in net2 - the connection to that IP should not work anymore
@@ -610,7 +616,9 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	checkItemsAreConfigured(false, false)
 
 	// can ping loop1, but cannot ping loop2
-	Expect(ctx.PingFromVPP(linuxLoopNet1IP2)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxLoopNet2IP)).NotTo(Succeed())
+	if ctx.VppRelease() < "21.01" {
+		Expect(ctx.PingFromVPP(linuxLoopNet1IP2)).To(Succeed())
+		Expect(ctx.PingFromVPP(linuxLoopNet2IP)).NotTo(Succeed())
+	}
 	Expect(ctx.AgentInSync()).To(BeTrue())
 }

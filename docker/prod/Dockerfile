@@ -29,12 +29,6 @@ RUN set -eux; \
 	rm *.deb; \
 	rm -rf /var/lib/apt/lists/*;
 
-# Final image
-FROM scratch
-COPY --from=base / /
-
-WORKDIR /root/
-
 # Copy configs
 COPY \
 	etcd.conf \
@@ -45,12 +39,24 @@ COPY \
 COPY vpp.conf /etc/vpp/vpp.conf
 COPY init_hook.sh /usr/bin/
 
+# handle differences in vpp.conf which are between supported VPP versions
+ARG VPP_VERSION
+COPY legacy-nat.conf /tmp/legacy-nat.conf
+RUN bash -c "if [[ \"$VPP_VERSION\" < "2101" ]]; then cat /tmp/legacy-nat.conf >> /etc/vpp/vpp.conf; fi"
+RUN rm /tmp/legacy-nat.conf
+
 # Install agent
 COPY --from=devimg \
     /go/bin/agentctl \
     /go/bin/vpp-agent \
     /go/bin/vpp-agent-init \
  /bin/
+
+# Final image
+FROM scratch
+COPY --from=base / /
+
+WORKDIR /root/
 
 ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 

@@ -32,10 +32,10 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2009"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2101"
 )
 
 // L2Plugin configures VPP bridge domains, L2 FIBs and xConnects using GoVPP.

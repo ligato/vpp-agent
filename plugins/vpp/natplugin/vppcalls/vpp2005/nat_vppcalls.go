@@ -23,6 +23,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/interface_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/ip_types"
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
@@ -50,6 +51,16 @@ type nat44Flags struct {
 	isInside       bool
 	isStatic       bool
 	isExtHostValid bool
+}
+
+// Enable NAT44 plugin and apply the given set of options.
+func (h *NatVppHandler) EnableNAT44Plugin(opts vppcalls.Nat44InitOpts) error {
+	return fmt.Errorf("unsupported in VPP 20.05 (use VPP startup config file)")
+}
+
+// DisableNAT44Plugin disables NAT44 plugin.
+func (h *NatVppHandler) DisableNAT44Plugin() error {
+	return fmt.Errorf("unsupported in VPP 20.05 (use VPP startup config file)")
 }
 
 // SetNat44Forwarding configures NAT44 forwarding.

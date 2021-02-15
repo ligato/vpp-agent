@@ -188,11 +188,13 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
-	bds, err := bridgeDomains(ctx)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(bds).To(HaveLen(1))
-	Expect(bds[0]).To(SatisfyAll(
-		bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
+		bds, err := bridgeDomains(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(bds).To(HaveLen(1))
+		Expect(bds[0]).To(SatisfyAll(
+			bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	}
 
 	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
 	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
@@ -258,11 +260,13 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
 	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
-	bds, err = bridgeDomains(ctx)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(bds).To(HaveLen(1))
-	Expect(bds[0]).To(SatisfyAll(
-		bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
+		bds, err := bridgeDomains(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(bds).To(HaveLen(1))
+		Expect(bds[0]).To(SatisfyAll(
+			bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	}
 }
 
 // connect microservices into the same L2 network segment via bridge domain
@@ -423,11 +427,13 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	Eventually(ctx.GetValueStateClb(afPacket2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
-	bds, err := bridgeDomains(ctx)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(bds).To(HaveLen(1))
-	Expect(bds[0]).To(SatisfyAll(
-		bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
+		bds, err := bridgeDomains(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(bds).To(HaveLen(1))
+		Expect(bds[0]).To(SatisfyAll(
+			bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	}
 
 	Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
 	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
@@ -491,11 +497,13 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
 
-	bds, err = bridgeDomains(ctx)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(bds).To(HaveLen(1))
-	Expect(bds[0]).To(SatisfyAll(
-		bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
+		bds, err := bridgeDomains(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(bds).To(HaveLen(1))
+		Expect(bds[0]).To(SatisfyAll(
+			bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
+	}
 
 	Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
 	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())

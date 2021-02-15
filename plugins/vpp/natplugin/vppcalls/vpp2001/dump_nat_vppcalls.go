@@ -37,12 +37,19 @@ type stMappingMap map[string][]*nat.DNat44_StaticMapping
 // identity mappings sorted by tags
 type idMappingMap map[string][]*nat.DNat44_IdentityMapping
 
+// WithLegacyStartupConf returns true if the loaded VPP NAT plugin is still using
+// the legacy startup NAT configuration (this is the case for VPP <= 20.09).
+func (h *NatVppHandler) WithLegacyStartupConf() bool {
+	return true
+}
+
 func (h *NatVppHandler) DefaultNat44GlobalConfig() *nat.Nat44Global {
 	return &nat.Nat44Global{
-		Forwarding:        false,
-		NatInterfaces:     nil,
-		AddressPool:       nil,
-		VirtualReassembly: nil, // VirtualReassembly is not part of NAT API in VPP 20.01+ anymore
+		Forwarding:          false,
+		EndpointIndependent: true,
+		NatInterfaces:       nil,
+		AddressPool:         nil,
+		VirtualReassembly:   nil, // VirtualReassembly is not part of NAT API in VPP 20.01+ anymore
 	}
 }
 

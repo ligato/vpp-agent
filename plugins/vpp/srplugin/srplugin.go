@@ -29,10 +29,10 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2009"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2101"
 )
 
 // SRPlugin configures segment routing.

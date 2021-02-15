@@ -40,10 +40,10 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1908"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2009"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2101"
 )
 
 var (
@@ -478,6 +478,13 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 				/*if event.State == govpp.Failed {
 					p.vppConn, p.vppConChan, _ = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 				}*/
+			} else if event.State == govpp.NotResponding {
+				p.infoMu.Lock()
+				p.vppInfo.Connected = false
+				p.infoMu.Unlock()
+
+				p.lastConnErr = errors.Errorf("VPP is not responding (event: %+v)", event)
+				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
 			} else {
 				p.Log.Warnf("unknown VPP connection state: %+v", event)
 			}

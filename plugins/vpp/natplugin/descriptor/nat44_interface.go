@@ -125,12 +125,17 @@ func (d *NAT44InterfaceDescriptor) Retrieve(correlate []adapter.NAT44InterfaceKV
 	return
 }
 
-// Dependencies lists the interface as the only dependency.
-func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Interface) []kvs.Dependency {
-	return []kvs.Dependency{
-		{
-			Label: natInterfaceDep,
-			Key:   interfaces.InterfaceKey(natIface.Name),
-		},
+// Dependencies lists the interface and the NAT44 global configuration as dependencies.
+func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Interface) (deps []kvs.Dependency) {
+	if !d.natHandler.WithLegacyStartupConf() {
+		deps = append(deps, kvs.Dependency{
+			Label: natInterfaceGlobalCfgDep,
+			Key:   nat.GlobalNAT44Key(),
+		})
 	}
+	deps = append(deps, kvs.Dependency{
+		Label: natInterfaceDep,
+		Key:   interfaces.InterfaceKey(natIface.Name),
+	})
+	return deps
 }
