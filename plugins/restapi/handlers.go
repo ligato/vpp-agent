@@ -622,6 +622,31 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 			invalidMessageFieldsStr = fmt.Sprintf("[%s]", strings.Join(invalidMessageFields, ","))
 		}
 
+		// attempt to guess yaml field by name from KVDescriptor.Validate (there is no enforcing of correct field name)
+		if len(invalidMessageFields) == 1 { // guessing only for single field references
+			// disassemble field reference (can refer to inner message field), guess the yaml name for each
+			// segment and assemble the path again
+			fieldPath := strings.Split(invalidMessageFieldsStr, ".")
+			messageDesc := proto.MessageV2(messageError.Message()).ProtoReflect().Descriptor()
+			for i := range fieldPath {
+				// find current field path segment in proto message fields
+				fieldDesc := messageDesc.Fields().ByName(protoreflect.Name(fieldPath[i]))
+				if fieldDesc == nil {
+					fieldDesc = messageDesc.Fields().ByJSONName(fieldPath[i])
+				}
+				if fieldDesc == nil {
+					break // name guessing failed -> can't continue and replace other field path segments
+				}
+
+				// replacing messageError name with name used in yaml
+				fieldPath[i] = fieldDesc.JSONName()
+
+				// updating message descriptor as we move through field path
+				messageDesc = fieldDesc.Message()
+			}
+			invalidMessageFieldsStr = strings.Join(fieldPath, ".")
+		}
+
 		// compute cardinality of field (in configGroup) referring to configuration with error
 		cardinality := protoreflect.Optional
 		if configGroupField := config.ProtoReflect().Descriptor().Fields().
