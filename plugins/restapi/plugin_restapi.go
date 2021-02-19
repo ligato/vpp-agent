@@ -23,7 +23,6 @@ import (
 	"go.ligato.io/cn-infra/v2/rpc/rest"
 	access "go.ligato.io/cn-infra/v2/rpc/rest/security/model/access-security"
 	"go.ligato.io/cn-infra/v2/servicelabel"
-
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	vpevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	kvscheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -32,6 +31,7 @@ import (
 	l3linuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
 	telemetryvppcalls "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 	abfvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/abfplugin/vppcalls"
@@ -53,6 +53,7 @@ import (
 const (
 	GET  = http.MethodGet
 	POST = http.MethodPost
+	PUT  = http.MethodPut
 )
 
 // Default Go routine count used to retrieve linux configuration
@@ -82,8 +83,6 @@ type Plugin struct {
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
 
-	kvscheduler kvscheduler.KVScheduler
-
 	govppmux sync.Mutex
 }
 
@@ -100,6 +99,8 @@ type Deps struct {
 	VPPL3Plugin   *l3plugin.L3Plugin
 	LinuxIfPlugin linuxifplugin.API
 	NsPlugin      nsplugin.API
+	Dispatcher    orchestrator.Dispatcher
+	KVScheduler   kvscheduler.KVScheduler
 }
 
 // index defines map of main index page entries
@@ -196,8 +197,8 @@ func (p *Plugin) Init() (err error) {
 func (p *Plugin) AfterInit() (err error) {
 	// Info handlers.
 	p.registerInfoHandlers()
-	// configuration handlers
-	p.registerConfigurationHandlers()
+	// NB configuration handlers.
+	p.registerNBConfigurationHandlers()
 	// VPP handlers
 	p.registerTelemetryHandlers()
 	// core
@@ -231,7 +232,8 @@ func getIndexPageItems() map[string][]indexItem {
 			{Name: "Version", Path: resturl.Version},
 			{Name: "JSONSchema", Path: resturl.JSONSchema},
 		},
-		"Configuration": {
+		"NB configuration": {
+			{Name: "Get or Put NB configuration", Path: resturl.Configuration},
 			{Name: "Validation", Path: resturl.Validate},
 		},
 		"ACL plugin": {
@@ -282,11 +284,25 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.JSONSchema, GET),
 		},
 	}
-	cfgValidationPg := &access.PermissionGroup{
-		Name: "configurationValidation",
+	nbConfigValidationPg := &access.PermissionGroup{
+		Name: "nbConfigValidation",
 		Permissions: []*access.PermissionGroup_Permissions{
 			newPermission("/", GET),
 			newPermission(resturl.Validate, GET),
+		},
+	}
+	nbConfigReadPg := &access.PermissionGroup{
+		Name: "nbConfigRead",
+		Permissions: []*access.PermissionGroup_Permissions{
+			newPermission("/", GET),
+			newPermission(resturl.Configuration, GET),
+		},
+	}
+	nbConfigWritePg := &access.PermissionGroup{
+		Name: "nbConfigWrite",
+		Permissions: []*access.PermissionGroup_Permissions{
+			newPermission("/", PUT),
+			newPermission(resturl.Configuration, PUT),
 		},
 	}
 	tracerPg := &access.PermissionGroup{
@@ -330,7 +346,8 @@ func getPermissionsGroups() []*access.PermissionGroup {
 		},
 	}
 
-	return []*access.PermissionGroup{infoPg, cfgValidationPg, tracerPg, telemetryPg, dumpPg}
+	return []*access.PermissionGroup{infoPg, tracerPg, telemetryPg, dumpPg,
+		nbConfigValidationPg, nbConfigReadPg, nbConfigWritePg}
 }
 
 // Returns permission object with url and provided methods

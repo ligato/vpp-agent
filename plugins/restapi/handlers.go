@@ -27,6 +27,7 @@ import (
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-errors/errors"
+	"github.com/goccy/go-yaml"
 	"github.com/golang/protobuf/proto"
 	protoc_plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/unrolled/render"
@@ -36,7 +37,10 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	kvscheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/jsonschema/converter"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -57,6 +61,17 @@ const (
 	// OnlyJSONFieldNames is URL parameter value for JSON schema http handler to use only JSON names as field names
 	OnlyJSONFieldNames = "onlyjson"
 
+	// URLReplaceParamName is URL parameter name for modifying NB configuration PUT behaviour to act as whole
+	// configuration replacer instead of config updater (fullresync vs update). It has the same effect as replace
+	// parameter for agentctl config update.
+	// Examples how to use full resync:
+	// <VPP-Agent IP address>:9191/configuration?replace
+	// <VPP-Agent IP address>:9191/configuration?replace=true
+	URLReplaceParamName = "replace"
+
+	// YamlContentType is http header content type for YAML content
+	YamlContentType = "application/yaml"
+
 	internalErrorLogPrefix = "500 Internal server error: "
 )
 
@@ -71,8 +86,10 @@ func (p *Plugin) registerInfoHandlers() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.JSONSchema, p.jsonSchemaHandler, GET)
 }
 
-func (p *Plugin) registerConfigurationHandlers() {
+func (p *Plugin) registerNBConfigurationHandlers() {
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.Validate, p.validationHandler, POST)
+	p.HTTPHandlers.RegisterHTTPHandler(resturl.Configuration, p.configurationGetHandler, GET)
+	p.HTTPHandlers.RegisterHTTPHandler(resturl.Configuration, p.configurationUpdateHandler, PUT)
 }
 
 // Registers ABF REST handler
@@ -360,16 +377,12 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		// create FileDescriptorProto for dynamic Config holding all VPP-Agent configuration
 		knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
 		if err != nil {
-			errMsg := fmt.Sprintf("can't get registered models: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't get registered models", err, w, formatter)
 			return
 		}
 		config, err := client.NewDynamicConfig(knownModels)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't create dynamic config due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't create dynamic config", err, w, formatter)
 			return
 		}
 		dynConfigFileDescProto := protodesc.ToFileDescriptorProto(config.ProtoReflect().Descriptor().ParentFile())
@@ -406,9 +419,7 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		cgReqMarshalled, err := proto.Marshal(cgReq)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't proto marshal CodeGeneratorRequest: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't proto marshal CodeGeneratorRequest", err, w, formatter)
 			return
 		}
 
@@ -418,9 +429,7 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
 		if err != nil {
 			if res == nil {
-				errMsg := fmt.Sprintf("failed to read registered model configuration input: %v\n", err)
-				p.Log.Error(internalErrorLogPrefix + errMsg)
-				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+				p.internalError("failed to read registered model configuration input", err, w, formatter)
 				return
 			}
 			errMsg := fmt.Sprintf("failed generate JSON schema: %v (%v)\n", res.Error, err)
@@ -506,25 +515,19 @@ func (p *Plugin) validationHandler(formatter *render.Render) http.HandlerFunc {
 		// reading input data (yaml-formatted dynamic config containing all VPP-Agent configuration)
 		yamlBytes, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't read request body due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't read request body", err, w, formatter)
 			return
 		}
 
 		// get empty dynamic Config able to hold all VPP-Agent configuration
 		knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
 		if err != nil {
-			errMsg := fmt.Sprintf("can't get registered models: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't get registered models", err, w, formatter)
 			return
 		}
 		config, err := client.NewDynamicConfig(knownModels)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't create dynamic config due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't create dynamic config", err, w, formatter)
 			return
 		}
 
@@ -532,42 +535,34 @@ func (p *Plugin) validationHandler(formatter *render.Render) http.HandlerFunc {
 		// (=syntax check of data + prepare for further processing)
 		bj, err := yaml2.YAMLToJSON(yamlBytes)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't convert yaml configuration "+
-				"from request body to JSON due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't convert yaml configuration "+
+				"from request body to JSON", err, w, formatter)
 			return
 		}
 		err = protojson.Unmarshal(bj, config)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't unmarshall string input data "+
-				"into dynamically created config due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't unmarshall string input data "+
+				"into dynamically created config", err, w, formatter)
 			return
 		}
 
 		// extracting proto messages from dynamically created config structure
 		configMessages, err := client.DynamicConfigExport(config)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't extract single proto message "+
-				"from one dynamic config to validate them per proto message due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't extract single proto message "+
+				"from one dynamic config to validate them per proto message", err, w, formatter)
 			return
 		}
 
 		// run Descriptor validators on config messages
-		err = p.kvscheduler.ValidateSemantically(convertToProtoV1(configMessages))
+		err = p.KVScheduler.ValidateSemantically(convertToProtoV1(configMessages))
 		if err != nil {
 			if validationErrors, ok := err.(*kvscheduler.InvalidMessagesError); ok {
 				convertedValidationErrors := p.ConvertValidationErrorOutput(validationErrors, knownModels, config)
 				p.logError(formatter.JSON(w, http.StatusBadRequest, convertedValidationErrors))
 				return
 			}
-			errMsg := fmt.Sprintf("can't validate data due to: %v\n", err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("can't validate data", err, w, formatter)
 			return
 		}
 		p.logError(formatter.JSON(w, http.StatusOK, struct{}{}))
@@ -733,6 +728,169 @@ func convertToProtoV1(messages []protoV2.Message) []proto.Message {
 		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
 	}
 	return result
+}
+
+// configurationGetHandler returns NB configuration of VPP-Agent in yaml format as used by agentctl.
+func (p *Plugin) configurationGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		// create dynamically config that can hold all locally known models (to use only configurator.Config is
+		// not enough as VPP-Agent could be used as library and additional model could be registered and
+		// these models are unknown for configurator.Config)
+		knownModels, err := client.LocalClient.KnownModels("config")
+		if err != nil {
+			p.internalError("failed to get registered models", err, w, formatter)
+			return
+		}
+		config, err := client.NewDynamicConfig(knownModels)
+		if err != nil {
+			p.internalError("failed to create empty "+
+				"all-config proto message dynamically", err, w, formatter)
+			return
+		}
+
+		// retrieve data into config
+		if err := client.LocalClient.GetConfig(config); err != nil {
+			p.internalError("failed to retrieve all configuration "+
+				"into dynamic all-config proto message", err, w, formatter)
+			return
+		}
+
+		// convert data-filled config into yaml
+		jsonBytes, err := protojson.Marshal(protoV2.Message(config))
+		if err != nil {
+			p.internalError("failed to convert retrieved configuration "+
+				"to intermediate json output", err, w, formatter)
+			return
+		}
+		var yamlObj interface{}
+		if err := yaml.UnmarshalWithOptions(jsonBytes, &yamlObj, yaml.UseOrderedMap()); err != nil {
+			p.internalError("failed to unmarshall intermediate json formatted "+
+				"retrieved configuration to yaml object", err, w, formatter)
+			return
+		}
+		yamlBytes, err := yaml.Marshal(yamlObj)
+		if err != nil {
+			p.internalError("failed to marshal retrieved configuration to yaml output", err, w, formatter)
+			return
+		}
+
+		// writing response (no YAML support in formatters -> custom handling)
+		w.Header().Set(render.ContentType, YamlContentType+"; charset=UTF-8")
+		w.Write(yamlBytes) // will also call WriteHeader(http.StatusOK) automatically
+	}
+}
+
+func (p *Plugin) internalError(additionalErrorMsgPrefix string, err error, w http.ResponseWriter,
+	formatter *render.Render) {
+	errMsg := fmt.Sprintf("%s: %v\n", additionalErrorMsgPrefix, err)
+	p.Log.Error(internalErrorLogPrefix + errMsg)
+	p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+}
+
+// configurationUpdateHandler creates/updates NB configuration of VPP-Agent. The input configuration should be
+// in yaml format as used by agentctl.
+func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		// create dynamically config that can hold input yaml configuration
+		knownModels, err := client.LocalClient.KnownModels("config")
+		if err != nil {
+			p.internalError("failed to get registered models", err, w, formatter)
+			return
+		}
+		config, err := client.NewDynamicConfig(knownModels)
+		if err != nil {
+			p.internalError("can't create all-config proto message dynamically", err, w, formatter)
+			return
+		}
+
+		// reading input data (yaml-formatted dynamic config containing all VPP-Agent configuration)
+		yamlBytes, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			p.internalError("can't read request body", err, w, formatter)
+			return
+		}
+
+		// filling dynamically created config with data
+		bj, err := yaml2.YAMLToJSON(yamlBytes)
+		if err != nil {
+			p.internalError("converting yaml input to json failed", err, w, formatter)
+			return
+		}
+		err = protojson.Unmarshal(bj, config)
+		if err != nil {
+			p.internalError("can't unmarshall input yaml data "+
+				"into dynamically created config", err, w, formatter)
+			return
+		}
+
+		// extracting proto messages from dynamically created config structure
+		// (further processing needs single proto messages and not one big hierarchical config)
+		configMessages, err := client.DynamicConfigExport(config)
+		if err != nil {
+			p.internalError("can't extract single configuration proto messages "+
+				"from one big configuration proto message", err, w, formatter)
+			return
+		}
+
+		// convert config messages to input for p.Dispatcher.PushData(...)
+		var configKVPairs []orchestrator.KeyVal
+		for _, configMessage := range configMessages {
+			// convert config message from dynamic to statically-generated proto message
+			// (this is needed for later processing of message - generated KVDescriptor adapters cast
+			// to statically-generated proto message and fail with dynamicpb.Message proto messages)
+			dynamicMessage, ok := configMessage.(*dynamicpb.Message)
+			if !ok { // should not happen, but checking anyway
+				errMsg := fmt.Sprintf("proto message is expected to be "+
+					"dynamicpb.Message (message=%s)\n", configMessage)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+				return
+			}
+			message, err := models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
+			if err != nil {
+				errMsg := fmt.Sprintf("can't convert dynamic message to statically generated message "+
+					"due to: %v (dynamic message=%v)", err, dynamicMessage)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+				return
+			}
+
+			// extract model key
+			key, err := models.GetKey(message)
+			if err != nil {
+				errMsg := fmt.Sprintf("can't get model key for dynamic message "+
+					"due to: %v (dynamic message=%v)", err, dynamicMessage)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			}
+
+			// build key-value pair structure
+			configKVPairs = append(configKVPairs, orchestrator.KeyVal{
+				Key: key,
+				Val: message,
+			})
+		}
+
+		// create context for data push
+		ctx := context.Background()
+		//// FullResync
+		if _, found := req.URL.Query()[URLReplaceParamName]; found {
+			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
+		}
+		//// Note: using "grpc" data source so that 'agentctl update --replace' can also work with this data
+		//// ('agentctl update' can change data also from non-grpc data sources, but
+		//// 'agentctl update --replace' (=resync) can't)
+		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
+
+		// config data pushed into VPP-Agent
+		_, err = p.Dispatcher.PushData(ctx, configKVPairs)
+		if err != nil {
+			p.internalError("can't push data into vpp-agent", err, w, formatter)
+			return
+		}
+
+		p.logError(formatter.JSON(w, http.StatusOK, struct{}{}))
+	}
 }
 
 // telemetryHandler - returns various telemetry data
