@@ -162,7 +162,7 @@ func (m *RemotelyKnownModel) InstanceName(x interface{}) (string, error) {
 		return "", errors.Errorf("can't load json of marshalled "+
 			"message to generic map due to: %v (json=%v)", err, jsonData)
 	}
-	name, err := NameTemplate(nameTemplate)(mapData, nil)
+	name, err := NameTemplate(nameTemplate)(mapData)
 	if err != nil {
 		return "", errors.Errorf("can't compute name from name template by applying generic map "+
 			"due to: %v (name template=%v, generic map=%v)", err, nameTemplate, mapData)

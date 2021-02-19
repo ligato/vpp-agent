@@ -140,20 +140,31 @@ func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
 	return keyPrefix
 }
 
-// DynamicMessageToGeneratedMessage converts proto dynamic message to corresponding generated proto message
-// (identified by go type).
+// DynamicLocallyKnownMessageToGeneratedMessage converts locally registered/known proto dynamic message to
+// corresponding statically generated proto message. This function will fail when there is no registration
+// of statically-generated proto message, i.e. dynamic message refers to remotely known model.
 // This conversion method should help handling dynamic proto messages in mostly protoc-generated proto message
 // oriented codebase (i.e. help for type conversions to named, help handle missing data fields as seen
 // in generated proto messages,...)
-func DynamicMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message,
-	goTypeOfGeneratedMessage reflect.Type) (proto.Message, error) {
+func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message) (proto.Message, error) {
+	// get go type of statically generated proto message corresponding to locally known dynamic message
+	model, err := GetModelFor(dynamicMessage)
+	if err != nil {
+		return nil, errors.Errorf("can't get model "+
+			"for dynamic message due to: %v (message=%v)", err, dynamicMessage)
+	}
+	goType := model.LocalGoType() // only for locally known models will return meaningful go type
+	if goType == nil {
+		return nil, errors.Errorf("dynamic messages for remote models are not supported due to "+
+			"not available go type of statically generated proto message (dynamic message=%v)", dynamicMessage)
+	}
 
-	// create empty proto message of the same type as it was used for registration
+	// create empty statically-generated proto message of the same type as it was used for registration
 	var registeredGoType interface{}
-	if goTypeOfGeneratedMessage.Kind() == reflect.Ptr {
-		registeredGoType = reflect.New(goTypeOfGeneratedMessage.Elem()).Interface()
+	if goType.Kind() == reflect.Ptr {
+		registeredGoType = reflect.New(goType.Elem()).Interface()
 	} else {
-		registeredGoType = reflect.Zero(goTypeOfGeneratedMessage).Interface()
+		registeredGoType = reflect.Zero(goType).Interface()
 	}
 	message, isProtoV1 := registeredGoType.(proto.Message)
 	if !isProtoV1 {
@@ -164,7 +175,7 @@ func DynamicMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message,
 		message = proto.MessageV1(messageV2)
 	}
 
-	// fill empty proto message with data from its dynamic proto message counterpart
+	// fill empty statically-generated proto message with data from its dynamic proto message counterpart
 	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
 	proto.Merge(message, dynamicMessage)
 
