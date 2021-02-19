@@ -30,6 +30,7 @@ import (
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"google.golang.org/protobuf/encoding/protojson"
 	protoV2 "google.golang.org/protobuf/proto"
 )
@@ -198,7 +199,7 @@ func (r *InitFileRegistry) watchResync(resyncReg resync.Registration) {
 		// resyncReg.StatusChan == Started => resync
 		if resyncStatus.ResyncStatus() == resync.Started && !r.pushedToWatchedRegistry {
 			if !r.Empty() { // put preloaded NB init file data into watched p.registry
-				c := client.NewClient(&txnFactory{r.watchedRegistry})
+				c := client.NewClient(&txnFactory{r.watchedRegistry}, &orchestrator.DefaultPlugin)
 				if err := c.ResyncConfig(r.preloadedNBConfigs...); err != nil {
 					r.Log.Errorf("resyncing preloaded NB init file data "+
 						"into watched registry failed: %v", err)
