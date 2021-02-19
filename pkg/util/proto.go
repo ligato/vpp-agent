@@ -15,9 +15,10 @@
 package util
 
 import (
+	"reflect"
+
 	protoV2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"reflect"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -82,42 +83,50 @@ func PlaceProtos(protos map[string]proto.Message, dsts ...interface{}) {
 // how many top model structure hierarchy layers can have empty values for messages (see
 // util.placeProtosInProto(...) for details)
 func PlaceProtosIntoProtos(protos []protoV2.Message, clearIgnoreLayerCount int, dsts ...protoV2.Message) {
-	protosMap := make(map[string][]protoV2.Message)
+	// create help structure for insertion proto messages
+	// (map values are protoreflect.Message(s) that contains proto message and its type. These messages will be
+	// later wrapped into protoreflect.Value(s) and filled into destination proto message using proto reflection.
+	// We could have used protoreflect.Value(s) as map values in this help structure, but protoreflect.Value type
+	// is cheap (really thin wrapper) and it is unknown whether using the same value on multiple fields could
+	// cause problems, so we will generate it for each field.
+	messageMap := make(map[string][]protoreflect.Message)
 	for _, protoMsg := range protos {
 		protoName := string(protoMsg.ProtoReflect().Descriptor().FullName())
-		protosMap[protoName] = append(protosMap[protoName], protoMsg)
+		messageMap[protoName] = append(messageMap[protoName], protoMsg.ProtoReflect())
 	}
+
+	// insert proto message to all destination containers (also proto messages)
 	for _, dst := range dsts {
-		placeProtosInProto(dst, protosMap, clearIgnoreLayerCount)
+		placeProtosInProto(dst, messageMap, clearIgnoreLayerCount)
 	}
 }
 
-// placeProtosInProto fills dst proto message (direct or transitive) fields with protos values from protoMap
-// (convenient map[proto descriptor full name]= proto value). The matching is done by message descriptor's
-// full name. The function is recursive and one run is handling only one level of proto message structure tree
-// (only handling Message references and ignoring scalar/enum/... values). The <clearIgnoreLayerCount> controls
-// how many top layer can have empty values for their message fields (as the algorithm backtracks the descriptor
-// model tree, it unfortunately initialize empty value for visited fields). The layer below
-// <clearIgnoreLayerCount> top layer will be cleared from the fake empty value.
-// Currently unsupported are maps as fields.
-func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Message, clearIgnoreLayerCount int) bool {
+// placeProtosInProto fills dst proto message (direct or transitive) fields with protos values from messageMap
+// (convenient map[proto descriptor full name]= protoreflect message containing proto message and proto type).
+// The matching is done by message descriptor's full name. The function is recursive and one run is handling
+// only one level of proto message structure tree (only handling Message references and ignoring
+// scalar/enum/... values). The <clearIgnoreLayerCount> controls how many top layer can have empty values
+// for their message fields (as the algorithm backtracks the descriptor model tree, it unfortunately initialize
+// empty value for visited fields). The layer below <clearIgnoreLayerCount> top layer will be cleared
+// from the fake empty value. Currently unsupported are maps as fields.
+func placeProtosInProto(dst protoV2.Message, messageMap map[string][]protoreflect.Message, clearIgnoreLayerCount int) bool {
 	changed := false
 	fields := dst.ProtoReflect().Descriptor().Fields()
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
 		fieldMessageDesc := field.Message()
 		if fieldMessageDesc != nil { // only interested in MessageKind or GroupKind fields
-			if protoMsgsForField, typeMatch := protosMap[string(fieldMessageDesc.FullName())]; typeMatch {
+			if messageForField, typeMatch := messageMap[string(fieldMessageDesc.FullName())]; typeMatch {
 				// fill value(s)
 				if field.IsList() {
 					list := dst.ProtoReflect().Mutable(field).List()
-					for _, protoMsg := range protoMsgsForField {
-						list.Append(protoreflect.ValueOf(protoMsg))
+					for _, message := range messageForField {
+						list.Append(protoreflect.ValueOf(message))
 						changed = true
 					}
 				} else if field.IsMap() { // unsupported
 				} else {
-					dst.ProtoReflect().Set(field, protoreflect.ValueOf(protoMsgsForField[0]))
+					dst.ProtoReflect().Set(field, protoreflect.ValueOf(messageForField[0]))
 					changed = true
 				}
 			} else {
@@ -129,9 +138,9 @@ func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Mess
 				if field.IsList() {
 					list := dst.ProtoReflect().Mutable(field).List()
 					changeOnLowerLayer := false
-					for j:=0; j < list.Len(); j++ {
+					for j := 0; j < list.Len(); j++ {
 						changeOnLowerLayer = changeOnLowerLayer ||
-							placeProtosInProto(list.Get(j).Message().Interface(), protosMap, clearIgnoreLayerCount- 1)
+							placeProtosInProto(list.Get(j).Message().Interface(), messageMap, clearIgnoreLayerCount-1)
 					}
 					if !changeOnLowerLayer && clearIgnoreLayerCount <= 0 {
 						dst.ProtoReflect().Clear(field)
@@ -140,7 +149,7 @@ func placeProtosInProto(dst protoV2.Message, protosMap map[string][]protoV2.Mess
 				} else if field.IsMap() { // unsupported
 				} else {
 					changeOnLowerLayer := placeProtosInProto(dst.ProtoReflect().Mutable(field).
-						Message().Interface(), protosMap, clearIgnoreLayerCount- 1)
+						Message().Interface(), messageMap, clearIgnoreLayerCount-1)
 					if !changeOnLowerLayer && clearIgnoreLayerCount <= 0 {
 						dst.ProtoReflect().Clear(field)
 					}
