@@ -241,19 +241,21 @@ func DynamicConfigGroupFieldNaming(modelDetail *models.ModelInfo) string {
 // containing the instances of given model inside the dynamic config describing the whole VPP-Agent configuration.
 func DynamicConfigKnownModelFieldNaming(modelDetail *models.ModelInfo) (protoName, jsonName string) {
 	simpleProtoName := simpleProtoName(modelDetail.ProtoName)
-	protoName = simpleProtoName + repeatedFieldsSuffix
-	jsonName = simpleProtoName + repeatedFieldsSuffix
-	if !existsModelOptionFor("nameTemplate", modelDetail.Options) {
-		protoName = simpleProtoName
-		jsonName = simpleProtoName
-	}
 	configGroupName := DynamicConfigGroupFieldNaming(modelDetail)
 	compatibilityKey := fmt.Sprintf("%v.%v", configGroupName, simpleProtoName)
+
 	if newNames, found := backwardCompatibleNames[compatibilityKey]; found {
 		// using field names from hardcoded configurator.Config to achieve json/yaml backward compatibility
 		protoName = newNames.protoName
 		jsonName = newNames.jsonName
+	} else if !existsModelOptionFor("nameTemplate", modelDetail.Options) {
+		protoName = simpleProtoName
+		jsonName = simpleProtoName
+	} else {
+		protoName = simpleProtoName + repeatedFieldsSuffix
+		jsonName = simpleProtoName + repeatedFieldsSuffix
 	}
+
 	return protoName, jsonName
 }
 
