@@ -3,6 +3,8 @@ package converter
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 
 	"github.com/alecthomas/jsonschema"
@@ -28,6 +30,25 @@ var (
 		"Value":       true,
 	}
 )
+
+// min/max constants that are safe to assign to int on 32-bit systems
+// The "github.com/alecthomas/jsonschema".Type has manimum and maximum defined as int, but that is insufficient
+// for some types. Therefore the ranges for these types must be artificially cut to be usable with int.
+var (
+	intSafeMaxUint32 int = math.MaxInt32 // int32 can't hold values up to math.MaxUint32
+	intSafeMinInt64  int = math.MinInt32
+	intSafeMaxInt64  int = math.MaxInt32
+	intSafeMaxUint64 int = math.MaxInt32
+)
+
+func init() {
+	if strconv.IntSize == 64 { // override of min/max constants for 64-bit systems
+		intSafeMaxUint32 = math.MaxUint32
+		intSafeMinInt64 = math.MinInt64
+		intSafeMaxInt64 = math.MaxInt64
+		intSafeMaxUint64 = math.MaxInt64 // int64 can't hold values up to math.MaxUint64
+	}
+}
 
 func (c *Converter) registerEnum(pkgName *string, enum *descriptor.EnumDescriptorProto) {
 	pkg := globalPkg
@@ -91,22 +112,45 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_INT32,
-		descriptor.FieldDescriptorProto_TYPE_UINT32,
-		descriptor.FieldDescriptorProto_TYPE_FIXED32,
 		descriptor.FieldDescriptorProto_TYPE_SFIXED32,
 		descriptor.FieldDescriptorProto_TYPE_SINT32:
 		if c.AllowNullValues {
 			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_NULL},
-				{Type: gojsonschema.TYPE_INTEGER},
+				{
+					Type: gojsonschema.TYPE_NULL,
+				}, {
+					Type:    gojsonschema.TYPE_INTEGER,
+					Minimum: math.MinInt32,
+					Maximum: math.MaxInt32,
+				},
 			}
 		} else {
 			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
+			jsonSchemaType.Minimum = math.MinInt32
+			jsonSchemaType.Maximum = math.MaxInt32
+		}
+
+	case descriptor.FieldDescriptorProto_TYPE_UINT32,
+		descriptor.FieldDescriptorProto_TYPE_FIXED32:
+		if c.AllowNullValues {
+			jsonSchemaType.OneOf = []*jsonschema.Type{
+				{
+					Type: gojsonschema.TYPE_NULL,
+				}, {
+					Type:             gojsonschema.TYPE_INTEGER,
+					Minimum:          -1,
+					ExclusiveMinimum: true,
+					Maximum:          intSafeMaxUint32,
+				},
+			}
+		} else {
+			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
+			jsonSchemaType.Minimum = -1
+			jsonSchemaType.ExclusiveMinimum = true
+			jsonSchemaType.Maximum = intSafeMaxUint32
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_INT64,
-		descriptor.FieldDescriptorProto_TYPE_UINT64,
-		descriptor.FieldDescriptorProto_TYPE_FIXED64,
 		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
 		descriptor.FieldDescriptorProto_TYPE_SINT64:
 		if c.AllowNullValues {
@@ -117,9 +161,27 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		} else {
 			jsonSchemaType.Type = gojsonschema.TYPE_STRING
 		}
-
 		if c.DisallowBigIntsAsStrings {
 			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
+			jsonSchemaType.Minimum = intSafeMinInt64
+			jsonSchemaType.Maximum = intSafeMaxInt64
+		}
+
+	case descriptor.FieldDescriptorProto_TYPE_UINT64,
+		descriptor.FieldDescriptorProto_TYPE_FIXED64:
+		if c.AllowNullValues {
+			jsonSchemaType.OneOf = []*jsonschema.Type{
+				{Type: gojsonschema.TYPE_STRING},
+				{Type: gojsonschema.TYPE_NULL},
+			}
+		} else {
+			jsonSchemaType.Type = gojsonschema.TYPE_STRING
+		}
+		if c.DisallowBigIntsAsStrings {
+			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
+			jsonSchemaType.Minimum = -1
+			jsonSchemaType.ExclusiveMinimum = true
+			jsonSchemaType.Maximum = intSafeMaxUint64
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_STRING,
@@ -197,6 +259,9 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			jsonSchemaType.Items.OneOf = nil
 		} else {
 			jsonSchemaType.Items.Type = jsonSchemaType.Type
+			jsonSchemaType.Items.Minimum = jsonSchemaType.Minimum
+			jsonSchemaType.Items.Maximum = jsonSchemaType.Maximum
+			jsonSchemaType.Items.ExclusiveMinimum = jsonSchemaType.ExclusiveMinimum
 			jsonSchemaType.Items.OneOf = jsonSchemaType.OneOf
 		}
 
@@ -404,21 +469,44 @@ func (c *Converter) recursiveFindDuplicatedNestedMessages(curPkg *ProtoPackage, 
 }
 
 func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descriptor.DescriptorProto, pkgName string, duplicatedMessages map[*descriptor.DescriptorProto]string, ignoreDuplicatedMessages bool) (*jsonschema.Type, error) {
-
 	// Handle google's well-known types:
 	if msg.Name != nil && wellKnownTypes[*msg.Name] && pkgName == ".google.protobuf" {
-		var schemaType string
+		var typeSchema *jsonschema.Type
 		switch *msg.Name {
 		case "DoubleValue", "FloatValue":
-			schemaType = gojsonschema.TYPE_NUMBER
-		case "Int32Value", "UInt32Value", "Int64Value", "UInt64Value":
-			schemaType = gojsonschema.TYPE_INTEGER
+			typeSchema = &jsonschema.Type{Type: gojsonschema.TYPE_NUMBER}
+		case "Int32Value":
+			typeSchema = &jsonschema.Type{
+				Type:    gojsonschema.TYPE_INTEGER,
+				Minimum: math.MinInt32,
+				Maximum: math.MaxInt32,
+			}
+		case "UInt32Value":
+			typeSchema = &jsonschema.Type{
+				Type:             gojsonschema.TYPE_INTEGER,
+				Minimum:          -1,
+				ExclusiveMinimum: true,
+				Maximum:          intSafeMaxUint32,
+			}
+		case "Int64Value":
+			typeSchema = &jsonschema.Type{
+				Type:    gojsonschema.TYPE_INTEGER,
+				Minimum: intSafeMinInt64,
+				Maximum: intSafeMaxInt64,
+			}
+		case "UInt64Value":
+			typeSchema = &jsonschema.Type{
+				Type:             gojsonschema.TYPE_INTEGER,
+				Minimum:          -1,
+				ExclusiveMinimum: true,
+				Maximum:          intSafeMaxUint64,
+			}
 		case "BoolValue":
-			schemaType = gojsonschema.TYPE_BOOLEAN
+			typeSchema = &jsonschema.Type{Type: gojsonschema.TYPE_BOOLEAN}
 		case "BytesValue", "StringValue":
-			schemaType = gojsonschema.TYPE_STRING
+			typeSchema = &jsonschema.Type{Type: gojsonschema.TYPE_STRING}
 		case "Value":
-			schemaType = gojsonschema.TYPE_OBJECT
+			typeSchema = &jsonschema.Type{Type: gojsonschema.TYPE_OBJECT}
 		}
 
 		// If we're allowing nulls then prepare a OneOf:
@@ -426,15 +514,13 @@ func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descr
 			return &jsonschema.Type{
 				OneOf: []*jsonschema.Type{
 					{Type: gojsonschema.TYPE_NULL},
-					{Type: schemaType},
+					typeSchema,
 				},
 			}, nil
 		}
 
 		// Otherwise just return this simple type:
-		return &jsonschema.Type{
-			Type: schemaType,
-		}, nil
+		return typeSchema, nil
 	}
 
 	if refName, ok := duplicatedMessages[msg]; ok && !ignoreDuplicatedMessages {
