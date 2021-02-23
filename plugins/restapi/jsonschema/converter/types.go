@@ -237,11 +237,12 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			jsonSchemaType.Format = "date-time"
 		default:
 			jsonSchemaType.Type = gojsonschema.TYPE_OBJECT
-			if desc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_OPTIONAL {
-				jsonSchemaType.AdditionalProperties = []byte("true")
-			}
-			if desc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REQUIRED {
+			// disallowAdditionalProperties will fail validation when this message/group field have value that
+			// have extra fields that are not covered by message/group schema
+			if c.DisallowAdditionalProperties {
 				jsonSchemaType.AdditionalProperties = []byte("false")
+			} else {
+				jsonSchemaType.AdditionalProperties = []byte("true")
 			}
 		}
 
