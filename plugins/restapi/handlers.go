@@ -618,6 +618,9 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 		modelFieldProtoName, modelFieldName := client.DynamicConfigKnownModelFieldNaming(messageModel)
 		invalidMessageFields := messageError.InvalidFields()
 		invalidMessageFieldsStr := invalidMessageFields[0]
+		if invalidMessageFieldsStr == "" {
+			invalidMessageFieldsStr = "<unknown field>"
+		}
 		if len(invalidMessageFields) > 1 {
 			invalidMessageFieldsStr = fmt.Sprintf("[%s]", strings.Join(invalidMessageFields, ","))
 		}
