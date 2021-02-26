@@ -78,7 +78,10 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 				invalidMessageErrors = append(invalidMessageErrors,
 					api.NewInvalidMessageError(originalMessage, ivError, nil))
 			} else {
-				return errors.Errorf("can't validate message due to: %v (message=%v)", err, message)
+				s.Log.Warn("Validation of KVDescriptor %s returns error that is not InvalidValueError. "+
+					"Using conversion to InvalidValueError, but the invalid fields will be unknown.", descriptor.Name)
+				invalidMessageErrors = append(invalidMessageErrors, api.NewInvalidMessageError(
+					originalMessage, api.NewInvalidValueError(err, ""), nil))
 			}
 		}
 
@@ -98,8 +101,11 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 					invalidMessageErrors = append(invalidMessageErrors,
 						api.NewInvalidMessageError(derivedValue.Value, ivError, originalMessage))
 				} else {
-					return errors.Errorf("can't validate message due to: "+
-						"%v (message=%v)", err, derivedValue.Value)
+					s.Log.Warn("Validation of KVDescriptor %s (derived value validation) "+
+						"returns error that is not InvalidValueError. Using conversion "+
+						"to InvalidValueError, but the invalid fields will be unknown.", descriptor.Name)
+					invalidMessageErrors = append(invalidMessageErrors, api.NewInvalidMessageError(
+						derivedValue.Value, api.NewInvalidValueError(err, ""), originalMessage))
 				}
 			}
 		}
