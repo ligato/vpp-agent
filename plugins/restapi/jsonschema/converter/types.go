@@ -559,8 +559,23 @@ func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descr
 		jsonSchemaType.AdditionalProperties = []byte("true")
 	}
 
+	// create support jsonchema.Type structures for proto oneof fields
+	protoOneOfJsonOneOfType := make(map[int32]*jsonschema.Type)
+	if len(msg.OneofDecl) == 1 { // single proto oneof in proto message
+		jsonSchemaType.PatternProperties = make(map[string]*jsonschema.Type)
+		protoOneOfJsonOneOfType[0] = jsonSchemaType
+	} else if len(msg.OneofDecl) > 1 { // multiple proto oneof in proto message
+		jsonSchemaType.PatternProperties = make(map[string]*jsonschema.Type)
+		for i := range msg.OneofDecl {
+			jsonOneOfType := &jsonschema.Type{}
+			jsonSchemaType.AllOf = append(jsonSchemaType.AllOf, jsonOneOfType)
+			protoOneOfJsonOneOfType[int32(i)] = jsonOneOfType
+		}
+	}
+
 	c.logger.WithField("message_str", proto.MarshalTextString(msg)).Trace("Converting message")
 	for _, fieldDesc := range msg.GetField() {
+		// get field schema
 		recursedJSONSchemaType, err := c.convertField(curPkg, fieldDesc, msg, duplicatedMessages)
 		if err != nil {
 			c.logger.WithError(err).WithField("field_name", fieldDesc.GetName()).WithField("message_name", msg.GetName()).Error("Failed to convert field")
@@ -569,19 +584,46 @@ func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descr
 		c.logger.WithField("field_name", fieldDesc.GetName()).WithField("type", recursedJSONSchemaType.Type).Trace("Converted field")
 
 		// Figure out which field names we want to use:
+		var fieldNames []string
 		switch {
 		case c.UseJSONFieldnamesOnly:
-			jsonSchemaType.Properties.Set(fieldDesc.GetJsonName(), recursedJSONSchemaType)
+			fieldNames = append(fieldNames, fieldDesc.GetJsonName())
 		case c.UseProtoAndJSONFieldnames:
-			jsonSchemaType.Properties.Set(fieldDesc.GetName(), recursedJSONSchemaType)
-			jsonSchemaType.Properties.Set(fieldDesc.GetJsonName(), recursedJSONSchemaType)
+			fieldNames = append(fieldNames, fieldDesc.GetName())
+			fieldNames = append(fieldNames, fieldDesc.GetJsonName())
 		default:
-			jsonSchemaType.Properties.Set(fieldDesc.GetName(), recursedJSONSchemaType)
+			fieldNames = append(fieldNames, fieldDesc.GetName())
 		}
 
-		// Look for required fields (either by proto2 required flag, or the AllFieldsRequired option):
-		if fieldDesc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REQUIRED {
-			jsonSchemaType.Required = append(jsonSchemaType.Required, fieldDesc.GetName())
+		if fieldDesc.OneofIndex != nil { // field is part of proto oneof structure
+			for _, fieldName := range fieldNames {
+				// allow usage of all proto oneof possible fields without sacrifice of enabling additional properties
+				// (additionalProperties to true would allow also other random names fields and that would cause
+				// external example generator to create for-vpp-agent-unknown fields that will cause problems
+				// in proto parsing)
+				jsonSchemaType.PatternProperties[fmt.Sprintf("^%s$", fieldName)] = &jsonschema.Type{}
+
+				// adding additional restriction that allow to use only one of the proto oneof fields
+				properties := orderedmap.New()
+				properties.Set(fieldName, recursedJSONSchemaType) // apply field schema
+				singleOneofUsageCase := &jsonschema.Type{
+					Type:       "object",
+					Required:   []string{fieldName},
+					Properties: properties,
+				}
+				jsonOneOfType := protoOneOfJsonOneOfType[*fieldDesc.OneofIndex]
+				jsonOneOfType.OneOf = append(jsonOneOfType.OneOf, singleOneofUsageCase)
+			}
+		} else { // normal field
+			// apply field schemas
+			for _, fieldName := range fieldNames {
+				jsonSchemaType.Properties.Set(fieldName, recursedJSONSchemaType)
+			}
+
+			// Look for required fields (either by proto2 required flag, or the AllFieldsRequired option):
+			if fieldDesc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REQUIRED {
+				jsonSchemaType.Required = append(jsonSchemaType.Required, fieldDesc.GetName())
+			}
 		}
 	}
 
