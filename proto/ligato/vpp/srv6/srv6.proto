@@ -4,8 +4,26 @@ package ligato.vpp.srv6;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6;vpp_srv6";
 
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    // NOTE: used option field index(2000) is in extension index range of descriptor.proto, but  is not registered
+    // in protobuf global extension registry (https://github.com/protocolbuffers/protobuf/blob/master/docs/options.md)
+    LigatoOptions ligato_options = 2000;
+}
+
+message LigatoOptions {
+    enum Type {
+        IP = 0;
+        IPV4 = 1;
+        IPV6 = 2;
+    }
+    Type type = 1;
+}
+
+
 message LocalSID {
-    string sid = 1;                      /* segment id (IPv6 Address) */
+    string sid = 1 [(ligato_options).type = IPV6];                      /* segment id (IPv6 Address) */
     uint32 installation_vrf_id = 2;      /* ID of IPv6 VRF table where to install LocalSID routing components
                                             (LocalSids with End.AD function ignore this setting due to missing setting
                                             in the API. The End.AD functionality is separated from the SRv6 functionality

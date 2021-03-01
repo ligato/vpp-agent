@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
+
 	"github.com/alecthomas/jsonschema"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -98,6 +100,19 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		jsonSchemaType.Description = formatDescription(src)
 	}
 
+	// get field annotations
+	var fieldAnnotations *srv6.LigatoOptions
+	val, err := proto.GetExtension(desc.Options, srv6.E_LigatoOptions)
+	if err != nil {
+		c.logger.Debugf("Field %s.%s doesn't have ligato option extension", msg.GetName(), desc.GetName())
+	} else {
+		var ok bool
+		if fieldAnnotations, ok = val.(*srv6.LigatoOptions); !ok {
+			c.logger.Debugf("Field %s.%s have ligato option extension, but its value has "+
+				"unexpected type (%T)", msg.GetName(), desc.GetName(), val)
+		}
+	}
+
 	// Switch the types, and pick a JSONSchema equivalent:
 	switch desc.GetType() {
 	case descriptor.FieldDescriptorProto_TYPE_DOUBLE,
@@ -184,8 +199,28 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			jsonSchemaType.Maximum = intSafeMaxUint64
 		}
 
-	case descriptor.FieldDescriptorProto_TYPE_STRING,
-		descriptor.FieldDescriptorProto_TYPE_BYTES:
+	case descriptor.FieldDescriptorProto_TYPE_STRING:
+		var pType *jsonschema.Type
+		if c.AllowNullValues {
+			pType = &jsonschema.Type{Type: gojsonschema.TYPE_STRING}
+			jsonSchemaType.OneOf = []*jsonschema.Type{
+				{Type: gojsonschema.TYPE_NULL},
+				pType,
+			}
+		} else {
+			jsonSchemaType.Type = gojsonschema.TYPE_STRING
+			pType = jsonSchemaType
+		}
+		if fieldAnnotations != nil {
+			switch fieldAnnotations.Type {
+			case srv6.LigatoOptions_IPV6:
+				pType.Format = "ipv6"
+			case srv6.LigatoOptions_IPV4:
+				pType.Format = "ipv4"
+			}
+		}
+
+	case descriptor.FieldDescriptorProto_TYPE_BYTES:
 		if c.AllowNullValues {
 			jsonSchemaType.OneOf = []*jsonschema.Type{
 				{Type: gojsonschema.TYPE_NULL},
