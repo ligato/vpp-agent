@@ -252,8 +252,8 @@ type KVScheduler interface {
 	GetRecordedTransaction(SeqNum uint64) (txn *RecordedTxn)
 
 	// ValidateSemantically validates given proto messages according to semantic validation(KVDescriptor.Validate)
-	// from registered KVDescriptors. If all messages are valid, nil is returned. If all message could be
-	// validated, kvscheduler.InvalidMessagesError is returned. In any other case, error is returned.
+	// from registered KVDescriptors. If all locally known messages are valid, nil is returned. If some locally known
+	// messages are invalid, kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
 	//
 	// Usage of dynamic proto messages (dynamicpb.Message) described by remotely known models is not supported.
 	// The reason for this is that the KVDescriptors can validate only statically generated proto messages and

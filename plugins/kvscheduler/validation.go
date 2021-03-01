@@ -23,8 +23,8 @@ import (
 )
 
 // ValidateSemantically validates given proto messages according to semantic validation(KVDescriptor.Validate)
-// from registered KVDescriptors. If all messages are valid, nil is returned. If all message could be
-// validated, kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
+// from registered KVDescriptors. If all locally known messages are valid, nil is returned. If some locally known
+// messages are invalid, kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
 //
 // Usage of dynamic proto messages (dynamicpb.Message) described by remotely known models is not supported.
 // The reason for this is that the KVDescriptors can validate only statically generated proto messages and
@@ -47,8 +47,9 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 			}
 			goType := model.LocalGoType() // only for locally known models will return meaningful go type
 			if goType == nil {
-				return errors.Errorf("dynamic messages for remote models are not supported due to "+
-					"not available go type of statically generated proto message (dynamic message=%v)", message)
+				s.Log.Debug("instance of %s doesn't have local go type and will be skipped from validation "+
+					"using KVDescriptor.Validate  (dynamic message=%v)", model.ProtoName(), message)
+				continue
 			}
 			message, err = models.DynamicMessageToGeneratedMessage(dynamicMessage, goType)
 			if err != nil {
