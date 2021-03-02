@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
+	"go.ligato.io/vpp-agent/v3/proto/ligato"
 
 	"github.com/alecthomas/jsonschema"
 	"github.com/golang/protobuf/proto"
@@ -101,13 +101,13 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 	}
 
 	// get field annotations
-	var fieldAnnotations *srv6.LigatoOptions
-	val, err := proto.GetExtension(desc.Options, srv6.E_LigatoOptions)
+	var fieldAnnotations *ligato.LigatoOptions
+	val, err := proto.GetExtension(desc.Options, ligato.E_LigatoOptions)
 	if err != nil {
 		c.logger.Debugf("Field %s.%s doesn't have ligato option extension", msg.GetName(), desc.GetName())
 	} else {
 		var ok bool
-		if fieldAnnotations, ok = val.(*srv6.LigatoOptions); !ok {
+		if fieldAnnotations, ok = val.(*ligato.LigatoOptions); !ok {
 			c.logger.Debugf("Field %s.%s have ligato option extension, but its value has "+
 				"unexpected type (%T)", msg.GetName(), desc.GetName(), val)
 		}
@@ -200,24 +200,46 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_STRING:
-		var pType *jsonschema.Type
-		if c.AllowNullValues {
-			pType = &jsonschema.Type{Type: gojsonschema.TYPE_STRING}
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_NULL},
-				pType,
-			}
-		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_STRING
-			pType = jsonSchemaType
-		}
+		tmpType := &jsonschema.Type{} // using temporal type to better handle complications with c.AllowNullValues
 		if fieldAnnotations != nil {
 			switch fieldAnnotations.Type {
-			case srv6.LigatoOptions_IPV6:
-				pType.Format = "ipv6"
-			case srv6.LigatoOptions_IPV4:
-				pType.Format = "ipv4"
+			case ligato.LigatoOptions_IPV6:
+				tmpType.Type = gojsonschema.TYPE_STRING
+				tmpType.Format = "ipv6"
+			case ligato.LigatoOptions_IPV4:
+				tmpType.Type = gojsonschema.TYPE_STRING
+				tmpType.Format = "ipv4"
+			case ligato.LigatoOptions_IP:
+				tmpType.OneOf = []*jsonschema.Type{
+					{
+						Type:   gojsonschema.TYPE_STRING,
+						Format: "ipv4",
+					},
+					{
+						Type:   gojsonschema.TYPE_STRING,
+						Format: "ipv6",
+					},
+				}
 			}
+		} else {
+			tmpType.Type = gojsonschema.TYPE_STRING
+		}
+		// apply/attach created schema to overall schema
+		if c.AllowNullValues { // insert possibility of using NULL type
+			if len(tmpType.OneOf) == 0 {
+				jsonSchemaType.OneOf = []*jsonschema.Type{
+					{Type: gojsonschema.TYPE_NULL},
+					{Type: tmpType.Type, Format: tmpType.Format},
+				}
+			} else {
+				jsonSchemaType.OneOf = append([]*jsonschema.Type{
+					{Type: gojsonschema.TYPE_NULL},
+				}, tmpType.OneOf...)
+			}
+		} else { // direct mapping (can't just overwrite jsonSchemaType variable due to other fields already computed)
+			jsonSchemaType.Type = tmpType.Type
+			jsonSchemaType.Format = tmpType.Format
+			jsonSchemaType.OneOf = tmpType.OneOf
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_BYTES:
@@ -293,12 +315,22 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			jsonSchemaType.Items.Enum = jsonSchemaType.Enum
 			jsonSchemaType.Enum = nil
 			jsonSchemaType.Items.OneOf = nil
-		} else {
+		} else { // move schema of primitive type to item schema
+			// copy
 			jsonSchemaType.Items.Type = jsonSchemaType.Type
+			jsonSchemaType.Items.Format = jsonSchemaType.Format
 			jsonSchemaType.Items.Minimum = jsonSchemaType.Minimum
 			jsonSchemaType.Items.Maximum = jsonSchemaType.Maximum
 			jsonSchemaType.Items.ExclusiveMinimum = jsonSchemaType.ExclusiveMinimum
 			jsonSchemaType.Items.OneOf = jsonSchemaType.OneOf
+
+			// cleanup
+			jsonSchemaType.Type = ""
+			jsonSchemaType.Format = ""
+			jsonSchemaType.Minimum = 0
+			jsonSchemaType.Maximum = 0
+			jsonSchemaType.ExclusiveMinimum = false
+			jsonSchemaType.OneOf = nil
 		}
 
 		if c.AllowNullValues {
