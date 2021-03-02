@@ -378,6 +378,11 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			// Assume the attrbutes of the recursed value:
 			jsonSchemaType.Properties = recursedJSONSchemaType.Properties
 			jsonSchemaType.Ref = recursedJSONSchemaType.Ref
+			if jsonSchemaType.Ref != "" {
+				// clean some fields because usage of REF makes them unnecessary (and in some validator
+				// implementation it cause problems/warnings)
+				jsonSchemaType.AdditionalProperties = []byte{}
+			}
 			jsonSchemaType.Required = recursedJSONSchemaType.Required
 
 			// Build up the list of required fields:
