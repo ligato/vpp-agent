@@ -14,9 +14,16 @@ extend google.protobuf.FieldOptions {
 
 message LigatoOptions {
     enum Type {
-        IP = 0;
-        IPV4 = 1;
-        IPV6 = 2;
+        UNSPECIFIED = 0;
+        IP = 1;
+        IPV4 = 2;
+        IPV6 = 3;
     }
     Type type = 1;
+
+    message IntRange {
+        int64 minimum = 1;
+        uint64 maximum = 2;
+    }
+    IntRange int_range = 2;
 }

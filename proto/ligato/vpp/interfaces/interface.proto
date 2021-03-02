@@ -5,6 +5,7 @@ package ligato.vpp.interfaces;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces;vpp_interfaces";
 
 import "ligato/vpp/ipsec/ipsec.proto";
+import "ligato/annotations.proto";
 
 // Interface defines a VPP interface.
 message Interface {
@@ -68,7 +69,7 @@ message Interface {
 
     // Mtu sets MTU (Maximum Transmission Unit) for this interface.
     // If set to zero, default MTU (usually 9216) will be used.
-    uint32 mtu = 8;
+    uint32 mtu = 8  [(ligato_options).int_range = {minimum: 0 maximum: 9216}];
 
     // Unnumbered is used for inheriting IP address from another interface.
     message Unnumbered {

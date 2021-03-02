@@ -5,6 +5,7 @@ package ligato.linux.interfaces;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces;linux_interfaces";
 
 import "ligato/linux/namespace/namespace.proto";
+import "ligato/annotations.proto";
 
 message Interface {
     enum Type {
@@ -77,7 +78,7 @@ message Interface {
     string phys_address = 7;
 
     // MTU is the maximum transmission unit value.
-    uint32 mtu = 8;
+    uint32 mtu = 8   [(ligato_options).int_range = {minimum: 0 maximum: 9216}];
 
     oneof link {
         // VETH-specific configuration

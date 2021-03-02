@@ -90,6 +90,39 @@ func (c *Converter) registerType(pkgName *string, msg *descriptor.DescriptorProt
 	pkg.types[msg.GetName()] = msg
 }
 
+// applyAllowNullValuesOption applies schema changes to schema while handling possibility of use Null values
+// (if enabled). This is a convenience method for handling the NULL values option.
+func (c *Converter) applyAllowNullValuesOption(schema *jsonschema.Type, schemaChanges *jsonschema.Type) {
+	if c.AllowNullValues { // insert possibility of using NULL type
+		if len(schemaChanges.OneOf) == 0 {
+			schema.OneOf = []*jsonschema.Type{
+				{
+					Type: gojsonschema.TYPE_NULL,
+				}, {
+					Type:             schemaChanges.Type,
+					Format:           schemaChanges.Format,
+					Minimum:          schemaChanges.Minimum,
+					ExclusiveMinimum: schemaChanges.ExclusiveMinimum,
+					Maximum:          schemaChanges.Maximum,
+					ExclusiveMaximum: schemaChanges.ExclusiveMaximum,
+				},
+			}
+		} else {
+			schema.OneOf = append([]*jsonschema.Type{
+				{Type: gojsonschema.TYPE_NULL},
+			}, schemaChanges.OneOf...)
+		}
+	} else { // direct mapping (schema could be already partially built -> need to fill new values into it)
+		schema.Type = schemaChanges.Type
+		schema.Format = schemaChanges.Format
+		schema.Minimum = schemaChanges.Minimum
+		schema.ExclusiveMinimum = schemaChanges.ExclusiveMinimum
+		schema.Maximum = schemaChanges.Maximum
+		schema.ExclusiveMaximum = schemaChanges.ExclusiveMaximum
+		schema.OneOf = schemaChanges.OneOf
+	}
+}
+
 // Convert a proto "field" (essentially a type-switch with some recursion):
 func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDescriptorProto, msg *descriptor.DescriptorProto, duplicatedMessages map[*descriptor.DescriptorProto]string) (*jsonschema.Type, error) {
 	// Prepare a new jsonschema.Type for our eventual return value:
@@ -117,140 +150,87 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 	switch desc.GetType() {
 	case descriptor.FieldDescriptorProto_TYPE_DOUBLE,
 		descriptor.FieldDescriptorProto_TYPE_FLOAT:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_NULL},
-				{Type: gojsonschema.TYPE_NUMBER},
-			}
-		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_NUMBER
-		}
+		c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_NUMBER})
 
 	case descriptor.FieldDescriptorProto_TYPE_INT32,
 		descriptor.FieldDescriptorProto_TYPE_SFIXED32,
 		descriptor.FieldDescriptorProto_TYPE_SINT32:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{
-					Type: gojsonschema.TYPE_NULL,
-				}, {
-					Type:    gojsonschema.TYPE_INTEGER,
-					Minimum: math.MinInt32,
-					Maximum: math.MaxInt32,
-				},
-			}
-		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
-			jsonSchemaType.Minimum = math.MinInt32
-			jsonSchemaType.Maximum = math.MaxInt32
+		schema := &jsonschema.Type{
+			Type:    gojsonschema.TYPE_INTEGER,
+			Minimum: math.MinInt32,
+			Maximum: math.MaxInt32,
 		}
+		c.applyIntRangeFieldAnnotation(fieldAnnotations, schema)
+		c.applyAllowNullValuesOption(jsonSchemaType, schema)
 
 	case descriptor.FieldDescriptorProto_TYPE_UINT32,
 		descriptor.FieldDescriptorProto_TYPE_FIXED32:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{
-					Type: gojsonschema.TYPE_NULL,
-				}, {
-					Type:             gojsonschema.TYPE_INTEGER,
-					Minimum:          -1,
-					ExclusiveMinimum: true,
-					Maximum:          intSafeMaxUint32,
-				},
-			}
-		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
-			jsonSchemaType.Minimum = -1
-			jsonSchemaType.ExclusiveMinimum = true
-			jsonSchemaType.Maximum = intSafeMaxUint32
+		schema := &jsonschema.Type{
+			Type:             gojsonschema.TYPE_INTEGER,
+			Minimum:          -1,
+			ExclusiveMinimum: true,
+			Maximum:          intSafeMaxUint32,
 		}
+		c.applyIntRangeFieldAnnotation(fieldAnnotations, schema)
+		c.applyAllowNullValuesOption(jsonSchemaType, schema)
 
 	case descriptor.FieldDescriptorProto_TYPE_INT64,
 		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
 		descriptor.FieldDescriptorProto_TYPE_SINT64:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_STRING},
-				{Type: gojsonschema.TYPE_NULL},
-			}
+		if !c.DisallowBigIntsAsStrings {
+			c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
 		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_STRING
-		}
-		if c.DisallowBigIntsAsStrings {
-			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
-			jsonSchemaType.Minimum = intSafeMinInt64
-			jsonSchemaType.Maximum = intSafeMaxInt64
+			schema := &jsonschema.Type{
+				Type:    gojsonschema.TYPE_INTEGER,
+				Minimum: intSafeMinInt64,
+				Maximum: intSafeMaxInt64,
+			}
+			c.applyIntRangeFieldAnnotation(fieldAnnotations, schema)
+			c.applyAllowNullValuesOption(jsonSchemaType, schema)
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_UINT64,
 		descriptor.FieldDescriptorProto_TYPE_FIXED64:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_STRING},
-				{Type: gojsonschema.TYPE_NULL},
-			}
+		if !c.DisallowBigIntsAsStrings {
+			c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
 		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_STRING
-		}
-		if c.DisallowBigIntsAsStrings {
-			jsonSchemaType.Type = gojsonschema.TYPE_INTEGER
-			jsonSchemaType.Minimum = -1
-			jsonSchemaType.ExclusiveMinimum = true
-			jsonSchemaType.Maximum = intSafeMaxUint64
+			schema := &jsonschema.Type{
+				Type:             gojsonschema.TYPE_INTEGER,
+				Minimum:          -1,
+				ExclusiveMinimum: true,
+				Maximum:          intSafeMaxUint64,
+			}
+			c.applyIntRangeFieldAnnotation(fieldAnnotations, schema)
+			c.applyAllowNullValuesOption(jsonSchemaType, schema)
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_STRING:
-		tmpType := &jsonschema.Type{} // using temporal type to better handle complications with c.AllowNullValues
-		if fieldAnnotations != nil {
-			switch fieldAnnotations.Type {
-			case ligato.LigatoOptions_IPV6:
-				tmpType.Type = gojsonschema.TYPE_STRING
-				tmpType.Format = "ipv6"
-			case ligato.LigatoOptions_IPV4:
-				tmpType.Type = gojsonschema.TYPE_STRING
-				tmpType.Format = "ipv4"
-			case ligato.LigatoOptions_IP:
-				tmpType.OneOf = []*jsonschema.Type{
-					{
-						Type:   gojsonschema.TYPE_STRING,
-						Format: "ipv4",
-					},
-					{
-						Type:   gojsonschema.TYPE_STRING,
-						Format: "ipv6",
-					},
-				}
+		schema := &jsonschema.Type{}
+		switch fieldAnnotations.GetType() {
+		case ligato.LigatoOptions_IPV6:
+			schema.Type = gojsonschema.TYPE_STRING
+			schema.Format = "ipv6"
+		case ligato.LigatoOptions_IPV4:
+			schema.Type = gojsonschema.TYPE_STRING
+			schema.Format = "ipv4"
+		case ligato.LigatoOptions_IP:
+			schema.OneOf = []*jsonschema.Type{
+				{
+					Type:   gojsonschema.TYPE_STRING,
+					Format: "ipv4",
+				},
+				{
+					Type:   gojsonschema.TYPE_STRING,
+					Format: "ipv6",
+				},
 			}
-		} else {
-			tmpType.Type = gojsonschema.TYPE_STRING
+		default: // no annotations or annotation used are not applicable here
+			schema.Type = gojsonschema.TYPE_STRING
 		}
-		// apply/attach created schema to overall schema
-		if c.AllowNullValues { // insert possibility of using NULL type
-			if len(tmpType.OneOf) == 0 {
-				jsonSchemaType.OneOf = []*jsonschema.Type{
-					{Type: gojsonschema.TYPE_NULL},
-					{Type: tmpType.Type, Format: tmpType.Format},
-				}
-			} else {
-				jsonSchemaType.OneOf = append([]*jsonschema.Type{
-					{Type: gojsonschema.TYPE_NULL},
-				}, tmpType.OneOf...)
-			}
-		} else { // direct mapping (can't just overwrite jsonSchemaType variable due to other fields already computed)
-			jsonSchemaType.Type = tmpType.Type
-			jsonSchemaType.Format = tmpType.Format
-			jsonSchemaType.OneOf = tmpType.OneOf
-		}
+		c.applyAllowNullValuesOption(jsonSchemaType, schema)
 
 	case descriptor.FieldDescriptorProto_TYPE_BYTES:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_NULL},
-				{Type: gojsonschema.TYPE_STRING},
-			}
-		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_STRING
-		}
+		c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
 
 	case descriptor.FieldDescriptorProto_TYPE_ENUM:
 		// Note: not setting type specification(oneof string and integer), because explicitly saying which
@@ -278,14 +258,7 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		}
 
 	case descriptor.FieldDescriptorProto_TYPE_BOOL:
-		if c.AllowNullValues {
-			jsonSchemaType.OneOf = []*jsonschema.Type{
-				{Type: gojsonschema.TYPE_NULL},
-				{Type: gojsonschema.TYPE_BOOLEAN},
-			}
-		} else {
-			jsonSchemaType.Type = gojsonschema.TYPE_BOOLEAN
-		}
+		c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_BOOLEAN})
 
 	case descriptor.FieldDescriptorProto_TYPE_GROUP, descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 		switch desc.GetTypeName() {
@@ -438,6 +411,38 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 	jsonSchemaType.Required = dedupe(jsonSchemaType.Required)
 
 	return jsonSchemaType, nil
+}
+
+// applyIntRangeFieldAnnotation applies new int range for int schema (if the annotation is present)
+func (c *Converter) applyIntRangeFieldAnnotation(fieldAnnotations *ligato.LigatoOptions, schema *jsonschema.Type) {
+	if fieldAnnotations.GetIntRange() != nil {
+		// correct value due for "exclusive" boundary usage
+		correctedMinimum := schema.Minimum
+		correctedMaximum := schema.Maximum
+		if schema.ExclusiveMinimum {
+			correctedMinimum = schema.Minimum + 1
+		}
+		if schema.ExclusiveMaximum {
+			correctedMaximum = schema.Maximum - 1
+		}
+
+		// compute new range
+		schema.Minimum = int(math.Max(float64(fieldAnnotations.GetIntRange().Minimum), float64(correctedMinimum)))
+		schema.Maximum = int(math.Min(float64(fieldAnnotations.GetIntRange().Maximum), float64(correctedMaximum)))
+		schema.ExclusiveMinimum = false
+		schema.ExclusiveMaximum = false
+
+		// apply workaround for 'omitempty' problem (default value is omitted from jsonschema marshaling and
+		// the boundary is missing in generated schema)
+		if schema.Minimum == 0 {
+			schema.Minimum = -1
+			schema.ExclusiveMinimum = true
+		}
+		if schema.Maximum == 0 {
+			schema.Maximum = 1
+			schema.ExclusiveMaximum = true
+		}
+	}
 }
 
 // Converts a proto "MESSAGE" into a JSON-Schema:
