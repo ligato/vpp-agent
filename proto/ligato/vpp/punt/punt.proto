@@ -4,6 +4,8 @@ package ligato.vpp.punt;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/punt;vpp_punt";
 
+import "ligato/annotations.proto";
+
 // L3Protocol defines Layer 3 protocols.
 enum L3Protocol {
     UNDEFINED_L3 = 0;
@@ -30,7 +32,7 @@ message IPRedirect {
     // Transmit interface name
     string tx_interface = 3;
     // Next hop IP where the traffic is redirected
-    string next_hop = 4;
+    string next_hop = 4  [(ligato_options).type = IP];
 }
 
 // ToHost allows otherwise dropped packet which destination IP address matching
@@ -43,7 +45,7 @@ message ToHost {
     // Currently VPP only supports UDP.
     L4Protocol l4_protocol = 3;
     // Destination port
-    uint32 port = 4;
+    uint32 port = 4  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 
     // SocketPath defines path to unix domain socket
     // used for punt packets to the host.

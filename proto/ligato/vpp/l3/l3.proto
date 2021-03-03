@@ -4,6 +4,8 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+import "ligato/annotations.proto";
+
 // ARP Proxy
 message ProxyARP {
     message Interface {
@@ -13,8 +15,8 @@ message ProxyARP {
     repeated Interface interfaces = 1;
 
     message Range {
-        string first_ip_addr = 1;
-        string last_ip_addr = 2;
+        string first_ip_addr = 1  [(ligato_options).type = IPV4];
+        string last_ip_addr = 2  [(ligato_options).type = IPV4];
         uint32 vrf_id = 3;
     }
     repeated Range ranges = 2;
@@ -42,10 +44,10 @@ message DHCPProxy {
 
     message DHCPServer {
         uint32 vrf_id = 1;
-        string ip_address = 2;
+        string ip_address = 2  [(ligato_options).type = IP];
     }
 
-    string source_ip_address = 1;
+    string source_ip_address = 1  [(ligato_options).type = IP];
     uint32 rx_vrf_id = 2;
     repeated DHCPServer servers = 4;
 }

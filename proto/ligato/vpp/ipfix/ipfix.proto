@@ -4,15 +4,17 @@ package ligato.vpp.ipfix;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipfix;vpp_ipfix";
 
+import "ligato/annotations.proto";
+
 // IPFIX defines the IP Flow Information eXport (IPFIX) configuration.
 message IPFIX {
     message Collector {
-        string address = 1;
-        uint32 port = 2;
+        string address = 1  [(ligato_options).type = IP];
+        uint32 port = 2  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
     }
     Collector collector = 1;
-    string source_address = 2;
+    string source_address = 2  [(ligato_options).type = IP];
     uint32 vrf_id = 3;
-    uint32 path_mtu = 4;
+    uint32 path_mtu = 4  [(ligato_options).int_range = {minimum: 0 maximum: 1450}];
     uint32 template_interval = 5;
 }

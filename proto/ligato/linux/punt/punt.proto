@@ -4,6 +4,8 @@ package ligato.linux.punt;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/punt;linux_punt";
 
+import "ligato/annotations.proto";
+
 /* Proxy allows to listen on network socket or unix domain socket, and resend to another network/unix domain socket */
 message Proxy {
     oneof rx {                          /* Socket to listen */
@@ -31,7 +33,7 @@ message PortBased {
         ALL = 3;
     }
     L3Protocol l3_protocol = 3;
-    uint32 port = 4;
+    uint32 port = 4  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 }
 
 /* Define unix domain socket type for IPC */

@@ -4,6 +4,8 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+import "ligato/annotations.proto";
+
 message Route {
     enum RouteType {
         // Forwarding is being done in the specified vrf_id only, or according to
@@ -30,7 +32,7 @@ message Route {
     string dst_network = 3;
 
     // Next hop address.
-    string next_hop_addr = 4;
+    string next_hop_addr = 4  [(ligato_options).type = IP];
 
     // Interface name of the outgoing interface.
     string outgoing_interface = 5;

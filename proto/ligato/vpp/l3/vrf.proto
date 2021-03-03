@@ -4,6 +4,8 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+import "ligato/annotations.proto";
+
 message VrfTable {
     // ID is mandatory identification for VRF table.
     // NOTE: do not confuse with fib index (shown by some VPP CLIs),
@@ -30,8 +32,8 @@ message VrfTable {
     message FlowHashSettings {
         bool use_src_ip = 1;
         bool use_dst_ip = 2;
-        bool use_src_port = 3;
-        bool use_dst_port = 4;
+        bool use_src_port = 3  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+        bool use_dst_port = 4  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
         bool use_protocol = 5;
         bool reverse = 6;
         bool symmetric = 7;

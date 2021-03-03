@@ -4,8 +4,10 @@ package ligato.linux.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3;linux_l3";
 
+import "ligato/annotations.proto";
+
 message ARPEntry {
     string interface = 1;
-    string ip_address = 2;
+    string ip_address = 2  [(ligato_options).type = IP];
     string hw_address = 3;
 }
