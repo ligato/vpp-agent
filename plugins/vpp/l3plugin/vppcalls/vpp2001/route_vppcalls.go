@@ -53,6 +53,32 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.Route, rtIfIdx uint32, delete bo
 		Weight:     uint8(route.Weight),
 		Preference: uint8(route.Preference),
 	}
+	// SInce I could not find where route is checked for nil pointer
+	// adding it here
+	if route != nil {
+		if len(route.Labels) != 0 {
+			// Label stack is not empty, need to add labels to the fib path
+			fibPath.NLabels = uint8(len(route.Labels))
+			fibPath.LabelStack = make([]fib_types.FibMplsLabel, 0)
+			for _, l := range route.Labels {
+				if l == nil {
+					// Somebody send a bomb in a form of a nil pointer
+					// Should I skip it or return error?? For now just ignoring it.
+					continue
+				}
+				f := fib_types.FibMplsLabel{
+					Label: uint32(l.Label),
+					Exp:   uint8(l.Exp[0]), // Only first byte has significance
+					TTL:   uint8(l.Ttl[0]), // Only first byte has significance
+				}
+				f.IsUniform = 0
+				if l.IsUniform {
+					f.IsUniform = 1
+				}
+				fibPath.LabelStack = append(fibPath.LabelStack, f)
+			}
+		}
+	}
 	if route.NextHopAddr != "" {
 		nextHop, err := h.addrAlloc.GetOrParseIPAddress(route.NextHopAddr,
 			route.OutgoingInterface, netalloc.IPAddressForm_ADDR_ONLY)
