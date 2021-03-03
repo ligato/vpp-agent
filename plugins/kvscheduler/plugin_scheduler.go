@@ -16,12 +16,12 @@ package kvscheduler
 
 import (
 	"context"
-	"errors"
 	"os"
 	"runtime/trace"
 	"sync"
 	"time"
 
+	"github.com/go-errors/errors"
 	"github.com/golang/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/idxmap"

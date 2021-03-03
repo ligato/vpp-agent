@@ -168,6 +168,87 @@ func (e *InvalidValueError) GetInvalidFields() []string {
 	return e.invalidFields
 }
 
+/***************************** Invalid Message ****************************/
+
+// InvalidMessageError is message validation error that links proto message with its
+// corresponding InvalidValueError returned from running KVDescriptor.Validate on the given proto message
+type InvalidMessageError struct {
+	// message is the message to which the invalidError refers to
+	message proto.Message
+	// parentMessage is filled only when field message is created using KVDescriptor.DerivedValues and
+	// it holds the proto message corresponding to the KVDescriptor that was used the derive value.
+	parentMessage proto.Message
+	// invalidError is the field validation error from KVDescriptor.Validate()
+	invalidError *InvalidValueError
+}
+
+// NewInvalidMessageError is constructor for InvalidMessageError
+func NewInvalidMessageError(message proto.Message, invalidError *InvalidValueError,
+	parentMessage proto.Message) *InvalidMessageError {
+	return &InvalidMessageError{
+		message:       message,
+		parentMessage: parentMessage,
+		invalidError:  invalidError,
+	}
+}
+
+// Error returns string representation of the pair (proto message, its InvalidValueError)
+func (e *InvalidMessageError) Error() string {
+	return fmt.Sprintf("message is not valid due to: %v (message=%v, parentMessage=%v)",
+		e.invalidError.Error(), e.message, e.parentMessage)
+}
+
+// Message returns proto message to which the InvalidValueError is linked
+func (e *InvalidMessageError) Message() proto.Message {
+	return e.message
+}
+
+// InvalidFields return fields to which the InvalidValueError is referring
+func (e *InvalidMessageError) InvalidFields() []string {
+	return e.invalidError.GetInvalidFields()
+}
+
+// ValidationError return error message of linked InvalidValueError
+func (e *InvalidMessageError) ValidationError() error {
+	return e.invalidError.GetValidationError()
+}
+
+// ParentMessage returns parent proto message to message which the InvalidValueError is linked to. The parent
+// proto message is non-nill only when the KVDescriptor.DerivedValues was used to create message
+// (InvalidMessageError.Message()), otherwise it is nil
+func (e *InvalidMessageError) ParentMessage() proto.Message {
+	return e.parentMessage
+}
+
+/***************************** Invalid Messages ****************************/
+
+// InvalidMessagesError is container for multiple InvalidMessageError instances
+type InvalidMessagesError struct {
+	messageErrors []*InvalidMessageError
+}
+
+// NewInvalidMessagesError is constructor for new InvalidMessagesError instances
+func NewInvalidMessagesError(messageErrors []*InvalidMessageError) *InvalidMessagesError {
+	return &InvalidMessagesError{
+		messageErrors: messageErrors,
+	}
+}
+
+// Error returns string representation of all contained InvalidMessageError instances
+func (e *InvalidMessagesError) Error() string {
+	var sb strings.Builder
+	sb.WriteString("some messages are invalid:\n")
+	for _, me := range e.messageErrors {
+		sb.WriteString(me.Error() + "\n")
+	}
+	return sb.String()
+}
+
+// MessageErrors returns all InvalidMessageError instances
+func (e *InvalidMessagesError) MessageErrors() []*InvalidMessageError {
+	return e.messageErrors
+}
+
 /***************************** Verification Failure ****************************/
 
 type VerificationErrorType int

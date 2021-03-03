@@ -24,6 +24,13 @@ const (
 	JSONSchema = "/info/configuration/jsonschema"
 )
 
+// Configuration
+const (
+	// Validate is a path for validating yaml configuration for VPP-Agent (the same all-in-one dynamically
+	// created yaml configuration as used in agentctl configuration get/update)
+	Validate = "/configuration/validate"
+)
+
 // Linux Dumps
 const (
 	// Interfaces

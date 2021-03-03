@@ -16,6 +16,7 @@ package models
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -76,6 +77,12 @@ func (m *RemotelyKnownModel) NameTemplate() string {
 func (m *RemotelyKnownModel) GoType() string {
 	goType, _ := m.modelOptionFor("goType", m.model.Options)
 	return goType
+}
+
+// LocalGoType should returns reflect go type for the model, but remotely known model doesn't have
+// locally known reflect go type. It always returns nil.
+func (m *RemotelyKnownModel) LocalGoType() reflect.Type {
+	return nil
 }
 
 // PkgPath returns package import path for the model definition.
@@ -176,7 +183,7 @@ func (m *RemotelyKnownModel) replaceFieldNamesInNameTemplate(messageDesc protore
 	for i := 0; i < messageDesc.Fields().Len(); i++ {
 		fieldDesc := messageDesc.Fields().Get(i)
 		pbJSONName := fieldDesc.JSONName()
-		nameTemplate = strings.ReplaceAll(nameTemplate, "." + m.upperFirst(pbJSONName), "." + pbJSONName)
+		nameTemplate = strings.ReplaceAll(nameTemplate, "."+m.upperFirst(pbJSONName), "."+pbJSONName)
 		if fieldDesc.Message() != nil {
 			nameTemplate = m.replaceFieldNamesInNameTemplate(fieldDesc.Message(), nameTemplate)
 		}

@@ -160,7 +160,7 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 	importedDependency := make(map[string]struct{}) // just for deduplication checking
 	for _, modelDetail := range knownModels {
 		// get/create group config for this know model (all configs are grouped into groups based on their module)
-		configGroupName := fmt.Sprintf("%v%v", modulePrefix(models.ToSpec(modelDetail.Spec).ModelName()), configGroupSuffix)
+		configGroupName := DynamicConfigGroupFieldNaming(modelDetail)
 		configGroup, found := configGroups[configGroupName]
 		if !found { // create it!
 			// create new message that represents new config group
@@ -186,21 +186,11 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		}
 
 		// fill config group message with currently handled known model
-		simpleProtoName := simpleProtoName(modelDetail.ProtoName)
-		protoName := string(simpleProtoName) + repeatedFieldsSuffix
-		jsonName := string(simpleProtoName) + repeatedFieldsSuffix
 		label := protoLabel(descriptorpb.FieldDescriptorProto_LABEL_REPEATED)
 		if !existsModelOptionFor("nameTemplate", modelDetail.Options) {
 			label = protoLabel(descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL)
-			protoName = string(simpleProtoName)
-			jsonName = string(simpleProtoName)
 		}
-		compatibilityKey := fmt.Sprintf("%v.%v", configGroupName, string(simpleProtoName))
-		if newNames, found := backwardCompatibleNames[compatibilityKey]; found {
-			// using field names from hardcoded configurator.Config to achieve json/yaml backward compatibility
-			protoName = newNames.protoName
-			jsonName = newNames.jsonName
-		}
+		protoName, jsonName := DynamicConfigKnownModelFieldNaming(modelDetail)
 		configGroup.Field = append(configGroup.Field, &descriptorpb.FieldDescriptorProto{
 			Name:     proto.String(protoName),
 			Number:   proto.Int32(int32(len(configGroup.Field) + 1)),
@@ -238,6 +228,35 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		}
 	}
 	return
+}
+
+// DynamicConfigGroupFieldNaming computes for given known model the naming of configuration group proto field
+// containing the instances of given model inside the dynamic config describing the whole VPP-Agent configuration.
+// The json name of the field is the same as proto name of field.
+func DynamicConfigGroupFieldNaming(modelDetail *models.ModelInfo) string {
+	return fmt.Sprintf("%v%v", modulePrefix(models.ToSpec(modelDetail.Spec).ModelName()), configGroupSuffix)
+}
+
+// DynamicConfigKnownModelFieldNaming compute for given known model the (proto and json) naming of proto field
+// containing the instances of given model inside the dynamic config describing the whole VPP-Agent configuration.
+func DynamicConfigKnownModelFieldNaming(modelDetail *models.ModelInfo) (protoName, jsonName string) {
+	simpleProtoName := simpleProtoName(modelDetail.ProtoName)
+	configGroupName := DynamicConfigGroupFieldNaming(modelDetail)
+	compatibilityKey := fmt.Sprintf("%v.%v", configGroupName, simpleProtoName)
+
+	if newNames, found := backwardCompatibleNames[compatibilityKey]; found {
+		// using field names from hardcoded configurator.Config to achieve json/yaml backward compatibility
+		protoName = newNames.protoName
+		jsonName = newNames.jsonName
+	} else if !existsModelOptionFor("nameTemplate", modelDetail.Options) {
+		protoName = simpleProtoName
+		jsonName = simpleProtoName
+	} else {
+		protoName = simpleProtoName + repeatedFieldsSuffix
+		jsonName = simpleProtoName + repeatedFieldsSuffix
+	}
+
+	return protoName, jsonName
 }
 
 // DynamicConfigExport exports from dynamic config the proto.Messages corresponding to known models that

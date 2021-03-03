@@ -46,7 +46,7 @@ func NameTemplate(t string) NameFunc {
 		// handling dynamic messages (they don't have data fields as generated proto messages)
 		if dynMessage, ok := obj.(*dynamicpb.Message); ok {
 			var err error
-			obj, err = dynamicMessageToGeneratedMessage(dynMessage, messageGoType)
+			obj, err = DynamicMessageToGeneratedMessage(dynMessage, messageGoType)
 			if err != nil {
 				return "", err
 			}

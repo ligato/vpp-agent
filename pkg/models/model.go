@@ -88,6 +88,11 @@ func (m *LocallyKnownModel) GoType() string {
 	return m.goType.String()
 }
 
+// LocalGoType returns reflect go type for the model.
+func (m *LocallyKnownModel) LocalGoType() reflect.Type {
+	return m.goType
+}
+
 // PkgPath returns package import path for the model definition.
 func (m *LocallyKnownModel) PkgPath() string {
 	return m.goType.Elem().PkgPath()

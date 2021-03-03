@@ -140,12 +140,12 @@ func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
 	return keyPrefix
 }
 
-// dynamicMessageToGeneratedMessage converts proto dynamic message to corresponding generated proto message
+// DynamicMessageToGeneratedMessage converts proto dynamic message to corresponding generated proto message
 // (identified by go type).
 // This conversion method should help handling dynamic proto messages in mostly protoc-generated proto message
 // oriented codebase (i.e. help for type conversions to named, help handle missing data fields as seen
 // in generated proto messages,...)
-func dynamicMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message,
+func DynamicMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message,
 	goTypeOfGeneratedMessage reflect.Type) (proto.Message, error) {
 
 	// create empty proto message of the same type as it was used for registration

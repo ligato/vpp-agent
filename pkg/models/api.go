@@ -15,6 +15,8 @@
 package models
 
 import (
+	"reflect"
+
 	"github.com/golang/protobuf/proto"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -77,6 +79,12 @@ type KnownModel interface {
 
 	// GoType returns go type for the model.
 	GoType() string
+
+	// LocalGoType returns reflect go type for the model. The reflect type can be retrieved only
+	// for locally registered model that provide locally known go types. The remotely retrieved model
+	// can't provide reflect type so if known model information is retrieved remotely, this method
+	// will return nil.
+	LocalGoType() reflect.Type
 
 	// PkgPath returns package import path for the model definition.
 	PkgPath() string
