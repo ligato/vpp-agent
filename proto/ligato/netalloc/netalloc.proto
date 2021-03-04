@@ -22,6 +22,8 @@ package ligato.netalloc;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc";
 
+import "ligato/annotations.proto";
+
 // IPAddressForm can be used in descriptors whose models reference allocated IP
 // addresses, to ask for a specific form in which the address should applied.
 enum IPAddressForm {
@@ -94,7 +96,7 @@ message IPAllocation {
     // network.
     // If the address is specified without a mask, the all-ones mask (/32 for
     // IPv4, /128 for IPv6) will be assumed.
-    string address = 4;
+    string address = 4  [(ligato_options).type = IP_OPTIONAL_MASK];
 
     // Gw is the address of the default gateway assigned to the interface in
     // the given network.
@@ -102,7 +104,7 @@ message IPAllocation {
     //  a) the mask of the <address> is used provided that GW IP falls into the
     //     same network IP range, or
     //  b) the all-ones mask is used otherwise
-    string gw = 5;
+    string gw = 5  [(ligato_options).type = IP_OPTIONAL_MASK];
 }
 
 // ConfigData wraps all configuration items exported by netalloc.

@@ -18,6 +18,12 @@ message LigatoOptions {
         IP = 1;
         IPV4 = 2;
         IPV6 = 3;
+        IP_WITH_MASK = 4;
+        IPV4_WITH_MASK = 5;
+        IPV6_WITH_MASK = 6;
+        IP_OPTIONAL_MASK = 7;
+        IPV4_OPTIONAL_MASK = 8;
+        IPV6_OPTIONAL_MASK = 9;
     }
     Type type = 1;
 

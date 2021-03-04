@@ -29,7 +29,7 @@ message Route {
     uint32 vrf_id = 1;
 
     // Destination network defined by IP address and prefix (format: <address>/<prefix>).
-    string dst_network = 3;
+    string dst_network = 3  [(ligato_options).type = IP_WITH_MASK];
 
     // Next hop address.
     string next_hop_addr = 4  [(ligato_options).type = IP];

@@ -16,6 +16,11 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+const (
+	PatternIpv6WithMask = "^(::|(([a-fA-F0-9]{1,4}):){7}(([a-fA-F0-9]{1,4}))|(:(:([a-fA-F0-9]{1,4})){1,6})|((([a-fA-F0-9]{1,4}):){1,6}:)|((([a-fA-F0-9]{1,4}):)(:([a-fA-F0-9]{1,4})){1,6})|((([a-fA-F0-9]{1,4}):){2}(:([a-fA-F0-9]{1,4})){1,5})|((([a-fA-F0-9]{1,4}):){3}(:([a-fA-F0-9]{1,4})){1,4})|((([a-fA-F0-9]{1,4}):){4}(:([a-fA-F0-9]{1,4})){1,3})|((([a-fA-F0-9]{1,4}):){5}(:([a-fA-F0-9]{1,4})){1,2}))(\\\\/(12[0-8]|1[0-1][0-9]|[1-9][0-9]|[0-9]))$"
+	PatternIpv4WithMask = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(/(3[0-2]|[1-2][0-9]|[0-9]))$"
+)
+
 var (
 	globalPkg = newProtoPackage(nil, "")
 
@@ -101,6 +106,7 @@ func (c *Converter) applyAllowNullValuesOption(schema *jsonschema.Type, schemaCh
 				}, {
 					Type:             schemaChanges.Type,
 					Format:           schemaChanges.Format,
+					Pattern:          schemaChanges.Pattern,
 					Minimum:          schemaChanges.Minimum,
 					ExclusiveMinimum: schemaChanges.ExclusiveMinimum,
 					Maximum:          schemaChanges.Maximum,
@@ -115,6 +121,7 @@ func (c *Converter) applyAllowNullValuesOption(schema *jsonschema.Type, schemaCh
 	} else { // direct mapping (schema could be already partially built -> need to fill new values into it)
 		schema.Type = schemaChanges.Type
 		schema.Format = schemaChanges.Format
+		schema.Pattern = schemaChanges.Pattern
 		schema.Minimum = schemaChanges.Minimum
 		schema.ExclusiveMinimum = schemaChanges.ExclusiveMinimum
 		schema.Maximum = schemaChanges.Maximum
@@ -222,6 +229,64 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 				{
 					Type:   gojsonschema.TYPE_STRING,
 					Format: "ipv6",
+				},
+			}
+		case ligato.LigatoOptions_IPV4_WITH_MASK:
+			schema.Type = gojsonschema.TYPE_STRING
+			schema.Pattern = PatternIpv4WithMask
+		case ligato.LigatoOptions_IPV6_WITH_MASK:
+			schema.Type = gojsonschema.TYPE_STRING
+			schema.Pattern = PatternIpv6WithMask
+		case ligato.LigatoOptions_IP_WITH_MASK:
+			schema.OneOf = []*jsonschema.Type{
+				{
+					Type:    gojsonschema.TYPE_STRING,
+					Pattern: PatternIpv4WithMask,
+				},
+				{
+					Type:    gojsonschema.TYPE_STRING,
+					Pattern: PatternIpv6WithMask,
+				},
+			}
+		case ligato.LigatoOptions_IPV4_OPTIONAL_MASK:
+			schema.OneOf = []*jsonschema.Type{
+				{
+					Type:   gojsonschema.TYPE_STRING,
+					Format: "ipv4",
+				},
+				{
+					Type:    gojsonschema.TYPE_STRING,
+					Pattern: PatternIpv4WithMask,
+				},
+			}
+		case ligato.LigatoOptions_IPV6_OPTIONAL_MASK:
+			schema.OneOf = []*jsonschema.Type{
+				{
+					Type:   gojsonschema.TYPE_STRING,
+					Format: "ipv6",
+				},
+				{
+					Type:    gojsonschema.TYPE_STRING,
+					Pattern: PatternIpv6WithMask,
+				},
+			}
+		case ligato.LigatoOptions_IP_OPTIONAL_MASK:
+			schema.OneOf = []*jsonschema.Type{
+				{
+					Type:   gojsonschema.TYPE_STRING,
+					Format: "ipv4",
+				},
+				{
+					Type:    gojsonschema.TYPE_STRING,
+					Pattern: PatternIpv4WithMask,
+				},
+				{
+					Type:   gojsonschema.TYPE_STRING,
+					Format: "ipv6",
+				},
+				{
+					Type:    gojsonschema.TYPE_STRING,
+					Pattern: PatternIpv6WithMask,
 				},
 			}
 		default: // no annotations or annotation used are not applicable here

@@ -23,7 +23,7 @@ message Route {
     // Destination network address in the format <address>/<prefix> (mandatory)
     // Address can be also allocated via netalloc plugin and referenced here,
     // see: api/models/netalloc/netalloc.proto
-    string dst_network = 3;
+    string dst_network = 3  [(ligato_options).type = IP_WITH_MASK];
 
     // Gateway IP address (without mask, optional).
     // Address can be also allocated via netalloc plugin and referenced here,

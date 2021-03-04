@@ -129,10 +129,10 @@ message Steering {
     message L2Traffic {                  /* L2 traffic that should be steered into SR policy */
         string interface_name = 1;       /* name of interface with incoming traffic that should be steered to SR policy */
     }
-    message L3Traffic {                  /* L3 traffic that should be steered into SR policy */
-        uint32 installation_vrf_id = 1;  /* ID of IPv4/IPv6 VRF table where to install L3 Steering routing components (VRF table type (IPv4/IPv6) is decided by prefix_address value)
-                                            Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
-        string prefix_address = 2;       /* IPv4/IPv6 prefix address(CIRD format) of traffic destination. All traffic with given destination will be steered to given SR policy */
+    message L3Traffic {                                                     /* L3 traffic that should be steered into SR policy */
+        uint32 installation_vrf_id = 1;                                     /* ID of IPv4/IPv6 VRF table where to install L3 Steering routing components (VRF table type (IPv4/IPv6) is decided by prefix_address value)
+                                                                               Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto) */
+        string prefix_address = 2  [(ligato_options).type = IP_WITH_MASK];  /* IPv4/IPv6 prefix address(CIRD format) of traffic destination. All traffic with given destination will be steered to given SR policy */
     }
 }
 

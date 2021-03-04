@@ -14,9 +14,9 @@ message VRRPEntry {
     uint32 vr_id = 2  [(ligato_options).int_range = {minimum: 1 maximum: 255}];
     // Priority defines which router becomes master. Should be > 0 and <= 255.
     uint32 priority = 3  [(ligato_options).int_range = {minimum: 1 maximum: 255}];
-    // VR advertisement interval in milliseconds, should be => 10 and <= 655350. 
+    // VR advertisement interval in milliseconds, should be => 10 and <= 65535.
     // (Later, in implemetation it is converted into centiseconds, so precision may be lost).
-    uint32 interval = 4  [(ligato_options).int_range = {minimum: 10 maximum: 655350}];
+    uint32 interval = 4  [(ligato_options).int_range = {minimum: 10 maximum: 65535}];
     // Controls whether a (starting or restarting) 
     // higher-priority Backup router preempts a lower-priority Master router.
     bool preempt = 5;
