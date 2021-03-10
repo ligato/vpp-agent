@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package ligato;
+
+option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    // NOTE: used option field index(2000) is in extension index range of descriptor.proto, but  is not registered
+    // in protobuf global extension registry (https://github.com/protocolbuffers/protobuf/blob/master/docs/options.md)
+    LigatoOptions ligato_options = 2000;
+}
+
+message LigatoOptions {
+    enum Type {
+        UNSPECIFIED = 0;
+        IP = 1;
+        IPV4 = 2;
+        IPV6 = 3;
+        IP_WITH_MASK = 4;
+        IPV4_WITH_MASK = 5;
+        IPV6_WITH_MASK = 6;
+        IP_OPTIONAL_MASK = 7;
+        IPV4_OPTIONAL_MASK = 8;
+        IPV6_OPTIONAL_MASK = 9;
+    }
+    Type type = 1;
+
+    message IntRange {
+        int64 minimum = 1;
+        uint64 maximum = 2;
+    }
+    IntRange int_range = 2;
+}

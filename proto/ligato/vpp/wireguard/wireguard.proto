@@ -4,18 +4,20 @@ package ligato.vpp.wireguard;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard;vpp_wg";
 
+import "ligato/annotations.proto";
+
 message Peer {
   // Public-key base64
   string public_key = 1;
 
   // Peer UDP port
-  uint32 port = 2;
+  uint32 port = 2  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 
   // Keepalive interval (sec)
   uint32 persistent_keepalive = 3;
 
   // Endpoint IP
-  string endpoint = 4;
+  string endpoint = 4  [(ligato_options).type = IP];
 
   // The name of the wireguard interface to which this peer belongs
   string wg_if_name = 5;
@@ -25,5 +27,5 @@ message Peer {
   uint32 flags = 6;
 
   // Allowed IPs
-  repeated string allowed_ips = 7;
+  repeated string allowed_ips = 7  [(ligato_options).type = IP];
 }

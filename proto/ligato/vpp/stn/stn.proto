@@ -4,7 +4,9 @@ package ligato.vpp.stn;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/stn;vpp_stn";
 
+import "ligato/annotations.proto";
+
 message Rule {
-    string ip_address = 1;
+    string ip_address = 1  [(ligato_options).type = IP];
     string interface = 2;
 }

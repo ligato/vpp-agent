@@ -4,17 +4,19 @@ package ligato.vpp.l3;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3;vpp_l3";
 
+import "ligato/annotations.proto";
+
 // VRRPEntry represents Virtual Router desired state.
 message VRRPEntry {
     // This field refers to logical interface name
     string interface = 1;
     // Should be > 0 and <= 255
-    uint32 vr_id = 2;
+    uint32 vr_id = 2  [(ligato_options).int_range = {minimum: 1 maximum: 255}];
     // Priority defines which router becomes master. Should be > 0 and <= 255.
-    uint32 priority = 3;
-    // VR advertisement interval in milliseconds, should be => 10 and <= 655350. 
+    uint32 priority = 3  [(ligato_options).int_range = {minimum: 1 maximum: 255}];
+    // VR advertisement interval in milliseconds, should be => 10 and <= 65535.
     // (Later, in implemetation it is converted into centiseconds, so precision may be lost).
-    uint32 interval = 4;
+    uint32 interval = 4  [(ligato_options).int_range = {minimum: 10 maximum: 65535}];
     // Controls whether a (starting or restarting) 
     // higher-priority Backup router preempts a lower-priority Master router.
     bool preempt = 5;
@@ -29,6 +31,6 @@ message VRRPEntry {
     bool unicast = 7;
 
     // Ip address quantity should be > 0 and <= 255.
-    repeated string ip_addresses = 8;
+    repeated string ip_addresses = 8  [(ligato_options).type = IP];
     bool enabled = 9;
 }

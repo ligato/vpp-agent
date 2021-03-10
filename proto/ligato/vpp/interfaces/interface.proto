@@ -5,6 +5,7 @@ package ligato.vpp.interfaces;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces;vpp_interfaces";
 
 import "ligato/vpp/ipsec/ipsec.proto";
+import "ligato/annotations.proto";
 
 // Interface defines a VPP interface.
 message Interface {
@@ -45,7 +46,7 @@ message Interface {
     // defined in the following format: <ipAddress>/<ipPrefix>.
     // Interface IP address can be also allocated via netalloc plugin and
     // referenced here, see: api/models/netalloc/netalloc.proto
-    repeated string ip_addresses = 5;
+    repeated string ip_addresses = 5  [(ligato_options).type = IP];
 
     // Vrf defines the ID of VRF table that the interface is assigned to.
     // The VRF table must be explicitely configured (see api/models/vpp/l3/vrf.proto).
@@ -68,7 +69,7 @@ message Interface {
 
     // Mtu sets MTU (Maximum Transmission Unit) for this interface.
     // If set to zero, default MTU (usually 9216) will be used.
-    uint32 mtu = 8;
+    uint32 mtu = 8  [(ligato_options).int_range = {minimum: 0 maximum: 9216}];
 
     // Unnumbered is used for inheriting IP address from another interface.
     message Unnumbered {
@@ -182,9 +183,9 @@ message MemifLink {
 // VxlanLink defines configuration for interface type: VXLAN_TUNNEL
 message VxlanLink {
     // SrcAddress is source VTEP address
-    string src_address = 1;  
+    string src_address = 1  [(ligato_options).type = IP];
     // DstAddress is destination VTEP address
-    string dst_address = 2; 
+    string dst_address = 2  [(ligato_options).type = IP];
     // Vni stands for VXLAN Network Identifier 
     uint32 vni = 3;     
     // Multicast defines name of multicast interface     
@@ -261,9 +262,9 @@ message IPSecLink {
     // Anti replay option
     bool anti_replay = 3;
     // Local IP address
-    string local_ip = 4;
+    string local_ip = 4  [(ligato_options).type = IP];
     // Remote IP address
-    string remote_ip = 5;
+    string remote_ip = 5  [(ligato_options).type = IP];
     // Local security parameter index
     uint32 local_spi = 6;
     // Remote security parameter index
@@ -343,8 +344,8 @@ message GreLink {
     };
     Type tunnel_type = 1;
 
-    string src_addr = 2; 
-    string dst_addr = 3;
+    string src_addr = 2  [(ligato_options).type = IP];
+    string dst_addr = 3  [(ligato_options).type = IP];
 
     uint32 outer_fib_id = 4;
     uint32 session_id = 5;
@@ -362,9 +363,9 @@ message GtpuLink {
         IP6 = 3;
     };
     // Source VTEP address
-    string src_addr = 1;
+    string src_addr = 1  [(ligato_options).type = IP];
     // Destination VTEP address
-    string dst_addr = 2;
+    string dst_addr = 2  [(ligato_options).type = IP];
     // Name of multicast interface
     string multicast = 3;
     // Tunnel endpoint identifier - local
@@ -390,9 +391,9 @@ message IPIPLink {
     Mode tunnel_mode = 1;
 
     // Source VTEP IP address
-    string src_addr = 2;
+    string src_addr = 2  [(ligato_options).type = IP];
     // Destination VTEP IP address
-    string dst_addr = 3;
+    string dst_addr = 3  [(ligato_options).type = IP];
 }
 
 message WireguardLink {
@@ -400,10 +401,10 @@ message WireguardLink {
   string private_key = 2;
 
   // Listen UDP port
-  uint32 port = 3;
+  uint32 port = 3  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 
   // Source IP address
-  string src_addr = 4;
+  string src_addr = 4  [(ligato_options).type = IP];
 }
 
 // https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.md

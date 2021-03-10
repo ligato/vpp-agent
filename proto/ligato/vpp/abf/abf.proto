@@ -4,6 +4,8 @@ package ligato.vpp.abf;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/abf;vpp_abf";
 
+import "ligato/annotations.proto";
+
 // ABF defines ACL based forwarding.
 message ABF {
     uint32 index = 1;               // ABF index (unique identifier)
@@ -19,7 +21,7 @@ message ABF {
 
     // List of forwarding paths added to the ABF policy (via)
     message ForwardingPath {
-        string next_hop_ip = 1;
+        string next_hop_ip = 1  [(ligato_options).type = IP];
         string interface_name = 2;
         uint32 weight = 3;
         uint32 preference = 4;

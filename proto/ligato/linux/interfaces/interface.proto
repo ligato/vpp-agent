@@ -5,6 +5,7 @@ package ligato.linux.interfaces;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces;linux_interfaces";
 
 import "ligato/linux/namespace/namespace.proto";
+import "ligato/annotations.proto";
 
 message Interface {
     enum Type {
@@ -69,7 +70,7 @@ message Interface {
     // defined in the following format: <ipAddress>/<ipPrefix>.
     // Interface IP address can be also allocated via netalloc plugin and
     // referenced here, see: api/models/netalloc/netalloc.proto
-    repeated string ip_addresses = 6;
+    repeated string ip_addresses = 6  [(ligato_options).type = IP_WITH_MASK];
 
     // PhysAddress represents physical address (MAC) of the interface.
     // Random address will be assigned if left empty.
@@ -77,7 +78,7 @@ message Interface {
     string phys_address = 7;
 
     // MTU is the maximum transmission unit value.
-    uint32 mtu = 8;
+    uint32 mtu = 8   [(ligato_options).int_range = {minimum: 0 maximum: 9216}];
 
     oneof link {
         // VETH-specific configuration

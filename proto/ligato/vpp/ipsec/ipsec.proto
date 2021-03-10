@@ -4,6 +4,8 @@ package ligato.vpp.ipsec;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec;vpp_ipsec";
 
+import "ligato/annotations.proto";
+
 /* Cryptographic algorithm for encryption */
 enum CryptoAlg { // vpp/src/vnet/ipsec/ipsec_sa.h:22
     NONE_CRYPTO = 0;
@@ -46,17 +48,17 @@ message SecurityPolicyDatabase {
         int32 priority = 2;
         bool is_outbound = 3;
 
-        string remote_addr_start = 4;
-        string remote_addr_stop = 5;
-        string local_addr_start = 6;
-        string local_addr_stop = 7;
+        string remote_addr_start = 4  [(ligato_options).type = IP];
+        string remote_addr_stop = 5  [(ligato_options).type = IP];
+        string local_addr_start = 6  [(ligato_options).type = IP];
+        string local_addr_stop = 7  [(ligato_options).type = IP];
 
         uint32 protocol = 8;
 
-        uint32 remote_port_start = 9;
-        uint32 remote_port_stop = 10;
-        uint32 local_port_start = 11;
-        uint32 local_port_stop = 12;
+        uint32 remote_port_start = 9  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+        uint32 remote_port_stop = 10  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+        uint32 local_port_start = 11  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+        uint32 local_port_stop = 12  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 
         enum Action {
             BYPASS = 0;
@@ -79,17 +81,17 @@ message SecurityPolicy {
     int32 priority = 3;
     bool is_outbound = 4;
 
-    string remote_addr_start = 5;
-    string remote_addr_stop = 6;
-    string local_addr_start = 7;
-    string local_addr_stop = 8;
+    string remote_addr_start = 5  [(ligato_options).type = IP];
+    string remote_addr_stop = 6  [(ligato_options).type = IP];
+    string local_addr_start = 7  [(ligato_options).type = IP];
+    string local_addr_stop = 8  [(ligato_options).type = IP];
 
     uint32 protocol = 9;
 
-    uint32 remote_port_start = 10;
-    uint32 remote_port_stop = 11;
-    uint32 local_port_start = 12;
-    uint32 local_port_stop = 13;
+    uint32 remote_port_start = 10  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+    uint32 remote_port_stop = 11  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+    uint32 local_port_start = 12  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+    uint32 local_port_stop = 13  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 
     enum Action {
         BYPASS = 0;
@@ -121,13 +123,13 @@ message SecurityAssociation {
     bool use_esn = 8;               /* Use extended sequence number */
     bool use_anti_replay = 9;       /* Use anti replay */
 
-    string tunnel_src_addr = 10;
-    string tunnel_dst_addr = 11;
+    string tunnel_src_addr = 10  [(ligato_options).type = IP];
+    string tunnel_dst_addr = 11  [(ligato_options).type = IP];
 
     bool enable_udp_encap = 12;     /* Enable UDP encapsulation for NAT traversal */
 
-    uint32 tunnel_src_port = 13;
-    uint32 tunnel_dst_port = 14;
+    uint32 tunnel_src_port = 13  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
+    uint32 tunnel_dst_port = 14  [(ligato_options).int_range = {minimum: 0 maximum: 65535}];
 }
 
 // TunnelProtection allows enabling IPSec tunnel protection on an existing interface
@@ -143,5 +145,5 @@ message TunnelProtection {
     repeated uint32 sa_in = 3;
 
     // (Optional) Next hop IP address, used for multipoint tunnels.
-    string next_hop_addr = 4;
+    string next_hop_addr = 4  [(ligato_options).type = IP];
 }

@@ -5,6 +5,7 @@ package ligato.vpp.interfaces;
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces;vpp_interfaces";
 
 import "ligato/vpp/interfaces/interface.proto";
+import "ligato/annotations.proto";
 
 message InterfaceStats {
     string name = 1;
@@ -53,7 +54,7 @@ message InterfaceState {
     int64 last_change = 7;
     string phys_address = 8;
     uint64 speed = 9;
-    uint32 mtu = 10;
+    uint32 mtu = 10  [(ligato_options).int_range = {minimum: 0 maximum: 9216}];
 
     enum Duplex {
         UNKNOWN_DUPLEX = 0;

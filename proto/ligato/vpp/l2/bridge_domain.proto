@@ -4,6 +4,8 @@ package ligato.vpp.l2;
 
 option go_package = "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2;vpp_l2";
 
+import "ligato/annotations.proto";
+
 message BridgeDomain {
     string name = 1;                 /* bridge domain name (can be any string) */
     bool flood = 2;                  /* enable/disable broadcast/multicast flooding in the BD */
@@ -21,7 +23,7 @@ message BridgeDomain {
     repeated Interface interfaces = 100;        /* list of interfaces */
 
     message ArpTerminationEntry {
-        string ip_address = 1;               /* IP address */
+        string ip_address = 1  [(ligato_options).type = IP];               /* IP address */
         string phys_address = 2;             /* MAC address matching to the IP */
     }
     repeated ArpTerminationEntry arp_termination_table = 102; /* list of ARP termination entries */
