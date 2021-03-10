@@ -212,10 +212,10 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 
 	// Use GetName as fallback for generating name
 	if _, ok := x.(named); ok {
-		model.nameFunc = func(obj interface{}, messageGoType reflect.Type) (s string, e error) {
+		model.nameFunc = func(obj interface{}) (s string, e error) {
 			// handling dynamic messages (they don't implement named interface)
 			if dynMessage, ok := obj.(*dynamicpb.Message); ok {
-				obj, e = DynamicMessageToGeneratedMessage(dynMessage, messageGoType)
+				obj, e = DynamicLocallyKnownMessageToGeneratedMessage(dynMessage)
 				if e != nil {
 					return "", e
 				}

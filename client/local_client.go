@@ -21,22 +21,31 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/db/keyval"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	protoV2 "google.golang.org/protobuf/proto"
 )
 
 // LocalClient is global client for direct local access.
-var LocalClient = NewClient(&txnFactory{local.DefaultRegistry})
+// Updates and resyncs of this client use local.DefaultRegistry for propagating data to orchestrator.Dispatcher
+// (going through watcher.Aggregator together with other data sources). However, data retrieval uses
+// orchestrator.Dispatcher directly.
+var LocalClient = NewClient(&txnFactory{local.DefaultRegistry}, &orchestrator.DefaultPlugin)
 
 type client struct {
 	txnFactory ProtoTxnFactory
+	dispatcher orchestrator.Dispatcher
 }
 
-// NewClient returns new instance that uses given registry for data propagation.
-func NewClient(factory ProtoTxnFactory) ConfigClient {
-	return &client{factory}
+// NewClient returns new instance that uses given registry for data propagation and dispatcher for data retrieval.
+func NewClient(factory ProtoTxnFactory, dispatcher orchestrator.Dispatcher) ConfigClient {
+	return &client{
+		txnFactory: factory,
+		dispatcher: dispatcher,
+	}
 }
 
 func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
@@ -69,7 +78,16 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
-	// TODO: use dispatcher to get config
+	protos := c.dispatcher.ListData()
+	protoDsts := extractProtoMessages(dsts)
+	if len(dsts) == len(protoDsts) { // all dsts are proto messages
+		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
+		//  (the value 1 generates from dynamic config the same json/yaml output as the hardcoded
+		//  configurator.Config and therefore serves for backward compatibility)
+		util.PlaceProtosIntoProtos(convertToProtoV2(protos), 1, protoDsts...)
+	} else {
+		util.PlaceProtos(protos, dsts...)
+	}
 	return nil
 }
 
@@ -142,4 +160,30 @@ func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 		return local.NewProtoTxn(p.registry.PropagateResync)
 	}
 	return local.NewProtoTxn(p.registry.PropagateChanges)
+}
+
+func extractProtoMessages(dsts []interface{}) []protoV2.Message {
+	protoDsts := make([]protoV2.Message, 0)
+	for _, dst := range dsts {
+		protoV1Dst, isProtoV1 := dst.(proto.Message)
+		if isProtoV1 {
+			protoDsts = append(protoDsts, proto.MessageV2(protoV1Dst))
+		} else {
+			protoV2Dst, isProtoV2 := dst.(protoV2.Message)
+			if isProtoV2 {
+				protoDsts = append(protoDsts, protoV2Dst)
+			} else {
+				break
+			}
+		}
+	}
+	return protoDsts
+}
+
+func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message {
+	result := make([]protoV2.Message, 0, len(protoMap))
+	for _, msg := range protoMap {
+		result = append(result, proto.MessageV2(msg))
+	}
+	return result
 }

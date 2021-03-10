@@ -26,7 +26,10 @@ const (
 
 // Configuration
 const (
-	// Validate is a path for validating yaml configuration for VPP-Agent (the same all-in-one dynamically
+	// Configuration is a path for handling(GET,PUT) all VPP-Agent NB configuration
+	Configuration = "/configuration"
+
+	// Validate is a path for validating NB yaml configuration for VPP-Agent (the same all-in-one dynamically
 	// created yaml configuration as used in agentctl configuration get/update)
 	Validate = "/configuration/validate"
 )

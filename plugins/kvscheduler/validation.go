@@ -51,7 +51,7 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 					"using KVDescriptor.Validate  (dynamic message=%v)", model.ProtoName(), message)
 				continue
 			}
-			message, err = models.DynamicMessageToGeneratedMessage(dynamicMessage, goType)
+			message, err = models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
 			if err != nil {
 				return errors.Errorf("can't convert dynamic message to statically generated message "+
 					"due to: %v (dynamic message=%v)", err, dynamicMessage)

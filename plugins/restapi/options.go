@@ -17,12 +17,12 @@ package restapi
 import (
 	"go.ligato.io/cn-infra/v2/rpc/rest"
 	"go.ligato.io/cn-infra/v2/servicelabel"
-	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
-
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	linuxifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin"
@@ -47,7 +47,8 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.VPPL3Plugin = &l3plugin.DefaultPlugin
 	p.LinuxIfPlugin = &linuxifplugin.DefaultPlugin
 	p.NsPlugin = &nsplugin.DefaultPlugin
-	p.kvscheduler = &kvscheduler.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
+	p.Dispatcher = &orchestrator.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

@@ -2,7 +2,6 @@ package models
 
 import (
 	"net"
-	"reflect"
 	"strings"
 	"text/template"
 
@@ -18,10 +17,7 @@ type modelOptions struct {
 type ModelOption func(*modelOptions)
 
 // NameFunc represents function which can name model instance.
-// To properly handle also dynamic Messages (dynamicpb.Message)
-// as model instances, the go type of corresponding generated
-// proto message must be given.
-type NameFunc func(obj interface{}, messageGoType reflect.Type) (string, error)
+type NameFunc func(obj interface{}) (string, error)
 
 // WithNameTemplate returns option for models which sets function
 // for generating name of instances using custom template.
@@ -42,11 +38,13 @@ func NameTemplate(t string) NameFunc {
 	tmpl := template.Must(
 		template.New("name").Funcs(funcMap).Option("missingkey=error").Parse(t),
 	)
-	return func(obj interface{}, messageGoType reflect.Type) (string, error) {
-		// handling dynamic messages (they don't have data fields as generated proto messages)
+	return func(obj interface{}) (string, error) {
+		// handling locally known dynamic messages (they don't have data fields as generated proto messages)
+		// (dynamic messages of remotely known models are not supported, remote_model implementation is
+		// not using dynamic message for name template resolving so it is ok)
 		if dynMessage, ok := obj.(*dynamicpb.Message); ok {
 			var err error
-			obj, err = DynamicMessageToGeneratedMessage(dynMessage, messageGoType)
+			obj, err = DynamicLocallyKnownMessageToGeneratedMessage(dynMessage)
 			if err != nil {
 				return "", err
 			}
