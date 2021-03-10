@@ -835,7 +835,7 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 		// convert config messages to input for p.Dispatcher.PushData(...)
 		var configKVPairs []orchestrator.KeyVal
 		for _, configMessage := range configMessages {
-			// convert config message from dynamic to statically-generated proto message
+			// convert config message from dynamic to statically-generated proto message (if possible)
 			// (this is needed for later processing of message - generated KVDescriptor adapters cast
 			// to statically-generated proto message and fail with dynamicpb.Message proto messages)
 			dynamicMessage, ok := configMessage.(*dynamicpb.Message)
@@ -846,13 +846,31 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
-			message, err := models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
+			model, err := models.GetModelFor(dynamicMessage)
 			if err != nil {
-				errMsg := fmt.Sprintf("can't convert dynamic message to statically generated message "+
-					"due to: %v (dynamic message=%v)", err, dynamicMessage)
+				errMsg := fmt.Sprintf("can't get model for dynamic message "+
+					"due to: %v (message=%v)", err, dynamicMessage)
 				p.Log.Error(internalErrorLogPrefix + errMsg)
 				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
+			}
+			var message proto.Message
+			if _, isRemoteModel := model.(*models.RemotelyKnownModel); isRemoteModel {
+				// message is retrieved from localclient but it has remotely known model => it is the proxy
+				// models in local model registry => can't convert it to generated message due to unknown
+				// generated message go type (to use reflection to create it), however the processing of proxy
+				// models is different so it might no need type casting fix at all -> using the only thing
+				// available, the dynamic message
+				message = dynamicMessage
+			} else { // message has locally known model -> using generated proto message
+				message, err = models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
+				if err != nil {
+					errMsg := fmt.Sprintf("can't convert dynamic message to statically generated message "+
+						"due to: %v (dynamic message=%v)", err, dynamicMessage)
+					p.Log.Error(internalErrorLogPrefix + errMsg)
+					p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+					return
+				}
 			}
 
 			// extract model key
