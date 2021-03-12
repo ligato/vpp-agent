@@ -259,7 +259,7 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 	// clear interfaces for update
 	c.ifsForUpdate = make(map[uint32]struct{})
 
-	// we dont want to lock during potentionally long dump call
+	// we dont want to lock during potentially long dump call
 	c.access.Unlock()
 
 	ifaces, err := c.ifHandler.DumpInterfaceStates(ifIdxs...)
