@@ -248,13 +248,9 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 		return
 	}
 
-	// we dont want to lock during potentionally long dump call
-	c.access.Unlock()
-
 	c.log.Debugf("updating interface states for %d interfaces", len(c.ifsForUpdate))
 
 	var ifIdxs []uint32
-	c.access.Lock()
 	if len(c.ifsForUpdate) < 1000 {
 		for ifIdx := range c.ifsForUpdate {
 			ifIdxs = append(ifIdxs, ifIdx)
@@ -262,6 +258,8 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 	}
 	// clear interfaces for update
 	c.ifsForUpdate = make(map[uint32]struct{})
+
+	// we dont want to lock during potentially long dump call
 	c.access.Unlock()
 
 	ifaces, err := c.ifHandler.DumpInterfaceStates(ifIdxs...)
