@@ -193,10 +193,6 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*vppcalls.FibTableDetails, erro
 
 // DumpXConnectPairs implements xconnect handler.
 func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectDetails, error) {
-	return nil, errors.New("l2_xconnect_dump crashes in VPP 21.01, dump will be skipped")
-/*
-	TODO: re-enable dump once l2_xconnect_dump is fixed in VPP (it crashes in >=21.01, see https://jira.fd.io/browse/VPP-1968)
-
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*vppcalls.XConnectDetails)
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_l2.L2XconnectDump{})
@@ -234,7 +230,6 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*vppcalls.XConnectD
 		}
 	}
 	return xpairs, nil
- */
 }
 
 func parseAddressToString(address ip_types.Address) string {
