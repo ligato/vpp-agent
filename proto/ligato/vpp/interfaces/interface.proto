@@ -46,7 +46,7 @@ message Interface {
     // defined in the following format: <ipAddress>/<ipPrefix>.
     // Interface IP address can be also allocated via netalloc plugin and
     // referenced here, see: api/models/netalloc/netalloc.proto
-    repeated string ip_addresses = 5  [(ligato_options).type = IP];
+    repeated string ip_addresses = 5  [(ligato_options).type = IP_WITH_MASK];
 
     // Vrf defines the ID of VRF table that the interface is assigned to.
     // The VRF table must be explicitely configured (see api/models/vpp/l3/vrf.proto).
