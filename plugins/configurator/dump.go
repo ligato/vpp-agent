@@ -17,6 +17,7 @@ package configurator
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"go.ligato.io/cn-infra/v2/logging"
 
@@ -48,16 +49,18 @@ import (
 type dumpService struct {
 	log logging.Logger
 
+	mux sync.Mutex
+
 	// VPP Handlers
 	ifHandler    ifvppcalls.InterfaceVppRead
 	l2Handler    l2vppcalls.L2VppAPI
 	l3Handler    l3vppcalls.L3VppAPI
 	ipsecHandler ipsecvppcalls.IPSecVPPRead
 	// plugins
-	aclHandler  aclvppcalls.ACLVppRead
-	abfHandler  abfvppcalls.ABFVppRead
-	natHandler  natvppcalls.NatVppRead
-	puntHandler vppcalls.PuntVPPRead
+	aclHandler       aclvppcalls.ACLVppRead
+	abfHandler       abfvppcalls.ABFVppRead
+	natHandler       natvppcalls.NatVppRead
+	puntHandler      vppcalls.PuntVPPRead
 	wireguardHandler wireguardvppcalls.WgVppRead
 
 	// Linux handlers
@@ -68,6 +71,9 @@ type dumpService struct {
 // Dump implements Dump method for Configurator
 func (svc *dumpService) Dump(ctx context.Context, req *rpc.DumpRequest) (*rpc.DumpResponse, error) {
 	defer trackOperation("Dump")()
+
+	svc.mux.Lock()
+	defer svc.mux.Unlock()
 
 	svc.log.Debugf("Received Dump request..")
 
