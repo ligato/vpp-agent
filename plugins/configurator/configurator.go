@@ -41,6 +41,10 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 )
 
+const (
+	waitDoneCheckPendingPeriod = time.Millisecond * 10
+)
+
 // configuratorServer implements DataSyncer service.
 type configuratorServer struct {
 	pb.UnimplementedConfiguratorServiceServer
@@ -74,8 +78,6 @@ func (svc *configuratorServer) Get(context.Context, *pb.GetRequest) (*pb.GetResp
 
 	return &pb.GetResponse{Config: config}, nil
 }
-
-const waitDoneCheckPendingPeriod = time.Millisecond * 10
 
 // Update adds configuration data present in data request to the VPP/Linux
 func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
