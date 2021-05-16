@@ -20,7 +20,7 @@ require (
 	github.com/go-errors/errors v1.0.1
 	github.com/goccy/go-graphviz v0.0.6
 	github.com/goccy/go-yaml v1.8.0
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.1 // indirect
@@ -55,7 +55,7 @@ require (
 	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
-	google.golang.org/genproto v0.0.0-20200601130524-0f60399e6634 // indirect
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.37.1
+	google.golang.org/grpc/examples v0.0.0-20210514222045-a12250e98f97 // indirect
 	google.golang.org/protobuf v1.25.0
 )
