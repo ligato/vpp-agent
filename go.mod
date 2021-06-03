@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v3
 go 1.13
 
 require (
-	git.fd.io/govpp.git v0.3.6-0.20200907135408-e517439567ad
+	git.fd.io/govpp.git v0.3.6-0.20210601140839-da95997338b7
 	github.com/Shopify/sarama v1.20.1 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
