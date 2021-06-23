@@ -28,7 +28,7 @@ func (h *InterfaceVppHandler) AddIPSecTunnelInterface(ctx context.Context, ifNam
 }
 
 // DeleteIPSecTunnelInterface removes existing IPSec tunnel interface.
-func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *ifs.IPSecLink) error {
+func (h *InterfaceVppHandler) DeleteIPSecTunnelInterface(ctx context.Context, ifName string, idx uint32, ipSecLink *ifs.IPSecLink) error {
 	// Note: ifIdx is not used now, tunnel should be matched based on parameters
 	_, err := h.tunnelIfAddDel(ctx, ifName, ipSecLink, false)
 	return err

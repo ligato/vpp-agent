@@ -92,8 +92,13 @@ func (h *TelemetryStats) GetNodeCounters(ctx context.Context) (*NodeCounterInfo,
 	var counters []NodeCounter
 	for _, c := range h.errStats.Errors {
 		node, reason := SplitErrorName(c.CounterName)
+		var valSum uint64 = 0
+		// c.Values are per worker counters
+		for _, val := range c.Values {
+			valSum += val
+		}
 		counters = append(counters, NodeCounter{
-			Value: c.Value,
+			Value: valSum,
 			Node:  node,
 			Name:  reason,
 		})

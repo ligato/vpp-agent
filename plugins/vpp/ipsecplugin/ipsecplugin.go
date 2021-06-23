@@ -38,6 +38,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2101"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/vppcalls/vpp2106"
 )
 
 func init() {

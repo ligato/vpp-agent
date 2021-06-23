@@ -15,6 +15,8 @@
 package vpp2009_test
 
 import (
+	"path"
+	"reflect"
 	"testing"
 
 	"git.fd.io/govpp.git/api"
@@ -184,8 +186,9 @@ func ifTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.InterfaceVppAPI) {
 	// that do not properly handle all replies, affecting tests that run after
 	// causing failures, because of unexpected ControlPingReply type from core
 	controlPingMsg := &vpe.ControlPingReply{}
-	api.GetRegisteredMessages()["control_ping_reply"] = controlPingMsg
-	api.GetRegisteredMessages()["control_ping_reply_f6b0b8ca"] = controlPingMsg
+	binapiPath := path.Dir(reflect.TypeOf(controlPingMsg).Elem().PkgPath())
+	api.GetRegisteredMessages()[binapiPath]["control_ping_reply"] = controlPingMsg
+	api.GetRegisteredMessages()[binapiPath]["control_ping_reply_f6b0b8ca"] = controlPingMsg
 	core.SetControlPingReply(controlPingMsg)
 	ctx := vppmock.SetupTestCtx(t)
 	core.SetControlPingReply(controlPingMsg)

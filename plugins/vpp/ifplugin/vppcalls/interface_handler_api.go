@@ -163,7 +163,7 @@ type InterfaceVppAPI interface {
 	// AddIPSecTunnelInterface adds a new IPSec tunnel interface
 	AddIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface
-	DeleteIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) error
+	DeleteIPSecTunnelInterface(ctx context.Context, ifName string, idx uint32, ipSecLink *interfaces.IPSecLink) error
 
 	// AddBondInterface configures bond interface.
 	AddBondInterface(ifName string, mac string, bondLink *interfaces.BondLink) (uint32, error)

@@ -42,8 +42,8 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	// forwarding
-	ctx.MockVpp.MockReply(&vpp_nat.Nat44ForwardingIsEnabledReply{
-		Enabled: true,
+	ctx.MockVpp.MockReply(&vpp_nat.Nat44ShowRunningConfigReply{
+		ForwardingEnabled: true,
 	})
 
 	// virtual reassembly
