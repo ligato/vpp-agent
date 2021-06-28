@@ -85,6 +85,7 @@ func (p *Plugin) GetBufferStats(stats *govppapi.BufferStats) error {
 	return p.statsConn.GetBufferStats(stats)
 }
 
+// GetMemoryStats retrieves VPP memory info
 func (p *Plugin) GetMemoryStats(stats *govppapi.MemoryStats) error {
 	if p.statsConn == nil {
 		return nil

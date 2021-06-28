@@ -344,7 +344,7 @@ func TestGetMemory(t *testing.T) {
 				MaxTotalAlloc:   1023.99e6,
 			},
 		},
-		// "unknown" test case fails (probably due to incorrectly updated regexp in telemetry_vppcalls.go:35)
+		// TODO "unknown" test case fails (probably due to incorrectly updated regexp in telemetry_vppcalls.go:35)
 		//
 		// {
 		// 	name: "unknown",
@@ -424,7 +424,7 @@ Thread 3 vpp_wk_2
 				MaxTotalAlloc:   1023.99e6,
 			},
 		},
-		// "19.08 update" test case tests for "page information not available" error.
+		// TODO "19.08 update" test case tests for "page information not available" error.
 		// It contains reply from VPP version 20.09. The format of replies changed
 		// since VPP version 21.01, so the test case should be updated accordingly.
 		//
