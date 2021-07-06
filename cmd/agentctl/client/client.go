@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/proxy"
-	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
+	"go.etcd.io/etcd/clientv3"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
 	"go.ligato.io/cn-infra/v2/logging"

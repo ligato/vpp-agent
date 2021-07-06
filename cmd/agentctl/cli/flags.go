@@ -98,5 +98,5 @@ func SetLogLevel(logLevel string) {
 		os.Exit(1)
 	}
 	logrus.SetLevel(lvl)
-	logging.DefaultLogger.SetLevel(logging.ParseLogLevel(logLevel))
+	logging.DefaultLogger.SetLevel(logging.LogLevel(lvl))
 }

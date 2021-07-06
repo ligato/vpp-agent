@@ -32,6 +32,13 @@ import (
 	protoc_plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/unrolled/render"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
+	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -44,12 +51,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/jsonschema/converter"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	"google.golang.org/protobuf/encoding/protojson"
-	protoV2 "google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -425,7 +426,7 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 
 		// use JSON schema converter and handle error cases
 		p.Log.Debug("Processing code generator request")
-		protoConverter := converter.New(logrus.DefaultLogger().StandardLogger())
+		protoConverter := converter.New(logrus.DefaultLogger().Logger)
 		res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
 		if err != nil {
 			if res == nil {
