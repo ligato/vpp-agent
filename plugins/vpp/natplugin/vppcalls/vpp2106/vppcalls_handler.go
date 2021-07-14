@@ -54,5 +54,6 @@ func NewNatVppHandler(c vpp.Client,
 		ifIndexes:    ifIndexes,
 		dhcpIndex:    dhcpIndex,
 		log:          log,
+		ed:           true,
 	}
 }
