@@ -256,6 +256,10 @@ message TapLink {
 }
 
 // IPSecLink defines configuration for interface type: IPSEC_TUNNEL
+// In VPP 21.06 and newer, IPSecLink serves just for creation of the link and thus only tunnel_mode is taken into
+// account and all of the remaining (deprecated) fields are ignored.
+// Please use separate SecurityPolicy, SecurityAssociation and TunnelProtection messages from ligato.vpp.ipsec
+// package to associate SA, SP and tunnel protection with the link.
 message IPSecLink {
     enum Mode {
         // point-to-point tunnel
@@ -266,8 +270,6 @@ message IPSecLink {
     // Mode of the IPIP tunnel
     Mode tunnel_mode = 1;
 
-    // In VPP 21.06 and newer, IPSecLink serves just for creation of the link and thus all of the following
-    // information is ignored. Please use separate messages for addition of SA and SPD instead.
     // Extended sequence number
     bool esn = 2 [deprecated=true];
     // Anti replay option
