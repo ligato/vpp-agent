@@ -761,9 +761,14 @@ func printErrorStatsTable(out io.Writer, errorStats *govppapi.ErrorStats) {
 	table.SetAutoWrapText(false)
 
 	for _, errorStat := range errorStats.Errors {
+		var valSum uint64 = 0
+		// errorStat.Values are per worker counters
+		for _, val := range errorStat.Values {
+			valSum += val
+		}
 		row := []string{
 			errorStat.CounterName,
-			fmt.Sprint(errorStat.Value),
+			fmt.Sprint(valSum),
 		}
 		table.Append(row)
 	}

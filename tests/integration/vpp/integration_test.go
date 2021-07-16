@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"reflect"
 	"strings"
 	"syscall"
@@ -150,8 +151,9 @@ func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 func reRegisterMessage(x govppapi.Message) {
 	typ := reflect.TypeOf(x)
 	namecrc := x.GetMessageName() + "_" + x.GetCrcString()
-	govppapi.GetRegisteredMessages()[namecrc] = x
-	govppapi.GetRegisteredMessageTypes()[typ] = namecrc
+	binapiPath := path.Dir(reflect.TypeOf(x).Elem().PkgPath())
+	govppapi.GetRegisteredMessages()[binapiPath][namecrc] = x
+	govppapi.GetRegisteredMessageTypes()[binapiPath][typ] = namecrc
 }
 
 func hackForBugInGoVPPMessageCache(t *testing.T, adapter adapter.VppAPI, vppCmd *exec.Cmd) error {
@@ -372,8 +374,8 @@ func (v *vppClient) NewAPIChannel() (govppapi.Channel, error) {
 	return v.conn.NewAPIChannel()
 }
 
-func (v *vppClient) NewStream(ctx context.Context) (govppapi.Stream, error) {
-	return v.conn.NewStream(ctx)
+func (v *vppClient) NewStream(ctx context.Context, options ...govppapi.StreamOption) (govppapi.Stream, error) {
+	return v.conn.NewStream(ctx, options...)
 }
 
 func (v *vppClient) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {

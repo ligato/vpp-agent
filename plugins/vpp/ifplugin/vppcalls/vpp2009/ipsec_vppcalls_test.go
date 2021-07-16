@@ -111,7 +111,7 @@ func TestDeleteIPSecTunnelInterface(t *testing.T) {
 		SwIfIndex: 2,
 	})
 
-	err := ifHandler.DeleteIPSecTunnelInterface(ctx.Context, "if1", &ifs.IPSecLink{
+	err := ifHandler.DeleteIPSecTunnelInterface(ctx.Context, "if1", 2, &ifs.IPSecLink{
 		Esn:             true,
 		LocalIp:         "10.10.0.1",
 		RemoteIp:        "10.10.0.2",
@@ -130,7 +130,7 @@ func TestDeleteIPSecTunnelInterfaceError(t *testing.T) {
 		Retval:    9,
 	})
 
-	err := ifHandler.DeleteIPSecTunnelInterface(ctx.Context, "if1", &ifs.IPSecLink{
+	err := ifHandler.DeleteIPSecTunnelInterface(ctx.Context, "if1", 2, &ifs.IPSecLink{
 		Esn:            true,
 		LocalIp:        "10.10.0.1",
 		LocalCryptoKey: "4a506a794f574265564551694d653768",

@@ -131,7 +131,7 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 		}
 
 		var err error
-		replyMsg, id, ok := ctx.MockVpp.ReplyFor(request.MsgName)
+		replyMsg, id, ok := ctx.MockVpp.ReplyFor("", request.MsgName)
 		if ok {
 			reply, err = ctx.MockVpp.ReplyBytes(request, replyMsg)
 			Expect(err).To(BeNil())
@@ -257,8 +257,8 @@ func newMockVPPClient(ctx *TestCtx) *mockVPPClient {
 	}
 }
 
-func (m *mockVPPClient) NewStream(ctx context.Context) (govppapi.Stream, error) {
-	stream, err := m.conn.NewStream(ctx)
+func (m *mockVPPClient) NewStream(ctx context.Context, options ...govppapi.StreamOption) (govppapi.Stream, error) {
+	stream, err := m.conn.NewStream(ctx, options...)
 	if err != nil {
 		return nil, err
 	}

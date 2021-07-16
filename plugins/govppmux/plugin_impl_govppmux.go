@@ -19,6 +19,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"path"
 	"reflect"
 	"sort"
 	"strings"
@@ -44,6 +45,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2101"
+	_ "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2106"
 )
 
 var (
@@ -246,8 +248,9 @@ func (p *Plugin) hackForBugInGoVPPMessageCache(address string, useShm bool) erro
 func reRegisterMessage(x govppapi.Message) {
 	typ := reflect.TypeOf(x)
 	namecrc := x.GetMessageName() + "_" + x.GetCrcString()
-	govppapi.GetRegisteredMessages()[namecrc] = x
-	govppapi.GetRegisteredMessageTypes()[typ] = namecrc
+	binapiPath := path.Dir(reflect.TypeOf(x).Elem().PkgPath())
+	govppapi.GetRegisteredMessages()[binapiPath][namecrc] = x
+	govppapi.GetRegisteredMessageTypes()[binapiPath][typ] = namecrc
 }
 
 // AfterInit reports status check.

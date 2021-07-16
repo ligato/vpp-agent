@@ -310,7 +310,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 			err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, targetHostIfName)
 		}
 	case interfaces.Interface_IPSEC_TUNNEL:
-		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, intf.GetIpsec())
+		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, ifIdx, intf.GetIpsec())
 	case interfaces.Interface_WIREGUARD_TUNNEL:
 		err = d.ifHandler.DeleteWireguardTunnel(intf.Name, ifIdx)
 	case interfaces.Interface_SUB_INTERFACE:

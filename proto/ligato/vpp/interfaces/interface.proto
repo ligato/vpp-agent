@@ -256,31 +256,44 @@ message TapLink {
 }
 
 // IPSecLink defines configuration for interface type: IPSEC_TUNNEL
+// In VPP 21.06 and newer, IPSecLink serves just for creation of the link and thus only tunnel_mode is taken into
+// account and all of the remaining (deprecated) fields are ignored.
+// Please use separate SecurityPolicy, SecurityAssociation and TunnelProtection messages from ligato.vpp.ipsec
+// package to associate SA, SP and tunnel protection with the link.
 message IPSecLink {
+    enum Mode {
+        // point-to-point tunnel
+        POINT_TO_POINT = 0;
+        // point-to multipoint tunnel (supported starting from VPP 20.05)
+        POINT_TO_MULTIPOINT = 1;
+    };
+    // Mode of the IPIP tunnel
+    Mode tunnel_mode = 1;
+
     // Extended sequence number
-    bool esn = 2;
+    bool esn = 2 [deprecated=true];
     // Anti replay option
-    bool anti_replay = 3;
+    bool anti_replay = 3 [deprecated=true];
     // Local IP address
-    string local_ip = 4  [(ligato_options).type = IP];
+    string local_ip = 4  [(ligato_options).type = IP, deprecated=true];
     // Remote IP address
-    string remote_ip = 5  [(ligato_options).type = IP];
+    string remote_ip = 5  [(ligato_options).type = IP, deprecated=true];
     // Local security parameter index
-    uint32 local_spi = 6;
+    uint32 local_spi = 6 [deprecated=true];
     // Remote security parameter index
-    uint32 remote_spi = 7;
+    uint32 remote_spi = 7 [deprecated=true];
 
     // Cryptographic algorithm for encryption
-    ipsec.CryptoAlg crypto_alg = 8;
-    string local_crypto_key = 9;
-    string remote_crypto_key = 10;
+    ipsec.CryptoAlg crypto_alg = 8 [deprecated=true];
+    string local_crypto_key = 9 [deprecated=true];
+    string remote_crypto_key = 10 [deprecated=true];
 
     // Cryptographic algorithm for authentication
-    ipsec.IntegAlg integ_alg = 11;
-    string local_integ_key = 12;
-    string remote_integ_key = 13;
+    ipsec.IntegAlg integ_alg = 11 [deprecated=true];
+    string local_integ_key = 12 [deprecated=true];
+    string remote_integ_key = 13 [deprecated=true];
 
-    bool enable_udp_encap = 14;
+    bool enable_udp_encap = 14 [deprecated=true];
 }
 
 // VmxNet3Link defines configuration for interface type: VMXNET3_INTERFACE

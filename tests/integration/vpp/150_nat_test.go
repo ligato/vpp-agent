@@ -15,9 +15,6 @@
 package vpp
 
 import (
-	"net"
-	"testing"
-
 	. "github.com/onsi/gomega"
 	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -26,6 +23,8 @@ import (
 	nat_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 	"google.golang.org/protobuf/proto"
+	"net"
+	"testing"
 )
 
 const (
@@ -33,7 +32,53 @@ const (
 	vpp2005 = "20.05"
 	vpp2009 = "20.09"
 	vpp2101 = "21.01"
+	vpp2106 = "21.06"
 )
+
+func TestNat44Global(t *testing.T) {
+	ctx := setupVPP(t)
+	defer ctx.teardownVPP()
+
+	unsupportedVPPVersions := []string{vpp2001, vpp2005, vpp2009}
+	// in older versions is used VPP startup config
+	// exclude test testing feature not supported in currently tested VPP version
+	for _, excludedVPPVersion := range unsupportedVPPVersions {
+		if ctx.versionInfo.Release() == excludedVPPVersion {
+			return
+		}
+	}
+
+	// nat handler
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
+	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)
+	natHandler := nat_vppcalls.CompatibleNatVppHandler(ctx.vppClient, swIfIndexes, dhcpIndexes, logrus.NewLogger("test"))
+
+	Expect(natHandler).ShouldNot(BeNil(), "Nat handler should be created.")
+
+	dumpBeforeEnable, err := natHandler.Nat44GlobalConfigDump(false)
+	Expect(err).To(Succeed())
+	t.Logf("dump before enable: %#v", dumpBeforeEnable)
+
+	if !natHandler.WithLegacyStartupConf() {
+		Expect(natHandler.EnableNAT44Plugin(nat_vppcalls.Nat44InitOpts{EndpointDependent: true})).Should(Succeed())
+	}
+	dumpAfterEnable, err := natHandler.Nat44GlobalConfigDump(false)
+	Expect(err).To(Succeed())
+	t.Logf("dump after enable: %#v", dumpAfterEnable)
+
+	Expect(natHandler.DisableNAT44Plugin()).Should(Succeed())
+	dumpAfterDisable, err := natHandler.Nat44GlobalConfigDump(false)
+	Expect(err).To(Succeed())
+	Expect(dumpAfterDisable).To(Equal(natHandler.DefaultNat44GlobalConfig()))
+	t.Logf("dump after disable: %#v", dumpAfterDisable)
+
+	if !natHandler.WithLegacyStartupConf() {
+		Expect(natHandler.EnableNAT44Plugin(nat_vppcalls.Nat44InitOpts{EndpointDependent: true})).Should(Succeed())
+	}
+	dumpAfterSecondEnable, err := natHandler.Nat44GlobalConfigDump(false)
+	Expect(err).To(Succeed())
+	t.Logf("dump after second enable: %#v", dumpAfterSecondEnable)
+}
 
 // TestNat44StaticMapping tests Create/Read/Delete operations for NAT44 static mappings
 func TestNat44StaticMapping(t *testing.T) {

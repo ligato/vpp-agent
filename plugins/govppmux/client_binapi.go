@@ -24,8 +24,8 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
-func (p *Plugin) NewStream(ctx context.Context) (govppapi.Stream, error) {
-	return p.vppConn.NewStream(ctx)
+func (p *Plugin) NewStream(ctx context.Context, options ...govppapi.StreamOption) (govppapi.Stream, error) {
+	return p.vppConn.NewStream(ctx, options...)
 }
 
 func (p *Plugin) Invoke(ctx context.Context, req govppapi.Message, reply govppapi.Message) error {

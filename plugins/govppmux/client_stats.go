@@ -20,7 +20,7 @@ import (
 )
 
 // ListStats returns all stats names
-func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
+func (p *Plugin) ListStats(prefixes ...string) ([]adapter.StatIdentifier, error) {
 	if p.statsAdapter == nil {
 		return nil, nil
 	}
@@ -83,4 +83,14 @@ func (p *Plugin) GetBufferStats(stats *govppapi.BufferStats) error {
 	p.statsMu.Lock()
 	defer p.statsMu.Unlock()
 	return p.statsConn.GetBufferStats(stats)
+}
+
+// GetMemoryStats retrieves VPP memory info
+func (p *Plugin) GetMemoryStats(stats *govppapi.MemoryStats) error {
+	if p.statsConn == nil {
+		return nil
+	}
+	p.statsMu.Lock()
+	defer p.statsMu.Unlock()
+	return p.statsConn.GetMemoryStats(stats)
 }

@@ -51,11 +51,13 @@ func TestBinapiMessage(t *testing.T) {
 		pkgPath string
 	}
 	items := []item{}
-	for msgType := range msgTypes {
-		typ := msgType.Elem()
-		msg := reflect.New(typ).Interface().(api.Message)
-		t := item{msg.GetMessageName(), msg.GetCrcString(), typ.PkgPath()}
-		items = append(items, t)
+	for _, path := range msgTypes {
+		for msgType := range path {
+			typ := msgType.Elem()
+			msg := reflect.New(typ).Interface().(api.Message)
+			t := item{msg.GetMessageName(), msg.GetCrcString(), typ.PkgPath()}
+			items = append(items, t)
+		}
 	}
 
 	sort.Slice(items, func(i, j int) bool {

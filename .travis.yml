@@ -63,6 +63,10 @@ jobs:
       script:
         - make verify-binapi
         - make integration-tests
+    - env: VPP_VERSION=2106
+      script:
+        - make verify-binapi
+        - make integration-tests
 
     - env: VPP_VERSION=2001
       script:
@@ -80,6 +84,11 @@ jobs:
       after_success:
         - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
     - env: VPP_VERSION=2101
+      script:
+        - make e2e-tests-cover
+      after_success:
+        - bash <(curl -s https://codecov.io/bash) -f /tmp/e2e-cov.out -F e2e
+    - env: VPP_VERSION=2106
       script:
         - make e2e-tests-cover
       after_success:
