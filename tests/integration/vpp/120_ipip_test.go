@@ -1,4 +1,4 @@
-//  Copyright (c) 2020 Cisco and/or its affiliates.
+//  Copyright (c) 2021 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,16 +29,6 @@ import (
 func TestIPIP(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
-
-	p2mpSupported := true // determines point-to-multipoint support
-
-	release := ctx.versionInfo.Release()
-	if release < "20.01" {
-		t.Skipf("IPIP: skipped for VPP < 20.01 (%s)", release)
-	}
-	if release < "20.05" {
-		p2mpSupported = false // point-to-multipoint support comes in VPP 20.05
-	}
 
 	h := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test"))
 
@@ -122,9 +112,6 @@ func TestIPIP(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if !p2mpSupported && test.ipip.TunnelMode == interfaces.IPIPLink_POINT_TO_MULTIPOINT {
-				t.Skipf("IPIP: p2mp skipped for VPP < 20.05 (%s)", release)
-			}
 			ifName := fmt.Sprintf("ipip%d", i)
 			ifIdx, err := h.AddIpipTunnel(ifName, 0, test.ipip)
 

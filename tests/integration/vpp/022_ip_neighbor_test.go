@@ -1,4 +1,4 @@
-//  Copyright (c) 2020 Cisco and/or its affiliates.
+//  Copyright (c) 2021 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ func TestIPNeighbor(t *testing.T) {
 	test := setupVPP(t)
 	defer test.teardownVPP()
 
+	// TODO update this test
 	if test.versionInfo.Release() >= "20.01" {
 		t.Skipf("SKIP for VPP %s>=20.01", test.versionInfo.Release())
 	}

@@ -1,4 +1,4 @@
-//  Copyright (c) 2020 Cisco and/or its affiliates.
+//  Copyright (c) 2021 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,16 +27,13 @@ import (
 	"git.fd.io/govpp.git/proxy"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009"
+	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vpe"
 )
 
-// TODO update example for VPP >=20.05
-//   (changed govpp's api.Channel for api.Connection in binapi NewServiceClient creation)
-
 // VPP version used in the example.
-const vppVersion = vpp2001.Version
+const vppVersion = vpp2009.Version
 
 var (
 	address = flag.String("addr", ":9191", "agent address")
@@ -100,9 +97,9 @@ func proxyBinapi(client *proxy.Client) {
 	log.Printf("Version: %+v", version)
 
 	// List interfaces
-	stream, err := interfaceSvc.DumpSwInterface(context.Background(), &interfaces.SwInterfaceDump{})
+	stream, err := interfaceSvc.SwInterfaceDump(context.Background(), &interfaces.SwInterfaceDump{})
 	if err != nil {
-		log.Fatalln("DumpSwInterface failed:", err)
+		log.Fatalln("SwInterfaceDump failed:", err)
 	}
 	log.Printf("dumping interfaces")
 	for {
@@ -115,4 +112,6 @@ func proxyBinapi(client *proxy.Client) {
 		}
 		log.Printf("- interface %d: %v", iface.SwIfIndex, iface.InterfaceName)
 	}
+
+	stream.Close()
 }

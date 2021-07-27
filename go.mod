@@ -64,3 +64,5 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gotest.tools/v3 v3.0.3 // indirect
 )
+
+replace git.fd.io/govpp.git => /home/ubuntu/Go_workspace/src/git.fd.io/govpp

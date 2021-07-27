@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+//  Copyright (c) 2021 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -259,6 +259,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	t.Logf("%v", ifaces[1])
 	t.Logf("%v", ifaces[2])
 	//this does not work for VPP 19.04 and maybe also other version
+	//checked for VPP 21.06 - still does not work
 	//Expect(ifaces[0].Ingress).To(Equal([]string{ifName}))
 	//Expect(ifaces[2].Egress).To(Equal([]string{ifName2}))
 
@@ -604,6 +605,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	t.Logf("%v", ifaces[1])
 	t.Logf("%v", ifaces[2])
 	//this does not work for VPP 19.04 and maybe also other version
+	//checked for VPP 21.06 - still does not work
 	//Expect(ifaces[0].Ingress).To(Equal([]string{ifName}))
 	//Expect(ifaces[2].Egress).To(Equal([]string{ifName2}))
 

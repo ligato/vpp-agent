@@ -1,4 +1,4 @@
-//  Copyright (c) 2020 Cisco and/or its affiliates.
+//  Copyright (c) 2021 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@ package vpp
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"testing"
+
+	"github.com/golang/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
@@ -35,18 +36,7 @@ func TestIPSec(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	p2mpSupported := true // determines point-to-multipoint support
-	saDumpAPIOk := true   // determines if SA dump API is working
 	spdIfaceDumpOk := false // determines if ipsec_spd_interface_dump works correctly
-
-	release := ctx.versionInfo.Release()
-	if release < "20.01" {
-		t.Skipf("IPSec: skipped for VPP < 20.01 (%s)", release)
-	}
-	if release < "20.05" {
-		saDumpAPIOk = false   // tunnel protection SA dump broken in VPP 20.01
-		p2mpSupported = false // point-to-multipoint support comes in VPP 20.05
-	}
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test-ifidx")
 	ifHandler := ifplugin_vppcalls.CompatibleInterfaceVppHandler(ctx.vppClient, logrus.NewLogger("test-if"))
@@ -92,32 +82,32 @@ func TestIPSec(t *testing.T) {
 				Index: 100,
 			},
 			spOut: &ipsec.SecurityPolicy{
-				SpdIndex:             100,
-				SaIndex:              10,
-				Priority:             0,
-				IsOutbound:           true,
-				RemoteAddrStart:      "10.10.1.1",
-				RemoteAddrStop:       "10.10.1.255",
-				LocalAddrStart:       "10.10.2.1",
-				LocalAddrStop:        "10.10.2.255",
-				Protocol:             0,
-				Action:               ipsec.SecurityPolicy_PROTECT,
+				SpdIndex:        100,
+				SaIndex:         10,
+				Priority:        0,
+				IsOutbound:      true,
+				RemoteAddrStart: "10.10.1.1",
+				RemoteAddrStop:  "10.10.1.255",
+				LocalAddrStart:  "10.10.2.1",
+				LocalAddrStop:   "10.10.2.255",
+				Protocol:        0,
+				Action:          ipsec.SecurityPolicy_PROTECT,
 			},
 			spIn: &ipsec.SecurityPolicy{
-				SpdIndex:             100,
-				SaIndex:              20,
-				Priority:             0,
-				IsOutbound:           false,
-				RemoteAddrStart:      "10.10.1.1",
-				RemoteAddrStop:       "10.10.1.255",
-				LocalAddrStart:       "10.10.2.1",
-				LocalAddrStop:        "10.10.2.255",
-				Protocol:             0,
-				RemotePortStart:      1000,
-				RemotePortStop:       5000,
-				LocalPortStart:       2000,
-				LocalPortStop:        7000,
-				Action:               ipsec.SecurityPolicy_PROTECT,
+				SpdIndex:        100,
+				SaIndex:         20,
+				Priority:        0,
+				IsOutbound:      false,
+				RemoteAddrStart: "10.10.1.1",
+				RemoteAddrStop:  "10.10.1.255",
+				LocalAddrStart:  "10.10.2.1",
+				LocalAddrStop:   "10.10.2.255",
+				Protocol:        0,
+				RemotePortStart: 1000,
+				RemotePortStop:  5000,
+				LocalPortStart:  2000,
+				LocalPortStop:   7000,
+				Action:          ipsec.SecurityPolicy_PROTECT,
 			},
 			tp: &ipsec.TunnelProtection{
 				SaOut: []uint32{10},
@@ -156,32 +146,32 @@ func TestIPSec(t *testing.T) {
 				Index: 101,
 			},
 			spOut: &ipsec.SecurityPolicy{
-				SpdIndex:             101,
-				SaIndex:              1,
-				Priority:             0,
-				IsOutbound:           true,
-				RemoteAddrStart:      "2001:1000::1",
-				RemoteAddrStop:       "2001:1000::1000",
-				LocalAddrStart:       "2001:2000::1",
-				LocalAddrStop:        "2001:2000::1000",
-				Protocol:             0,
-				Action:               ipsec.SecurityPolicy_PROTECT,
+				SpdIndex:        101,
+				SaIndex:         1,
+				Priority:        0,
+				IsOutbound:      true,
+				RemoteAddrStart: "2001:1000::1",
+				RemoteAddrStop:  "2001:1000::1000",
+				LocalAddrStart:  "2001:2000::1",
+				LocalAddrStop:   "2001:2000::1000",
+				Protocol:        0,
+				Action:          ipsec.SecurityPolicy_PROTECT,
 			},
 			spIn: &ipsec.SecurityPolicy{
-				SpdIndex:             101,
-				SaIndex:              2,
-				Priority:             0,
-				IsOutbound:           false,
-				RemoteAddrStart:      "2001:1000::1",
-				RemoteAddrStop:       "2001:1000::1000",
-				LocalAddrStart:       "2001:2000::1",
-				LocalAddrStop:        "2001:2000::1000",
-				Protocol:             0,
-				RemotePortStart:      1000,
-				RemotePortStop:       5000,
-				LocalPortStart:       2000,
-				LocalPortStop:        7000,
-				Action:               ipsec.SecurityPolicy_PROTECT,
+				SpdIndex:        101,
+				SaIndex:         2,
+				Priority:        0,
+				IsOutbound:      false,
+				RemoteAddrStart: "2001:1000::1",
+				RemoteAddrStop:  "2001:1000::1000",
+				LocalAddrStart:  "2001:2000::1",
+				LocalAddrStop:   "2001:2000::1000",
+				Protocol:        0,
+				RemotePortStart: 1000,
+				RemotePortStop:  5000,
+				LocalPortStart:  2000,
+				LocalPortStop:   7000,
+				Action:          ipsec.SecurityPolicy_PROTECT,
 			},
 		},
 		{
@@ -214,32 +204,32 @@ func TestIPSec(t *testing.T) {
 				Index: 102,
 			},
 			spOut: &ipsec.SecurityPolicy{
-				SpdIndex:             102,
-				SaIndex:              100,
-				Priority:             0,
-				IsOutbound:           true,
-				RemoteAddrStart:      "10.10.1.1",
-				RemoteAddrStop:       "10.10.1.255",
-				LocalAddrStart:       "10.10.2.1",
-				LocalAddrStop:        "10.10.2.255",
-				Protocol:             0,
-				Action:               ipsec.SecurityPolicy_PROTECT,
+				SpdIndex:        102,
+				SaIndex:         100,
+				Priority:        0,
+				IsOutbound:      true,
+				RemoteAddrStart: "10.10.1.1",
+				RemoteAddrStop:  "10.10.1.255",
+				LocalAddrStart:  "10.10.2.1",
+				LocalAddrStop:   "10.10.2.255",
+				Protocol:        0,
+				Action:          ipsec.SecurityPolicy_PROTECT,
 			},
 			spIn: &ipsec.SecurityPolicy{
-				SpdIndex:             102,
-				SaIndex:              101,
-				Priority:             0,
-				IsOutbound:           false,
-				RemoteAddrStart:      "10.10.1.1",
-				RemoteAddrStop:       "10.10.1.255",
-				LocalAddrStart:       "10.10.2.1",
-				LocalAddrStop:        "10.10.2.255",
-				Protocol:             0,
-				RemotePortStart:      1000,
-				RemotePortStop:       5000,
-				LocalPortStart:       2000,
-				LocalPortStop:        7000,
-				Action:               ipsec.SecurityPolicy_PROTECT,
+				SpdIndex:        102,
+				SaIndex:         101,
+				Priority:        0,
+				IsOutbound:      false,
+				RemoteAddrStart: "10.10.1.1",
+				RemoteAddrStop:  "10.10.1.255",
+				LocalAddrStart:  "10.10.2.1",
+				LocalAddrStop:   "10.10.2.255",
+				Protocol:        0,
+				RemotePortStart: 1000,
+				RemotePortStop:  5000,
+				LocalPortStart:  2000,
+				LocalPortStop:   7000,
+				Action:          ipsec.SecurityPolicy_PROTECT,
 			},
 			tp: &ipsec.TunnelProtection{
 				SaOut:       []uint32{100},
@@ -250,9 +240,6 @@ func TestIPSec(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if !p2mpSupported && test.ipip.TunnelMode == interfaces.IPIPLink_POINT_TO_MULTIPOINT {
-				t.Skipf("IPIP: p2mp skipped for VPP < 20.05 (%s)", release)
-			}
 			// create IPIP tunnel + SAs + tunnel protection + SPs
 			ifName := fmt.Sprintf("ipip%d", i)
 			ifIdx, err := ifHandler.AddIpipTunnel(ifName, 0, test.ipip)
@@ -316,13 +303,9 @@ func TestIPSec(t *testing.T) {
 			if tpList[0].Interface != ifName {
 				t.Fatalf("Invalid interface name in tunnel protections: %s", tpList[0].Interface)
 			}
-			if saDumpAPIOk {
-				if tpList[0].SaIn[0] != test.saIn.Index || tpList[0].SaOut[0] != test.saOut.Index {
-					t.Fatalf("tunnel protection SA mismatch (%d != %d || %d != %d)",
-						tpList[0].SaIn[0], test.saIn.Index, tpList[0].SaOut[0], test.saOut.Index)
-				}
-			} else {
-				t.Logf("IPIP: SA index check skipped because of a broken API in VPP %s", ctx.versionInfo.Version)
+			if tpList[0].SaIn[0] != test.saIn.Index || tpList[0].SaOut[0] != test.saOut.Index {
+				t.Fatalf("tunnel protection SA mismatch (%d != %d || %d != %d)",
+					tpList[0].SaIn[0], test.saIn.Index, tpList[0].SaOut[0], test.saOut.Index)
 			}
 			if tpList[0].NextHopAddr != test.tp.NextHopAddr {
 				t.Fatalf("tunnel protection next hop mismatch (%v != %v)", tpList[0].NextHopAddr, test.tp.NextHopAddr)
