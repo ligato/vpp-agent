@@ -65,4 +65,4 @@ require (
 	gotest.tools/v3 v3.0.3 // indirect
 )
 
-replace git.fd.io/govpp.git => /home/ubuntu/Go_workspace/src/git.fd.io/govpp
+replace git.fd.io/govpp.git => github.com/mhalaj1/govpp v0.3.6-0.20210728083739-e04017a413a7
