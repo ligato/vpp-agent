@@ -113,5 +113,8 @@ func proxyBinapi(client *proxy.Client) {
 		log.Printf("- interface %d: %v", iface.SwIfIndex, iface.InterfaceName)
 	}
 
-	stream.Close()
+	err = stream.Close()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
