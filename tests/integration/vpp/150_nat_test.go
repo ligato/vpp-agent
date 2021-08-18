@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Pantheon.tech
+// Copyright (c) 2021 Pantheon.tech
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
 package vpp
 
 import (
+	"net"
+	"testing"
+
 	. "github.com/onsi/gomega"
 	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -23,12 +26,9 @@ import (
 	nat_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 	"google.golang.org/protobuf/proto"
-	"net"
-	"testing"
 )
 
 const (
-	vpp2001 = "20.01"
 	vpp2005 = "20.05"
 	vpp2009 = "20.09"
 	vpp2101 = "21.01"
@@ -39,7 +39,7 @@ func TestNat44Global(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
-	unsupportedVPPVersions := []string{vpp2001, vpp2005, vpp2009}
+	unsupportedVPPVersions := []string{vpp2005, vpp2009}
 	// in older versions is used VPP startup config
 	// exclude test testing feature not supported in currently tested VPP version
 	for _, excludedVPPVersion := range unsupportedVPPVersions {
@@ -139,7 +139,7 @@ func TestNat44StaticMapping(t *testing.T) {
 		},
 		{
 			name:                          "NAT44 static mapping with twice nat and twice NAT pool IP",
-			excludeUnsupportedVPPVersions: []string{vpp2001, vpp2005},
+			excludeUnsupportedVPPVersions: []string{vpp2005},
 			input: &nat.DNat44_StaticMapping{
 				Protocol:     nat.DNat44_TCP,
 				ExternalIp:   externalIP.String(),

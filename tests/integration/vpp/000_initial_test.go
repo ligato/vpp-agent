@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Cisco and/or its affiliates.
+//  Copyright (c) 2021 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
 package vpp
 
 import (
+	"testing"
+
 	. "github.com/onsi/gomega"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
-	"testing"
 )
 
 func TestPing(t *testing.T) {
@@ -55,9 +56,8 @@ func TestGetPlugins(t *testing.T) {
 	t.Logf("%d plugins: %v", len(plugins), plugins)
 	Expect(plugins).ToNot(BeEmpty())
 
-	// GetModules return empty list with VPP 20.01
-	/*modules, err := vpp.GetModules(test.Ctx)
+	modules, err := vpp.GetModules(test.Ctx)
 	Expect(err).ToNot(HaveOccurred())
 	t.Logf("%d modules: %v", len(modules), modules)
-	Expect(modules).ToNot(BeEmpty())*/
+	Expect(modules).ToNot(BeEmpty())
 }

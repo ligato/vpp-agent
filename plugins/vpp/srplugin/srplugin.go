@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Bell Canada, Pantheon Technologies and/or its affiliates.
+// Copyright (c) 2021 Bell Canada, Pantheon Technologies and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2101"

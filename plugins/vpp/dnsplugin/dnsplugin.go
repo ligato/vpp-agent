@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Pantheon.tech
+// Copyright (c) 2021 Pantheon.tech
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2001"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2005"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2101"

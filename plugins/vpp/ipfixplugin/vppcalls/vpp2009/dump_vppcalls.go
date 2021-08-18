@@ -26,7 +26,7 @@ import (
 // Since it always only one IPFIX configuration, this method signature
 // defined as it is to keep consistensy between different vppcalls packages.
 //
-// Caution: VPP 20.01 does not support IPv6 addresses for IPFIX configuration,
+// Caution: VPP 20.09 does not support IPv6 addresses for IPFIX configuration,
 // but this may change in future versions. Be careful porting this method to
 // another version of VPP.
 //

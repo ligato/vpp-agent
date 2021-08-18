@@ -1,4 +1,4 @@
-// Copyright (c) 2020 Pantheon.tech
+// Copyright (c) 2021 Pantheon.tech
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,9 +44,6 @@ func TestDNSServerCRUD(t *testing.T) {
 
 	// ignoring unsupported VPP versions
 	release := ctx.versionInfo.Release()
-	if release < "20.01" {
-		t.Skipf("DNS: skipped for VPP < 20.01 (%s) due to missing support", release)
-	}
 
 	// get VPP handler
 	dnsHandler := vppcalls.CompatibleDNSHandler(ctx.vppClient, logrus.NewLogger("test-dns"))
