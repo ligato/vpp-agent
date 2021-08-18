@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v3
 go 1.13
 
 require (
-	git.fd.io/govpp.git v0.3.6-0.20210601140839-da95997338b7
+	git.fd.io/govpp.git v0.3.6-0.20210810100027-c0da1f2999a6
 	github.com/Shopify/sarama v1.20.1 // indirect
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/alicebob/miniredis v2.5.0+incompatible // indirect
@@ -64,5 +64,3 @@ require (
 	google.golang.org/protobuf v1.25.0
 	gotest.tools/v3 v3.0.3 // indirect
 )
-
-replace git.fd.io/govpp.git => github.com/mhalaj1/govpp v0.3.6-0.20210728083739-e04017a413a7
