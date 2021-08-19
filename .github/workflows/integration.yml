@@ -7,7 +7,7 @@ on:
 
 jobs:
   vpp-integration:
-    name: "VPP ${{ matrix.tag }}"
+    name: "VPP ${{ matrix.version }}"
     runs-on: ubuntu-latest
     env:
       VPP_VERSION: ${{ matrix.version }}
