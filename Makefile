@@ -263,7 +263,7 @@ gotestsumcmd := $(shell command -v gotestsum 2> /dev/null)
 
 test-tools: ## install test tools
 ifndef gotestsumcmd
-	go get -v gotest.tools/gotestsum
+	go get gotest.tools/gotestsum
 endif
 	@env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
 
