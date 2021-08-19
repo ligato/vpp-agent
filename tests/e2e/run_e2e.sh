@@ -128,7 +128,7 @@ echo "--------------------------------------------------------------------------
 
 # Run e2e tests
 #if run_e2e ${args[@]:-}
-if docker run -it \
+if docker run -i \
 	--name "${testname}" \
 	--pid=host \
 	--privileged \
