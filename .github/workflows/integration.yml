@@ -1,0 +1,25 @@
+---
+name: Integration
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  vpp-integration:
+    name: "VPP ${{ matrix.tag }}"
+    runs-on: ubuntu-latest
+    env:
+      VPP_VERSION: ${{ matrix.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['2106', '2101', '2009', '2005']
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - name: "Run tests"
+        run: |
+          make integration-tests
