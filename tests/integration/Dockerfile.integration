@@ -22,9 +22,6 @@ RUN apt-get update && apt-get install -yq \
 # - test2json
 # - gotestsum
 
-#RUN env CGO_ENABLED=0 \
-# 	go build -ldflags='-s -w -extldflags "-static"' -o /usr/local/bin/test2json cmd/test2json
-
 COPY --from=build /test2json /usr/local/bin/test2json
 
 ARG GOTESTSUM_VERSION=0.6.0
