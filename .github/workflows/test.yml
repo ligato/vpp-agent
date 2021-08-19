@@ -8,7 +8,7 @@ on:
 
 jobs:
   integration:
-    name: "VPP ${{ matrix.version }}"
+    name: "Integration - VPP ${{ matrix.version }}"
     runs-on: ubuntu-latest
     env:
       VPP_VERSION: ${{ matrix.version }}
@@ -26,7 +26,7 @@ jobs:
           make integration-tests
 
   e2e:
-    name: "VPP ${{ matrix.version }}"
+    name: "E2E - VPP ${{ matrix.version }}"
     runs-on: ubuntu-latest
     env:
       VPP_VERSION: ${{ matrix.version }}
