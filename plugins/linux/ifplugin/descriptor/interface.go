@@ -57,9 +57,10 @@ const (
 	InterfaceDescriptorName = "linux-interface"
 
 	// default MTU - expected when MTU is not specified in the config.
-	defaultEthernetMTU = 1500
-	defaultLoopbackMTU = 65536
-	defaultVrfDevMTU   = 65536
+	defaultEthernetMTU     = 1500
+	defaultLoopbackMTU     = 65536
+	defaultVrfDevMTU       = 65575
+	defaultVrfDevLegacyMTU = 65536
 
 	// dependency labels
 	existingHostInterfaceDep = "host-interface-exists"
@@ -242,7 +243,13 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	}
 
 	// handle default MTU
-	if getInterfaceMTU(oldIntf) != getInterfaceMTU(newIntf) {
+	if oldIntf.Type == interfaces.Interface_VRF_DEVICE {
+		if (oldIntf.Mtu == defaultVrfDevLegacyMTU || oldIntf.Mtu == defaultVrfDevMTU) && newIntf.Mtu == 0 {
+			// If VRF contains default or legacy default mtu with no intent to change it, left it as it is
+		} else if getInterfaceMTU(oldIntf) != getInterfaceMTU(newIntf) {
+			return false
+		}
+	} else if getInterfaceMTU(oldIntf) != getInterfaceMTU(newIntf) {
 		return false
 	}
 
