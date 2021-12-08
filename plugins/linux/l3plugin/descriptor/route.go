@@ -51,6 +51,9 @@ const (
 	routeOutInterfaceIPAddrDep = "outgoing-interface-has-ip-address"
 	routeGwReachabilityDep     = "gw-reachable"
 	allocatedAddrAttached      = "allocated-addr-attached"
+
+	// default metric of the IPv6 route
+	ipv6DefaultMetric = 1024
 )
 
 // A list of non-retriable errors:
@@ -95,19 +98,20 @@ func NewRouteDescriptor(
 		log:           log.NewLogger("route-descriptor"),
 	}
 	typedDescr := &adapter.RouteDescriptor{
-		Name:            RouteDescriptorName,
-		NBKeyPrefix:     linux_l3.ModelRoute.KeyPrefix(),
-		ValueTypeName:   linux_l3.ModelRoute.ProtoName(),
-		KeySelector:     linux_l3.ModelRoute.IsKeyValid,
-		KeyLabel:        linux_l3.ModelRoute.StripKeyPrefix,
-		ValueComparator: ctx.EquivalentRoutes,
-		Validate:        ctx.Validate,
-		Create:          ctx.Create,
-		Delete:          ctx.Delete,
-		Update:          ctx.Update,
-		Retrieve:        ctx.Retrieve,
-		DerivedValues:   ctx.DerivedValues,
-		Dependencies:    ctx.Dependencies,
+		Name:               RouteDescriptorName,
+		NBKeyPrefix:        linux_l3.ModelRoute.KeyPrefix(),
+		ValueTypeName:      linux_l3.ModelRoute.ProtoName(),
+		KeySelector:        linux_l3.ModelRoute.IsKeyValid,
+		KeyLabel:           linux_l3.ModelRoute.StripKeyPrefix,
+		ValueComparator:    ctx.EquivalentRoutes,
+		Validate:           ctx.Validate,
+		Create:             ctx.Create,
+		Delete:             ctx.Delete,
+		Update:             ctx.Update,
+		UpdateWithRecreate: ctx.UpdateWithRecreate,
+		Retrieve:           ctx.Retrieve,
+		DerivedValues:      ctx.DerivedValues,
+		Dependencies:       ctx.Dependencies,
 		RetrieveDependencies: []string{
 			netalloc_descr.IPAllocDescriptorName,
 			ifdescriptor.InterfaceDescriptorName},
@@ -119,8 +123,11 @@ func NewRouteDescriptor(
 func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *linux_l3.Route) bool {
 	// attributes compared as usually:
 	if oldRoute.OutgoingInterface != newRoute.OutgoingInterface ||
-		oldRoute.Scope != newRoute.Scope ||
-		oldRoute.Metric != newRoute.Metric {
+		oldRoute.Scope != newRoute.Scope {
+		return false
+	}
+	// compare metrics
+	if !isRouteMetricEqual(oldRoute, newRoute) {
 		return false
 	}
 
@@ -159,10 +166,15 @@ func (d *RouteDescriptor) Delete(key string, route *linux_l3.Route, metadata int
 	return d.updateRoute(route, "delete", d.l3Handler.DelRoute)
 }
 
-// Update is able to change route scope, metric and GW address.
+// Update is able to change route scope and GW address.
 func (d *RouteDescriptor) Update(key string, oldRoute, newRoute *linux_l3.Route, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	err = d.updateRoute(newRoute, "modify", d.l3Handler.ReplaceRoute)
 	return nil, err
+}
+
+// UpdateWithRecreate in case the metric was changed
+func (d *RouteDescriptor) UpdateWithRecreate(_ string, oldRoute, newRoute *linux_l3.Route, _ interface{}) bool {
+	return !isRouteMetricEqual(oldRoute, newRoute)
 }
 
 // updateRoute adds, modifies or deletes a Linux route.
@@ -487,4 +499,18 @@ func getGwAddr(route *linux_l3.Route) string {
 		return l3linuxcalls.IPv4AddrAny
 	}
 	return route.GwAddr
+}
+
+// compares route metrics. For IPv6, Metric 0 & 1024 are considered the same value
+func isRouteMetricEqual(oldRoute, newRoute *linux_l3.Route) bool {
+	if oldRoute.Metric != newRoute.Metric {
+		dstNetwork := net.ParseIP(strings.Split(newRoute.DstNetwork, "/")[0])
+		if dstNetwork != nil && dstNetwork.To4() == nil {
+			return (oldRoute.Metric == 0 && newRoute.Metric == ipv6DefaultMetric) ||
+				(oldRoute.Metric == ipv6DefaultMetric && newRoute.Metric == 0)
+		} else {
+			return false
+		}
+	}
+	return true
 }
