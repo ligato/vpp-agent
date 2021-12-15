@@ -688,6 +688,36 @@ func (test *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metad
 	if err != nil {
 		test.t.Fatalf("Failed to get key for value %v: %v", value, err)
 	}
+	kvDump := test.getKVDump(value, view)
+	for _, kv := range kvDump {
+		if kv.Key == key {
+			return kv.Metadata
+		}
+	}
+	return nil
+}
+
+// GetValue retrieves value(s) as seen by the given view
+func (test *TestCtx) GetValue(value proto.Message, view kvs.View) proto.Message {
+	key, err := models.GetKey(value)
+	if err != nil {
+		test.t.Fatalf("Failed to get key for value %v: %v", value, err)
+	}
+	kvDump := test.getKVDump(value, view)
+	for _, kv := range kvDump {
+		if kv.Key == key {
+			return kv.Value
+		}
+	}
+	return nil
+}
+
+// NumValues returns number of values found under the given model
+func (test *TestCtx) NumValues(value proto.Message, view kvs.View) int {
+	return len(test.getKVDump(value, view))
+}
+
+func (test *TestCtx) getKVDump(value proto.Message, view kvs.View) []kvs.KVWithMetadata {
 	model, err := models.GetModelFor(value)
 	if err != nil {
 		test.t.Fatalf("Failed to get model for value %v: %v", value, err)
@@ -699,12 +729,7 @@ func (test *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metad
 	if err != nil {
 		test.t.Fatalf("Request to dump values failed: %v", err)
 	}
-	for _, kv := range kvDump {
-		if kv.Key == key {
-			return kv.Metadata
-		}
-	}
-	return nil
+	return kvDump
 }
 
 func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
