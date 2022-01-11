@@ -16,7 +16,6 @@ package e2e
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -52,10 +51,8 @@ import (
 //    +-------------------------------+  +-------------------------------+
 //
 func TestVRFsWithSameSubnets(t *testing.T) {
-	if os.Getenv("TRAVIS") != "" {
-		// VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
-		// TODO: remove `skip` once we upgrade to Ubuntu Bionic or newer
-		t.Skip("skip for travis")
+	if !supportsLinuxVRF() {
+		t.Skip("Linux VRFs are not supported")
 	}
 
 	ctx := Setup(t)
@@ -251,10 +248,8 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 //    +-------------------------------+            +-------------------------------+
 //
 func TestVRFRoutes(t *testing.T) {
-	if os.Getenv("TRAVIS") != "" {
-		// VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
-		// TODO: remove `skip` once we upgrade to Ubuntu Bionic or newer
-		t.Skip("skip for travis")
+	if !supportsLinuxVRF() {
+		t.Skip("Linux VRFs are not supported")
 	}
 
 	ctx := Setup(t)
@@ -462,10 +457,8 @@ func TestVRFRoutes(t *testing.T) {
 
 // Test VRF created externally (i.e. not by the agent).
 func TestExistingLinuxVRF(t *testing.T) {
-	if os.Getenv("TRAVIS") != "" {
-		// VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
-		// TODO: remove `skip` once we upgrade to Ubuntu Bionic or newer
-		t.Skip("skip for travis")
+	if !supportsLinuxVRF() {
+		t.Skip("Linux VRFs are not supported")
 	}
 
 	ctx := Setup(t)
