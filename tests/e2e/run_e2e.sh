@@ -147,6 +147,7 @@ if docker run -i \
 	--env VPP_AGENT \
 	--env GOTESTSUM_FORMAT \
 	--env GOTESTSUM_JUNITFILE \
+	--env GITHUB_WORKFLOW \
 	${DOCKER_ARGS-} \
 	"${imgname}" ${args[@]:-}
 then
