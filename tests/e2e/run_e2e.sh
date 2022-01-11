@@ -10,7 +10,7 @@ echo "Preparing e2e tests.."
 export VPP_AGENT="${VPP_AGENT:-ligato/vpp-agent:latest}"
 export VPP_AGENT_CUSTOM="vppagent.test.ligato.io:custom"
 export TESTDATA_DIR="$SCRIPT_DIR/resources"
-export TESTREPORT_DIR="${TESTREPORT_DIR:-reports}"
+export TESTREPORT_DIR="${TESTREPORT_DIR:-$SCRIPT_DIR/reports}"
 export GOTESTSUM_FORMAT="${GOTESTSUM_FORMAT:-testname}"
 export GOTESTSUM_JUNITFILE="${GOTESTSUM_JUNITFILE:-}"
 export DOCKER_BUILDKIT=1
