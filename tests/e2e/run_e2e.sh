@@ -10,7 +10,9 @@ echo "Preparing e2e tests.."
 export VPP_AGENT="${VPP_AGENT:-ligato/vpp-agent:latest}"
 export VPP_AGENT_CUSTOM="vppagent.test.ligato.io:custom"
 export TESTDATA_DIR="$SCRIPT_DIR/resources"
+export TESTREPORT_DIR="${TESTREPORT_DIR:-reports}"
 export GOTESTSUM_FORMAT="${GOTESTSUM_FORMAT:-testname}"
+export GOTESTSUM_JUNITFILE="${GOTESTSUM_JUNITFILE:-}"
 export DOCKER_BUILDKIT=1
 
 testname="vpp-agent-e2e-test"
@@ -115,6 +117,8 @@ else
 	exit $res
 fi
 
+mkdir -vp "${TESTREPORT_DIR}"
+
 vppver=$(docker run --rm -i "$VPP_AGENT" dpkg-query -f '${Version}' -W vpp)
 
 echo "=========================================================================="
@@ -134,6 +138,7 @@ if docker run -i \
 	--privileged \
 	--label io.ligato.vpp-agent.testsuite=e2e \
 	--label io.ligato.vpp-agent.testname="${testname}" \
+	--volume "${TESTREPORT_DIR}":/testreport \
 	--volume "${TESTDATA_DIR}":/testdata:ro \
 	--volume /var/run/docker.sock:/var/run/docker.sock \
 	--volume "${sharevolumename}":/test-share \
@@ -141,6 +146,7 @@ if docker run -i \
 	--env INITIAL_LOGLVL \
 	--env VPP_AGENT \
 	--env GOTESTSUM_FORMAT \
+	--env GOTESTSUM_JUNITFILE \
 	${DOCKER_ARGS-} \
 	"${imgname}" ${args[@]:-}
 then
