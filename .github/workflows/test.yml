@@ -40,16 +40,37 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v2
 
-      - name: "Dump info"
+      - name: "Dump Info"
         run: |
           env | sort
           ls -Al /sys/module
 
-      - name: "Run tests"
+      - name: "Run Tests"
         run: |
           make e2e-tests
 
-      - name: "Publish report"
+      - name: "Upload Test Results"
         if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: E2E Test Results (VPP ${{ matrix.version }})
+          path: ./tests/e2e/reports/e2e.xml
         run: |
           ls -Al ./tests/e2e/reports
+
+  publish-test-results:
+    name: "Publish Test Results"
+    needs: e2e
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: "Download Artifacts"
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: "Publish Unit Test Results"
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: artifacts/**/*.xml
