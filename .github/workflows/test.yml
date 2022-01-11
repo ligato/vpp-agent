@@ -55,8 +55,6 @@ jobs:
         with:
           name: E2E Test Results (VPP ${{ matrix.version }})
           path: ./tests/e2e/reports/e2e.xml
-        run: |
-          ls -Al ./tests/e2e/reports
 
   publish-test-results:
     name: "Publish Test Results"
