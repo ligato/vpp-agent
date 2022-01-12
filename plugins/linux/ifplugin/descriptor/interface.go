@@ -56,11 +56,15 @@ const (
 	// InterfaceDescriptorName is the name of the descriptor for Linux interfaces.
 	InterfaceDescriptorName = "linux-interface"
 
+	// DefaultVrfDevLegacyMTU is ETH_MAX_MTU value used as the default for the linux VRF Dev
+	DefaultVrfDevLegacyMTU = 65536
+	// DefaultVrfDevMTU is the ETH_MAX_MTU increased by the size of the IPv6 header, used
+	// as the default for VRF Dev in latest linux kernels
+	DefaultVrfDevMTU = 65575
+
 	// default MTU - expected when MTU is not specified in the config.
-	defaultEthernetMTU     = 1500
-	defaultLoopbackMTU     = 65536
-	defaultVrfDevMTU       = 65575
-	defaultVrfDevLegacyMTU = 65536
+	defaultEthernetMTU = 1500
+	defaultLoopbackMTU = 65536
 
 	// dependency labels
 	existingHostInterfaceDep = "host-interface-exists"
@@ -244,7 +248,7 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 
 	// handle default MTU
 	if oldIntf.Type == interfaces.Interface_VRF_DEVICE {
-		if (oldIntf.Mtu == defaultVrfDevLegacyMTU || oldIntf.Mtu == defaultVrfDevMTU) && newIntf.Mtu == 0 {
+		if (oldIntf.Mtu == DefaultVrfDevLegacyMTU || oldIntf.Mtu == DefaultVrfDevMTU) && newIntf.Mtu == 0 {
 			// If VRF contains default or legacy default mtu with no intent to change it, left it as it is
 		} else if getInterfaceMTU(oldIntf) != getInterfaceMTU(newIntf) {
 			return false
@@ -1104,7 +1108,7 @@ func getInterfaceMTU(linuxIntf *interfaces.Interface) int {
 		case interfaces.Interface_LOOPBACK:
 			return defaultLoopbackMTU
 		case interfaces.Interface_VRF_DEVICE:
-			return defaultVrfDevMTU
+			return DefaultVrfDevMTU
 		}
 		return defaultEthernetMTU
 	}
