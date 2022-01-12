@@ -44,7 +44,7 @@ docker build \
     ./tests/e2e
 
 # Build custom VPP-Agent image (needed in some tests)
-docker run -d -i --name customVPPAgent ${VPP_AGENT} bash
+docker run -d -e ETCD_CONFIG=disabled --name customVPPAgent ${VPP_AGENT}
 docker exec -i customVPPAgent sh -c "apt-get update && apt-get install -y iptables"
 docker commit customVPPAgent ${VPP_AGENT_CUSTOM}
 docker rm -f customVPPAgent
