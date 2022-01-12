@@ -25,8 +25,6 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"go.ligato.io/cn-infra/v2/logging"
-	"go.ligato.io/cn-infra/v2/utils/addrs"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
@@ -122,8 +120,11 @@ func NewRouteDescriptor(
 // EquivalentRoutes is case-insensitive comparison function for l3.LinuxRoute.
 func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *linux_l3.Route) bool {
 	// attributes compared as usually:
-	if oldRoute.OutgoingInterface != newRoute.OutgoingInterface ||
-		oldRoute.Scope != newRoute.Scope {
+	if oldRoute.OutgoingInterface != newRoute.OutgoingInterface {
+		return false
+	}
+	// compare scopes for IPv4 routes
+	if isIPv4Route(newRoute) && oldRoute.Scope != newRoute.Scope {
 		return false
 	}
 	// compare metrics
@@ -230,13 +231,15 @@ func (d *RouteDescriptor) updateRoute(route *linux_l3.Route, actionName string, 
 		netlinkRoute.Gw = gwAddr.IP
 	}
 
-	// set route scope
-	scope, err := rtScopeFromNBToNetlink(route.Scope)
-	if err != nil {
-		d.log.Error(err)
-		return err
+	// set route scope for IPv4
+	if isIPv4Route(route) {
+		scope, err := rtScopeFromNBToNetlink(route.Scope)
+		if err != nil {
+			d.log.Error(err)
+			return err
+		}
+		netlinkRoute.Scope = scope
 	}
-	netlinkRoute.Scope = scope
 
 	// set route metric
 	netlinkRoute.Priority = int(route.Metric)
@@ -397,11 +400,15 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 
 	// correlate with the expected configuration
 	for _, routeDetails := range routeDetails {
-		// Convert to key-value object with metadata
-		scope, err := rtScopeFromNetlinkToNB(routeDetails.Meta.NetlinkScope)
-		if err != nil {
-			// route not configured by the agent
-			continue
+		// convert to key-value object with metadata
+		// resolve scope for IPv4. Note that IPv6 route scope always returns zero value.
+		var scope linux_l3.Route_Scope
+		if isIPv4Route(routeDetails.Route) {
+			scope, err = rtScopeFromNetlinkToNB(routeDetails.Meta.NetlinkScope)
+			if err != nil {
+				// route not configured by the agent
+				continue
+			}
 		}
 		route := adapter.RouteKVWithMetadata{
 			Key: linux_l3.RouteKey(routeDetails.Route.DstNetwork, routeDetails.Route.OutgoingInterface),
@@ -493,10 +500,10 @@ func equalNetworks(net1, net2 string) bool {
 // when it is left undefined.
 func getGwAddr(route *linux_l3.Route) string {
 	if route.GwAddr == "" {
-		if ipv6, _ := addrs.IsIPv6(route.DstNetwork); ipv6 {
-			return l3linuxcalls.IPv6AddrAny
+		if isIPv4Route(route) {
+			return l3linuxcalls.IPv4AddrAny
 		}
-		return l3linuxcalls.IPv4AddrAny
+		return l3linuxcalls.IPv6AddrAny
 	}
 	return route.GwAddr
 }
@@ -504,13 +511,17 @@ func getGwAddr(route *linux_l3.Route) string {
 // compares route metrics. For IPv6, Metric 0 & 1024 are considered the same value
 func isRouteMetricEqual(oldRoute, newRoute *linux_l3.Route) bool {
 	if oldRoute.Metric != newRoute.Metric {
-		dstNetwork := net.ParseIP(strings.Split(newRoute.DstNetwork, "/")[0])
-		if dstNetwork != nil && dstNetwork.To4() == nil {
-			return (oldRoute.Metric == 0 && newRoute.Metric == ipv6DefaultMetric) ||
-				(oldRoute.Metric == ipv6DefaultMetric && newRoute.Metric == 0)
-		} else {
+		if isIPv4Route(newRoute) {
 			return false
 		}
+		return (oldRoute.Metric == 0 && newRoute.Metric == ipv6DefaultMetric) ||
+			(oldRoute.Metric == ipv6DefaultMetric && newRoute.Metric == 0)
 	}
 	return true
+}
+
+// checks the destination network to determine whether the route is an IPv4 route
+func isIPv4Route(r *linux_l3.Route) bool {
+	ip := net.ParseIP(strings.Split(r.DstNetwork, "/")[0])
+	return ip != nil && ip.To4() != nil
 }

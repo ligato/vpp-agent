@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	vrf "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/utils"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -59,15 +60,16 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	defer ctx.Teardown()
 
 	const (
-		vrf1ID        = 1
-		vrf2ID        = 2
-		vrf1Label     = "vrf-1"
-		vrf2Label     = "vrf-2"
-		vrfVppIP      = "192.168.1.1"
-		vrfLinuxIP    = "192.168.1.2"
-		vrfSubnetMask = "/24"
-		tapNameSuffix = "-tap"
-		msName        = "microservice1"
+		vrf1ID               = 1
+		vrf1Mtu       uint32 = 1500
+		vrf2ID               = 2
+		vrf1Label            = "vrf-1"
+		vrf2Label            = "vrf-2"
+		vrfVppIP             = "192.168.1.1"
+		vrfLinuxIP           = "192.168.1.2"
+		vrfSubnetMask        = "/24"
+		tapNameSuffix        = "-tap"
+		msName               = "microservice1"
 	)
 
 	// TAP interfaces
@@ -155,6 +157,21 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 			Reference: MsNamePrefix + msName,
 		},
 	}
+	linuxVrf1Updated := &linux_interfaces.Interface{
+		Name:    vrf1Label,
+		Type:    linux_interfaces.Interface_VRF_DEVICE,
+		Enabled: true,
+		Link: &linux_interfaces.Interface_VrfDev{
+			VrfDev: &linux_interfaces.VrfDevLink{
+				RoutingTable: vrf1ID,
+			},
+		},
+		Mtu: vrf1Mtu,
+		Namespace: &linux_namespace.NetNamespace{
+			Type:      linux_namespace.NetNamespace_MICROSERVICE,
+			Reference: MsNamePrefix + msName,
+		},
+	}
 	linuxVrf2 := &linux_interfaces.Interface{
 		Name:    vrf2Label,
 		Type:    linux_interfaces.Interface_VRF_DEVICE,
@@ -190,10 +207,15 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	Expect(ctx.GetValueState(vppVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	Expect(ctx.GetValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
+	// vrf mtu check
+	linuxVrf1Mtu := ctx.GetValue(linuxVrf1, kvs.SBView).(*linux_interfaces.Interface).Mtu
+	Expect(int(linuxVrf1Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
+	linuxVrf2Mtu := ctx.GetValue(linuxVrf2, kvs.SBView).(*linux_interfaces.Interface).Mtu
+	Expect(int(linuxVrf2Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
+
 	// try to ping in both VRFs
 	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
 	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-
 	Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
@@ -217,9 +239,13 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
-		linuxVrf1,
+		linuxVrf1Updated,
 	).Send(context.Background())
 	Expect(err).ToNot(HaveOccurred())
+
+	// vrf 1 mtu re-check
+	linuxVrf1Mtu = ctx.GetValue(linuxVrf1, kvs.SBView).(*linux_interfaces.Interface).Mtu
+	Expect(linuxVrf1Mtu).To(Equal(vrf1Mtu))
 
 	Eventually(ctx.PingFromMsClb(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
 	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
