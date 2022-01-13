@@ -124,11 +124,11 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *linux
 		return false
 	}
 	// compare scopes for IPv4 routes
-	if isIPv4Route(newRoute) && oldRoute.Scope != newRoute.Scope {
+	if d.isIPv4Route(newRoute) && oldRoute.Scope != newRoute.Scope {
 		return false
 	}
 	// compare metrics
-	if !isRouteMetricEqual(oldRoute, newRoute) {
+	if !d.isRouteMetricEqual(oldRoute, newRoute) {
 		return false
 	}
 
@@ -136,7 +136,7 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *linux
 	if !equalNetworks(oldRoute.DstNetwork, newRoute.DstNetwork) {
 		return false
 	}
-	return equalAddrs(getGwAddr(oldRoute), getGwAddr(newRoute))
+	return equalAddrs(d.getGwAddr(oldRoute), d.getGwAddr(newRoute))
 }
 
 // Validate validates static route configuration.
@@ -152,7 +152,7 @@ func (d *RouteDescriptor) Validate(key string, route *linux_l3.Route) (err error
 	if err != nil {
 		return err
 	}
-	return d.addrAlloc.ValidateIPAddress(getGwAddr(route), route.OutgoingInterface,
+	return d.addrAlloc.ValidateIPAddress(d.getGwAddr(route), route.OutgoingInterface,
 		"gw_addr", netalloc.GWRefRequired)
 }
 
@@ -175,7 +175,7 @@ func (d *RouteDescriptor) Update(key string, oldRoute, newRoute *linux_l3.Route,
 
 // UpdateWithRecreate in case the metric was changed
 func (d *RouteDescriptor) UpdateWithRecreate(_ string, oldRoute, newRoute *linux_l3.Route, _ interface{}) bool {
-	return !isRouteMetricEqual(oldRoute, newRoute)
+	return !d.isRouteMetricEqual(oldRoute, newRoute)
 }
 
 // updateRoute adds, modifies or deletes a Linux route.
@@ -232,7 +232,7 @@ func (d *RouteDescriptor) updateRoute(route *linux_l3.Route, actionName string, 
 	}
 
 	// set route scope for IPv4
-	if isIPv4Route(route) {
+	if d.isIPv4Route(route) {
 		scope, err := rtScopeFromNBToNetlink(route.Scope)
 		if err != nil {
 			d.log.Error(err)
@@ -308,7 +308,7 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 				route.OutgoingInterface, d.addrAlloc.CreateAddressAllocRef(network, "", false),
 				netalloc_api.IPAddressSource_ALLOC_REF),
 		})
-	} else if gwAddr := net.ParseIP(getGwAddr(route)); gwAddr != nil && !gwAddr.IsUnspecified() {
+	} else if gwAddr := net.ParseIP(d.getGwAddr(route)); gwAddr != nil && !gwAddr.IsUnspecified() {
 		// GW is not netalloc reference but an actual IP
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: routeGwReachabilityDep,
@@ -380,7 +380,7 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 			dstNetwork = parsed.String()
 		}
 		gwAddr := kv.Value.GwAddr
-		parsed, err = d.addrAlloc.GetOrParseIPAddress(getGwAddr(kv.Value),
+		parsed, err = d.addrAlloc.GetOrParseIPAddress(d.getGwAddr(kv.Value),
 			kv.Value.OutgoingInterface, netalloc_api.IPAddressForm_ADDR_ONLY)
 		if err == nil {
 			gwAddr = parsed.IP.String()
@@ -403,7 +403,7 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 		// convert to key-value object with metadata
 		// resolve scope for IPv4. Note that IPv6 route scope always returns zero value.
 		var scope linux_l3.Route_Scope
-		if isIPv4Route(routeDetails.Route) {
+		if d.isIPv4Route(routeDetails.Route) {
 			scope, err = rtScopeFromNetlinkToNB(routeDetails.Meta.NetlinkScope)
 			if err != nil {
 				// route not configured by the agent
@@ -434,6 +434,39 @@ func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]a
 	}
 
 	return values, nil
+}
+
+// compares route metrics. For IPv6, Metric 0 & 1024 are considered the same value
+func (d *RouteDescriptor) isRouteMetricEqual(oldRoute, newRoute *linux_l3.Route) bool {
+	if oldRoute.Metric != newRoute.Metric {
+		if d.isIPv4Route(newRoute) {
+			return false
+		}
+		return (oldRoute.Metric == 0 && newRoute.Metric == ipv6DefaultMetric) ||
+			(oldRoute.Metric == ipv6DefaultMetric && newRoute.Metric == 0)
+	}
+	return true
+}
+
+// checks the destination network to determine whether the route is an IPv4 route
+func (d *RouteDescriptor) isIPv4Route(r *linux_l3.Route) bool {
+	addr, err := d.addrAlloc.GetOrParseIPAddress(r.DstNetwork, "", netalloc_api.IPAddressForm_ADDR_ONLY)
+	if err != nil {
+		d.log.Error(err)
+	}
+	return addr != nil && addr.IP != nil && addr.IP.To4() != nil
+}
+
+// getGwAddr returns the GW address chosen in the given route, handling the cases
+// when it is left undefined.
+func (d *RouteDescriptor) getGwAddr(route *linux_l3.Route) string {
+	if route.GwAddr == "" {
+		if d.isIPv4Route(route) {
+			return l3linuxcalls.IPv4AddrAny
+		}
+		return l3linuxcalls.IPv6AddrAny
+	}
+	return route.GwAddr
 }
 
 // rtScopeFromNBToNetlink convert Route scope from NB configuration
@@ -494,34 +527,4 @@ func equalNetworks(net1, net2 string) bool {
 		return strings.ToLower(net1) == strings.ToLower(net2)
 	}
 	return n1.IP.Equal(n2.IP) && bytes.Equal(n1.Mask, n2.Mask)
-}
-
-// getGwAddr returns the GW address chosen in the given route, handling the cases
-// when it is left undefined.
-func getGwAddr(route *linux_l3.Route) string {
-	if route.GwAddr == "" {
-		if isIPv4Route(route) {
-			return l3linuxcalls.IPv4AddrAny
-		}
-		return l3linuxcalls.IPv6AddrAny
-	}
-	return route.GwAddr
-}
-
-// compares route metrics. For IPv6, Metric 0 & 1024 are considered the same value
-func isRouteMetricEqual(oldRoute, newRoute *linux_l3.Route) bool {
-	if oldRoute.Metric != newRoute.Metric {
-		if isIPv4Route(newRoute) {
-			return false
-		}
-		return (oldRoute.Metric == 0 && newRoute.Metric == ipv6DefaultMetric) ||
-			(oldRoute.Metric == ipv6DefaultMetric && newRoute.Metric == 0)
-	}
-	return true
-}
-
-// checks the destination network to determine whether the route is an IPv4 route
-func isIPv4Route(r *linux_l3.Route) bool {
-	ip := net.ParseIP(strings.Split(r.DstNetwork, "/")[0])
-	return ip != nil && ip.To4() != nil
 }
