@@ -10,7 +10,9 @@ echo "Preparing e2e tests.."
 export VPP_AGENT="${VPP_AGENT:-ligato/vpp-agent:latest}"
 export VPP_AGENT_CUSTOM="vppagent.test.ligato.io:custom"
 export TESTDATA_DIR="$SCRIPT_DIR/resources"
+export TESTREPORT_DIR="${TESTREPORT_DIR:-$SCRIPT_DIR/reports}"
 export GOTESTSUM_FORMAT="${GOTESTSUM_FORMAT:-testname}"
+export GOTESTSUM_JUNITFILE="${GOTESTSUM_JUNITFILE:-}"
 export DOCKER_BUILDKIT=1
 
 testname="vpp-agent-e2e-test"
@@ -42,8 +44,8 @@ docker build \
     ./tests/e2e
 
 # Build custom VPP-Agent image (needed in some tests)
-docker run -d -e ETCD_CONFIG="disabled" --name customVPPAgent ${VPP_AGENT}
-docker exec -it customVPPAgent sh -c "apt-get update && apt-get install -y iptables"
+docker run -d -e ETCD_CONFIG=disabled --name customVPPAgent ${VPP_AGENT}
+docker exec -i customVPPAgent sh -c "apt-get update && apt-get install -y iptables"
 docker commit customVPPAgent ${VPP_AGENT_CUSTOM}
 docker rm -f customVPPAgent
 
@@ -115,6 +117,8 @@ else
 	exit $res
 fi
 
+mkdir -vp "${TESTREPORT_DIR}"
+
 vppver=$(docker run --rm -i "$VPP_AGENT" dpkg-query -f '${Version}' -W vpp)
 
 echo "=========================================================================="
@@ -128,12 +132,13 @@ echo "--------------------------------------------------------------------------
 
 # Run e2e tests
 #if run_e2e ${args[@]:-}
-if docker run -it \
+if docker run -i \
 	--name "${testname}" \
 	--pid=host \
 	--privileged \
 	--label io.ligato.vpp-agent.testsuite=e2e \
 	--label io.ligato.vpp-agent.testname="${testname}" \
+	--volume "${TESTREPORT_DIR}":/testreport \
 	--volume "${TESTDATA_DIR}":/testdata:ro \
 	--volume /var/run/docker.sock:/var/run/docker.sock \
 	--volume "${sharevolumename}":/test-share \
@@ -141,6 +146,8 @@ if docker run -it \
 	--env INITIAL_LOGLVL \
 	--env VPP_AGENT \
 	--env GOTESTSUM_FORMAT \
+	--env GOTESTSUM_JUNITFILE \
+	--env GITHUB_WORKFLOW \
 	${DOCKER_ARGS-} \
 	"${imgname}" ${args[@]:-}
 then

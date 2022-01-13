@@ -110,7 +110,7 @@ COPY ./docker/dev/init_hook.sh /usr/bin/
 # handle differences in vpp.conf which are between supported VPP versions
 ARG VPP_VERSION
 COPY ./docker/dev/legacy-nat.conf /tmp/legacy-nat.conf
-RUN if [[ "$VPP_VERSION" < "2009" ]]; then \
+RUN if [ "$VPP_VERSION" -le 2009 ]; then \
 		cat /tmp/legacy-nat.conf >> /etc/vpp/vpp.conf; \
 	fi; \
 	rm /tmp/legacy-nat.conf

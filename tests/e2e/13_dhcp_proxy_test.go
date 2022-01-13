@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
@@ -28,6 +29,10 @@ import (
 )
 
 func TestDhcpProxy(t *testing.T) {
+	if !supportsLinuxVRF() {
+		t.Skip("Linux VRFs are not supported")
+	}
+
 	ctx := Setup(t)
 	defer ctx.Teardown()
 

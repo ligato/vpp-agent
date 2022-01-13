@@ -60,9 +60,9 @@ const (
 
 	// VPP input nodes for packet tracing (uncomment when needed)
 	tapv2InputNode = "virtio-input"
-	//tapv1InputNode    = "tapcli-rx"
-	//afPacketInputNode = "af-packet-input"
-	//memifInputNode    = "memif-input"
+	// tapv1InputNode    = "tapcli-rx"
+	// afPacketInputNode = "af-packet-input"
+	// memifInputNode    = "memif-input"
 )
 
 // TestCtx represents data context fur currently running test
@@ -143,7 +143,7 @@ func NewTest(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 	// TODO: Do not use global test registration.
 	//  It is now deprecated and you should use NewWithT() instead.
-	//g := NewWithT(t)
+	// g := NewWithT(t)
 
 	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
 
@@ -283,7 +283,7 @@ func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
 // AgentInstanceName provides instance name of VPP-Agent that is created by setup by default. This name is
 // used i.e. in ETCD key prefix.
 func AgentInstanceName(testCtx *TestCtx) string {
-	//TODO API boundaries becomes blurry as tests and support structures are in the same package and there
+	// TODO API boundaries becomes blurry as tests and support structures are in the same package and there
 	// is strong temptation to misuse it and create an unmaintainable dependency mesh -> create different
 	// package for test supporting files (setup/teardown/util stuff) and define clear boundaries
 	if testCtx.Agent != nil {
@@ -772,4 +772,23 @@ func (test *TestCtx) checkAgentReady() error {
 		return fmt.Errorf("agent status: %v", agent.State.String())
 	}
 	return nil
+}
+
+func supportsLinuxVRF() bool {
+	if os.Getenv("GITHUB_WORKFLOW") != "" {
+		// Linux VRFs are not enabled by default in the github workflow runners
+		// Notes:
+		// generally, run this to check system support for VRFs:
+		//  	modinfo vrf
+		// in the container, you can check if kernel module for VRFs is loaded:
+		//  	ls /sys/module/vrf
+		// TODO: figure out how to enable support for linux VRFs
+		return false
+	}
+	if os.Getenv("TRAVIS") != "" {
+		// Linux VRFs are seemingly not supported on Ubuntu Xenial, which is used in Travis CI to run the tests.
+		// TODO: remove once we upgrade to Ubuntu Bionic or newer
+		return false
+	}
+	return true
 }
