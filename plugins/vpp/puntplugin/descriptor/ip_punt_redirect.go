@@ -17,8 +17,8 @@ package descriptor
 import (
 	"errors"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"

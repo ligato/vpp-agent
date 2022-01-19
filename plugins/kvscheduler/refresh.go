@@ -19,8 +19,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
@@ -444,7 +444,7 @@ func dumpGraph(g graph.RWAccess) string {
 			lastUpdate,
 			getNodeState(node).String(),
 		))
-		writeLines(proto.MarshalTextString(node.GetValue()), "  ")
+		writeLines(prototext.Format(node.GetValue()), "  ")
 
 		if f := node.GetTargets(DependencyRelation); f != nil && len(f) > 0 {
 			writeLine("Depends on:", "")

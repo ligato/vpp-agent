@@ -18,20 +18,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.ligato.io/cn-infra/v2/logging"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
-	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 type genericService struct {
@@ -58,7 +59,7 @@ func (s *genericService) KnownModels(ctx context.Context, req *generic.KnownMode
 func (s *genericService) ProtoFileDescriptor(ctx context.Context, req *generic.ProtoFileDescriptorRequest) (*generic.ProtoFileDescriptorResponse, error) {
 	for _, model := range models.RegisteredModels() {
 		if req.FullProtoFileName == model.ProtoFile() {
-			fileDesc := proto.MessageV2(model.NewInstance()).ProtoReflect().Descriptor().ParentFile()
+			fileDesc := model.NewInstance().ProtoReflect().Descriptor().ParentFile()
 			if fileDesc != nil {
 				return &generic.ProtoFileDescriptorResponse{
 					FileDescriptor:        protodesc.ToFileDescriptorProto(fileDesc),
@@ -150,7 +151,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 				Status:  res.Status.State.String(),
 				Message: msg,
 			},
-			//Op: res.Status.LastOperation.String(),
+			// Op: res.Status.LastOperation.String(),
 		})
 	}
 
@@ -212,7 +213,11 @@ func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (
 
 	fmt.Printf("dispatch.ListState: %d pairs", len(pairs))
 	for key, val := range pairs {
-		fmt.Printf(" - [%s] %+v\n", key, proto.CompactTextString(val))
+		b, err := prototext.Marshal(val)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf(" - [%s] %+v\n", key, string(b))
 	}
 
 	var states []*generic.StateItem
@@ -236,8 +241,8 @@ func (s *genericService) Subscribe(req *generic.SubscribeRequest, server generic
 }
 
 // toImportSet performs convenient format conversion to descriptor.FileDescriptorSet
-func toImportSet(importFDs []protoreflect.FileDescriptor) *descriptor.FileDescriptorSet {
-	fdProtoimports := &descriptor.FileDescriptorSet{
+func toImportSet(importFDs []protoreflect.FileDescriptor) *descriptorpb.FileDescriptorSet {
+	fdProtoimports := &descriptorpb.FileDescriptorSet{
 		File: make([]*descriptorpb.FileDescriptorProto, 0, len(importFDs)),
 	}
 	for _, importFD := range importFDs {

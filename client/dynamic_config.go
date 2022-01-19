@@ -7,9 +7,6 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
-	"go.ligato.io/vpp-agent/v3/pkg/util"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -17,6 +14,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // field proto name/json name constants (can't be changes to not break json/yaml compatibility with configurator.Config)
@@ -200,7 +201,7 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 			TypeName: proto.String(fmt.Sprintf(".%v", modelDetail.ProtoName)),
 		})
 
-		//add proto file dependency for this known model (+ check that it is in dependency file descriptor registry)
+		// add proto file dependency for this known model (+ check that it is in dependency file descriptor registry)
 		protoFile, err := ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
 			error = errors.Errorf("can't retrieve protoFile from model options "+
@@ -210,7 +211,7 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		if _, found := importedDependency[protoFile]; !found {
 			importedDependency[protoFile] = struct{}{}
 
-			//add proto file dependency for this known model
+			// add proto file dependency for this known model
 			fileDP.Dependency = append(fileDP.Dependency, protoFile)
 
 			// checking dependency registry that should already contain the linked dependency

@@ -20,19 +20,20 @@ import (
 	"sync"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/reflection"
 )
 
 var (

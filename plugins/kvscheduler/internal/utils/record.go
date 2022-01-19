@@ -16,11 +16,9 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 )
 
 // RecordedProtoMessage is a proto.Message suitable for recording and access via
@@ -47,8 +45,12 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 		err     error
 	)
 	if p != nil {
-		msgName = proto.MessageName(p.Message)
-		msgData = proto.CompactTextString(p.Message)
+		msgName = string(proto.MessageName(p.Message))
+		b, err := prototext.Marshal(p.Message)
+		if err != nil {
+			return nil, err
+		}
+		msgData = string(b) // protov1.CompactTextString(protov1.MessageV1(p.Message))
 	}
 	pwn, err := json.Marshal(ProtoWithName{
 		ProtoMsgName: msgName,
@@ -72,21 +74,21 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	if p.ProtoMsgName == "" {
 		return nil
 	}
-	msgType := proto.MessageType(pwn.ProtoMsgName)
-	if msgType == nil {
-		return fmt.Errorf("unknown proto message: %s", p.ProtoMsgName)
-	}
-	msg := reflect.New(msgType.Elem()).Interface().(proto.Message)
-	var err error
-	if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
-		err = jsonpb.UnmarshalString(pwn.ProtoMsgData, msg)
-	} else {
-		err = proto.UnmarshalText(pwn.ProtoMsgData, msg)
-	}
-	if err != nil {
-		return err
-	}
-	p.Message = msg
+	/*msgType := proto.MessageType(pwn.ProtoMsgName)
+	  if msgType == nil {
+	  	return fmt.Errorf("unknown proto message: %s", p.ProtoMsgName)
+	  }
+	  msg := reflect.New(msgType.Elem()).Interface().(proto.Message)
+	  var err error
+	  if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
+	  	err = jsonpb.UnmarshalString(pwn.ProtoMsgData, msg)
+	  } else {
+	  	err = proto.UnmarshalText(pwn.ProtoMsgData, msg)
+	  }
+	  if err != nil {
+	  	return err
+	  }
+	  p.Message = msg*/
 	return nil
 }
 
@@ -100,6 +102,6 @@ func RecordProtoMessage(msg proto.Message) *RecordedProtoMessage {
 	}
 	return &RecordedProtoMessage{
 		Message:      msg,
-		ProtoMsgName: proto.MessageName(msg),
+		ProtoMsgName: string(proto.MessageName(msg)),
 	}
 }

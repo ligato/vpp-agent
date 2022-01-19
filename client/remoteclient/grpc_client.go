@@ -5,18 +5,17 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"go.ligato.io/vpp-agent/v3/client"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
-	"go.ligato.io/vpp-agent/v3/pkg/util"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/grpc"
-	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 type grpcClient struct {
@@ -31,17 +30,17 @@ type NewClientOption = func(client.GenericClient) error
 func NewClientGRPC(conn grpc.ClientConnInterface, options ...NewClientOption) (client.ConfigClient, error) {
 	manager := generic.NewManagerServiceClient(conn)
 	meta := generic.NewMetaServiceClient(conn)
-	client := &grpcClient{
+	c := &grpcClient{
 		manager:       manager,
 		meta:          meta,
 		modelRegistry: models.DefaultRegistry,
 	}
 	for _, option := range options {
-		if err := option(client); err != nil {
+		if err := option(c); err != nil {
 			return nil, errors.Errorf("can't apply option to newly created GRPC client due to: %v", err)
 		}
 	}
-	return client, nil
+	return c, nil
 }
 
 func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
@@ -68,7 +67,7 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	}
 
 	// query meta service for extracted proto files to get their file descriptor protos
-	fileDescProtos := make(map[string]*descriptor.FileDescriptorProto) // deduplicaton + data container
+	fileDescProtos := make(map[string]*descriptorpb.FileDescriptorProto) // deduplicaton + data container
 	for protoFilePath, _ := range protoFilePaths {
 		ctx := context.Background()
 		resp, err := c.meta.ProtoFileDescriptor(ctx, &generic.ProtoFileDescriptorRequest{
@@ -118,7 +117,7 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	var result []*models.ModelInfo
 	for _, info := range knownModels {
 		result = append(result, &models.ModelInfo{
-			ModelDetail:       *info,
+			ModelDetail:       info,
 			MessageDescriptor: messageDescriptors[info.ProtoName],
 		})
 	}
@@ -344,14 +343,14 @@ func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptor
 	return strings.Join(keys, ",")
 }
 
-func extractProtoMessages(dsts []interface{}) []protoV2.Message {
-	protoDsts := make([]protoV2.Message, 0)
+func extractProtoMessages(dsts []interface{}) []proto.Message {
+	protoDsts := make([]proto.Message, 0)
 	for _, dst := range dsts {
 		protoV1Dst, isProtoV1 := dst.(proto.Message)
 		if isProtoV1 {
-			protoDsts = append(protoDsts, proto.MessageV2(protoV1Dst))
+			protoDsts = append(protoDsts, proto.Message(protoV1Dst))
 		} else {
-			protoV2Dst, isProtoV2 := dst.(protoV2.Message)
+			protoV2Dst, isProtoV2 := dst.(proto.Message)
 			if isProtoV2 {
 				protoDsts = append(protoDsts, protoV2Dst)
 			} else {
@@ -362,10 +361,10 @@ func extractProtoMessages(dsts []interface{}) []protoV2.Message {
 	return protoDsts
 }
 
-func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message {
-	result := make([]protoV2.Message, 0, len(protoMap))
+func convertToProtoV2(protoMap map[string]proto.Message) []proto.Message {
+	result := make([]proto.Message, 0, len(protoMap))
 	for _, msg := range protoMap {
-		result = append(result, proto.MessageV2(msg))
+		result = append(result, proto.Message(msg))
 	}
 	return result
 }

@@ -17,9 +17,9 @@ package descriptor
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor/adapter"
@@ -72,7 +72,7 @@ func NewRxModeDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex ifaceidx.If
 		Name:        RxModeDescriptorName,
 		KeySelector: ctx.IsInterfaceRxModeKey,
 		// proto message Interface is only used as container for RxMode
-		ValueTypeName:   proto.MessageName(&interfaces.Interface{}),
+		ValueTypeName:   string(proto.MessageName(&interfaces.Interface{})),
 		ValueComparator: ctx.EquivalentRxMode,
 		Validate:        ctx.Validate,
 		Create:          ctx.Create,

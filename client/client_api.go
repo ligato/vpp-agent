@@ -17,7 +17,8 @@ package client
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/vishvananda/netns"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )

@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
 
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"

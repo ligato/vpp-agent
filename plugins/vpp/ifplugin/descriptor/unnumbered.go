@@ -17,9 +17,9 @@ package descriptor
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor/adapter"
@@ -58,7 +58,7 @@ func NewUnnumberedIfDescriptor(ifHandler vppcalls.InterfaceVppAPI, ifIndex iface
 	typedDescr := &adapter.UnnumberedDescriptor{
 		Name:          UnnumberedIfDescriptorName,
 		KeySelector:   ctx.IsUnnumberedInterfaceKey,
-		ValueTypeName: proto.MessageName(&interfaces.Interface_Unnumbered{}),
+		ValueTypeName: string(proto.MessageName(&interfaces.Interface_Unnumbered{})),
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
 		Dependencies:  ctx.Dependencies,

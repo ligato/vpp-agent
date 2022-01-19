@@ -21,7 +21,6 @@ import (
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -29,10 +28,11 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/infra"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
-	"google.golang.org/protobuf/encoding/protojson"
-	protoV2 "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -282,10 +282,10 @@ func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 	return local.NewProtoTxn(p.registry.PropagateChanges)
 }
 
-func convertToProtoV1(messages []protoV2.Message) []proto.Message {
+func convertToProtoV1(messages []proto.Message) []proto.Message {
 	result := make([]proto.Message, 0, len(messages))
 	for _, message := range messages {
-		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
+		result = append(result, message.ProtoReflect().Interface())
 	}
 	return result
 }

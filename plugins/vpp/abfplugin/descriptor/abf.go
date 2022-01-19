@@ -16,8 +16,8 @@ package descriptor
 
 import (
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/proto"
+	prototypes "google.golang.org/protobuf/types/known/emptypb"
 
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"

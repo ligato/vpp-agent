@@ -17,8 +17,8 @@ package descriptor
 import (
 	"sync"
 
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -100,7 +100,7 @@ func (w *LinkStateDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (values [
 		w.linkStates[ifaceName] = linkIsUp
 		values = append(values, kvs.KVWithMetadata{
 			Key:    interfaces.LinkStateKey(ifaceName, linkIsUp),
-			Value:  &prototypes.Empty{},
+			Value:  &emptypb.Empty{},
 			Origin: kvs.FromSB,
 		})
 	}
@@ -138,7 +138,7 @@ func (w *LinkStateDescriptor) UpdateLinkState(ifaceState *interfaces.InterfaceNo
 		// push new key-value pair
 		notifs = append(notifs, kvs.KVWithMetadata{
 			Key:      interfaces.LinkStateKey(ifaceState.State.Name, linkIsUp),
-			Value:    &prototypes.Empty{},
+			Value:    &emptypb.Empty{},
 			Metadata: nil,
 		})
 		w.linkStates[ifaceName] = linkIsUp

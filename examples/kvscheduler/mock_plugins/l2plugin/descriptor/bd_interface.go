@@ -15,9 +15,9 @@
 package descriptor
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	interfaces "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model"
 	"go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/descriptor/adapter"
@@ -63,7 +63,7 @@ func NewBDInterfaceDescriptor(bdIndex idxvpp.NameToIndex, bdHandler mockcalls.Mo
 	typedDescr := &adapter.BDInterfaceDescriptor{
 		Name:          BDInterfaceDescriptorName,
 		KeySelector:   descrCtx.IsBDInterfaceKey,
-		ValueTypeName: proto.MessageName(&l2.BridgeDomain_Interface{}),
+		ValueTypeName: string(proto.MessageName(&l2.BridgeDomain_Interface{})),
 		Create:        descrCtx.Create,
 		Delete:        descrCtx.Delete,
 		Dependencies:  descrCtx.Dependencies,

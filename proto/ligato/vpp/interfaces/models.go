@@ -18,8 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
@@ -658,6 +656,7 @@ func ParseRxModesKey(key string) (ifaceName string, isRxModesKey bool) {
 	return
 }
 
+/*
 // MarshalJSON ensures that field of type 'oneOf' is correctly marshaled
 // by using protobuf json marshaller
 func (m *Interface) MarshalJSON() ([]byte, error) {
@@ -673,3 +672,4 @@ func (m *Interface) MarshalJSON() ([]byte, error) {
 func (m *Interface) UnmarshalJSON(data []byte) error {
 	return jsonpb.UnmarshalString(string(data), m)
 }
+*/

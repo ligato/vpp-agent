@@ -17,16 +17,16 @@ package client
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/db/keyval"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
-	protoV2 "google.golang.org/protobuf/proto"
 )
 
 // LocalClient is global client for direct local access.
@@ -53,8 +53,8 @@ func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 	for _, model := range models.RegisteredModels() {
 		if class == "" || model.Spec().Class == class {
 			modules = append(modules, &models.ModelInfo{
-				ModelDetail:       *model.ModelDetail(),
-				MessageDescriptor: proto.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
+				ModelDetail:       model.ModelDetail(),
+				MessageDescriptor: model.NewInstance().ProtoReflect().Descriptor(),
 			})
 		}
 	}
@@ -162,14 +162,14 @@ func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 	return local.NewProtoTxn(p.registry.PropagateChanges)
 }
 
-func extractProtoMessages(dsts []interface{}) []protoV2.Message {
-	protoDsts := make([]protoV2.Message, 0)
+func extractProtoMessages(dsts []interface{}) []proto.Message {
+	protoDsts := make([]proto.Message, 0)
 	for _, dst := range dsts {
 		protoV1Dst, isProtoV1 := dst.(proto.Message)
 		if isProtoV1 {
-			protoDsts = append(protoDsts, proto.MessageV2(protoV1Dst))
+			protoDsts = append(protoDsts, protoV1Dst)
 		} else {
-			protoV2Dst, isProtoV2 := dst.(protoV2.Message)
+			protoV2Dst, isProtoV2 := dst.(proto.Message)
 			if isProtoV2 {
 				protoDsts = append(protoDsts, protoV2Dst)
 			} else {
@@ -180,10 +180,10 @@ func extractProtoMessages(dsts []interface{}) []protoV2.Message {
 	return protoDsts
 }
 
-func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message {
-	result := make([]protoV2.Message, 0, len(protoMap))
+func convertToProtoV2(protoMap map[string]proto.Message) []proto.Message {
+	result := make([]proto.Message, 0, len(protoMap))
 	for _, msg := range protoMap {
-		result = append(result, proto.MessageV2(msg))
+		result = append(result, msg)
 	}
 	return result
 }

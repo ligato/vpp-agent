@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package mock.l2;
 
+option go_package = "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/l2plugin/model;mock_l2";
+
 message BridgeDomain {
     string name = 1;                        /* bridge domain name */
 

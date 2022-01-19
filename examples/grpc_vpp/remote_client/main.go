@@ -22,13 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/namsral/flag"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
@@ -182,7 +181,7 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServic
 	if err != nil {
 		log.Fatalln(err)
 	}
-	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+	out := protojson.Format(cfg)
 	fmt.Printf("Config:\n %+v\n", out)
 
 	time.Sleep(time.Second * 5)
@@ -192,7 +191,7 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServic
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
+	fmt.Printf("Dump:\n %+v\n", protojson.Format(dump))
 }
 
 // Dialer for unix domain socket

@@ -27,9 +27,9 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
@@ -671,7 +671,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 	// interface state
 	derValues = append(derValues, kvs.KeyValuePair{
 		Key:   interfaces.InterfaceStateKey(linuxIf.Name, linuxIf.Enabled),
-		Value: &prototypes.Empty{},
+		Value: &emptypb.Empty{},
 	})
 	if linuxIf.GetVrfMasterInterface() != "" {
 		derValues = append(derValues, kvs.KeyValuePair{

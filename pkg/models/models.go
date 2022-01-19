@@ -20,8 +20,9 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -49,7 +50,7 @@ func GetModel(name string) (KnownModel, error) {
 	return GetModelFromRegistry(name, DefaultRegistry)
 }
 
-// GetModel returns registered model in given registry for given model name.
+// GetModelFromRegistry returns registered model in given registry for given model name.
 func GetModelFromRegistry(name string, modelRegistry Registry) (KnownModel, error) {
 	return modelRegistry.GetModel(name)
 }
@@ -94,7 +95,7 @@ func GetKey(x proto.Message) (string, error) {
 	return GetKeyUsingModelRegistry(x, DefaultRegistry)
 }
 
-// GetKey returns complete key for given model from given model registry,
+// GetKeyUsingModelRegistry returns complete key for given model from given model registry,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
 func GetKeyUsingModelRegistry(message proto.Message, modelRegistry Registry) (string, error) {
@@ -166,18 +167,24 @@ func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Mess
 	} else {
 		registeredGoType = reflect.Zero(goType).Interface()
 	}
-	message, isProtoV1 := registeredGoType.(proto.Message)
-	if !isProtoV1 {
-		messageV2, isProtoV2 := registeredGoType.(protoV2.Message)
-		if !isProtoV2 {
-			return nil, errors.Errorf("registered go type(%T) is not proto.Message", registeredGoType)
-		}
-		message = proto.MessageV1(messageV2)
-	}
+
+	/*message, isProtoV2 := registeredGoType.(protoreflect.ProtoMessage)
+	  if !isProtoV2 {
+	  	messageV1, isProtoV1 := registeredGoType.(protoiface.MessageV1)
+	  	if !isProtoV1 {
+	  		return nil, errors.Errorf("registered go type(%T) is not proto.Message", registeredGoType)
+	  	}
+	  	message = protoimpl.X.ProtoMessageV2Of(messageV1)
+	  }*/
+	message := protoMessageOf(registeredGoType)
 
 	// fill empty statically-generated proto message with data from its dynamic proto message counterpart
 	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
 	proto.Merge(message, dynamicMessage)
 
 	return message, nil
+}
+
+func protoMessageOf(m interface{}) protoreflect.ProtoMessage {
+	return protoimpl.X.ProtoMessageV2Of(m)
 }

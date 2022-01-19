@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package model;
 
+option go_package = "go.ligato.io/vpp-agent/v3/examples/kvscheduler/plugin_skeleton/with_metadata/model;model";
+
 message ValueSkeleton {
     /*
       logical name is often defined to build unique keys for value instances

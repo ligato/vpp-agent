@@ -16,8 +16,8 @@ package descriptor
 
 import (
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/encoding/prototext"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -174,7 +174,7 @@ func (d *PolicyDescriptor) Update(key string, oldPolicy, newPolicy *srv6.Policy,
 	// remove old segment lists not present in newPolicy
 	slIndexes := oldMetadata.(*PolicyMetadata).segmentListIndexes
 	for _, sl := range removePool {
-		index, exists := slIndexes[proto.CompactTextString(sl)]
+		index, exists := slIndexes[prototext.MarshalOptions{}.Format(sl)]
 		if !exists {
 			return nil, errors.Errorf("failed update policy: failed to find index for segment list "+
 				"%+v in policy with bsid %v (metadata segment list indexes: %+v)", sl, oldPolicy.GetBsid(), slIndexes)
@@ -204,7 +204,7 @@ func (d *PolicyDescriptor) policyIndexInfo(policy *srv6.Policy) (map[string]uint
 	}
 	result := make(map[string]uint32)
 	for slist, index := range indexes {
-		result[proto.CompactTextString(slist)] = index
+		result[prototext.MarshalOptions{}.Format(slist)] = index
 	}
 	return result, nil
 }

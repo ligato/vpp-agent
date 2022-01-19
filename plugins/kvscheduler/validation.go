@@ -16,10 +16,11 @@ package kvscheduler
 
 import (
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/dynamicpb"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 // ValidateSemantically validates given proto messages according to semantic validation(KVDescriptor.Validate)

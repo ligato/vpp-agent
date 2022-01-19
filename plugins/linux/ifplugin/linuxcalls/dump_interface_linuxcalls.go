@@ -20,10 +20,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/vishvananda/netlink"
 	"go.ligato.io/cn-infra/v2/logging"
 	"golang.org/x/sys/unix"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"

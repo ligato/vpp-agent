@@ -18,8 +18,8 @@ import (
 	"strconv"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/descriptor/adapter"
@@ -59,7 +59,7 @@ func (d *SPDInterfaceDescriptor) GetDescriptor() *adapter.SPDInterfaceDescriptor
 	return &adapter.SPDInterfaceDescriptor{
 		Name:          SPDInterfaceDescriptorName,
 		KeySelector:   d.IsSPDInterfaceKey,
-		ValueTypeName: proto.MessageName(&ipsec.SecurityPolicyDatabase{}),
+		ValueTypeName: string(proto.MessageName(&ipsec.SecurityPolicyDatabase{})),
 		Create:        d.Create,
 		Delete:        d.Delete,
 		Dependencies:  d.Dependencies,

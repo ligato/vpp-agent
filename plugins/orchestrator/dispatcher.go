@@ -21,13 +21,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
@@ -194,7 +194,7 @@ func (p *dispatcher) ListState() (KVPairs, error) {
 			return nil, err
 		}
 		for _, d := range data {
-			//status := p.kvs.GetValueStatus(d.Key)
+			// status := p.kvs.GetValueStatus(d.Key)
 			pairs[d.Key] = d.Value
 		}
 	}

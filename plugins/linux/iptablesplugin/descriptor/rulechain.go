@@ -17,9 +17,10 @@ package descriptor
 import (
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin/descriptor/adapter"

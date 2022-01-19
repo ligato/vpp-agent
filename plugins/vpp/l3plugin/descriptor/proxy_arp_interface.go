@@ -15,9 +15,9 @@
 package descriptor
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/descriptor/adapter"
@@ -57,7 +57,7 @@ func NewProxyArpInterfaceDescriptor(scheduler kvs.KVScheduler,
 			_, isProxyARPInterfaceKey := l3.ParseProxyARPInterfaceKey(key)
 			return isProxyARPInterfaceKey
 		},
-		ValueTypeName: proto.MessageName(&l3.ProxyARP_Interface{}),
+		ValueTypeName: string(proto.MessageName(&l3.ProxyARP_Interface{})),
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
 		Dependencies:  ctx.Dependencies,

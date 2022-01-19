@@ -25,20 +25,22 @@ import (
 	"time"
 
 	yaml2 "github.com/ghodss/yaml"
-	"github.com/golang/protobuf/proto"
 	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
+	//protoV2 "google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/encoding/protojson"
-	protoV2 "google.golang.org/protobuf/proto"
 )
 
 func NewConfigCommand(cli agentcli.Cli) *cobra.Command {
@@ -318,10 +320,10 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 	return nil
 }
 
-func convertToProtoV1(messages []protoV2.Message) []proto.Message {
+func convertToProtoV1(messages []proto.Message) []proto.Message {
 	result := make([]proto.Message, 0, len(messages))
 	for _, message := range messages {
-		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
+		result = append(result, message)
 	}
 	return result
 }

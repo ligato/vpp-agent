@@ -21,7 +21,7 @@ import (
 
 	"go.ligato.io/cn-infra/v2/agent"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/clientv2/linux/localclient"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"

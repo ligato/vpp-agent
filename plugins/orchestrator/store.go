@@ -17,7 +17,7 @@ package orchestrator
 import (
 	"sort"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // KVStore describes an interface for key-value store used by dispatcher.

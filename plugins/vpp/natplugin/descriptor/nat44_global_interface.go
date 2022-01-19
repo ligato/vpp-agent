@@ -15,8 +15,8 @@
 package descriptor
 
 import (
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/descriptor/adapter"
@@ -54,7 +54,7 @@ func NewNAT44GlobalInterfaceDescriptor(natHandler vppcalls.NatVppAPI, log loggin
 	typedDescr := &adapter.NAT44GlobalInterfaceDescriptor{
 		Name:          NAT44GlobalInterfaceDescriptorName,
 		KeySelector:   ctx.IsNAT44DerivedInterfaceKey,
-		ValueTypeName: proto.MessageName(&nat.Nat44Global_Interface{}),
+		ValueTypeName: string(proto.MessageName(&nat.Nat44Global_Interface{})),
 		Create:        ctx.Create,
 		Delete:        ctx.Delete,
 		Dependencies:  ctx.Dependencies,

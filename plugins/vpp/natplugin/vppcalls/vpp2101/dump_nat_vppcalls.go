@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	vpp_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/nat44"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/nat_types"

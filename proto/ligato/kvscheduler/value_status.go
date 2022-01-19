@@ -15,12 +15,10 @@
 package kvscheduler
 
 import (
-	"bytes"
 	"encoding/json"
-
-	"github.com/golang/protobuf/jsonpb"
 )
 
+/*
 // MarshalJSON ensures data is correctly marshaled
 func (m ValueStatus) MarshalJSON() ([]byte, error) {
 	marshaller := &jsonpb.Marshaler{}
@@ -35,7 +33,7 @@ func (m ValueStatus) MarshalJSON() ([]byte, error) {
 func (m *ValueStatus) UnmarshalJSON(data []byte) error {
 	return jsonpb.Unmarshal(bytes.NewReader(data), m)
 }
-
+*/
 // MarshalJSON ensures data is correctly marshaled
 func (x ValueState) MarshalJSON() ([]byte, error) {
 	return json.Marshal(x.String())
