@@ -177,6 +177,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 func buildClientOptions(cfg *Config) []client.Opt {
 	clientOpts := []client.Opt{
 		client.WithHost(cfg.Host),
+		client.WithTimeout(cfg.Timeout),
 		client.WithServiceLabel(cfg.ServiceLabel),
 		client.WithGrpcPort(cfg.GRPCPort),
 		client.WithHTTPPort(cfg.HTTPPort),

@@ -61,6 +61,8 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	flags.Int("http-port", client.DefaultPortHTTP, "HTTP server port")
 	_ = viper.BindPFlag("http-port", flags.Lookup("http-port"))
 
+	flags.Duration("timeout", client.DefaultTimeout, "Timeout for client requests")
+
 	flags.Int("grpc-port", client.DefaultPortGRPC, "gRPC server port")
 	_ = viper.BindPFlag("grpc-port", flags.Lookup("grpc-port"))
 
@@ -98,5 +100,5 @@ func SetLogLevel(logLevel string) {
 		os.Exit(1)
 	}
 	logrus.SetLevel(lvl)
-	logging.DefaultLogger.SetLevel(logging.ParseLogLevel(logLevel))
+	logging.DefaultLogger.SetLevel(logging.LogLevel(lvl))
 }
