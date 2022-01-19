@@ -23,6 +23,7 @@ import (
 
 	docker "github.com/fsouza/go-dockerclient"
 	. "github.com/onsi/gomega"
+
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_iptables "go.ligato.io/vpp-agent/v3/proto/ligato/linux/iptables"
 	vpp_dns "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/dns"
@@ -85,6 +86,7 @@ func TestDnsCache(t *testing.T) {
 			if td.SkipAll {
 				t.Skipf("Skipped due to %s", td.SkipReason)
 			}
+
 			// test setup
 			td.SetupModifiers = append(td.SetupModifiers, WithCustomVPPAgent()) // need iptables to be installed
 			ctx := Setup(t, td.SetupModifiers...)
@@ -95,36 +97,36 @@ func TestDnsCache(t *testing.T) {
 
 			// configure VPP-Agent container as DNS server
 			vppDNSServer := net.ParseIP(ctx.Agent.IPAddress())
-			Expect(vppDNSServer).ShouldNot(BeNil(), "VPP DNS Server container has no IP address")
+			ctx.Expect(vppDNSServer).ShouldNot(BeNil(), "VPP DNS Server container has no IP address")
 			upstreamDNSServer := td.PublicUpstreamDNSServer
 			if td.PublicUpstreamDNSServer == nil {
 				upstreamDNSServer = net.ParseIP(ctx.DNSServer.IPAddress())
-				Expect(upstreamDNSServer).ShouldNot(BeNil(),
+				ctx.Expect(upstreamDNSServer).ShouldNot(BeNil(),
 					"Local upstream DNS Server container (CoreDNS) has no IP address")
 			}
 			err := configureVPPAgentAsDNSServer(ctx, vppDNSServer, upstreamDNSServer)
-			Expect(err).ShouldNot(HaveOccurred(), "Configuring changes to VPP-Agent failed with err")
+			ctx.Expect(err).ShouldNot(HaveOccurred(), "Configuring changes to VPP-Agent failed with err")
 
 			// Testing resolving DNS query by VPP (it should make request to upstream DNS server)
 			//// Testing A (IPv4) record
 			resolvedIPAddresses, err := ms.Dig(vppDNSServer, td.QueryDomainName, A)
-			Expect(err).ToNot(HaveOccurred())
+			ctx.Expect(err).ToNot(HaveOccurred())
 			if td.ExpectedResolvedIPv4Address != nil {
-				Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv4Address}))
+				ctx.Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv4Address}))
 			} else { // external domain have loadbalancers -> can't tell what IP address we get from upstream DNS server
-				Expect(resolvedIPAddresses).NotTo(BeEmpty())
-				Expect(resolvedIPAddresses[0].To4() != nil).Should(BeTrue(), "is not ipv4 address")
+				ctx.Expect(resolvedIPAddresses).NotTo(BeEmpty())
+				ctx.Expect(resolvedIPAddresses[0].To4() != nil).Should(BeTrue(), "is not ipv4 address")
 			}
 
 			//// Testing AAAA (IPv6) record
 			if !td.SkipAAAARecordCheck {
 				resolvedIPAddresses, err = ms.Dig(vppDNSServer, td.QueryDomainName, AAAA)
-				Expect(err).ToNot(HaveOccurred())
+				ctx.Expect(err).ToNot(HaveOccurred())
 				if td.ExpectedResolvedIPv6Address != nil {
-					Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv6Address}))
+					ctx.Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv6Address}))
 				} else { // external domain have loadbalancers -> can't tell what IP address we get from upstream DNS server
-					Expect(resolvedIPAddresses).NotTo(BeEmpty())
-					Expect(resolvedIPAddresses[0].To4() == nil).Should(BeTrue(), "is not ipv6 address")
+					ctx.Expect(resolvedIPAddresses).NotTo(BeEmpty())
+					ctx.Expect(resolvedIPAddresses[0].To4() == nil).Should(BeTrue(), "is not ipv6 address")
 				}
 			}
 
@@ -141,7 +143,7 @@ func TestDnsCache(t *testing.T) {
 						fmt.Sprintf("-j DROP -d %s", upstreamDNSServer.String()),
 					},
 				}
-				Expect(ctx.GenericClient().ChangeRequest().Update(blockUpstreamDNSServer).
+				ctx.Expect(ctx.GenericClient().ChangeRequest().Update(blockUpstreamDNSServer).
 					Send(context.Background())).To(Succeed())
 			} else {
 				// using local container as DNS server -> the easy way how to block it is to kill it
@@ -151,7 +153,7 @@ func TestDnsCache(t *testing.T) {
 			// verify the upstream DNS blocking (without it some mild test/container changes could introduce
 			// silent error when VPP will still access upstream DNS server due to ineffective(or still not
 			// effectively applied) blocking and therefore test of VPP caching will not test the cache at all)
-			Eventually(func() error {
+			ctx.Eventually(func() error {
 				_, err := ms.Dig(vppDNSServer, td.UnreachabilityVerificationDomainName, A)
 				return err
 			}, 3*time.Second).Should(HaveOccurred(),
@@ -160,23 +162,23 @@ func TestDnsCache(t *testing.T) {
 			// Testing resolving DNS query by VPP from its cache (upstream DNS server requests are blocked)
 			//// Testing A (IPv4) record
 			resolvedIPAddresses, err = ms.Dig(vppDNSServer, td.QueryDomainName, A)
-			Expect(err).ToNot(HaveOccurred())
+			ctx.Expect(err).ToNot(HaveOccurred())
 			if td.ExpectedResolvedIPv4Address != nil {
-				Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv4Address}))
+				ctx.Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv4Address}))
 			} else { // external domain have loadbalancers -> can't tell what IP address we get from upstream DNS server
-				Expect(resolvedIPAddresses).NotTo(BeEmpty())
-				Expect(resolvedIPAddresses[0].To4() != nil).Should(BeTrue(), "is not ipv4 address")
+				ctx.Expect(resolvedIPAddresses).NotTo(BeEmpty())
+				ctx.Expect(resolvedIPAddresses[0].To4() != nil).Should(BeTrue(), "is not ipv4 address")
 			}
 
 			//// Testing AAAA (IPv6) record
 			if !td.SkipAAAARecordCheck {
 				resolvedIPAddresses, err = ms.Dig(vppDNSServer, td.QueryDomainName, AAAA)
-				Expect(err).ToNot(HaveOccurred())
+				ctx.Expect(err).ToNot(HaveOccurred())
 				if td.ExpectedResolvedIPv6Address != nil {
-					Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv6Address}))
+					ctx.Expect(resolvedIPAddresses).To(ConsistOf([]net.IP{td.ExpectedResolvedIPv6Address}))
 				} else { // external domain have loadbalancers -> can't tell what IP address we get from upstream DNS server
-					Expect(resolvedIPAddresses).NotTo(BeEmpty())
-					Expect(resolvedIPAddresses[0].To4() == nil).Should(BeTrue(), "is not ipv6 address")
+					ctx.Expect(resolvedIPAddresses).NotTo(BeEmpty())
+					ctx.Expect(resolvedIPAddresses[0].To4() == nil).Should(BeTrue(), "is not ipv6 address")
 				}
 			}
 		})

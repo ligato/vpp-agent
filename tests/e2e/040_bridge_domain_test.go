@@ -179,70 +179,70 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		vppLoop,
 		bd,
 	).Send(context.Background())
-	Expect(err).To(BeNil(), "Transaction creating BD with TAPs failed")
+	ctx.Expect(err).To(BeNil(), "Transaction creating BD with TAPs failed")
 
-	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TAP attached to a newly started microservice2 should be eventually configured")
 
 	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
 		bds, err := bridgeDomains(ctx)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(bds).To(HaveLen(1))
-		Expect(bds[0]).To(SatisfyAll(
+		ctx.Expect(err).ToNot(HaveOccurred())
+		ctx.Expect(bds).To(HaveLen(1))
+		ctx.Expect(bds[0]).To(SatisfyAll(
 			bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 	}
 
-	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
 	// - "Eventually" is also used with linuxTap1 to wait for retry txn that
 	//   will change state from RETRYING to PENDING
 	ctx.StopMicroservice(ms1Name)
-	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
-	Eventually(ctx.GetValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Eventually(ctx.GetValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated LinuxTAP should be pending")
-	Expect(ctx.GetValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to running microservice is not configured")
-	Expect(ctx.GetValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Linux-TAP attached to running microservice is not configured")
-	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI interface is not configured")
-	Expect(ctx.GetValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD is not configured")
 
-	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).ToNot(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap1IP)).ToNot(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).ToNot(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap1IP)).ToNot(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
 	ctx.StartMicroservice(ms1Name)
-	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
-	Expect(ctx.GetValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Linux-TAP attached to a re-started microservice1 is not configured")
 
 	// Waiting for TAP interface after restart
 	// See: https://github.com/ligato/vpp-agent/issues/1489
-	Eventually(ctx.PingFromMsClb(ms2Name, linuxTap1IP), "18s", "2s").Should(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Eventually(ctx.PingFromMsClb(ms2Name, linuxTap1IP), "18s", "2s").Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
 	bd.MacAge = 10
@@ -250,21 +250,21 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	err = req.Update(
 		bd,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
 
-	Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Expect(ctx.PingFromMs(ms2Name, linuxTap1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTap2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
 		bds, err := bridgeDomains(ctx)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(bds).To(HaveLen(1))
-		Expect(bds[0]).To(SatisfyAll(
+		ctx.Expect(err).ToNot(HaveOccurred())
+		ctx.Expect(bds).To(HaveLen(1))
+		ctx.Expect(bds[0]).To(SatisfyAll(
 			bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 	}
 }
@@ -418,76 +418,76 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		vppLoop,
 		bd,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Transaction creating BD with AF-PACKETs failed")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Transaction creating BD with AF-PACKETs failed")
 
-	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI should be configured even before microservices start")
-	Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice1 should be eventually configured")
-	Eventually(ctx.GetValueStateClb(afPacket2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(afPacket2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a newly started microservice2 should be eventually configured")
 
 	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
 		bds, err := bridgeDomains(ctx)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(bds).To(HaveLen(1))
-		Expect(bds[0]).To(SatisfyAll(
+		ctx.Expect(err).ToNot(HaveOccurred())
+		ctx.Expect(bds).To(HaveLen(1))
+		ctx.Expect(bds[0]).To(SatisfyAll(
 			bdAgeIs(0), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 	}
 
-	Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// kill one of the microservices
 	// - both AF-PACKET and VETH use separate "Eventually" assertion since
 	//   they react to different SB notifications
 	ctx.StopMicroservice(ms1Name)
-	Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated AF-PACKET should be pending")
-	Eventually(ctx.GetValueStateClb(veth1a)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Eventually(ctx.GetValueStateClb(veth1a)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
-	Expect(ctx.GetValueState(veth1b)).To(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Expect(ctx.GetValueState(veth1b)).To(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VETH should be pending")
-	Expect(ctx.GetValueState(afPacket2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(afPacket2)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to running microservice is not configured")
-	Expect(ctx.GetValueState(veth2a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(veth2a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to running microservice is not configured")
-	Expect(ctx.GetValueState(veth2b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(veth2b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to running microservice is not configured")
-	Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(vppLoop)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD BVI interface is not configured")
-	Expect(ctx.GetValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(bd)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"BD is not configured")
 
-	Expect(ctx.PingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth1IP)).ToNot(Succeed())
-	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Expect(ctx.PingFromMs(ms2Name, veth1IP)).ToNot(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth1IP)).ToNot(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
 	ctx.StartMicroservice(ms1Name)
-	Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a re-started microservice1 should be eventually configured")
-	Expect(ctx.GetValueState(veth1a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(veth1a)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
-	Expect(ctx.GetValueState(veth1b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(veth1b)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VETH attached to re-started microservice1 is not configured")
 
 	// Waiting for AF-PACKET interface after restart
 	// See: https://github.com/ligato/vpp-agent/issues/1489
-	Eventually(ctx.PingFromMsClb(ms2Name, veth1IP), "18s", "2s").Should(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Eventually(ctx.PingFromMsClb(ms2Name, veth1IP), "18s", "2s").Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// change bridge domain config to trigger re-creation
 	bd.MacAge = 10
@@ -495,21 +495,21 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	err = req.Update(
 		bd,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Transaction updating BD failed")
 
 	if ctx.VppRelease() < "21.01" { // "show bridge-domain" hard to parse in VPP>=21.01 (https://jira.fd.io/browse/VPP-1969)
 		bds, err := bridgeDomains(ctx)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(bds).To(HaveLen(1))
-		Expect(bds[0]).To(SatisfyAll(
+		ctx.Expect(err).ToNot(HaveOccurred())
+		ctx.Expect(bds).To(HaveLen(1))
+		ctx.Expect(bds[0]).To(SatisfyAll(
 			bdAgeIs(10), bdWithFlooding(), bdWithForwarding(), bdWithLearning()))
 	}
 
-	Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
-	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
+	ctx.Expect(ctx.PingFromMs(ms2Name, veth1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, veth2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vppLoopbackIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 }

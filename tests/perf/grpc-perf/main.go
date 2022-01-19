@@ -25,8 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/namsral/flag"
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,6 +34,7 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
@@ -215,7 +214,7 @@ func (p *GRPCStressPlugin) setupInitial() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+		out := protojson.Format(cfg)
 		fmt.Printf("Config:\n %+v\n", out)
 
 		p.Log.Infof("Requesting dump..")
@@ -223,7 +222,7 @@ func (p *GRPCStressPlugin) setupInitial() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
+		fmt.Printf("Dump:\n %+v\n", protojson.Format(dump))
 	}
 
 	time.Sleep(time.Second * 1)
@@ -290,8 +289,7 @@ func (p *GRPCStressPlugin) runGRPCCreateRedBlackMemifs(client configurator.Confi
 		if err != nil {
 			log.Fatalln(err)
 		}
-		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
-		fmt.Printf("Config:\n %+v\n", out)
+		fmt.Printf("Config:\n %+v\n", protojson.Format(cfg))
 	}
 
 }
@@ -357,8 +355,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
-		fmt.Printf("Config:\n %+v\n", out)
+		fmt.Printf("Config:\n %+v\n", protojson.Format(cfg))
 
 		time.Sleep(time.Second * 5)
 		p.Log.Infof("Requesting dump..")
@@ -367,7 +364,7 @@ func (p *GRPCStressPlugin) runAllClients() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
+		fmt.Printf("Dump:\n %+v\n", protojson.Format(dump))
 	}
 
 }
@@ -442,13 +439,13 @@ func (p *GRPCStressPlugin) runGRPCStressCreate(clientId int, client configurator
 				OutgoingInterface: ipsecTunnelName,
 			}
 
-			//p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, clientId, tunNum)
+			// p.Log.Infof("Creating %s ... client: %d, tunNum: %d", ipsecTunnelName, clientId, tunNum)
 
 			ifaces = append(ifaces, ipsecTunnel)
 			routes = append(routes, route)
 		}
 
-		//p.Log.Infof("Creating %d ifaces & %d routes", len(ifaces), len(routes))
+		// p.Log.Infof("Creating %d ifaces & %d routes", len(ifaces), len(routes))
 
 		_, err := client.Update(context.Background(), &configurator.UpdateRequest{
 			Update: &configurator.Config{

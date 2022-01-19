@@ -196,60 +196,60 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		vrf1VppTap, vrf1LinuxTap,
 		vrf2VppTap, vrf2LinuxTap,
 	)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vppVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vppVrf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// vrf mtu check
 	linuxVrf1Mtu := ctx.GetValue(linuxVrf1, kvs.SBView).(*linux_interfaces.Interface).Mtu
-	Expect(int(linuxVrf1Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
+	ctx.Expect(int(linuxVrf1Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
 	linuxVrf2Mtu := ctx.GetValue(linuxVrf2, kvs.SBView).(*linux_interfaces.Interface).Mtu
-	Expect(int(linuxVrf2Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
+	ctx.Expect(int(linuxVrf2Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
 
 	// try to ping in both VRFs
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
 	ctx.StopMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	ctx.StartMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux VRF1
 	err = ctx.GenericClient().ChangeRequest().
 		Delete(linuxVrf1).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxVrf1Updated,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// vrf 1 mtu re-check
 	linuxVrf1Mtu = ctx.GetValue(linuxVrf1, kvs.SBView).(*linux_interfaces.Interface).Mtu
-	Expect(linuxVrf1Mtu).To(Equal(vrf1Mtu))
+	ctx.Expect(linuxVrf1Mtu).To(Equal(vrf1Mtu))
 
-	Eventually(ctx.PingFromMsClb(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromMsClb(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 //
@@ -436,49 +436,49 @@ func TestVRFRoutes(t *testing.T) {
 		vrf1VppRoute, vrf2VppRoute,
 		vrf1LinuxRoute, vrf2LinuxRoute,
 	)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf1VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf2VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vrf2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf1VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf2LinuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf2VppTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf1VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf2VppRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vrf2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// try to ping across VRFs
-	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
 	ctx.StopMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	ctx.StartMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux VRF1
 	err = ctx.GenericClient().ChangeRequest().
 		Delete(linuxVrf1).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).ToNot(Succeed())
+	ctx.Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(ctx.PingFromMs(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).ToNot(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).ToNot(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxVrf1,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
-	Eventually(ctx.PingFromMsClb(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(err).ToNot(HaveOccurred())
+	ctx.Eventually(ctx.PingFromMsClb(msName, vrf2LinuxIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vrf1LinuxIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 // Test VRF created externally (i.e. not by the agent).
@@ -547,92 +547,92 @@ func TestExistingLinuxVRF(t *testing.T) {
 		existingIface1,
 		iface2,
 	)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// the referenced VRF with interface does not exist yet
-	Expect(ctx.GetValueState(existingVrf)).To(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.GetValueState(existingIface1)).To(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.GetValueState(iface2)).To(Equal(kvscheduler.ValueState_CONFIGURED)) // created but not in VRF yet
-	Expect(ctx.GetDerivedValueState(iface2, iface2InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetValueState(existingVrf)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetValueState(existingIface1)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetValueState(iface2)).To(Equal(kvscheduler.ValueState_CONFIGURED)) // created but not in VRF yet
+	ctx.Expect(ctx.GetDerivedValueState(iface2, iface2InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
 
 	ifHandler := ctx.Agent.LinuxInterfaceHandler()
 
 	// create referenced VRF using netlink (without the interface inside it for now)
 	err = ifHandler.AddVRFDevice(vrfHostName, vrfRT)
-	Expect(err).To(BeNil())
+	ctx.Expect(err).To(BeNil())
 	err = ifHandler.SetInterfaceUp(vrfHostName)
-	Expect(err).To(BeNil())
+	ctx.Expect(err).To(BeNil())
 
-	Eventually(ctx.GetValueStateClb(existingVrf)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
+	ctx.Eventually(ctx.GetValueStateClb(existingVrf)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfDevRT"), BeEquivalentTo(vrfRT)))
-	Eventually(ctx.GetDerivedValueStateClb(iface2, iface2InVrfKey)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
+	ctx.Eventually(ctx.GetDerivedValueStateClb(iface2, iface2InVrfKey)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
-	Eventually(ctx.GetDerivedValueStateClb(iface2, ipAddr3Key)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Consistently(ctx.GetValueStateClb(existingIface1)).Should(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Eventually(ctx.GetDerivedValueStateClb(iface2, ipAddr3Key)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Consistently(ctx.GetValueStateClb(existingIface1)).Should(Equal(kvscheduler.ValueState_PENDING))
 
 	// re-check metadata after resync
-	Expect(ctx.AgentInSync()).To(BeTrue())
-	Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfDevRT"), BeEquivalentTo(vrfRT)))
-	Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
+	ctx.Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
 
 	// create vrfIface1 but do not put it into VRF yet
 	err = ifHandler.AddDummyInterface(vrfIface1HostName)
-	Expect(err).To(BeNil())
+	ctx.Expect(err).To(BeNil())
 	err = ifHandler.SetInterfaceUp(vrfIface1HostName)
-	Expect(err).To(BeNil())
+	ctx.Expect(err).To(BeNil())
 
-	Eventually(ctx.GetValueStateClb(existingIface1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueMetadata(existingIface1, kvs.CachedView)).To(
+	ctx.Eventually(ctx.GetValueStateClb(existingIface1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueMetadata(existingIface1, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
-	Expect(ctx.GetDerivedValueState(existingIface1, iface1InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetDerivedValueState(existingIface1, iface1InVrfKey)).To(Equal(kvscheduler.ValueState_PENDING))
 
 	// put interface into VRF (without IPs for now)
 	err = ifHandler.PutInterfaceIntoVRF(vrfIface1HostName, vrfHostName)
-	Expect(err).To(BeNil())
+	ctx.Expect(err).To(BeNil())
 
-	Eventually(ctx.GetDerivedValueStateClb(existingIface1, iface1InVrfKey)).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface1, iface1InVrfKey)).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
 		Should(Equal(kvscheduler.ValueState_PENDING))
 
 	// re-check metadata after resync
-	Expect(ctx.AgentInSync()).To(BeTrue())
-	Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.GetValueMetadata(existingVrf, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfDevRT"), BeEquivalentTo(vrfRT)))
-	Expect(ctx.GetValueMetadata(existingIface1, kvs.CachedView)).To(
+	ctx.Expect(ctx.GetValueMetadata(existingIface1, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
-	Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
+	ctx.Expect(ctx.GetValueMetadata(iface2, kvs.CachedView)).To(
 		HaveKeyWithValue(BeEquivalentTo("VrfMasterIf"), BeEquivalentTo(vrfName)))
 
 	// add ipAddr1
 	ipAddr, _, err := utils.ParseIPAddr(ipAddr1+netMask, nil)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.AddInterfaceIP(vrfIface1HostName, ipAddr)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// add ipAddr2
 	ipAddr, _, err = utils.ParseIPAddr(ipAddr2+netMask, nil)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.AddInterfaceIP(vrfIface1HostName, ipAddr)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr1Key)).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface1, ipAddr2Key)).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// cleanup
 	req := ctx.GenericClient().ChangeRequest()
@@ -641,9 +641,9 @@ func TestExistingLinuxVRF(t *testing.T) {
 		existingIface1,
 		iface2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.DeleteInterface(vrfIface1HostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.DeleteInterface(vrfHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 }

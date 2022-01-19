@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -27,11 +28,10 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/golang/protobuf/proto"
-	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
@@ -40,6 +40,9 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+
+	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -67,6 +70,8 @@ const (
 
 // TestCtx represents data context fur currently running test
 type TestCtx struct {
+	*gomega.WithT
+
 	Agent     *Agent // the default agent (first agent in multi-agent test scenario)
 	Etcd      *Etcd
 	DNSServer *DNSServer
@@ -140,20 +145,26 @@ type Diger interface {
 
 // NewTest creates new TestCtx for given runnin test
 func NewTest(t *testing.T) *TestCtx {
-	RegisterTestingT(t)
-	// TODO: Do not use global test registration.
-	//  It is now deprecated and you should use NewWithT() instead.
-	// g := NewWithT(t)
-
-	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
+	g := gomega.NewWithT(t)
 
 	SetDefaultEventuallyPollingInterval(checkPollingInterval)
 	SetDefaultEventuallyTimeout(checkTimeout)
 
+	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
+
 	outputBuf := new(bytes.Buffer)
-	logger := log.New(outputBuf, "e2e-test: ", log.Lshortfile|log.Lmicroseconds)
+	var logW io.Writer
+	if *debug {
+		logW = os.Stderr // io.MultiWriter(os.Stderr, outputBuf)
+	} else {
+		logW = outputBuf
+	}
+
+	prefix := fmt.Sprintf("[E2E-TEST::%v] ", t.Name())
+	logger := log.New(logW, prefix, log.Lshortfile|log.Lmicroseconds)
 
 	te := &TestCtx{
+		WithT:         g,
 		t:             t,
 		testDataDir:   os.Getenv("TESTDATA_DIR"),
 		testShareDir:  defaultTestShareDir,
@@ -218,13 +229,13 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 	// setup DNS server
 	if opt.SetupDNSServer {
 		testCtx.DNSServer, err = NewDNSServer(testCtx, extractDNSOptions(opt))
-		Expect(err).ShouldNot(HaveOccurred())
+		testCtx.Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	// setup Etcd
 	if opt.SetupEtcd {
 		testCtx.Etcd, err = NewEtcd(testCtx, extractEtcdOptions(opt))
-		Expect(err).ShouldNot(HaveOccurred())
+		testCtx.Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	if opt.SetupAgent {
@@ -259,7 +270,7 @@ func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
 	}
 
 	// wait to agent to start properly
-	Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
+	testCtx.Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
 
 	// run initial resync
 	if !options.NoManualInitialResync {

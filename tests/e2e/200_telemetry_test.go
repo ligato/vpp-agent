@@ -110,32 +110,32 @@ func TestTelemetryStatsPoller(t *testing.T) {
 
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING))
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(srcTap, srcLinuxTap).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.PingFromVPP("10.20.1.1")).To(Succeed())
-	Expect(ctx.PingFromMs(msName, "10.20.1.2")).To(Succeed())
+	ctx.Expect(ctx.PingFromVPP("10.20.1.1")).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, "10.20.1.2")).To(Succeed())
 
 	pollerClient := configurator.NewStatsPollerServiceClient(ctx.GRPCConn())
 
 	t.Run("periodSec=0", func(tt *testing.T) {
-		RegisterTestingT(tt)
+		g := NewWithT(tt)
 
 		stream, err := pollerClient.PollStats(context.Background(), &configurator.PollStatsRequest{
 			PeriodSec: 0,
 		})
-		Expect(err).ToNot(HaveOccurred())
+		g.Expect(err).ToNot(HaveOccurred())
 		maxSeq := uint32(0)
 		n := 0
 		for {
@@ -151,18 +151,18 @@ func TestTelemetryStatsPoller(t *testing.T) {
 				maxSeq = stats.GetPollSeq()
 			}
 		}
-		Expect(n).To(BeEquivalentTo(3))
-		Expect(maxSeq).To(BeEquivalentTo(0))
+		g.Expect(n).To(BeEquivalentTo(3))
+		g.Expect(maxSeq).To(BeEquivalentTo(0))
 	})
 
 	t.Run("numPolls=1", func(tt *testing.T) {
-		RegisterTestingT(tt)
+		g := NewWithT(tt)
 
 		stream, err := pollerClient.PollStats(context.Background(), &configurator.PollStatsRequest{
 			NumPolls:  1,
 			PeriodSec: 1,
 		})
-		Expect(err).ToNot(HaveOccurred())
+		g.Expect(err).ToNot(HaveOccurred())
 		maxSeq := uint32(0)
 		n := 0
 		for {
@@ -178,19 +178,19 @@ func TestTelemetryStatsPoller(t *testing.T) {
 				maxSeq = stats.GetPollSeq()
 			}
 		}
-		Expect(n).To(BeEquivalentTo(3))
-		Expect(maxSeq).To(BeEquivalentTo(1))
+		g.Expect(n).To(BeEquivalentTo(3))
+		g.Expect(maxSeq).To(BeEquivalentTo(1))
 	})
 
 	t.Run("numPolls=2", func(tt *testing.T) {
-		RegisterTestingT(tt)
+		g := NewWithT(tt)
 
 		stream, err := pollerClient.PollStats(context.Background(), &configurator.PollStatsRequest{
 			NumPolls: 2,
 		})
-		Expect(err).ToNot(HaveOccurred())
+		g.Expect(err).ToNot(HaveOccurred())
 		_, err = stream.Recv()
-		Expect(err).To(HaveOccurred())
+		g.Expect(err).To(HaveOccurred())
 	})
 
 }

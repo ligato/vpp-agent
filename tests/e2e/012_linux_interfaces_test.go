@@ -72,38 +72,38 @@ func TestDummyInterface(t *testing.T) {
 		dummyIf1,
 		dummyIf2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(dummyIf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, ipAddr3)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(dummyIf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr3)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// Delete dummy2
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		dummyIf2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.GetValueState(dummyIf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(dummyIf2)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, ipAddr3)).ToNot(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.GetValueState(dummyIf1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(dummyIf2)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr3)).ToNot(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
 	ctx.StopMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	ctx.StartMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr1)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, ipAddr2)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// Disable dummy1
 	dummyIf1.Enabled = false
@@ -111,7 +111,7 @@ func TestDummyInterface(t *testing.T) {
 	err = req.Update(
 		dummyIf1,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 }
 
 // Test interfaces created externally but with IP addresses assigned by the agent.
@@ -140,7 +140,7 @@ func TestExistingInterface(t *testing.T) {
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)
-		Expect(err).ToNot(HaveOccurred())
+		ctx.Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
 			if addr.IP.String() == ipAddr {
 				return true
@@ -158,54 +158,54 @@ func TestExistingInterface(t *testing.T) {
 	err := req.Update(
 		existingIface,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// referenced interface does not exist yet
-	Expect(ctx.GetValueState(existingIface)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetValueState(existingIface)).To(Equal(kvscheduler.ValueState_PENDING))
 
 	// create referenced host interface using linuxcalls
 	err = ifHandler.AddDummyInterface(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.SetInterfaceUp(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(existingIface)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
+	ctx.Eventually(ctx.GetValueStateClb(existingIface)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// check that the IP addresses have been configured
-	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeTrue())
-	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr1)).To(BeTrue())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
 
 	// add third IP address externally, it should get removed by resync
 	ipAddr, _, err := utils.ParseIPAddr(ipAddr3+netMask, nil)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.AddInterfaceIP(ifaceHostName, ipAddr)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// resync should remove the address that was added externally
-	Expect(ctx.AgentInSync()).To(BeFalse())
-	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeTrue())
-	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
-	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
+	ctx.Expect(ctx.AgentInSync()).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr1)).To(BeTrue())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 
 	// remove the EXISTING interface (IP addresses should be unassigned)
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		existingIface,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.GetValueState(existingIface)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
-	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeFalse())
-	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
+	ctx.Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(ctx.GetValueState(existingIface)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr2)).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 
 	// cleanup
 	err = ifHandler.DeleteInterface(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 }
 
 // Test interfaces created externally including the IP address assignments.
@@ -238,7 +238,7 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 
 	hasIP := func(ifName, ipAddr string) bool {
 		addrs, err := ifHandler.GetAddressList(ifName)
-		Expect(err).ToNot(HaveOccurred())
+		ctx.Expect(err).ToNot(HaveOccurred())
 		for _, addr := range addrs {
 			if addr.IP.String() == ipAddr {
 				return true
@@ -256,58 +256,58 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 	err := req.Update(
 		existingIface,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// the referenced interface does not exist yet
-	Expect(ctx.GetValueState(existingIface)).To(Equal(kvscheduler.ValueState_PENDING))
+	ctx.Expect(ctx.GetValueState(existingIface)).To(Equal(kvscheduler.ValueState_PENDING))
 
 	// create referenced host interface using linuxcalls (without IPs for now)
 	err = ifHandler.AddDummyInterface(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.SetInterfaceUp(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(existingIface)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
+	ctx.Eventually(ctx.GetValueStateClb(existingIface)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr3+netMask))).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr3+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// add IP addresses using linuxcalls (except ipAddr3)
-	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
-	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeFalse())
-	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr2)).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 	ipAddr, _, err := utils.ParseIPAddr(ipAddr1+netMask, nil)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.AddInterfaceIP(ifaceHostName, ipAddr)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	ipAddr, _, err = utils.ParseIPAddr(ipAddr2+netMask, nil)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.AddInterfaceIP(ifaceHostName, ipAddr)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// ipAddr1 and ipAddr2 should be eventually marked as configured
-	Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr3+netMask))).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr3+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// remove one IP address
 	ipAddr, _, err = utils.ParseIPAddr(ipAddr1+netMask, nil)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 	err = ifHandler.DelInterfaceIP(ifaceHostName, ipAddr)
-	Expect(err).ToNot(HaveOccurred())
-	Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
+	ctx.Expect(err).ToNot(HaveOccurred())
+	ctx.Eventually(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr1+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr2+netMask))).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr3+netMask))).
+	ctx.Consistently(ctx.GetDerivedValueStateClb(existingIface, addrKey(ipAddr3+netMask))).
 		Should(Equal(kvscheduler.ValueState_PENDING))
 
 	// remove the EXISTING interface (the actual interface should be left untouched including IPs)
@@ -315,13 +315,13 @@ func TestExistingLinkOnlyInterface(t *testing.T) {
 	err = req.Delete(
 		existingIface,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
-	Expect(ctx.GetValueState(existingIface)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
-	Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
-	Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
+	ctx.Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(ctx.GetValueState(existingIface)).ToNot(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(hasIP(ifaceHostName, ipAddr1)).To(BeFalse())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr2)).To(BeTrue())
+	ctx.Expect(hasIP(ifaceHostName, ipAddr3)).To(BeFalse())
 
 	// cleanup
 	err = ifHandler.DeleteInterface(ifaceHostName)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 }

@@ -108,50 +108,50 @@ func TestSpan(t *testing.T) {
 	ctx.StartMicroservice(msName)
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Destination TAP is not configured")
 
-	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING),
 		"SPAN is not in a `PENDING` state, but `InterfaceFrom` is not ready")
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(srcTap, srcLinuxTap).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(srcTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Source TAP is not configured")
 
-	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
 	ctx.StopMicroservice(msName)
-	Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Destination TAP must be in a `PENDING` state, after its microservice stops")
 
-	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING),
+	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_PENDING),
 		"SPAN is not in a `PENDING` state, but `InterfaceTo` is not ready")
 
 	// Check `show int span` output
 	stdout, err := ctx.ExecVppctl("show", "int", "span")
-	Expect(err).ToNot(HaveOccurred(), "Running `show int span` failed with err")
-	Expect(stdout).To(HaveLen(0),
+	ctx.Expect(err).ToNot(HaveOccurred(), "Running `show int span` failed with err")
+	ctx.Expect(stdout).To(HaveLen(0),
 		"Expected empty output from `show int span` command")
 
 	// Start container and configure destination interface again
 	ctx.StartMicroservice(msName)
 
-	Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"Destination TAP expected to be configured")
 
-	Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
 	// Check `show int span` output
 	stdout, err = ctx.ExecVppctl("show", "int", "span")
-	Expect(err).ToNot(HaveOccurred(), "Running `show int span` failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Running `show int span` failed with err")
 	s := regexp.MustCompile(`\s+`).ReplaceAllString(stdout, " ")
-	Expect(s).To(Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "),
+	ctx.Expect(s).To(Equal("Source Destination Device L2 tap1 tap0 ( rx) ( none) "),
 		"Output of `show int span` didn't match to expected")
 }

@@ -132,25 +132,25 @@ func TestIPSec(t *testing.T) {
 		spIn,
 		spOut,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IPIP tunnel is not configured")
-	Eventually(ctx.GetValueStateClb(saOut)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saOut)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SA is not configured")
-	Eventually(ctx.GetValueStateClb(saIn)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saIn)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SA is not configured")
-	Eventually(ctx.GetValueStateClb(tp)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(tp)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"tunnel protection is not configured")
-	Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPD is not configured")
-	Eventually(ctx.GetValueStateClb(spIn)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spIn)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SP is not configured")
-	Eventually(ctx.GetValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SP is not configured")
 
 	if ctx.VppRelease() >= "20.05" {
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 
 	// rekey - delete old SAs, create new SAs and modify tunnel protection
@@ -227,29 +227,29 @@ func TestIPSec(t *testing.T) {
 			spInNew,
 			tpNew,
 		).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.GetValueStateClb(saOut)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saOut)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"old OUT SA was not removed")
-	Eventually(ctx.GetValueStateClb(saIn)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saIn)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"old IN SA was not removed")
-	Eventually(ctx.GetValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SA is not configured")
-	Eventually(ctx.GetValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SA is not configured")
-	Eventually(ctx.GetValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"tunnel protection is not configured")
-	Eventually(ctx.GetValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"old OUT SP was not removed")
-	Eventually(ctx.GetValueStateClb(spIn)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spIn)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"old IN SP was not removed")
-	Eventually(ctx.GetValueStateClb(spOutNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spOutNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SP is not configured")
-	Eventually(ctx.GetValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SP is not configured")
 
 	if ctx.VppRelease() >= "20.05" {
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 
 	// delete the tunnel
@@ -264,25 +264,25 @@ func TestIPSec(t *testing.T) {
 		spOutNew,
 		spd,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.GetValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saOutNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SA was not removed")
-	Eventually(ctx.GetValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SA was not removed")
-	Eventually(ctx.GetValueStateClb(spOutNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spOutNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SP was not removed")
-	Eventually(ctx.GetValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SP was not removed")
-	Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"SPD was not removed")
-	Eventually(ctx.GetValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(tpNew)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"tunnel protection was not removed")
-	Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
 
 	if ctx.VppRelease() >= "20.05" {
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 }
 
@@ -456,39 +456,39 @@ func TestIPSecMultiPoint(t *testing.T) {
 		tp1, tp2,
 		teib1, teib2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IPIP tunnel is not configured")
-	Eventually(ctx.GetValueStateClb(saOut1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saOut1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SA 1 is not configured")
-	Eventually(ctx.GetValueStateClb(saIn1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saIn1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SA 1 is not configured")
-	Eventually(ctx.GetValueStateClb(saOut2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saOut2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SA 2 is not configured")
-	Eventually(ctx.GetValueStateClb(saIn2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(saIn2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SA 2 is not configured")
-	Eventually(ctx.GetValueStateClb(tp1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(tp1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"tunnel protection 1 is not configured")
-	Eventually(ctx.GetValueStateClb(tp2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(tp2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"tunnel protection 2 is not configured")
-	Eventually(ctx.GetValueStateClb(teib1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(teib1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TEIB 1 is not configured")
-	Eventually(ctx.GetValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"TEIB 2 is not configured")
-	Eventually(ctx.GetValueStateClb(spOut1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spOut1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SP 1 is not configured")
-	Eventually(ctx.GetValueStateClb(spIn1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spIn1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SP 1 is not configured")
-	Eventually(ctx.GetValueStateClb(spOut2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spOut2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SP 2 is not configured")
-	Eventually(ctx.GetValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SP 2 is not configured")
-	Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPD is not configured")
 
 	if ctx.VppRelease() >= "20.05" {
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 
 	req3 := ctx.GenericClient().ChangeRequest()
@@ -499,36 +499,36 @@ func TestIPSecMultiPoint(t *testing.T) {
 		tp1, tp2,
 		teib1, teib2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
+	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
 
-	Eventually(ctx.GetValueStateClb(teib1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(teib1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"TEIB 1 was not removed")
-	Eventually(ctx.GetValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(teib2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"TEIB 2 was not removed")
-	Eventually(ctx.GetValueStateClb(saOut1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saOut1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SA 1 was not removed")
-	Eventually(ctx.GetValueStateClb(saIn1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saIn1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SA 1 was not removed")
-	Eventually(ctx.GetValueStateClb(saOut2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saOut2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SA 2 was not removed")
-	Eventually(ctx.GetValueStateClb(saIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(saIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SA 2 was not removed")
-	Eventually(ctx.GetValueStateClb(tp2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(tp2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"tunnel protection 2 was not removed")
-	Eventually(ctx.GetValueStateClb(tp1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(tp1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"tunnel protection 1 was not removed")
-	Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
-	Eventually(ctx.GetValueStateClb(spOut1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spOut1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SP 1 was not removed")
-	Eventually(ctx.GetValueStateClb(spIn1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spIn1)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SP 1 was not removed")
-	Eventually(ctx.GetValueStateClb(spOut2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spOut2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"OUT SP 2 was not removed")
-	Eventually(ctx.GetValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
+	ctx.Eventually(ctx.GetValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SP 2 was not removed")
 
 	if ctx.VppRelease() >= "20.05" {
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 }

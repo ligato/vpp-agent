@@ -17,8 +17,8 @@ package vpp
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	vpe_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	netalloc_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
@@ -70,7 +70,7 @@ func TestIPNeighbor(t *testing.T) {
 	if err != nil {
 		t.Fatal("getting ip neighbor config failed:", err)
 	}
-	t.Logf("dump config:\n%+v", proto.MarshalTextString(ipneigh))
+	t.Logf("dump config:\n%+v", prototext.Format(ipneigh))
 	if ipneigh.Mode != vpp_l3.IPScanNeighbor_DISABLED {
 		t.Fatal("expected Mode to be DISABLED")
 	}
@@ -92,7 +92,7 @@ func TestIPNeighbor(t *testing.T) {
 	if err != nil {
 		t.Fatal("getting ip neighbor config failed:", err)
 	}
-	t.Logf("dump config:\n%+v", proto.MarshalTextString(ipneigh))
+	t.Logf("dump config:\n%+v", prototext.Format(ipneigh))
 	if ipneigh.Mode != vpp_l3.IPScanNeighbor_IPV4 {
 		t.Fatalf("expected Mode to be IPV4, got %v", ipneigh.Mode)
 	}

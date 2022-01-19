@@ -22,8 +22,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/pkg/stringid"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/go-errors/errors"
+	"github.com/segmentio/textio"
 	"github.com/sirupsen/logrus"
 )
 
@@ -68,12 +70,13 @@ func (c *ContainerRuntime) Start(options interface{}) error {
 		return errors.Errorf("can't start %s container due to: %v", c.logIdentity, err)
 	}
 	log = log.WithField("container", c.container.Name)
-	log = log.WithField("cid", c.container.ID)
+	log = log.WithField("cid", stringid.TruncateID(c.container.ID))
 	log.Debugf("container started")
 
 	// attach logs (using one buffer from testctx -> all logs from all containers are merged together)
 	if opts.AttachLogs {
-		if err = c.attachLoggingToContainer(c.ctx.outputBuf); err != nil {
+		logWriter := textio.NewPrefixWriter(c.ctx.outputBuf, fmt.Sprintf("[container::%s/%v] ", c.container.Name, stringid.TruncateID(c.container.ID)))
+		if err = c.attachLoggingToContainer(logWriter); err != nil {
 			return errors.Errorf("can't attach logging to %s container due to: %v", c.logIdentity, err)
 		}
 	}
@@ -109,6 +112,8 @@ func (c *ContainerRuntime) Stop(options ...interface{}) error {
 
 // ExecCmd executes command inside docker container
 func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
+	c.ctx.Logger.Printf("[container:%v] ExecCmd(%s, %v)", c.container.ID, cmd, args)
+
 	opts := docker.CreateExecOptions{
 		Context:      c.ctx.ctx,
 		Container:    c.container.ID,
@@ -134,19 +139,22 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 	stdout = stdoutBuf.String()
 	stderr = stderrBuf.String()
 
-	c.ctx.Logger.Printf("exec: '%s %s':\nstdout: %v\nstderr: %v",
-		cmd, strings.Join(args, " "), stdout, stderr)
+	cmdStr := fmt.Sprintf("`%s %s`", cmd, strings.Join(args, " "))
+
+	c.ctx.Logger.Printf("docker exec: %v:\nstdout(%d): %v\nstderr(%d): %v", cmdStr, len(stdout), stdout, len(stderr), stderr)
+
 	if err != nil {
-		errMsg := fmt.Sprintf("starting of docker exec for command %v failed due to: %v", cmd, err)
+		errMsg := fmt.Sprintf("exec command %v failed due to: %v", cmdStr, err)
 		c.ctx.Logger.Printf(errMsg)
 		err = errors.Errorf(errMsg)
 		return
 	}
 
 	if info, er := c.ctx.dockerClient.InspectExec(exec.ID); er != nil {
-		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmd, er)
+		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmdStr, er)
+		err = errors.Errorf("inspect exec error: %v", err)
 	} else {
-		c.ctx.Logger.Printf("exec details (ID %v, Cmd %s): %+v", exec.ID, cmd, info)
+		c.ctx.Logger.Printf("exec details (ID %v, Cmd %s): %+v", exec.ID, cmdStr, info)
 		if info.ExitCode != 0 {
 			err = errors.Errorf("exec error (exit code %v): %v", info.ExitCode, stderr)
 		}
@@ -266,7 +274,7 @@ func (c *ContainerRuntime) attachLoggingToContainer(logOutput io.Writer) error {
 
 	log := logrus.WithField("name", c.logIdentity)
 	log = log.WithField("container", c.container.Name)
-	log = log.WithField("cid", c.container.ID)
+	log = log.WithField("cid", stringid.TruncateID(c.container.ID))
 
 	go func() {
 		err := closeWaiter.Wait()

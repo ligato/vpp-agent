@@ -16,12 +16,13 @@ package e2e
 
 import (
 	"bufio"
+	"encoding/json"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
 func TestAgentCtlCommands(t *testing.T) {
@@ -30,15 +31,18 @@ func TestAgentCtlCommands(t *testing.T) {
 
 	var err error
 	var stdout, stderr string
-	var matched bool
 
 	// file created below is required to test `import` action
 	err = createFileWithContent(
 		"/tmp/config1",
 		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
 	)
-	Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+	ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
 
+	type KeyVal struct {
+		Key   string
+		Value interface{}
+	}
 	tests := []struct {
 		name                 string
 		cmd                  string
@@ -48,6 +52,7 @@ func TestAgentCtlCommands(t *testing.T) {
 		expectInStdout       string
 		expectReStdout       string
 		expectInStderr       string
+		expectJsonKeyVals    []KeyVal
 	}{
 		{
 			name:                 "Check if executable is present",
@@ -122,28 +127,32 @@ func TestAgentCtlCommands(t *testing.T) {
 			expectInStdout: "type: UNDEFINED_TYPE",
 		},
 		{
-			name:           "Test `generate` action to json",
-			cmd:            "generate vpp.interfaces -f=json",
-			expectInStdout: `"type": "UNDEFINED_TYPE",`,
+			name: "Test `generate` action to json",
+			cmd:  "generate vpp.interfaces -f=json",
+			expectJsonKeyVals: []KeyVal{
+				{"type", "UNDEFINED_TYPE"},
+			},
 		},
 		{
-			name:           "Test `generate` action to json (oneline)",
-			cmd:            "generate vpp.interfaces -f=json --oneline",
-			expectInStdout: `{"name":"","type":"UNDEFINED_TYPE",`,
+			name: "Test `generate` action to json (oneline)",
+			cmd:  "generate vpp.interfaces -f=json --oneline",
+			expectJsonKeyVals: []KeyVal{
+				{"type", "UNDEFINED_TYPE"},
+			},
 		},
 		/*{
-			// This test depends on file (/tmp/config1) which was created before.
-			name:           "Test `import` action",
-			cmd:            "import /tmp/config1 --service-label vpp1",
-			expectErr:      true,
-			expectInStderr: "connecting to Etcd failed",
-		},
-		{
-			// This test depends on file (/tmp/config1) which was created before.
-			name:         "Test `import` action (grpc)",
-			cmd:          "import /tmp/config1 --service-label vpp1 --grpc",
-			expectStdout: "importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
-		},*/
+		  	// This test depends on file (/tmp/config1) which was created before.
+		  	name:           "Test `import` action",
+		  	cmd:            "import /tmp/config1 --service-label vpp1",
+		  	expectErr:      true,
+		  	expectInStderr: "connecting to Etcd failed",
+		  },
+		  {
+		  	// This test depends on file (/tmp/config1) which was created before.
+		  	name:         "Test `import` action (grpc)",
+		  	cmd:          "import /tmp/config1 --service-label vpp1 --grpc",
+		  	expectStdout: "importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
+		  },*/
 		{
 			name:           "Test `kvdb list` action",
 			cmd:            "kvdb list",
@@ -153,7 +162,7 @@ func TestAgentCtlCommands(t *testing.T) {
 		{
 			name:           "Test `log list` action",
 			cmd:            "log list",
-			expectReStdout: `agent\s+info`,
+			expectReStdout: `agent\s+(trace|debug|info)`,
 		},
 		{
 			name:         "Test `log set` action",
@@ -227,50 +236,50 @@ func TestAgentCtlCommands(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// we need to register again for each subtest
-			// TODO: remove this after migration to NewWithT
-			RegisterTestingT(t)
+			g := NewWithT(t)
 
-			stdout, stderr, err = ctx.ExecCmd("agentctl", strings.Split(test.cmd, " ")...)
+			stdout, stderr, err = ctx.Agent.ExecCmd("agentctl", strings.Split(test.cmd, " ")...)
 
 			if test.expectErr {
-				Expect(err).To(Not(BeNil()),
-					"Command `%s` should fail\n",
-					test.cmd,
-				)
+				g.Expect(err).To(HaveOccurred(),
+					"Expected command `%s` to fail\n", test.cmd)
 			} else {
-				Expect(err).To(BeNil(),
-					"Command `%s` should not fail. Got err: %v\nStderr:\n%s\n",
-					test.cmd, err, stderr,
-				)
+				g.Expect(err).ToNot(HaveOccurred(),
+					"Expected command `%s` not to fail, but failed with err: %v\nStderr:\n%s\n", test.cmd, err, stderr)
 			}
 			// Check STDOUT:
 			if test.expectNotEmptyStdout {
-				Expect(len(stdout)).To(Not(BeZero()),
-					"Stdout should not be empty\n",
-				)
+				g.Expect(stdout).ToNot(BeEmpty(),
+					"Stdout should not be empty\n")
 			}
 			if test.expectStdout != "" {
-				Expect(stdout).To(Equal(test.expectStdout),
-					"Expected output not equal stdout",
-				)
+				g.Expect(stdout).To(Equal(test.expectStdout),
+					"Expected output not equal stdout")
 			}
 			if test.expectInStdout != "" {
-				Expect(stdout).To(ContainSubstring(test.expectInStdout),
+				g.Expect(stdout).To(ContainSubstring(test.expectInStdout),
 					"Expected string not found in stdout")
 			}
+			if test.expectJsonKeyVals != nil {
+				var data map[string]interface{}
+				err := json.Unmarshal([]byte(stdout), &data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var matchers []types.GomegaMatcher
+				for _, kv := range test.expectJsonKeyVals {
+					matchers = append(matchers, HaveKeyWithValue(kv.Key, kv.Value))
+
+				}
+				g.Expect(data).To(SatisfyAll(matchers...), "Expected key-value not found in JSON data from stdout")
+			}
 			if test.expectReStdout != "" {
-				matched, err = regexp.MatchString(test.expectReStdout, stdout)
-				Expect(err).To(BeNil())
-				Expect(matched).To(BeTrue(), "Expect regexp %q to match stdout "+
-					"for command %q, stdout:\n%s", test.expectReStdout, test.cmd, stdout)
+				g.Expect(stdout).To(MatchRegexp(test.expectReStdout), "Expect regexp %q to match stdout for command %q, stdout:\n%s", test.expectReStdout, test.cmd, stdout)
 			}
 			// Check STDERR:
 			if test.expectInStderr != "" {
-				Expect(strings.Contains(stderr, test.expectInStderr)).To(BeTrue(),
-					"Want in stderr: \n%s\nGot stderr: \n%s\n",
-					test.expectInStderr, stderr,
-				)
+				g.Expect(stderr).To(ContainSubstring(test.expectInStderr),
+					"Want in stderr: \n%s\nGot stderr: \n%s\n", test.expectInStderr, stderr)
 			}
 		})
 	}
@@ -300,8 +309,8 @@ func TestAgentCtlCommands(t *testing.T) {
 	_, stderr, err := ctx.ExecCmd(
 		"/agentctl", "--debug", "dump", "vpp.interfaces",
 	)
-	Expect(err).To(Not(BeNil()))
-	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
+ctx.Expect(err).To(Not(BeNil()))
+ctx.Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
 
@@ -309,8 +318,8 @@ func TestAgentCtlCommands(t *testing.T) {
 	_, stderr, err = ctx.ExecCmd(
 		"/agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces",
 	)
-	Expect(err).To(Not(BeNil()))
-	Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
+ctx.Expect(err).To(Not(BeNil()))
+ctx.Expect(strings.Contains(stderr, "rpc error")).To(BeTrue(),
 		"Want in stderr: \n\"rpc error\"\nGot stderr: \n%s\n", stderr,
 	)
 
@@ -318,10 +327,10 @@ func TestAgentCtlCommands(t *testing.T) {
 	stdout, stderr, err := ctx.ExecCmd(
 		"/agentctl", "--debug", "--config-dir=/etc/.agentctl", "dump", "vpp.interfaces",
 	)
-	Expect(err).To(BeNil(),
+ctx.Expect(err).To(BeNil(),
 		"Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr,
 	)
-	Expect(len(stdout)).To(Not(BeZero()))
+ctx.Expect(len(stdout)).To(Not(BeZero()))
 }*/
 
 func TestAgentCtlSecureGrpc(t *testing.T) {
@@ -349,20 +358,20 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	t.Log("Try without any TLS")
 	_, stderr, err := ctx.ExecCmd(
 		"agentctl", "--debug", "dump", "vpp.interfaces")
-	Expect(err).To(Not(BeNil()))
-	Expect(stderr).To(ContainSubstring("rpc error"), "Expected string not found in stderr")
+	ctx.Expect(err).To(Not(BeNil()))
+	ctx.Expect(stderr).To(ContainSubstring("rpc error"), "Expected string not found in stderr")
 
 	t.Log("Try with TLS enabled via flag --insecure-tls. Should work because server is not configured to check client certs.")
 	stdout, stderr, err := ctx.ExecCmd(
 		"agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces")
-	Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
-	Expect(len(stdout)).To(Not(BeZero()))
+	ctx.Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
+	ctx.Expect(len(stdout)).To(Not(BeZero()))
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err = ctx.ExecCmd(
 		"agentctl", "--debug", "--config=/testdata/agentctl.conf", "dump", "vpp.interfaces")
-	Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
-	Expect(stdout).ToNot(BeEmpty())
+	ctx.Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
+	ctx.Expect(stdout).ToNot(BeEmpty())
 }
 
 func TestAgentCtlSecureETCD(t *testing.T) {
@@ -372,20 +381,20 @@ func TestAgentCtlSecureETCD(t *testing.T) {
 	// test without any TLS
 	t.Run("no TLS", func(t *testing.T) {
 		_, _, err := ctx.ExecCmd("agentctl", "--debug", "kvdb", "list")
-		Expect(err).To(Not(BeNil()))
+		ctx.Expect(err).To(Not(BeNil()))
 	})
 
 	// test with TLS enabled via flag --insecure-tls, but without cert and key (note: server configured to check those files)
 	t.Run("insecure TLS", func(t *testing.T) {
 		_, _, err := ctx.ExecCmd("agentctl", "--debug", "--insecure-tls", "kvdb", "list")
-		Expect(err).To(Not(BeNil()))
+		ctx.Expect(err).To(Not(BeNil()))
 	})
 
 	// test with fully configured TLS via config file
 	/*t.Run("fully cofigured TLS", func(t *testing.T) {
-		_, stderr, err := ctx.ExecCmd("/agentctl", "--debug", "--config-dir=/etc/.agentctl", "kvdb", "list")
-		Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
-	})*/
+	  	_, stderr, err := ctx.ExecCmd("/agentctl", "--debug", "--config-dir=/etc/.agentctl", "kvdb", "list")
+	  ctx.Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
+	  })*/
 }
 
 func createFileWithContent(path, content string) error {

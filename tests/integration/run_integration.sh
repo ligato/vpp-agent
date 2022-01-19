@@ -10,7 +10,8 @@ imgname="vpp-agent-integration-tests"
 
 # Compile testing suite
 go test -c -o ./tests/integration/integration.test \
-	  -tags 'osusergo netgo integration' \
+    -covermode atomic \
+	-tags 'osusergo netgo integration' \
     -ldflags '-w -s -extldflags "-static"' \
     ./tests/integration/...
 
@@ -43,6 +44,7 @@ if docker run -i \
 	--label io.ligato.vpp-agent.testname="${testname}" \
 	--env INITIAL_LOGLVL \
 	--env VPPVER=${vppver:0:5} \
+	--volume $(pwd)/report:/reports \
 	${DOCKER_ARGS-} \
 	"${imgname}" ${args[@]:-}
 then

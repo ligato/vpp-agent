@@ -177,7 +177,7 @@ func TestDhcpProxy(t *testing.T) {
 
 	dhcpProxies := func() string {
 		output, err := ctx.ExecVppctl("show", "dhcp", "proxy")
-		Expect(err).ShouldNot(HaveOccurred())
+		ctx.Expect(err).ShouldNot(HaveOccurred())
 		return output
 	}
 	dhcpProxyRegexp := func(vrf int) string {
@@ -196,28 +196,28 @@ func TestDhcpProxy(t *testing.T) {
 		dhcpProxy1,
 		dhcpProxy2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(linuxTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(dhcpProxy1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Eventually(ctx.GetValueStateClb(dhcpProxy2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromMs(msName, vppTapIP, PingWithSourceInterface(linuxTap1Hostname))).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP, PingWithSourceInterface(linuxTap2Hostname))).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(linuxTap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(dhcpProxy1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(dhcpProxy2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP, PingWithSourceInterface(linuxTap1Hostname))).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP, PingWithSourceInterface(linuxTap2Hostname))).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
-	Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf1ID)))
-	Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf2ID)))
+	ctx.Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf1ID)))
+	ctx.Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf2ID)))
 
 	err = ctx.GenericClient().ChangeRequest().Delete(
 		dhcpProxy1,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.AgentInSync()).To(BeTrue())
-	Expect(dhcpProxies()).ShouldNot(MatchRegexp(dhcpProxyRegexp(vrf1ID)))
-	Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf2ID)))
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(dhcpProxies()).ShouldNot(MatchRegexp(dhcpProxyRegexp(vrf1ID)))
+	ctx.Expect(dhcpProxies()).Should(MatchRegexp(dhcpProxyRegexp(vrf2ID)))
 
 }

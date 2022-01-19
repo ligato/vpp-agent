@@ -194,6 +194,7 @@ func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
 			"INITIAL_LOGLVL=" + logging.DefaultLogger.GetLevel().String(),
 			"ETCD_CONFIG=" + etcdConfig,
 			"GRPC_CONFIG=" + grpcConfig,
+			"DEBUG=" + os.Getenv("DEBUG"),
 		},
 	}
 	return opt
@@ -291,8 +292,8 @@ func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent s
 	testName := strings.ReplaceAll(ctx.t.Name(), string(filepath.Separator), "-")
 	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
 		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
-	Expect(err).To(Not(HaveOccurred()))
-	Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
+	ctx.Expect(err).To(Not(HaveOccurred()))
+	ctx.Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
 
 	// TODO register in context and delete in teardown? this doesn't matter
 	//  that much because file names contain unique test names so no file collision can happen
