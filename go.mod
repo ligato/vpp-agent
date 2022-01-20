@@ -10,7 +10,6 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/containerd/containerd v1.4.12 // indirect
 	github.com/coreos/go-iptables v0.4.5
-	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/docker/cli v0.0.0-20190822175708-578ab52ece34
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/fatih/color v1.10.0 // indirect
@@ -20,14 +19,11 @@ require (
 	github.com/go-errors/errors v1.0.1
 	github.com/goccy/go-graphviz v0.0.6
 	github.com/goccy/go-yaml v1.8.0
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.5.6
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/grpc-ecosystem/grpc-gateway v1.11.3 // indirect
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 	github.com/jhump/protoreflect v1.10.1
-	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/mapstructure v1.1.2
@@ -38,12 +34,12 @@ require (
 	github.com/opencontainers/runc v1.0.3 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.5.0
-	github.com/prometheus/client_golang v1.4.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/cobra v0.0.7
-	github.com/spf13/pflag v1.0.3
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/cobra v1.1.3
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.7.0
 	github.com/unrolled/render v0.0.0-20180914162206-b9786414de4d
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
@@ -51,16 +47,11 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
-	go.etcd.io/etcd v0.5.0-alpha.5.0.20210419091813-4276c3302675
-	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220111104833-05747d9d2783
-	go.uber.org/multierr v1.2.0 // indirect
+	go.etcd.io/etcd/client/v3 v3.5.1
+	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220120095228-fab55b0d3627
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 	gotest.tools/v3 v3.0.3 // indirect
 )
-
-replace google.golang.org/grpc => google.golang.org/grpc v1.27.0
-
-replace go.etcd.io/etcd => github.com/coreos/etcd v0.5.0-alpha.5.0.20210419091813-4276c3302675
