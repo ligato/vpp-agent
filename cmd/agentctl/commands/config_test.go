@@ -53,7 +53,6 @@ func Test_prepareNotifyFilters(t *testing.T) {
 			}
 			for i, n := range got {
 				if !proto.Equal(n, tt.want[i]) {
-					//if !reflect.DeepEqual(got, tt.want) {
 					t.Errorf("prepareNotifyFilters()[%d] = %v, want %v", i, n, tt.want[i])
 				}
 			}

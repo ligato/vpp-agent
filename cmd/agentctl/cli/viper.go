@@ -20,7 +20,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
-
 	"go.ligato.io/cn-infra/v2/logging"
 )
 

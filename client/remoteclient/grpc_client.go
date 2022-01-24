@@ -2,9 +2,9 @@ package remoteclient
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -37,7 +37,7 @@ func NewClientGRPC(conn grpc.ClientConnInterface, options ...NewClientOption) (c
 	}
 	for _, option := range options {
 		if err := option(c); err != nil {
-			return nil, errors.Errorf("can't apply option to newly created GRPC client due to: %v", err)
+			return nil, fmt.Errorf("cannot apply option to newly created GRPC client due to: %w", err)
 		}
 	}
 	return c, nil
@@ -60,29 +60,29 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	for _, modelDetail := range knownModels {
 		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
-			return nil, errors.Errorf("can't get protoFile from model options of "+
-				"known model %v due to: %v", modelDetail.ProtoName, err)
+			return nil, fmt.Errorf("cannot get protoFile from model options of "+
+				"known model %v due to: %w", modelDetail.ProtoName, err)
 		}
 		protoFilePaths[protoFilePath] = struct{}{}
 	}
 
 	// query meta service for extracted proto files to get their file descriptor protos
 	fileDescProtos := make(map[string]*descriptorpb.FileDescriptorProto) // deduplicaton + data container
-	for protoFilePath, _ := range protoFilePaths {
+	for protoFilePath := range protoFilePaths {
 		ctx := context.Background()
 		resp, err := c.meta.ProtoFileDescriptor(ctx, &generic.ProtoFileDescriptorRequest{
 			FullProtoFileName: protoFilePath,
 		})
 		if err != nil {
-			return nil, errors.Errorf("can't retrieve ProtoFileDescriptor "+
-				"for proto file %v due to: %v", protoFilePath, err)
+			return nil, fmt.Errorf("cannot retrieve ProtoFileDescriptor "+
+				"for proto file %v due to: %w", protoFilePath, err)
 		}
 		if resp.FileDescriptor == nil {
-			return nil, errors.Errorf("returned file descriptor proto "+
+			return nil, fmt.Errorf("returned file descriptor proto "+
 				"for proto file %v from meta service can't be nil", protoFilePath)
 		}
 		if resp.FileImportDescriptors == nil {
-			return nil, errors.Errorf("returned import file descriptors proto "+
+			return nil, fmt.Errorf("returned import file descriptors proto "+
 				"for proto file %v from meta service can't be nil", protoFilePath)
 		}
 
@@ -101,8 +101,8 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	}
 	fileDescriptors, err := toFileDescriptors(fileDescProtosSlice)
 	if err != nil {
-		return nil, errors.Errorf("can't convert file descriptor protos to file descriptors "+
-			"(for dependency registry creation) due to: %v", err)
+		return nil, fmt.Errorf("cannot convert file descriptor protos to file descriptors "+
+			"(for dependency registry creation) due to: %w", err)
 	}
 
 	// extract all messages from file descriptors
@@ -183,7 +183,7 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
 		//  (the value 1 generates from dynamic config the same json/yaml output as the hardcoded
 		//  configurator.Config and therefore serves for backward compatibility)
-		util.PlaceProtosIntoProtos(convertToProtoV2(protos), 1, protoDsts...)
+		util.PlaceProtosIntoProtos(protoMapToList(protos), 1, protoDsts...)
 	} else {
 		util.PlaceProtos(protos, dsts...)
 	}
@@ -260,14 +260,14 @@ func UseRemoteRegistry(modelClass string) NewClientOption {
 			// get all remote models
 			knownModels, err := grpcClient.KnownModels(modelClass)
 			if err != nil {
-				return errors.Errorf("can't retrieve remote models (in UseRemoteRegistry) due to: %w", err)
+				return fmt.Errorf("cannot retrieve remote models (in UseRemoteRegistry) due to: %w", err)
 			}
 
 			// fill them into new remote registry and use that registry instead of default local model registry
 			grpcClient.modelRegistry = models.NewRemoteRegistry()
 			for _, knowModel := range knownModels {
 				if _, err := grpcClient.modelRegistry.Register(knowModel, models.ToSpec(knowModel.Spec)); err != nil {
-					return errors.Errorf("can't register remote known model "+
+					return fmt.Errorf("cannot register remote known model "+
 						"for remote generic client usage due to: %w", err)
 				}
 			}
@@ -306,14 +306,14 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 					break
 				}
 				if err := reg.RegisterFile(resolvedDep); err != nil {
-					return nil, errors.Errorf("can't put resolved dependency %v "+
+					return nil, fmt.Errorf("cannot put resolved dependency %v "+
 						"into descriptor registry due to: %v", resolvedDep.Name(), err)
 				}
 			}
 			if allDepsFound {
 				fd, err := protodesc.NewFile(fdp, reg)
 				if err != nil {
-					return nil, errors.Errorf("can't create file descriptor "+
+					return nil, fmt.Errorf("cannot create file descriptor "+
 						"(from file descriptor proto named %v) due to: %v", *fdp.Name, err)
 				}
 				resolved[fdpName] = fd
@@ -323,7 +323,7 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 		}
 	}
 	if len(unresolvedFDProtos) > 0 {
-		return nil, errors.Errorf("can't resolve some FileDescriptorProtos due to missing of "+
+		return nil, fmt.Errorf("cannot resolve some FileDescriptorProtos due to missing of "+
 			"some protos of their imports (FileDescriptorProtos with unresolvable imports: %v)",
 			fileDescriptorProtoMapToString(unresolvedFDProtos))
 	}
@@ -337,7 +337,7 @@ func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]pr
 
 func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptorProto) string {
 	keys := make([]string, 0, len(fdps))
-	for key, _ := range fdps {
+	for key := range fdps {
 		keys = append(keys, key)
 	}
 	return strings.Join(keys, ",")
@@ -346,25 +346,20 @@ func fileDescriptorProtoMapToString(fdps map[string]*descriptorpb.FileDescriptor
 func extractProtoMessages(dsts []interface{}) []proto.Message {
 	protoDsts := make([]proto.Message, 0)
 	for _, dst := range dsts {
-		protoV1Dst, isProtoV1 := dst.(proto.Message)
-		if isProtoV1 {
-			protoDsts = append(protoDsts, proto.Message(protoV1Dst))
+		msg, ok := dst.(proto.Message)
+		if ok {
+			protoDsts = append(protoDsts, msg)
 		} else {
-			protoV2Dst, isProtoV2 := dst.(proto.Message)
-			if isProtoV2 {
-				protoDsts = append(protoDsts, protoV2Dst)
-			} else {
-				break
-			}
+			break
 		}
 	}
 	return protoDsts
 }
 
-func convertToProtoV2(protoMap map[string]proto.Message) []proto.Message {
+func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
 	result := make([]proto.Message, 0, len(protoMap))
 	for _, msg := range protoMap {
-		result = append(result, proto.Message(msg))
+		result = append(result, msg)
 	}
 	return result
 }

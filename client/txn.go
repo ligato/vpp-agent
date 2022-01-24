@@ -55,7 +55,7 @@ func (t *Txn) FindItem(id string) (model proto.Message, found bool) {
 	return item, ok
 }
 
-// Items returns map of items defined for the request,
+// ListItems returns map of items defined for the request,
 // where key represents model ID and nil value represents delete.
 // NOTE: Do not alter the returned map directly.
 func (t *Txn) ListItems() map[string]proto.Message {

@@ -35,8 +35,8 @@ type ProtoWithName struct {
 	ProtoMsgData string
 }
 
-// MarshalJSON marshalls proto message using the marshaller from jsonpb.
-// The jsonpb package produces a different output than the standard "encoding/json"
+// MarshalJSON marshalls proto message using the marshaller from protojson.
+// The protojson package produces a different output than the standard "encoding/json"
 // package, which does not operate correctly on protocol buffers.
 func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 	var (
@@ -50,7 +50,7 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		msgData = string(b) // protov1.CompactTextString(protov1.MessageV1(p.Message))
+		msgData = string(b)
 	}
 	pwn, err := json.Marshal(ProtoWithName{
 		ProtoMsgName: msgName,

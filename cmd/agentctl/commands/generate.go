@@ -121,8 +121,7 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 		if err != nil {
 			return fmt.Errorf("encoding to json failed: %v", err)
 		}
-		out = string(b)
-		b, err = yaml.JSONToYAML([]byte(out))
+		b, err = yaml.JSONToYAML(b)
 		if err != nil {
 			return fmt.Errorf("encoding to yaml failed: %v", err)
 		}

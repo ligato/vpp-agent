@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/db/keyval"
@@ -84,7 +85,7 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
 		//  (the value 1 generates from dynamic config the same json/yaml output as the hardcoded
 		//  configurator.Config and therefore serves for backward compatibility)
-		util.PlaceProtosIntoProtos(convertToProtoV2(protos), 1, protoDsts...)
+		util.PlaceProtosIntoProtos(protoMapToList(protos), 1, protoDsts...)
 	} else {
 		util.PlaceProtos(protos, dsts...)
 	}
@@ -163,24 +164,20 @@ func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 }
 
 func extractProtoMessages(dsts []interface{}) []proto.Message {
-	protoDsts := make([]proto.Message, 0)
+	msgs := make([]proto.Message, 0)
 	for _, dst := range dsts {
-		protoV1Dst, isProtoV1 := dst.(proto.Message)
-		if isProtoV1 {
-			protoDsts = append(protoDsts, protoV1Dst)
+		msg, ok := dst.(proto.Message)
+		if ok {
+			msgs = append(msgs, msg)
 		} else {
-			protoV2Dst, isProtoV2 := dst.(proto.Message)
-			if isProtoV2 {
-				protoDsts = append(protoDsts, protoV2Dst)
-			} else {
-				break
-			}
+			logrus.Debugf("at least one of the %d items is not proto message, but: %#v", len(dsts), dst)
+			break
 		}
 	}
-	return protoDsts
+	return msgs
 }
 
-func convertToProtoV2(protoMap map[string]proto.Message) []proto.Message {
+func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
 	result := make([]proto.Message, 0, len(protoMap))
 	for _, msg := range protoMap {
 		result = append(result, msg)

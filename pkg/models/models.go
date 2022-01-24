@@ -15,11 +15,11 @@
 package models
 
 import (
+	"fmt"
 	"path"
 	"reflect"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/runtime/protoimpl"
@@ -102,14 +102,14 @@ func GetKeyUsingModelRegistry(message proto.Message, modelRegistry Registry) (st
 	// find model for message
 	model, err := GetModelFromRegistryFor(message, modelRegistry)
 	if err != nil {
-		return "", errors.Errorf("can't find known model "+
-			"for message (while getting key for model) due to: %v (message = %+v)", err, message)
+		return "", fmt.Errorf("cannot find known model "+
+			"for message (while getting key for model) due to: %w (message = %+v)", err, message)
 	}
 
 	// compute Item.ID.Name
 	name, err := model.InstanceName(message)
 	if err != nil {
-		return "", errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
+		return "", fmt.Errorf("cannot compute model instance name due to: %v (message %+v)", err, message)
 	}
 
 	key := path.Join(model.KeyPrefix(), name)
@@ -151,12 +151,12 @@ func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Mess
 	// get go type of statically generated proto message corresponding to locally known dynamic message
 	model, err := GetModelFor(dynamicMessage)
 	if err != nil {
-		return nil, errors.Errorf("can't get model "+
-			"for dynamic message due to: %v (message=%v)", err, dynamicMessage)
+		return nil, fmt.Errorf("can't get model "+
+			"for dynamic message due to: %w (message=%v)", err, dynamicMessage)
 	}
 	goType := model.LocalGoType() // only for locally known models will return meaningful go type
 	if goType == nil {
-		return nil, errors.Errorf("dynamic messages for remote models are not supported due to "+
+		return nil, fmt.Errorf("dynamic messages for remote models are not supported due to "+
 			"not available go type of statically generated proto message (dynamic message=%v)", dynamicMessage)
 	}
 
@@ -168,14 +168,6 @@ func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Mess
 		registeredGoType = reflect.Zero(goType).Interface()
 	}
 
-	/*message, isProtoV2 := registeredGoType.(protoreflect.ProtoMessage)
-	  if !isProtoV2 {
-	  	messageV1, isProtoV1 := registeredGoType.(protoiface.MessageV1)
-	  	if !isProtoV1 {
-	  		return nil, errors.Errorf("registered go type(%T) is not proto.Message", registeredGoType)
-	  	}
-	  	message = protoimpl.X.ProtoMessageV2Of(messageV1)
-	  }*/
 	message := protoMessageOf(registeredGoType)
 
 	// fill empty statically-generated proto message with data from its dynamic proto message counterpart

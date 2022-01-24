@@ -31,9 +31,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
-
-	//protoV2 "google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
@@ -133,9 +130,9 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	flags.BoolVar(&opts.Replace, "replace", false, "Replaces all existing config")
 	// TODO implement waitdone also for generic client
-	//flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
+	// flags.BoolVar(&opts.WaitDone, "waitdone", false, "Waits until config update is done")
 	// TODO implement transaction output when verbose is used
-	//flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
+	// flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t",
 		5*time.Minute, "Timeout for sending updated data")
 	return cmd
@@ -144,8 +141,8 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 type ConfigUpdateOptions struct {
 	Format  string
 	Replace bool
-	//WaitDone bool
-	//Verbose  bool
+	// WaitDone bool
+	// Verbose  bool
 	Timeout time.Duration
 }
 
@@ -202,12 +199,12 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 
 	// update/resync configuration
 	if opts.Replace {
-		if err := c.ResyncConfig(convertToProtoV1(configMessages)...); err != nil {
+		if err := c.ResyncConfig(configMessages...); err != nil {
 			return fmt.Errorf("resync failed: %v", err)
 		}
 	} else {
 		req := c.ChangeRequest()
-		req.Update(convertToProtoV1(configMessages)...)
+		req.Update(configMessages...)
 		if err := req.Send(ctx); err != nil {
 			return fmt.Errorf("send failed: %v", err)
 		}
@@ -255,7 +252,7 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := cli.Client().ConfiguratorClient()
+	c, err := cli.Client().ConfiguratorClient()
 	if err != nil {
 		return err
 	}
@@ -283,7 +280,7 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 	var data interface{}
 
 	var header metadata.MD
-	resp, err := client.Delete(ctx, &configurator.DeleteRequest{
+	resp, err := c.Delete(ctx, &configurator.DeleteRequest{
 		Delete:   update,
 		WaitDone: opts.WaitDone,
 	}, grpc.Header(&header))
@@ -320,14 +317,6 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 	return nil
 }
 
-func convertToProtoV1(messages []proto.Message) []proto.Message {
-	result := make([]proto.Message, 0, len(messages))
-	for _, message := range messages {
-		result = append(result, message)
-	}
-	return result
-}
-
 func newConfigRetrieveCommand(cli agentcli.Cli) *cobra.Command {
 	var (
 		opts ConfigRetrieveOptions
@@ -354,11 +343,11 @@ func runConfigRetrieve(cli agentcli.Cli, opts ConfigRetrieveOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := cli.Client().ConfiguratorClient()
+	c, err := cli.Client().ConfiguratorClient()
 	if err != nil {
 		return err
 	}
-	resp, err := client.Dump(ctx, &configurator.DumpRequest{})
+	resp, err := c.Dump(ctx, &configurator.DumpRequest{})
 	if err != nil {
 		return err
 	}
@@ -407,7 +396,7 @@ func runConfigWatch(cli agentcli.Cli, opts ConfigWatchOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := cli.Client().ConfiguratorClient()
+	c, err := cli.Client().ConfiguratorClient()
 	if err != nil {
 		return err
 	}
@@ -418,7 +407,7 @@ func runConfigWatch(cli agentcli.Cli, opts ConfigWatchOptions) error {
 	}
 
 	var nextIdx uint32
-	stream, err := client.Notify(ctx, &configurator.NotifyRequest{
+	stream, err := c.Notify(ctx, &configurator.NotifyRequest{
 		Idx:     nextIdx,
 		Filters: filters,
 	})

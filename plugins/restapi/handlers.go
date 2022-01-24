@@ -19,6 +19,7 @@ package restapi
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,7 +27,6 @@ import (
 	"strings"
 
 	yaml2 "github.com/ghodss/yaml"
-	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
 	"github.com/unrolled/render"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -79,7 +79,7 @@ const (
 var (
 	// ErrHandlerUnavailable represents error returned when particular
 	// handler is not available
-	ErrHandlerUnavailable = errors.New("Handler is not available")
+	ErrHandlerUnavailable = errors.New("handler is not available")
 )
 
 func (p *Plugin) registerInfoHandlers() {
@@ -493,7 +493,7 @@ func allFileDescriptorProtos(knownModels []*client.ModelInfo) []*descriptorpb.Fi
 // versionHandler returns version of Agent.
 func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		version := types.Version{
+		ver := types.Version{
 			App:       version.App(),
 			Version:   version.Version(),
 			GitCommit: version.GitCommit(),
@@ -505,7 +505,7 @@ func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 			OS:        runtime.GOOS,
 			Arch:      runtime.GOARCH,
 		}
-		p.logError(formatter.JSON(w, http.StatusOK, version))
+		p.logError(formatter.JSON(w, http.StatusOK, ver))
 	}
 }
 
@@ -556,7 +556,7 @@ func (p *Plugin) validationHandler(formatter *render.Render) http.HandlerFunc {
 		}
 
 		// run Descriptor validators on config messages
-		err = p.KVScheduler.ValidateSemantically(convertToProtoV1(configMessages))
+		err = p.KVScheduler.ValidateSemantically(configMessages)
 		if err != nil {
 			if validationErrors, ok := err.(*kvscheduler.InvalidMessagesError); ok {
 				convertedValidationErrors := p.ConvertValidationErrorOutput(validationErrors, knownModels, config)
@@ -663,9 +663,9 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 			json, err := protojson.Marshal(messageError.ParentMessage())
 			if err == nil {
 				parentConfigPart = string(json)
-				yaml, err := yaml2.JSONToYAML(json)
+				b, err := yaml2.JSONToYAML(json)
 				if err == nil {
-					parentConfigPart = string(yaml)
+					parentConfigPart = string(b)
 				}
 			}
 		}
@@ -676,9 +676,9 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 		json, err := protojson.Marshal(messageError.Message())
 		if err == nil {
 			configPart = string(json)
-			yaml, err := yaml2.JSONToYAML(json)
+			b, err := yaml2.JSONToYAML(json)
 			if err == nil {
-				configPart = string(yaml)
+				configPart = string(b)
 			}
 		}
 
@@ -720,14 +720,6 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 		convertedValidationErrors = append(convertedValidationErrors, convertedValidationError)
 	}
 	return convertedValidationErrors
-}
-
-func convertToProtoV1(messages []proto.Message) []proto.Message {
-	result := make([]proto.Message, 0, len(messages))
-	for _, message := range messages {
-		result = append(result, message.ProtoReflect().Interface())
-	}
-	return result
 }
 
 // configurationGetHandler returns NB configuration of VPP-Agent in yaml format as used by agentctl.
@@ -891,13 +883,13 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 
 		// create context for data push
 		ctx := context.Background()
-		//// FullResync
+		// // FullResync
 		if _, found := req.URL.Query()[URLReplaceParamName]; found {
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 		}
-		//// Note: using "grpc" data source so that 'agentctl update --replace' can also work with this data
-		//// ('agentctl update' can change data also from non-grpc data sources, but
-		//// 'agentctl update --replace' (=resync) can't)
+		// // Note: using "grpc" data source so that 'agentctl update --replace' can also work with this data
+		// // ('agentctl update' can change data also from non-grpc data sources, but
+		// // 'agentctl update --replace' (=resync) can't)
 		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 
 		// config data pushed into VPP-Agent
