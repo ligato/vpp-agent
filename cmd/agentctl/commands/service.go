@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -25,7 +26,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/grpcreflect"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ref "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
@@ -78,7 +78,7 @@ func runServiceList(cli agentcli.Cli, opts ServiceListOptions) error {
 	services, err := c.ListServices()
 	if err != nil {
 		msg := status.Convert(err).Message()
-		return errors.Wrapf(err, "listing services failed: %v", msg)
+		return fmt.Errorf("listing services failed: %v: %w", msg, err)
 	}
 
 	for _, srv := range services {
@@ -144,7 +144,7 @@ func runServiceCall(cli agentcli.Cli, opts ServiceCallOptions) error {
 	svc, err := c.ResolveService(opts.Service)
 	if err != nil {
 		msg := status.Convert(err).Message()
-		return errors.Wrapf(err, "resolving service failed: %v", msg)
+		return fmt.Errorf("resolving service failed: %v: %w", msg, err)
 	}
 
 	m := svc.FindMethodByName(opts.Method)

@@ -17,8 +17,8 @@ package kvscheduler
 import (
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
 
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
@@ -55,7 +55,9 @@ func checkRecordedValues(recorded, expected []RecordedKVPair) {
 		for _, kv2 := range recorded {
 			if kv2.Key == kv.Key {
 				found = true
-				Expect(proto.Equal(kv2.Value, kv.Value)).To(BeTrue())
+				if kv2.Value != nil && kv.Value != nil {
+					Expect(proto.Equal(kv2.Value.Message, kv.Value.Message)).To(BeTrue())
+				}
 				Expect(kv2.Origin).To(Equal(kv.Origin))
 			}
 		}
@@ -66,8 +68,12 @@ func checkRecordedValues(recorded, expected []RecordedKVPair) {
 func checkTxnOperation(recorded, expected *RecordedTxnOp) {
 	Expect(recorded.Operation).To(Equal(expected.Operation))
 	Expect(recorded.Key).To(Equal(expected.Key))
-	Expect(proto.Equal(recorded.PrevValue, expected.PrevValue)).To(BeTrue())
-	Expect(proto.Equal(recorded.NewValue, expected.NewValue)).To(BeTrue())
+	if recorded.PrevValue != nil && expected.PrevValue != nil {
+		Expect(proto.Equal(recorded.PrevValue, expected.PrevValue)).To(BeTrue())
+	}
+	if recorded.NewValue != nil && expected.NewValue != nil {
+		Expect(proto.Equal(recorded.NewValue, expected.NewValue)).To(BeTrue())
+	}
 	Expect(recorded.PrevState).To(Equal(expected.PrevState))
 	Expect(recorded.NewState).To(Equal(expected.NewState))
 	if expected.PrevErr == nil {

@@ -16,15 +16,17 @@ package descriptor
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	"net"
+
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/wgidx"
-	"net"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
@@ -67,21 +69,19 @@ var (
 
 	// ErrWgPeerAllowedIPs is returned when one of allowedIp address was not set to valid IP address.
 	ErrWgPeerAllowedIPs = errors.New("Invalid wireguard peer allowedIps")
-
-
 )
 
 // WgPeerDescriptor teaches KVScheduler how to configure VPP wg peer.
 type WgPeerDescriptor struct {
-	log          logging.Logger
+	log       logging.Logger
 	wgHandler vppcalls.WgVppAPI
 }
 
 // NewWgPeerDescriptor creates a new instance of the wireguard interface descriptor.
 func NewWgPeerDescriptor(wgHandler vppcalls.WgVppAPI, log logging.PluginLogger) *WgPeerDescriptor {
 	return &WgPeerDescriptor{
-		wgHandler:    wgHandler,
-		log:          log.NewLogger("wg-peer-descriptor"),
+		wgHandler: wgHandler,
+		log:       log.NewLogger("wg-peer-descriptor"),
 	}
 }
 
@@ -89,18 +89,18 @@ func NewWgPeerDescriptor(wgHandler vppcalls.WgVppAPI, log logging.PluginLogger) 
 // the KVScheduler.
 func (d *WgPeerDescriptor) GetDescriptor() *adapter.PeerDescriptor {
 	return &adapter.PeerDescriptor{
-		Name:            PeerDescriptorName,
-		NBKeyPrefix:     wg.ModelPeer.KeyPrefix(),
-		ValueTypeName:   wg.ModelPeer.ProtoName(),
-		KeySelector:     wg.ModelPeer.IsKeyValid,
-		KeyLabel:        wg.ModelPeer.StripKeyPrefix,
-		ValueComparator: d.EquivalentWgPeers,
-		Validate:        d.Validate,
-		Create:          d.Create,
-		Delete:          d.Delete,
-		Retrieve:        d.Retrieve,
+		Name:                 PeerDescriptorName,
+		NBKeyPrefix:          wg.ModelPeer.KeyPrefix(),
+		ValueTypeName:        wg.ModelPeer.ProtoName(),
+		KeySelector:          wg.ModelPeer.IsKeyValid,
+		KeyLabel:             wg.ModelPeer.StripKeyPrefix,
+		ValueComparator:      d.EquivalentWgPeers,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
 		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
-		WithMetadata:    true,
+		WithMetadata:         true,
 	}
 }
 
@@ -130,7 +130,7 @@ func (d *WgPeerDescriptor) Validate(key string, peer *wg.Peer) (err error) {
 	}
 
 	for _, allowedIp := range peer.AllowedIps {
-		_,err := ip_types.ParsePrefix(allowedIp)
+		_, err := ip_types.ParsePrefix(allowedIp)
 		if err != nil {
 			return kvs.NewInvalidValueError(ErrWgPeerAllowedIPs, "allowed_ips")
 		}
@@ -174,9 +174,9 @@ func (d *WgPeerDescriptor) Retrieve(correlate []adapter.PeerKVWithMetadata) (dum
 	}
 	for _, peer := range peers {
 		dump = append(dump, adapter.PeerKVWithMetadata{
-			Key:      models.Key(peer),
-			Value:    peer,
-			Origin:   kvs.FromNB,
+			Key:    models.Key(peer),
+			Value:  peer,
+			Origin: kvs.FromNB,
 		})
 	}
 

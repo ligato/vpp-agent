@@ -15,8 +15,9 @@
 package utils
 
 import (
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ProtoToString converts proto message to string.
@@ -31,11 +32,11 @@ func ProtoToString(msg proto.Message) string {
 	if msg == nil {
 		return "<NIL>"
 	}
-	if _, isEmpty := msg.(*prototypes.Empty); isEmpty {
+	if _, isEmpty := msg.(*emptypb.Empty); isEmpty {
 		return "<EMPTY>"
 	}
 	// wrap with curly braces, it is easier to read
-	return "{ " + msg.String() + " }"
+	return "{ " + prototext.Format(msg) + " }"
 }
 
 // ErrorToString converts error to string.

@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
-	"go.ligato.io/vpp-agent/v3/pkg/util"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -17,6 +13,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // field proto name/json name constants (can't be changes to not break json/yaml compatibility with configurator.Config)
@@ -92,19 +92,19 @@ func NewDynamicConfig(knownModels []*models.ModelInfo) (*dynamicpb.Message, erro
 	// create dependency registry
 	dependencyRegistry, err := createFileDescRegistry(knownModels)
 	if err != nil {
-		return nil, errors.Errorf("can't create dependency file descriptor registry due to: %v", err)
+		return nil, fmt.Errorf("cannot create dependency file descriptor registry due to: %w", err)
 	}
 
 	// get file descriptor proto for give known models
 	fileDP, rootMsgName, err := createDynamicConfigDescriptorProto(knownModels, dependencyRegistry)
 	if err != nil {
-		return nil, errors.Errorf("can't create descriptor proto for dynamic config due to: %v", err)
+		return nil, fmt.Errorf("cannot create descriptor proto for dynamic config due to: %v", err)
 	}
 
 	// convert file descriptor proto to file descriptor
 	fd, err := protodesc.NewFile(fileDP, dependencyRegistry)
 	if err != nil {
-		return nil, errors.Errorf("can't convert file descriptor proto to file descriptor due to: %v", err)
+		return nil, fmt.Errorf("cannot convert file descriptor proto to file descriptor due to: %v", err)
 	}
 
 	// get descriptor for config root message
@@ -200,28 +200,28 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 			TypeName: proto.String(fmt.Sprintf(".%v", modelDetail.ProtoName)),
 		})
 
-		//add proto file dependency for this known model (+ check that it is in dependency file descriptor registry)
+		// add proto file dependency for this known model (+ check that it is in dependency file descriptor registry)
 		protoFile, err := ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
-			error = errors.Errorf("can't retrieve protoFile from model options "+
+			error = fmt.Errorf("cannot retrieve protoFile from model options "+
 				"from model %v due to: %v", modelDetail.ProtoName, err)
 			return
 		}
 		if _, found := importedDependency[protoFile]; !found {
 			importedDependency[protoFile] = struct{}{}
 
-			//add proto file dependency for this known model
+			// add proto file dependency for this known model
 			fileDP.Dependency = append(fileDP.Dependency, protoFile)
 
 			// checking dependency registry that should already contain the linked dependency
 			if _, err := dependencyRegistry.FindFileByPath(protoFile); err != nil {
 				if err == protoregistry.NotFound {
-					error = errors.Errorf("proto file %v need to be referenced in dynamic config, but it "+
+					error = fmt.Errorf("proto file %v need to be referenced in dynamic config, but it "+
 						"is not in dependency registry that was created from file descriptor proto input "+
 						"(missing in input? check debug output from creating dependency registry) ", protoFile)
 					return
 				}
-				error = errors.Errorf("can't verify that proto file %v is in "+
+				error = fmt.Errorf("cannot verify that proto file %v is in "+
 					"dependency registry, it is due to: %v", protoFile, err)
 				return
 			}
@@ -265,7 +265,7 @@ func DynamicConfigKnownModelFieldNaming(modelDetail *models.ModelInfo) (protoNam
 // dynamic config (i.e. after json/yaml loading into dynamic config).
 func DynamicConfigExport(dynamicConfig *dynamicpb.Message) ([]proto.Message, error) {
 	if dynamicConfig == nil {
-		return nil, errors.Errorf("dynamic config can't be nil")
+		return nil, fmt.Errorf("dynamic config cannot be nil")
 	}
 
 	// iterate over config group messages and extract proto message from them
@@ -300,17 +300,17 @@ func ExportDynamicConfigStructure(dynamicConfig proto.Message) (string, error) {
 	}
 	b, err := m.Marshal(dynamicConfig)
 	if err != nil {
-		return "", errors.Errorf("can't marshal dynamic config to json due to: %v", err)
+		return "", fmt.Errorf("cannot marshal dynamic config to json due to: %v", err)
 	}
 	var jsonObj interface{}
 	err = yaml.UnmarshalWithOptions(b, &jsonObj, yaml.UseOrderedMap())
 	if err != nil {
-		return "", errors.Errorf("can't convert dynamic config's json bytes to "+
+		return "", fmt.Errorf("cannot convert dynamic config's json bytes to "+
 			"json struct for yaml marshalling due to: %v", err)
 	}
 	bb, err := yaml.Marshal(jsonObj)
 	if err != nil {
-		return "", errors.Errorf("can't marshal dynamic config from json to yaml due to: %v", err)
+		return "", fmt.Errorf("cannot marshal dynamic config from json to yaml due to: %v", err)
 	}
 	return string(bb), nil
 }
@@ -348,16 +348,16 @@ func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, 
 	for _, option := range options {
 		if option.Key == key {
 			if len(option.Values) == 0 {
-				return "", errors.Errorf("there is no value for key %v in model options", key)
+				return "", fmt.Errorf("there is no value for key %v in model options", key)
 			}
 			if strings.TrimSpace(option.Values[0]) == "" {
-				return "", errors.Errorf("there is no value(only empty string "+
+				return "", fmt.Errorf("there is no value(only empty string "+
 					"after trimming) for key %v in model options", key)
 			}
 			return option.Values[0], nil
 		}
 	}
-	return "", errors.Errorf("there is no model option with key %v (model options=%+v))", key, options)
+	return "", fmt.Errorf("there is no model option with key %v (model options=%+v))", key, options)
 }
 
 func existsModelOptionFor(key string, options []*generic.ModelDetail_Option) bool {

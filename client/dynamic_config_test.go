@@ -19,21 +19,20 @@ import (
 	"encoding/json"
 	"testing"
 
-	testmodel "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto"
-
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
-	protoV1 "github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	testmodel "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_srv6 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/srv6"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 // TestYamlCompatibility test dynamically generated all-in-one configuration proto message to be compatible
@@ -60,8 +59,8 @@ func TestYamlCompatibility(t *testing.T) {
 	for _, model := range models.RegisteredModels() {
 		if model.Spec().Class == "config" {
 			knownModels = append(knownModels, &models.ModelInfo{
-				ModelDetail:       *model.ModelDetail(),
-				MessageDescriptor: protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
+				ModelDetail:       model.ModelDetail(),
+				MessageDescriptor: model.NewInstance().ProtoReflect().Descriptor(),
 			})
 		}
 	}
@@ -107,8 +106,8 @@ func TestDynamicConfigWithThirdPartyModel(t *testing.T) {
 	for _, model := range models.RegisteredModels() {
 		if model.Spec().Class == "config" && model.Spec().Module == "model" {
 			knownModels = append(knownModels, &models.ModelInfo{
-				ModelDetail:       *model.ModelDetail(),
-				MessageDescriptor: protoV1.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
+				ModelDetail:       model.ModelDetail(),
+				MessageDescriptor: model.NewInstance().ProtoReflect().Descriptor(),
 			})
 		}
 	}

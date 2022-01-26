@@ -17,8 +17,6 @@ package linux_interfaces
 import (
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 )
@@ -49,7 +47,7 @@ const (
 	InterfaceHostNameKeyPrefix = "linux/interface/host-name/"
 
 	interfaceHostNameWithAddrKeyTmpl = InterfaceHostNameKeyPrefix + "{host-name}/address/{address}"
-	interfaceHostNameWithVrfKeyTmpl = InterfaceHostNameKeyPrefix + "{host-name}/vrf-host-name/{vrf-host-name}"
+	interfaceHostNameWithVrfKeyTmpl  = InterfaceHostNameKeyPrefix + "{host-name}/vrf-host-name/{vrf-host-name}"
 
 	/* Interface State (derived) */
 
@@ -299,20 +297,4 @@ func ParseInterfaceVrfKey(key string) (iface string, vrf string, invalidKey, isV
 	}
 	vrf = parts[vrfIdx+1]
 	return
-}
-
-// MarshalJSON ensures that field of type 'oneOf' is correctly marshaled
-// by using protobuf json marshaller
-func (m *Interface) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-// UnmarshalJSON ensures that field of type 'oneOf' is correctly unmarshaled
-func (m *Interface) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
 }

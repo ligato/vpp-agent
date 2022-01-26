@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "go.ligato.io/vpp-agent/v3/examples/customize/custom_api_model/proto/custom;custom";
+
 package custom;
 
 message MyModel {

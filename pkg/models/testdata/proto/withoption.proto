@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto;model";
+
 package model;
 
 import "ligato/generic/options.proto";

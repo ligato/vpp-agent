@@ -18,8 +18,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	vpp_syslog "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/proto/custom/vpp/syslog"
 	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/descriptor/adapter"

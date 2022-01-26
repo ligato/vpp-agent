@@ -77,75 +77,75 @@ func TestInterfaceConnTap(t *testing.T) {
 		vppTap,
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
 
 	// resync TAPs
 	err = ctx.GenericClient().ResyncConfig(
 		vppTap,
 		linuxTap,
 	)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
 		ctx.StopMicroservice(msName)
-		Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Eventually(ctx.GetValueStateClb(linuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Eventually(ctx.GetValueStateClb(linuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 		ctx.StartMicroservice(msName)
-		Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
-		Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
+		ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 
 	// re-create VPP TAP
 	err = ctx.GenericClient().ChangeRequest().
 		Delete(vppTap).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).NotTo(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
 		vppTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromVPPClb(linuxTapIP)).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromVPPClb(linuxTapIP)).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create Linux TAP
 	err = ctx.GenericClient().ChangeRequest().Delete(
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).NotTo(Succeed())
 
 	err = ctx.GenericClient().ChangeRequest().Update(
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromVPPClb(linuxTapIP)).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromVPPClb(linuxTapIP)).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 // connect VPP with a microservice via TAP tunnel interface
@@ -202,12 +202,12 @@ func TestInterfaceTapTunnel(t *testing.T) {
 		vppTap,
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	//Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-	//Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	//ctx.Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
+	//ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
 
 	ctx.ExecVppctl("show", "int")
 	ctx.ExecVppctl("show", "int", "addr")
@@ -220,32 +220,32 @@ func TestInterfaceTapTunnel(t *testing.T) {
 		vppTap,
 		linuxTap,
 	)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
 	ctx.ExecVppctl("show", "int")
 	ctx.ExecVppctl("show", "int", "addr")
 	ctx.ExecCmd("ip", "link")
 	ctx.ExecCmd("ip", "addr")
 
-	Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	//Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-	//Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	//ctx.Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
+	//ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
 
 	// restart microservice twice
 	/*for i := 0; i < 2; i++ {
 		ctx.stopMicroservice(msName)
-		Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Eventually(ctx.getValueStateClb(linuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
-		Expect(ctx.agentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Eventually(ctx.getValueStateClb(linuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
+		ctx.Expect(ctx.agentInSync()).To(BeTrue())
 
 		ctx.startMicroservice(msName)
-		Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
-		Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
-		Expect(ctx.agentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.getValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.getValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.pingFromVPP(linuxTapIP)).To(Succeed())
+		ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
+		ctx.Expect(ctx.agentInSync()).To(BeTrue())
 	}
 
 	// re-create VPP TAP
@@ -253,40 +253,40 @@ func TestInterfaceTapTunnel(t *testing.T) {
 	err = req.Delete(
 		vppTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
-	Expect(ctx.pingFromMs(msName, vppTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).NotTo(Succeed())
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		vppTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.pingFromVPPClb(linuxTapIP)).Should(Succeed())
-	Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.pingFromVPPClb(linuxTapIP)).Should(Succeed())
+	ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Expect(ctx.agentInSync()).To(BeTrue())
 
 	// re-create Linux TAP
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
-	Expect(ctx.pingFromMs(msName, vppTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.pingFromVPP(linuxTapIP)).NotTo(Succeed())
+	ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).NotTo(Succeed())
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		linuxTap,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.pingFromVPPClb(linuxTapIP)).Should(Succeed())
-	Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
-	Expect(ctx.agentInSync()).To(BeTrue())*/
+	ctx.Eventually(ctx.pingFromVPPClb(linuxTapIP)).Should(Succeed())
+	ctx.Expect(ctx.pingFromMs(msName, vppTapIP)).To(Succeed())
+	ctx.Expect(ctx.agentInSync()).To(BeTrue())*/
 }
 
 // connect VPP with a microservice via AF-PACKET + VETH interfaces
@@ -352,30 +352,30 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 		veth1,
 		veth2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+	ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
 		ctx.StopMicroservice(msName)
-		Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Eventually(ctx.GetValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Eventually(ctx.GetValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Eventually(ctx.GetValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Eventually(ctx.GetValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 		ctx.StartMicroservice(msName)
-		Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-		Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+		ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 
 	// re-create AF-PACKET
@@ -383,40 +383,40 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 	err = req.Delete(
 		afPacket,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		afPacket,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create VETH
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		veth2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		veth2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 // Connect VPP with a microservice via AF-PACKET + VETH interfaces.
@@ -483,30 +483,30 @@ func TestInterfaceAfPacketWithLogicalReference(t *testing.T) {
 		veth1,
 		veth2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+	ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
 		ctx.StopMicroservice(msName)
-		Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Eventually(ctx.GetValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Eventually(ctx.GetValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
-		Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Eventually(ctx.GetValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Eventually(ctx.GetValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
+		ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 		ctx.StartMicroservice(msName)
-		Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
-		Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
-		Expect(ctx.AgentInSync()).To(BeTrue())
+		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
+		ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	}
 
 	// re-create AF-PACKET
@@ -514,38 +514,38 @@ func TestInterfaceAfPacketWithLogicalReference(t *testing.T) {
 	err = req.Delete(
 		afPacket,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		afPacket,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// re-create VETH
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Delete(
 		veth2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).NotTo(Succeed())
 
 	req = ctx.GenericClient().ChangeRequest()
 	err = req.Update(
 		veth2,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
-	Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
+	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }

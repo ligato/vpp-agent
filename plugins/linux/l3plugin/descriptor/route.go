@@ -19,12 +19,12 @@ import (
 	"net"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
-
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+	prototypes "google.golang.org/protobuf/types/known/emptypb"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"

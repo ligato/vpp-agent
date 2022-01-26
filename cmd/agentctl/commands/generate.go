@@ -17,18 +17,19 @@ package commands
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
+
+const defaultIndent = "  "
 
 func NewGenerateCommand(cli agentcli.Cli) *cobra.Command {
 	var (
@@ -78,53 +79,64 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 	logrus.Debugf("models: %+v", modelList)
 	model := modelList[0]
 
-	valueType := proto.MessageType(model.ProtoName)
+	valueType := protoMessageType(model.ProtoName)
 	if valueType == nil {
 		return fmt.Errorf("unknown proto message defined for: %s", model.ProtoName)
 	}
-	modelInstance := reflect.New(valueType.Elem()).Interface().(proto.Message)
+	modelInstance := valueType.New().Interface()
 
 	var out string
 
 	switch strings.ToLower(opts.Format) {
 	case "j", "json":
-		m := jsonpb.Marshaler{
-			EnumsAsInts:  false,
-			EmitDefaults: true,
-			Indent:       "  ",
-			OrigName:     true,
-			AnyResolver:  nil,
+		m := protojson.MarshalOptions{
+			UseEnumNumbers:  false,
+			EmitUnpopulated: true,
+			AllowPartial:    true,
+			Indent:          defaultIndent,
+			UseProtoNames:   true,
+			Resolver:        nil,
 		}
 		if opts.OneLine {
 			m.Indent = ""
 		}
-		out, err = m.MarshalToString(modelInstance)
+		b, err := m.Marshal(modelInstance)
 		if err != nil {
 			return fmt.Errorf("encoding to json failed: %v", err)
 		}
+		out = string(b)
 	case "y", "yaml":
-		m := jsonpb.Marshaler{
-			EnumsAsInts:  false,
-			EmitDefaults: true,
-			Indent:       "  ",
-			OrigName:     true,
-			AnyResolver:  nil,
+		m := protojson.MarshalOptions{
+			UseEnumNumbers:  false,
+			AllowPartial:    true,
+			EmitUnpopulated: true,
+			Indent:          defaultIndent,
+			UseProtoNames:   true,
+			Resolver:        nil,
 		}
-		out, err = m.MarshalToString(modelInstance)
+		if opts.OneLine {
+			m.Indent = ""
+		}
+		b, err := m.Marshal(modelInstance)
 		if err != nil {
 			return fmt.Errorf("encoding to json failed: %v", err)
 		}
-		b, err := yaml.JSONToYAML([]byte(out))
+		b, err = yaml.JSONToYAML(b)
 		if err != nil {
 			return fmt.Errorf("encoding to yaml failed: %v", err)
 		}
 		out = string(b)
 	case "p", "proto":
-		m := proto.TextMarshaler{
-			Compact:   false,
-			ExpandAny: false,
+		m := prototext.MarshalOptions{
+			AllowPartial: true,
+			Indent:       "  ",
+			Resolver:     nil,
 		}
-		out = m.Text(modelInstance)
+		b, err := m.Marshal(modelInstance)
+		if err != nil {
+			return fmt.Errorf("encoding to proto text failed: %v", err)
+		}
+		out = string(b)
 	default:
 		return fmt.Errorf("unknown format: %s", opts.Format)
 	}

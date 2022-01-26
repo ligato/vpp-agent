@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
 
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
@@ -59,7 +59,7 @@ func TestNotifications(t *testing.T) {
 			}
 			return true
 		},
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 0, test.WithoutRetrieve)
@@ -68,7 +68,7 @@ func TestNotifications(t *testing.T) {
 		Name:          descriptor2Name,
 		NBKeyPrefix:   prefixB,
 		KeySelector:   prefixSelector(prefixB),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixB+baseValue2 {
@@ -752,7 +752,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 0, test.WithoutRetrieve)
@@ -761,7 +761,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 		Name:          descriptor2Name,
 		NBKeyPrefix:   prefixB,
 		KeySelector:   prefixSelector(prefixB),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixB+baseValue2 {
 				depKey := prefixA + baseValue1
@@ -785,7 +785,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 		Name:            descriptor3Name,
 		NBKeyPrefix:     prefixC,
 		KeySelector:     prefixSelector(prefixC),
-		ValueTypeName:   proto.MessageName(test.NewStringValue("")),
+		ValueTypeName:   string(proto.MessageName(test.NewStringValue(""))),
 		ValueComparator: test.StringValueComparator,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixC+baseValue3 {

@@ -15,9 +15,9 @@
 package descriptor
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -61,7 +61,7 @@ func (d *BDInterfaceDescriptor) GetDescriptor() *adapter.BDInterfaceDescriptor {
 	return &adapter.BDInterfaceDescriptor{
 		Name:          BDInterfaceDescriptorName,
 		KeySelector:   d.IsBDInterfaceKey,
-		ValueTypeName: proto.MessageName(&l2.BridgeDomain_Interface{}),
+		ValueTypeName: string(proto.MessageName(&l2.BridgeDomain_Interface{})),
 		Create:        d.Create,
 		Delete:        d.Delete,
 		Dependencies:  d.Dependencies,

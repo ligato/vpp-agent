@@ -16,14 +16,16 @@ package e2e
 
 import (
 	"context"
+	"testing"
+
 	. "github.com/onsi/gomega"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	"testing"
 )
 
 // TestIPv4Routes tests L3 routes in the default VRF and for various scopes
@@ -135,17 +137,17 @@ func TestIPv4Routes(t *testing.T) {
 		vppTap2, linuxTap2,
 		subnet1LinuxRoute, subnet2LinuxRoute,
 	)
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(subnet1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-	Expect(ctx.GetValueState(subnet2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(vppTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(linuxTap2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(subnet1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(ctx.GetValueState(subnet2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	Expect(ctx.AlreadyRunningMicroservice(msName1).Ping("20.0.0.2")).To(Succeed())
-	Expect(ctx.AlreadyRunningMicroservice(msName2).Ping("10.0.0.2")).To(Succeed())
+	ctx.Expect(ctx.AlreadyRunningMicroservice(msName1).Ping("20.0.0.2")).To(Succeed())
+	ctx.Expect(ctx.AlreadyRunningMicroservice(msName2).Ping("10.0.0.2")).To(Succeed())
 
 	// keep the current number of routes before the update
 	numLinuxRoutes := ctx.NumValues(&linux_l3.Route{}, kvs.SBView)
@@ -154,11 +156,11 @@ func TestIPv4Routes(t *testing.T) {
 	err = ctx.GenericClient().ChangeRequest().Update(
 		subnet2LinuxLinkRoute,
 	).Send(context.Background())
-	Expect(err).ToNot(HaveOccurred())
+	ctx.Expect(err).ToNot(HaveOccurred())
 
-	Expect(ctx.AlreadyRunningMicroservice(msName1).Ping("20.0.0.2")).NotTo(Succeed())
-	Expect(ctx.AlreadyRunningMicroservice(msName2).Ping("10.0.0.2")).NotTo(Succeed())
+	ctx.Expect(ctx.AlreadyRunningMicroservice(msName1).Ping("20.0.0.2")).NotTo(Succeed())
+	ctx.Expect(ctx.AlreadyRunningMicroservice(msName2).Ping("10.0.0.2")).NotTo(Succeed())
 
 	// route count should be unchanged
-	Expect(ctx.NumValues(&linux_l3.Route{}, kvs.SBView)).To(Equal(numLinuxRoutes))
+	ctx.Expect(ctx.NumValues(&linux_l3.Route{}, kvs.SBView)).To(Equal(numLinuxRoutes))
 }

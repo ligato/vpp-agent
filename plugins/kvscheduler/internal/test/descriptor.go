@@ -17,8 +17,8 @@ package test
 import (
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/idxmap"
+	"google.golang.org/protobuf/proto"
 
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )

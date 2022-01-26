@@ -17,10 +17,8 @@ package util
 import (
 	"reflect"
 
-	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-
-	"github.com/golang/protobuf/proto"
 )
 
 func ExtractProtos(from ...interface{}) (protos []proto.Message) {
@@ -82,7 +80,7 @@ func PlaceProtos(protos map[string]proto.Message, dsts ...interface{}) {
 // The matching is done by message descriptor's full name. The <clearIgnoreLayerCount> variable controls
 // how many top model structure hierarchy layers can have empty values for messages (see
 // util.placeProtosInProto(...) for details)
-func PlaceProtosIntoProtos(protos []protoV2.Message, clearIgnoreLayerCount int, dsts ...protoV2.Message) {
+func PlaceProtosIntoProtos(protos []proto.Message, clearIgnoreLayerCount int, dsts ...proto.Message) {
 	// create help structure for insertion proto messages
 	// (map values are protoreflect.Message(s) that contains proto message and its type. These messages will be
 	// later wrapped into protoreflect.Value(s) and filled into destination proto message using proto reflection.
@@ -109,7 +107,7 @@ func PlaceProtosIntoProtos(protos []protoV2.Message, clearIgnoreLayerCount int, 
 // for their message fields (as the algorithm backtracks the descriptor model tree, it unfortunately initialize
 // empty value for visited fields). The layer below <clearIgnoreLayerCount> top layer will be cleared
 // from the fake empty value. Currently unsupported are maps as fields.
-func placeProtosInProto(dst protoV2.Message, messageMap map[string][]protoreflect.Message, clearIgnoreLayerCount int) bool {
+func placeProtosInProto(dst proto.Message, messageMap map[string][]protoreflect.Message, clearIgnoreLayerCount int) bool {
 	changed := false
 	fields := dst.ProtoReflect().Descriptor().Fields()
 	for i := 0; i < fields.Len(); i++ {

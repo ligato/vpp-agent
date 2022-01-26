@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/proxy"
-	"github.com/coreos/etcd/clientv3"
 	"github.com/docker/docker/api/types/versions"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
 	"go.ligato.io/cn-infra/v2/logging"
@@ -56,10 +56,12 @@ const (
 
 // Constants for etcd connection.
 const (
-	// defaultEtcdOpTimeout defines default dial timeout.
-	defaultEtcdDialTimeout = time.Second * 3
-	// defaultEtcdOpTimeout defines default timeout for a pending operation.
-	defaultEtcdOpTimeout = time.Second * 10
+	// DefaultTimeout defines default timeout for client HTTP requests.
+	DefaultTimeout = time.Second * 120
+	// DefaultEtcdDialTimeout defines default timeout for dialing Etcd.
+	DefaultEtcdDialTimeout = time.Second * 3
+	// DefaultEtcdOpTimeout defines default timeout for a pending Etcd operation.
+	DefaultEtcdOpTimeout = time.Second * 10
 )
 
 var _ APIClient = (*Client)(nil)
@@ -186,9 +188,9 @@ func (c *Client) HTTPClient() *http.Client {
 	if c.httpClient == nil {
 		tr := cloneHTTPTransport()
 		tr.TLSClientConfig = c.httpTLS
-
 		c.httpClient = &http.Client{
 			Transport: tr,
+			Timeout:   DefaultTimeout,
 		}
 	}
 	return c.httpClient
@@ -198,11 +200,11 @@ func (c *Client) HTTPClient() *http.Client {
 // GoVPP proxy from vpp-agent
 func (c *Client) GoVPPProxyClient() (*proxy.Client, error) {
 	if c.govppProxyClient == nil {
-		client, err := proxy.Connect(c.httpAddr)
+		cc, err := proxy.Connect(c.httpAddr)
 		if err != nil {
 			return nil, fmt.Errorf("connecting to proxy failed due to: %v", err)
 		}
-		c.govppProxyClient = client
+		c.govppProxyClient = cc
 	}
 	return c.govppProxyClient, nil
 }
@@ -310,17 +312,20 @@ func connectEtcd(endpoints []string, dialTimeout time.Duration, tc *tls.Config) 
 	} else {
 		log.SetLevel(logging.WarnLevel)
 	}
-	dt := defaultEtcdDialTimeout
-	if dialTimeout != 0 {
+	dt := DefaultEtcdDialTimeout
+	if dialTimeout > 0 {
 		dt = dialTimeout
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), dt)
+	defer cancel()
 	cfg := etcd.ClientConfig{
 		Config: &clientv3.Config{
 			Endpoints:   endpoints,
 			DialTimeout: dt,
 			TLS:         tc,
+			Context:     ctx,
 		},
-		OpTimeout: defaultEtcdOpTimeout,
+		OpTimeout: DefaultEtcdOpTimeout,
 	}
 	kvdb, err := etcd.NewEtcdConnectionWithBytes(cfg, log)
 	if err != nil {

@@ -18,10 +18,11 @@ import (
 	"math"
 	"net"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/logging"
+
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/descriptor/adapter"

@@ -7,13 +7,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/health/probe"
+	"google.golang.org/grpc"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	"google.golang.org/grpc"
 )
 
 // APIClient is an interface that clients that talk with a agent server must implement.

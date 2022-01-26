@@ -22,12 +22,13 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/jsonpb"
-	protoV1 "github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
-	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // RemotelyKnownModel represents a registered remote model (remote model has only information about model
@@ -44,14 +45,14 @@ func (m *RemotelyKnownModel) Spec() *Spec {
 
 // ModelDetail returns descriptor for the model.
 func (m *RemotelyKnownModel) ModelDetail() *api.ModelDetail {
-	return &m.model.ModelDetail
+	return m.model.ModelDetail
 }
 
 // NewInstance creates new instance value for model type. Due to missing go type for remote models, the created
 // instance won't have the same go type as in case of local models, but dynamic proto message's go type
 // (the proto descriptor will be the same).
-func (m *RemotelyKnownModel) NewInstance() protoV1.Message {
-	return protoV1.MessageV1(dynamicpb.NewMessageType(m.model.MessageDescriptor).New().Interface())
+func (m *RemotelyKnownModel) NewInstance() proto.Message {
+	return dynamicpb.NewMessageType(m.model.MessageDescriptor).New().Interface()
 }
 
 // ProtoName returns proto message name registered with the model.
@@ -133,15 +134,7 @@ func (m *RemotelyKnownModel) StripKeyPrefix(key string) string {
 
 // InstanceName computes message name for given proto message using name template (if present).
 func (m *RemotelyKnownModel) InstanceName(x interface{}) (string, error) {
-	// convert to proto message
-	var message protoV1.Message
-	if pb, ok := x.(protoreflect.ProtoMessage); ok {
-		message = protoV1.MessageV1(pb)
-	} else if v1, ok := x.(protoV1.Message); ok {
-		message = v1
-	} else {
-		return "", errors.Errorf("instance %+v is not proto message", x)
-	}
+	message := protoMessageOf(x)
 
 	// extract data from message and use them with name template to get the name
 	nameTemplate, err := m.modelOptionFor("nameTemplate", m.model.Options)
@@ -151,14 +144,16 @@ func (m *RemotelyKnownModel) InstanceName(x interface{}) (string, error) {
 		return "", nil // having no name template is valid case for some models
 	}
 	nameTemplate = m.replaceFieldNamesInNameTemplate(m.model.MessageDescriptor, nameTemplate)
-	marshaler := jsonpb.Marshaler{EmitDefaults: true} // using jsonbp to generate json with json name field in proto tag
-	jsonData, err := marshaler.MarshalToString(message)
+	marshaller := protojson.MarshalOptions{
+		EmitUnpopulated: true,
+	}
+	jsonData, err := marshaller.Marshal(message)
 	if err != nil {
 		return "", errors.Errorf("can't marshall message "+
 			"to json due to: %v (message: %+v)", err, message)
 	}
 	var mapData map[string]interface{}
-	if err := json.Unmarshal([]byte(jsonData), &mapData); err != nil {
+	if err := json.Unmarshal(jsonData, &mapData); err != nil {
 		return "", errors.Errorf("can't load json of marshalled "+
 			"message to generic map due to: %v (json=%v)", err, jsonData)
 	}

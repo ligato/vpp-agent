@@ -1,9 +1,8 @@
 package client
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 // errConnectionFailed implements an error returned when connection failed.
@@ -21,8 +20,8 @@ func (err errConnectionFailed) Error() string {
 
 // IsErrConnectionFailed returns true if the error is caused by connection failed.
 func IsErrConnectionFailed(err error) bool {
-	_, ok := errors.Cause(err).(errConnectionFailed)
-	return ok
+	var connErr *errConnectionFailed
+	return errors.As(err, &connErr)
 }
 
 // ErrorConnectionFailed returns an error with host in the error message when connection to agent failed.

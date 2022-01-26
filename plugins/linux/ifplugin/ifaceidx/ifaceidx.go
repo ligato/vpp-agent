@@ -17,10 +17,10 @@ package ifaceidx
 import (
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/idxmap/mem"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )

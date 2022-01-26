@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"reflect"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -42,16 +43,16 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 		if kvd.Value.ProtoMsgName == "" {
 			return nil, fmt.Errorf("empty proto message name for key %s", d.Key)
 		}
-		valueType := proto.MessageType(kvd.Value.ProtoMsgName)
-		if valueType == nil {
-			return nil, fmt.Errorf("unknown proto message defined for key %s", d.Key)
+		valueType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(kvd.Value.ProtoMsgName))
+		if err != nil {
+			return nil, fmt.Errorf("proto message defined for key %s error: %v", d.Key, err)
 		}
-		d.Value = reflect.New(valueType.Elem()).Interface().(proto.Message)
+		d.Value = valueType.New().Interface()
 
 		if len(kvd.Value.ProtoMsgData) > 0 && kvd.Value.ProtoMsgData[0] == '{' {
-			err = jsonpb.UnmarshalString(kvd.Value.ProtoMsgData, d.Value)
+			err = protojson.Unmarshal([]byte(kvd.Value.ProtoMsgData), d.Value)
 		} else {
-			err = proto.UnmarshalText(kvd.Value.ProtoMsgData, d.Value)
+			err = prototext.Unmarshal([]byte(kvd.Value.ProtoMsgData), d.Value)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("decoding dump reply for %v failed: %v", valueType, err)

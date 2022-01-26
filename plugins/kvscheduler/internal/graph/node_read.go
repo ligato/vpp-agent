@@ -15,7 +15,7 @@
 package graph
 
 import (
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // maximum number of flags allowed to have defined

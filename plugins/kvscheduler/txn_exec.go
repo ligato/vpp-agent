@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/logging"
 
@@ -831,7 +831,7 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 						compressedOp = true
 						executed[j].PrevValue = op.PrevValue
 						executed[j].PrevErr = op.PrevErr
-						if op.PrevErr!=nil {
+						if op.PrevErr != nil {
 							executed[j].PrevErrMsg = op.PrevErr.Error()
 						}
 						executed[j].PrevState = op.PrevState

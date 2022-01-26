@@ -17,11 +17,10 @@ package models
 import (
 	"fmt"
 
+	"github.com/go-errors/errors"
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
-
-	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
 )
 
 // RemoteRegistry defines model registry for managing registered remote models. The remote model have no
@@ -50,7 +49,7 @@ func (r *RemoteRegistry) GetModel(name string) (KnownModel, error) {
 
 // GetModelFor returns registered model for the given proto message.
 func (r *RemoteRegistry) GetModelFor(x interface{}) (KnownModel, error) {
-	messageDesc := proto.MessageV2(x).ProtoReflect().Descriptor()
+	messageDesc := protoMessageOf(x).ProtoReflect().Descriptor()
 	messageFullName := string(messageDesc.FullName())
 	var foundModel *RemotelyKnownModel
 	for _, model := range r.modelByName {
@@ -89,7 +88,9 @@ func (r *RemoteRegistry) RegisteredModels() []KnownModel {
 func (r *RemoteRegistry) MessageTypeRegistry() *protoregistry.Types {
 	typeRegistry := new(protoregistry.Types)
 	for _, model := range r.modelByName {
-		typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.model.MessageDescriptor))
+		if err := typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.model.MessageDescriptor)); err != nil {
+			logging.Warn("registering message %v for remote registry failed: %v", model, err)
+		}
 	}
 	return typeRegistry
 }

@@ -15,8 +15,8 @@
 package api
 
 import (
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/idxmap"
+	"google.golang.org/protobuf/proto"
 )
 
 // Dependency references another kv pair that must exist before the associated

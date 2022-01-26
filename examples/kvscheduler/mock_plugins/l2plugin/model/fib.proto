@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package mock.l2;
 
+option go_package = "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model;mock_l2";
+
 message FIBEntry {
     string phys_address = 1;       /* unique destination MAC address */
     string bridge_domain = 2;      /* name of bridge domain this FIB table entry belongs to */

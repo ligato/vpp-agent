@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
 
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
@@ -48,7 +48,7 @@ func TestDataChangeTransactions(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 0)
@@ -57,7 +57,7 @@ func TestDataChangeTransactions(t *testing.T) {
 		Name:          descriptor2Name,
 		NBKeyPrefix:   prefixB,
 		KeySelector:   prefixSelector(prefixB),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixB+baseValue2+"/item1" {
@@ -82,7 +82,7 @@ func TestDataChangeTransactions(t *testing.T) {
 		Name:          descriptor3Name,
 		NBKeyPrefix:   prefixC,
 		KeySelector:   prefixSelector(prefixC),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		UpdateWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
 			return key == prefixC+baseValue3
@@ -757,7 +757,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 0)
@@ -766,7 +766,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 		Name:          descriptor2Name,
 		NBKeyPrefix:   prefixB,
 		KeySelector:   prefixSelector(prefixB),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixB+baseValue2+"/item1" {
@@ -791,7 +791,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 		Name:          descriptor3Name,
 		NBKeyPrefix:   prefixC,
 		KeySelector:   prefixSelector(prefixC),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		UpdateWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
 			return key == prefixC+baseValue3
@@ -1304,7 +1304,7 @@ func TestDependencyCycles(t *testing.T) {
 		Name:            descriptor1Name,
 		KeySelector:     prefixSelector(prefixA),
 		NBKeyPrefix:     prefixA,
-		ValueTypeName:   proto.MessageName(test.NewStringValue("")),
+		ValueTypeName:   string(proto.MessageName(test.NewStringValue(""))),
 		ValueComparator: test.StringValueComparator,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixA+baseValue1 {
@@ -1916,7 +1916,7 @@ func TestFailedDeleteOfDerivedValue(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 0)
@@ -2059,7 +2059,7 @@ func TestFailedRecreateOfDerivedValue(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 		UpdateWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {

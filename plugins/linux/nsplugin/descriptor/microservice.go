@@ -21,8 +21,8 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/servicelabel"
@@ -140,7 +140,7 @@ func (d *MicroserviceDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (value
 	for msLabel := range d.microServiceByLabel {
 		values = append(values, kvs.KVWithMetadata{
 			Key:    nsmodel.MicroserviceKey(msLabel),
-			Value:  &prototypes.Empty{},
+			Value:  &emptypb.Empty{},
 			Origin: kvs.FromSB,
 		})
 	}
@@ -217,7 +217,7 @@ func (d *MicroserviceDescriptor) processNewMicroservice(microserviceLabel string
 	if d.msStateInSync {
 		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 			Key:      nsmodel.MicroserviceKey(ms.Label),
-			Value:    &prototypes.Empty{},
+			Value:    &emptypb.Empty{},
 			Metadata: nil,
 		})
 	}

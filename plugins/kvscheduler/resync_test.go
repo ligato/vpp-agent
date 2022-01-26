@@ -21,7 +21,8 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
@@ -141,7 +142,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixA+baseValue2 {
@@ -567,7 +568,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixA+baseValue2+"/item1" {
@@ -981,7 +982,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 		Name:          descriptor1Name,
 		KeySelector:   prefixSelector(prefixA),
 		NBKeyPrefix:   prefixA,
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixA+baseValue2 {
@@ -1214,7 +1215,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 1)
@@ -1223,7 +1224,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 		Name:          descriptor2Name,
 		NBKeyPrefix:   prefixB,
 		KeySelector:   prefixSelector(prefixB),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		Dependencies: func(key string, value proto.Message) []Dependency {
 			if key == prefixB+baseValue2+"/item1" {
@@ -1248,7 +1249,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 		Name:          descriptor3Name,
 		NBKeyPrefix:   prefixC,
 		KeySelector:   prefixSelector(prefixC),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		UpdateWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
 			return key == prefixC+baseValue3
@@ -1691,7 +1692,7 @@ func TestResyncWithRetry(t *testing.T) {
 		Name:          descriptor1Name,
 		NBKeyPrefix:   prefixA,
 		KeySelector:   prefixSelector(prefixA),
-		ValueTypeName: proto.MessageName(test.NewArrayValue()),
+		ValueTypeName: string(proto.MessageName(test.NewArrayValue())),
 		DerivedValues: test.ArrayValueDerBuilder,
 		WithMetadata:  true,
 	}, mockSB, 1)

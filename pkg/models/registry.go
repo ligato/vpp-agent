@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -88,7 +88,7 @@ func (r *LocalRegistry) GetModelFor(x interface{}) (KnownModel, error) {
 		if pb, ok := x.(protoreflect.ProtoMessage); ok {
 			protoName = string(pb.ProtoReflect().Descriptor().FullName())
 		} else if v1, ok := x.(proto.Message); ok {
-			protoName = string(proto.MessageV2(v1).ProtoReflect().Descriptor().FullName())
+			protoName = string(v1.ProtoReflect().Descriptor().FullName())
 		}
 		if protoName != "" {
 			if model, found = r.registeredModelsByProtoName[protoName]; found {
@@ -207,7 +207,7 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 	if pb, ok := x.(protoreflect.ProtoMessage); ok {
 		model.proto = pb
 	} else if v1, ok := x.(proto.Message); ok {
-		model.proto = proto.MessageV2(v1)
+		model.proto = v1
 	}
 
 	// Use GetName as fallback for generating name

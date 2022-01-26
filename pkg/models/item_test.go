@@ -17,8 +17,9 @@ package models_test
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	testmodel "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto"
@@ -41,7 +42,7 @@ func TestEncode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal error: %v", err)
 	}
-	t.Logf("marshalled:\n%+v", proto.MarshalTextString(item))
+	t.Logf("marshalled:\n%+v", prototext.Format(item))
 
 	tc.Expect(item.GetData().GetAny().GetTypeUrl()).
 		To(Equal("models.ligato.io/model.Basic"))
@@ -50,7 +51,7 @@ func TestEncode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
-	t.Logf("unmarshalled:\n%+v", proto.MarshalTextString(out))
+	t.Logf("unmarshalled:\n%+v", prototext.Format(out))
 }
 
 func TestDecode(t *testing.T) {
@@ -70,7 +71,7 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal error: %v", err)
 	}
-	t.Logf("marshalled:\n%+v", proto.MarshalTextString(item))
+	t.Logf("marshalled:\n%+v", prototext.Format(item))
 
 	tc.Expect(item.GetId().GetModel()).To(Equal("module.basic"))
 	tc.Expect(item.GetId().GetName()).To(Equal("basic1"))
@@ -82,7 +83,7 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
-	t.Logf("unmarshalled:\n%+v", proto.MarshalTextString(out))
+	t.Logf("unmarshalled:\n%+v", prototext.Format(out))
 
 	tc.Expect(proto.Equal(in, out)).To(BeTrue())
 }

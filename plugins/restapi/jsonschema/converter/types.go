@@ -7,13 +7,14 @@ import (
 	"strconv"
 	"strings"
 
-	"go.ligato.io/vpp-agent/v3/proto/ligato"
-
 	"github.com/alecthomas/jsonschema"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/iancoleman/orderedmap"
 	"github.com/xeipuuv/gojsonschema"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato"
 )
 
 const (
@@ -57,7 +58,7 @@ func init() {
 	}
 }
 
-func (c *Converter) registerEnum(pkgName *string, enum *descriptor.EnumDescriptorProto) {
+func (c *Converter) registerEnum(pkgName *string, enum *descriptorpb.EnumDescriptorProto) {
 	pkg := globalPkg
 	if pkgName != nil {
 		for _, node := range strings.Split(*pkgName, ".") {
@@ -76,7 +77,7 @@ func (c *Converter) registerEnum(pkgName *string, enum *descriptor.EnumDescripto
 	pkg.enums[enum.GetName()] = enum
 }
 
-func (c *Converter) registerType(pkgName *string, msg *descriptor.DescriptorProto) {
+func (c *Converter) registerType(pkgName *string, msg *descriptorpb.DescriptorProto) {
 	pkg := globalPkg
 	if pkgName != nil {
 		for _, node := range strings.Split(*pkgName, ".") {
@@ -131,7 +132,7 @@ func (c *Converter) applyAllowNullValuesOption(schema *jsonschema.Type, schemaCh
 }
 
 // Convert a proto "field" (essentially a type-switch with some recursion):
-func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDescriptorProto, msg *descriptor.DescriptorProto, duplicatedMessages map[*descriptor.DescriptorProto]string) (*jsonschema.Type, error) {
+func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptorpb.FieldDescriptorProto, msg *descriptorpb.DescriptorProto, duplicatedMessages map[*descriptorpb.DescriptorProto]string) (*jsonschema.Type, error) {
 	// Prepare a new jsonschema.Type for our eventual return value:
 	jsonSchemaType := &jsonschema.Type{}
 
@@ -142,26 +143,26 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 
 	// get field annotations
 	var fieldAnnotations *ligato.LigatoOptions
-	val, err := proto.GetExtension(desc.Options, ligato.E_LigatoOptions)
-	if err != nil {
+	val := proto.GetExtension(desc, ligato.E_LigatoOptions)
+	/*if err != nil {
 		c.logger.Debugf("Field %s.%s doesn't have ligato option extension", msg.GetName(), desc.GetName())
-	} else {
-		var ok bool
-		if fieldAnnotations, ok = val.(*ligato.LigatoOptions); !ok {
-			c.logger.Debugf("Field %s.%s have ligato option extension, but its value has "+
-				"unexpected type (%T)", msg.GetName(), desc.GetName(), val)
-		}
+	} else {*/
+	var ok bool
+	if fieldAnnotations, ok = val.(*ligato.LigatoOptions); !ok {
+		c.logger.Debugf("Field %s.%s have ligato option extension, but its value has "+
+			"unexpected type (%T)", msg.GetName(), desc.GetName(), val)
 	}
+	// }
 
 	// Switch the types, and pick a JSONSchema equivalent:
 	switch desc.GetType() {
-	case descriptor.FieldDescriptorProto_TYPE_DOUBLE,
-		descriptor.FieldDescriptorProto_TYPE_FLOAT:
+	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
+		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:
 		c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_NUMBER})
 
-	case descriptor.FieldDescriptorProto_TYPE_INT32,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED32,
-		descriptor.FieldDescriptorProto_TYPE_SINT32:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32:
 		schema := &jsonschema.Type{
 			Type:    gojsonschema.TYPE_INTEGER,
 			Minimum: math.MinInt32,
@@ -170,8 +171,8 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		c.applyIntRangeFieldAnnotation(fieldAnnotations, schema)
 		c.applyAllowNullValuesOption(jsonSchemaType, schema)
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT32,
-		descriptor.FieldDescriptorProto_TYPE_FIXED32:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:
 		schema := &jsonschema.Type{
 			Type:             gojsonschema.TYPE_INTEGER,
 			Minimum:          -1,
@@ -181,9 +182,9 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		c.applyIntRangeFieldAnnotation(fieldAnnotations, schema)
 		c.applyAllowNullValuesOption(jsonSchemaType, schema)
 
-	case descriptor.FieldDescriptorProto_TYPE_INT64,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
-		descriptor.FieldDescriptorProto_TYPE_SINT64:
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 		if !c.DisallowBigIntsAsStrings {
 			c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
 		} else {
@@ -196,8 +197,8 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			c.applyAllowNullValuesOption(jsonSchemaType, schema)
 		}
 
-	case descriptor.FieldDescriptorProto_TYPE_UINT64,
-		descriptor.FieldDescriptorProto_TYPE_FIXED64:
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
 		if !c.DisallowBigIntsAsStrings {
 			c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
 		} else {
@@ -211,7 +212,7 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			c.applyAllowNullValuesOption(jsonSchemaType, schema)
 		}
 
-	case descriptor.FieldDescriptorProto_TYPE_STRING:
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
 		schema := &jsonschema.Type{}
 		switch fieldAnnotations.GetType() {
 		case ligato.LigatoOptions_IPV6:
@@ -294,17 +295,17 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 		}
 		c.applyAllowNullValuesOption(jsonSchemaType, schema)
 
-	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
 		c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
 
-	case descriptor.FieldDescriptorProto_TYPE_ENUM:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		// Note: not setting type specification(oneof string and integer), because explicitly saying which
 		// values are valid (and any other is invalid) is enough specification what can be used
 		// (this also overcome bug in example creator https://json-schema-faker.js.org/ that doesn't select
 		// correct type for enum value but rather chooses random type from oneof and cast value to that type)
 		//
-		//jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
-		//jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: gojsonschema.TYPE_INTEGER})
+		// jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: gojsonschema.TYPE_STRING})
+		// jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: gojsonschema.TYPE_INTEGER})
 		if c.AllowNullValues {
 			jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: gojsonschema.TYPE_NULL})
 		}
@@ -322,10 +323,10 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			jsonSchemaType.Enum = append(jsonSchemaType.Enum, value.Number)
 		}
 
-	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
 		c.applyAllowNullValuesOption(jsonSchemaType, &jsonschema.Type{Type: gojsonschema.TYPE_BOOLEAN})
 
-	case descriptor.FieldDescriptorProto_TYPE_GROUP, descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+	case descriptorpb.FieldDescriptorProto_TYPE_GROUP, descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		switch desc.GetTypeName() {
 		case ".google.protobuf.Timestamp":
 			jsonSchemaType.Type = gojsonschema.TYPE_STRING
@@ -346,7 +347,7 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 	}
 
 	// Recurse array of primitive types:
-	if desc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REPEATED && jsonSchemaType.Type != gojsonschema.TYPE_OBJECT {
+	if desc.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && jsonSchemaType.Type != gojsonschema.TYPE_OBJECT {
 		jsonSchemaType.Items = &jsonschema.Type{}
 
 		if len(jsonSchemaType.Enum) > 0 {
@@ -421,7 +422,7 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptor.FieldDes
 			jsonSchemaType.AdditionalProperties = additionalPropertiesJSON
 
 		// Arrays:
-		case desc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REPEATED:
+		case desc.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED:
 			jsonSchemaType.Items = recursedJSONSchemaType
 			jsonSchemaType.Type = gojsonschema.TYPE_ARRAY
 
@@ -511,7 +512,7 @@ func (c *Converter) applyIntRangeFieldAnnotation(fieldAnnotations *ligato.Ligato
 }
 
 // Converts a proto "MESSAGE" into a JSON-Schema:
-func (c *Converter) convertMessageType(curPkg *ProtoPackage, msg *descriptor.DescriptorProto) (*jsonschema.Schema, error) {
+func (c *Converter) convertMessageType(curPkg *ProtoPackage, msg *descriptorpb.DescriptorProto) (*jsonschema.Schema, error) {
 
 	// first, recursively find messages that appear more than once - in particular, that will break cycles
 	duplicatedMessages, err := c.findDuplicatedNestedMessages(curPkg, msg)
@@ -546,9 +547,9 @@ func (c *Converter) convertMessageType(curPkg *ProtoPackage, msg *descriptor.Des
 		Definitions: definitions,
 	}
 
-	// Look for required fields (either by proto2 required flag, or the AllFieldsRequired option):
+	// Look for required fields (either by proto required flag, or the AllFieldsRequired option):
 	for _, fieldDesc := range msg.GetField() {
-		if c.AllFieldsRequired || fieldDesc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REQUIRED {
+		if c.AllFieldsRequired || fieldDesc.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REQUIRED {
 			newJSONSchema.Required = append(newJSONSchema.Required, fieldDesc.GetName())
 		}
 	}
@@ -560,13 +561,13 @@ func (c *Converter) convertMessageType(curPkg *ProtoPackage, msg *descriptor.Des
 
 // findDuplicatedNestedMessages takes a message, and returns a map mapping pointers to messages that appear more than once
 // (typically because they're part of a reference cycle) to the sub-schema name that we give them.
-func (c *Converter) findDuplicatedNestedMessages(curPkg *ProtoPackage, msg *descriptor.DescriptorProto) (map[*descriptor.DescriptorProto]string, error) {
-	all := make(map[*descriptor.DescriptorProto]*nameAndCounter)
+func (c *Converter) findDuplicatedNestedMessages(curPkg *ProtoPackage, msg *descriptorpb.DescriptorProto) (map[*descriptorpb.DescriptorProto]string, error) {
+	all := make(map[*descriptorpb.DescriptorProto]*nameAndCounter)
 	if err := c.recursiveFindDuplicatedNestedMessages(curPkg, msg, msg.GetName(), all); err != nil {
 		return nil, err
 	}
 
-	result := make(map[*descriptor.DescriptorProto]string)
+	result := make(map[*descriptorpb.DescriptorProto]string)
 	for m, nameAndCounter := range all {
 		if nameAndCounter.counter > 1 && !strings.HasPrefix(nameAndCounter.name, ".google.protobuf.") {
 			result[m] = strings.TrimLeft(nameAndCounter.name, ".")
@@ -581,7 +582,7 @@ type nameAndCounter struct {
 	counter int
 }
 
-func (c *Converter) recursiveFindDuplicatedNestedMessages(curPkg *ProtoPackage, msg *descriptor.DescriptorProto, typeName string, alreadySeen map[*descriptor.DescriptorProto]*nameAndCounter) error {
+func (c *Converter) recursiveFindDuplicatedNestedMessages(curPkg *ProtoPackage, msg *descriptorpb.DescriptorProto, typeName string, alreadySeen map[*descriptorpb.DescriptorProto]*nameAndCounter) error {
 	if nameAndCounter, present := alreadySeen[msg]; present {
 		nameAndCounter.counter++
 		return nil
@@ -593,7 +594,7 @@ func (c *Converter) recursiveFindDuplicatedNestedMessages(curPkg *ProtoPackage, 
 
 	for _, desc := range msg.GetField() {
 		descType := desc.GetType()
-		if descType != descriptor.FieldDescriptorProto_TYPE_MESSAGE && descType != descriptor.FieldDescriptorProto_TYPE_GROUP {
+		if descType != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && descType != descriptorpb.FieldDescriptorProto_TYPE_GROUP {
 			// no nested messages
 			continue
 		}
@@ -611,7 +612,7 @@ func (c *Converter) recursiveFindDuplicatedNestedMessages(curPkg *ProtoPackage, 
 	return nil
 }
 
-func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descriptor.DescriptorProto, pkgName string, duplicatedMessages map[*descriptor.DescriptorProto]string, ignoreDuplicatedMessages bool) (*jsonschema.Type, error) {
+func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descriptorpb.DescriptorProto, pkgName string, duplicatedMessages map[*descriptorpb.DescriptorProto]string, ignoreDuplicatedMessages bool) (*jsonschema.Type, error) {
 	// Handle google's well-known types:
 	if msg.Name != nil && wellKnownTypes[*msg.Name] && pkgName == ".google.protobuf" {
 		var typeSchema *jsonschema.Type
@@ -715,7 +716,7 @@ func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descr
 		}
 	}
 
-	c.logger.WithField("message_str", proto.MarshalTextString(msg)).Trace("Converting message")
+	c.logger.WithField("message_str", prototext.Format(msg)).Trace("Converting message")
 	for _, fieldDesc := range msg.GetField() {
 		// get field schema
 		recursedJSONSchemaType, err := c.convertField(curPkg, fieldDesc, msg, duplicatedMessages)
@@ -762,8 +763,8 @@ func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descr
 				jsonSchemaType.Properties.Set(fieldName, recursedJSONSchemaType)
 			}
 
-			// Look for required fields (either by proto2 required flag, or the AllFieldsRequired option):
-			if fieldDesc.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REQUIRED {
+			// Look for required fields (either by proto required flag, or the AllFieldsRequired option):
+			if fieldDesc.GetLabel() == descriptorpb.FieldDescriptorProto_LABEL_REQUIRED {
 				jsonSchemaType.Required = append(jsonSchemaType.Required, fieldDesc.GetName())
 			}
 		}
@@ -777,7 +778,7 @@ func (c *Converter) recursiveConvertMessageType(curPkg *ProtoPackage, msg *descr
 	return jsonSchemaType, nil
 }
 
-func formatDescription(sl *descriptor.SourceCodeInfo_Location) string {
+func formatDescription(sl *descriptorpb.SourceCodeInfo_Location) string {
 	var lines []string
 	for _, str := range sl.GetLeadingDetachedComments() {
 		if s := strings.TrimSpace(str); s != "" {

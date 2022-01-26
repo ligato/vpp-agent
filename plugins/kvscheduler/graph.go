@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.ligato.io/vpp-agent/v3/pkg/graphviz"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -191,7 +191,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 		if rec, ok := value.(*utils.RecordedProtoMessage); ok {
 			value = rec.Message
 		}
-		attrs["tooltip"] = fmt.Sprintf("[%s] %s\n-----\n%s", valueState, key, proto.MarshalTextString(value))
+		attrs["tooltip"] = fmt.Sprintf("[%s] %s\n-----\n%s", valueState, key, prototext.Format(value))
 
 		n := &dotNode{
 			ID:    key,

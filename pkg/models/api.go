@@ -17,15 +17,16 @@ package models
 import (
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // ModelInfo represents model information retrieved using meta service
 type ModelInfo struct {
-	generic.ModelDetail
+	*generic.ModelDetail
 
 	// MessageDescriptor is the proto message descriptor of the message represented by this ModelInfo struct
 	MessageDescriptor protoreflect.MessageDescriptor

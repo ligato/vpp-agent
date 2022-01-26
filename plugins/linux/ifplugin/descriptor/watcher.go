@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
@@ -145,20 +145,20 @@ func (w *InterfaceWatcher) Retrieve(correlate []kvs.KVWithMetadata) (values []kv
 		}
 		values = append(values, kvs.KVWithMetadata{
 			Key:    ifmodel.InterfaceHostNameKey(hostIface.name),
-			Value:  &prototypes.Empty{},
+			Value:  &emptypb.Empty{},
 			Origin: kvs.FromSB,
 		})
 		for _, ipAddr := range hostIface.ipAddrs {
 			values = append(values, kvs.KVWithMetadata{
 				Key:    ifmodel.InterfaceHostNameWithAddrKey(hostIface.name, ipAddr),
-				Value:  &prototypes.Empty{},
+				Value:  &emptypb.Empty{},
 				Origin: kvs.FromSB,
 			})
 		}
 		if hostIface.vrfName != "" {
 			values = append(values, kvs.KVWithMetadata{
 				Key:    ifmodel.InterfaceHostNameWithVrfKey(hostIface.name, hostIface.vrfName),
-				Value:  &prototypes.Empty{},
+				Value:  &emptypb.Empty{},
 				Origin: kvs.FromSB,
 			})
 		}
@@ -264,7 +264,7 @@ func (w *InterfaceWatcher) processLinkNotification(linkNotif linkNotif) {
 	if !linkNotif.delayed && exists && !isLinkUp(linkNotif.LinkUpdate) {
 		// do not react to interface being DOWN immediately, this could be only very temporary
 		linkNotif.delayed = true
-		time.AfterFunc(linkDownDelay, func() {w.delayedLinkNotifCh <- linkNotif})
+		time.AfterFunc(linkDownDelay, func() { w.delayedLinkNotifCh <- linkNotif })
 		return
 	}
 
@@ -372,7 +372,7 @@ func (w *InterfaceWatcher) updateLinkKV(ifName string, enabled bool) {
 	var value proto.Message
 	if enabled {
 		// empty == enabled, nil == disabled
-		value = &prototypes.Empty{}
+		value = &emptypb.Empty{}
 	}
 	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:      ifmodel.InterfaceHostNameKey(ifName),
@@ -388,7 +388,7 @@ func (w *InterfaceWatcher) updateAddrKV(ifName string, address string, removed b
 	var value proto.Message
 	if !removed {
 		// empty == assigned, nil == not assigned
-		value = &prototypes.Empty{}
+		value = &emptypb.Empty{}
 	}
 	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:      ifmodel.InterfaceHostNameWithAddrKey(ifName, address),
@@ -407,7 +407,7 @@ func (w *InterfaceWatcher) updateVrfKV(ifName string, vrf string, removed bool) 
 	}
 	if !removed {
 		// empty == assigned, nil == not assigned
-		value = &prototypes.Empty{}
+		value = &emptypb.Empty{}
 	}
 	if err := w.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 		Key:      ifmodel.InterfaceHostNameWithVrfKey(ifName, vrf),

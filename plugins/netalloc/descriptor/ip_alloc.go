@@ -17,8 +17,8 @@ package descriptor
 import (
 	"net"
 
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor/adapter"
@@ -83,7 +83,7 @@ func (d *IPAllocDescriptor) DerivedValues(key string, addrAlloc *netalloc.IPAllo
 	if neighGw {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   netalloc.NeighGwKey(addrAlloc.NetworkName, addrAlloc.InterfaceName),
-			Value: &prototypes.Empty{},
+			Value: &emptypb.Empty{},
 		})
 	}
 	return derValues

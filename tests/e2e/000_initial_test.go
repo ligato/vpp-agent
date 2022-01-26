@@ -28,7 +28,7 @@ func TestAgentInSync(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	Expect(ctx.AgentInSync()).To(BeTrue())
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 func TestStartStopMicroservice(t *testing.T) {
@@ -42,10 +42,10 @@ func TestStartStopMicroservice(t *testing.T) {
 	}
 
 	ctx.StartMicroservice(ms1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
+	ctx.Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
 
 	ctx.StopMicroservice(ms1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
+	ctx.Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }
 
 func TestStartStopAgent(t *testing.T) {
@@ -59,10 +59,10 @@ func TestStartStopAgent(t *testing.T) {
 	}
 
 	ctx.StartAgent(agent1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
+	ctx.Eventually(msState).Should(Equal(kvscheduler.ValueState_OBTAINED))
 
 	ctx.StopAgent(agent1)
-	Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
+	ctx.Eventually(msState).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }
 
 // TestInitFromFile tests configuring initial state of NB from file
@@ -102,7 +102,7 @@ initial-configuration-file-path: %v
 	initInterfaceConfigState := func() kvscheduler.ValueState {
 		return ctx.GetValueStateByKey("vpp/interface/loop-test-from-init-file/address/static/10.10.1.1/24")
 	}
-	Eventually(initInterfaceConfigState).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(initInterfaceConfigState).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"loopback from init file was not properly created")
 }
 
@@ -115,7 +115,7 @@ func TestInitFromEtcd(t *testing.T) {
 	defer ctx.Teardown() // will teardown also VPP-Agent created later
 
 	// put NB config into Etcd
-	Expect(ctx.Etcd.Put(
+	ctx.Expect(ctx.Etcd.Put(
 		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/loop-test-from-etcd", AgentInstanceName(ctx)),
 		`{"name":"loop-test-from-etcd","type":"SOFTWARE_LOOPBACK","enabled":true,"ip_addresses":["10.10.1.2/24"], "mtu":1500}`)).
 		To(Succeed(), "can't insert data into ETCD")
@@ -127,7 +127,7 @@ endpoints:
     - "%v:2379"
 `
 	etcdIPAddress := ctx.Etcd.IPAddress()
-	Expect(etcdIPAddress).ShouldNot(BeNil())
+	ctx.Expect(etcdIPAddress).ShouldNot(BeNil())
 	etcdConfig = fmt.Sprintf(etcdConfig, etcdIPAddress)
 
 	// create VPP-Agent
@@ -140,7 +140,7 @@ endpoints:
 	initInterfaceConfigState := func() kvscheduler.ValueState {
 		return ctx.GetValueStateByKey("vpp/interface/loop-test-from-etcd/address/static/10.10.1.2/24")
 	}
-	Eventually(initInterfaceConfigState).Should(Equal(kvscheduler.ValueState_CONFIGURED),
+	ctx.Eventually(initInterfaceConfigState).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"loopback from etcd was not properly created")
 }
 
@@ -153,7 +153,7 @@ func TestInitFromFileAndEtcd(t *testing.T) {
 	defer ctx.Teardown() // will teardown also VPP-Agent created later
 
 	// put NB config into Etcd
-	Expect(ctx.Etcd.Put(
+	ctx.Expect(ctx.Etcd.Put(
 		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/memif-from-etcd", AgentInstanceName(ctx)),
 		`{
 "name":"memif-from-etcd",
@@ -167,7 +167,7 @@ func TestInitFromFileAndEtcd(t *testing.T) {
 		"socket_filename": "/run/vpp/default.sock"
 	}
 }`)).To(Succeed(), "can't insert data1 into ETCD")
-	Expect(ctx.Etcd.Put(
+	ctx.Expect(ctx.Etcd.Put(
 		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/memif-from-both-sources", AgentInstanceName(ctx)),
 		`{
 "name":"memif-from-both-sources",
@@ -225,7 +225,7 @@ endpoints:
     - "%v:2379"
 `
 	etcdIPAddress := ctx.Etcd.IPAddress()
-	Expect(etcdIPAddress).ShouldNot(BeNil())
+	ctx.Expect(etcdIPAddress).ShouldNot(BeNil())
 	etcdConfig = fmt.Sprintf(etcdConfig, etcdIPAddress)
 
 	// create VPP-Agent
@@ -240,13 +240,13 @@ endpoints:
 		return ctx.GetValueStateByKey(
 			fmt.Sprintf("vpp/interface/%v/address/static/%v/32", interfaceName, ipAddress))
 	}
-	Eventually(initInterfaceConfigState("memif-from-etcd", "10.10.1.1")).
+	ctx.Eventually(initInterfaceConfigState("memif-from-etcd", "10.10.1.1")).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED),
 			"unique memif from etcd was not properly created")
-	Eventually(initInterfaceConfigState("memif-from-init-file", "10.10.1.2")).
+	ctx.Eventually(initInterfaceConfigState("memif-from-init-file", "10.10.1.2")).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED),
 			"unique memif from init file was not properly created")
-	Eventually(initInterfaceConfigState("memif-from-both-sources", "10.10.1.3")).
+	ctx.Eventually(initInterfaceConfigState("memif-from-both-sources", "10.10.1.3")).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED),
 			"conflicting memif (defined in init file and etcd) was either not correctly "+
 				"merged (etcd data should have priority) or other things prevented its proper creation")

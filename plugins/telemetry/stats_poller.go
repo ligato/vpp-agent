@@ -6,10 +6,10 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

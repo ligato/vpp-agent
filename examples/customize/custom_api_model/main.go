@@ -22,12 +22,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/namsral/flag"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/client/remoteclient"
@@ -127,11 +127,6 @@ func (p *Example) Init() (err error) {
 }
 
 func demonstrateClient(c client.ConfigClient) {
-	tm := proto.TextMarshaler{
-		Compact:   true,
-		ExpandAny: true,
-	}
-
 	// List known models
 	fmt.Println("# ==========================================")
 	fmt.Println("# List known models..")
@@ -196,7 +191,7 @@ func demonstrateClient(c client.ConfigClient) {
 	if err := c.GetConfig(&cfg.VPP, &cfg.Linux, &cfg); err != nil {
 		log.Println("GetConfig failed:", err)
 	}
-	fmt.Printf("Retrieved config:\n%+v\n", cfg)
+	fmt.Printf("Retrieved config:\n%+v\n", &cfg)
 
 	// Dump state
 	fmt.Println("# ==========================================")
@@ -208,7 +203,7 @@ func demonstrateClient(c client.ConfigClient) {
 	}
 	fmt.Printf("Dumping %d states\n", len(states))
 	for _, state := range states {
-		fmt.Printf(" - %v\n", tm.Text(state))
+		fmt.Printf(" - %v\n", prototext.Format(state))
 	}
 }
 

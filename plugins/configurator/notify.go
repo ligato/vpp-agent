@@ -19,9 +19,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 	proto3 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 

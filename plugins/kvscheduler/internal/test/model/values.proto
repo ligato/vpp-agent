@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/test/model";
+
 package model;
 
 message ArrayValue {

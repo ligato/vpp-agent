@@ -18,9 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"

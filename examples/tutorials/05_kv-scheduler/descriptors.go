@@ -3,8 +3,8 @@ package main
 import (
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/examples/tutorials/05_kv-scheduler/adapter"
 	"go.ligato.io/vpp-agent/v3/examples/tutorials/05_kv-scheduler/model"
@@ -27,7 +27,7 @@ func NewIfDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
 		// Prefix for the descriptor-specific configuration
 		NBKeyPrefix: ifPrefix,
 		// A string value defining descriptor type
-		ValueTypeName: proto.MessageName(&model.Interface{}),
+		ValueTypeName: string(proto.MessageName(&model.Interface{})),
 		// A unique identifier of the configuration (name, label)
 		KeyLabel: func(key string) string {
 			return strings.TrimPrefix(key, ifPrefix)
@@ -76,7 +76,7 @@ func NewRouteDescriptor(logger logging.PluginLogger) *api.KVDescriptor {
 		// Prefix for the descriptor-specific configuration
 		NBKeyPrefix: routePrefix,
 		// A string value defining descriptor type
-		ValueTypeName: proto.MessageName(&model.Route{}),
+		ValueTypeName: string(proto.MessageName(&model.Route{})),
 		// A unique identifier of the configuration (name, label)
 		KeyLabel: descriptorCtx.KeyLabel,
 		// Returns true if the provided key is relevant for this descriptor is some way

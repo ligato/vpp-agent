@@ -15,13 +15,12 @@
 package localregistry
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	yaml2 "github.com/ghodss/yaml"
-	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -29,10 +28,11 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/infra"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
-	"google.golang.org/protobuf/encoding/protojson"
-	protoV2 "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -118,7 +118,7 @@ func (r *InitFileRegistry) Init() error {
 func (r *InitFileRegistry) Empty() bool {
 	if !r.initialized { // could be called from init of other plugins -> possibly before this plugin init
 		if err := r.initialize(); err != nil {
-			r.Log.Errorf("can't initialize InitFileRegistry due to: %v", err)
+			r.Log.Errorf("cannot initialize InitFileRegistry due to: %v", err)
 		}
 	}
 	return len(r.preloadedNBConfigs) == 0
@@ -151,7 +151,7 @@ func (r *InitFileRegistry) initialize() error {
 	if !r.config.DisableInitialConfiguration {
 		// preload NB config data from file
 		if err := r.preloadNBConfigs(r.config.InitialConfigurationFilePath); err != nil {
-			return errors.Errorf("can't preload initial NB configuration from file due to: %v", err)
+			return fmt.Errorf("cannot preload initial NB configuration from file due to: %w", err)
 		}
 		if len(r.preloadedNBConfigs) != 0 {
 			// watch for resync.DefaultPlugin.DoResync() that will trigger pushing of preloaded
@@ -165,24 +165,24 @@ func (r *InitFileRegistry) initialize() error {
 
 // retrieveConfig loads InitFileRegistry plugin configuration file.
 func (r *InitFileRegistry) retrieveConfig() (*Config, error) {
-	config := &Config{
+	cfg := &Config{
 		// default configuration
 		DisableInitialConfiguration:  false,
 		InitialConfigurationFilePath: defaultInitFilePath,
 	}
-	found, err := r.Cfg.LoadValue(config)
+	found, err := r.Cfg.LoadValue(cfg)
 	if !found {
 		if err == nil {
 			r.Log.Debug("InitFileRegistry plugin config not found")
 		} else {
-			r.Log.Debugf("InitFileRegistry plugin config can't be loaded due to: %v", err)
+			r.Log.Debugf("InitFileRegistry plugin config cannot be loaded due to: %v", err)
 		}
-		return config, err
+		return cfg, err
 	}
 	if err != nil {
 		return nil, err
 	}
-	return config, err
+	return cfg, err
 }
 
 // watchNBResync will watch to default resync plugin's resync call(resync.DefaultPlugin.DoResync()) and will
@@ -202,7 +202,7 @@ func (r *InitFileRegistry) watchResync(resyncReg resync.Registration) {
 				c := client.NewClient(&txnFactory{r.watchedRegistry}, &orchestrator.DefaultPlugin)
 				if err := c.ResyncConfig(r.preloadedNBConfigs...); err != nil {
 					r.Log.Errorf("resyncing preloaded NB init file data "+
-						"into watched registry failed: %v", err)
+						"into watched registry failed: %w", err)
 				}
 			}
 			r.pushedToWatchedRegistry = true
@@ -232,7 +232,7 @@ func (r *InitFileRegistry) preloadNBConfigs(filePath string) error {
 	// read data from file
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return errors.Errorf("problem reading file %s: %w", filePath, err)
+		return fmt.Errorf("problem reading file %s: %w", filePath, err)
 	}
 
 	// create dynamic config (using it instead of configurator.Config because it can hold also models defined
@@ -240,33 +240,33 @@ func (r *InitFileRegistry) preloadNBConfigs(filePath string) error {
 	// additional properly registered configuration models)
 	knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
 	if err != nil {
-		return errors.Errorf("can't get registered models: %w", err)
+		return fmt.Errorf("cannot get registered models: %w", err)
 	}
-	config, err := client.NewDynamicConfig(knownModels)
+	cfg, err := client.NewDynamicConfig(knownModels)
 	if err != nil {
-		return errors.Errorf("can't create dynamic config due to: %w", err)
+		return fmt.Errorf("cannot create dynamic config due to: %w", err)
 	}
 
 	// filling dynamically created config with data from NB init file
 	bj, err := yaml2.YAMLToJSON(b)
 	if err != nil {
-		return errors.Errorf("can't converting to JSON: %w", err)
+		return fmt.Errorf("cannot converting to JSON: %w", err)
 	}
-	err = protojson.Unmarshal(bj, config)
+	err = protojson.Unmarshal(bj, cfg)
 	if err != nil {
-		return errors.Errorf("can't unmarshall init file data into dynamic config due to: %v", err)
+		return fmt.Errorf("cannot unmarshall init file data into dynamic config due to: %w", err)
 	}
 
 	// extracting proto messages from dynamic config structure
 	// (generic client wants single proto messages and not one big hierarchical config)
-	configMessages, err := client.DynamicConfigExport(config)
+	configMessages, err := client.DynamicConfigExport(cfg)
 	if err != nil {
-		return errors.Errorf("can't extract single init configuration proto messages "+
-			"from one big configuration proto message due to: %v", err)
+		return fmt.Errorf("cannot extract single init configuration proto messages "+
+			"from one big configuration proto message due to: %w", err)
 	}
 
 	// remember extracted data for later push to watched registry
-	r.preloadedNBConfigs = convertToProtoV1(configMessages)
+	r.preloadedNBConfigs = configMessages
 
 	return nil
 }
@@ -280,12 +280,4 @@ func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 		return local.NewProtoTxn(p.registry.PropagateResync)
 	}
 	return local.NewProtoTxn(p.registry.PropagateChanges)
-}
-
-func convertToProtoV1(messages []protoV2.Message) []proto.Message {
-	result := make([]proto.Message, 0, len(messages))
-	for _, message := range messages {
-		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
-	}
-	return result
 }

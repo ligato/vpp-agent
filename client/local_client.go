@@ -17,16 +17,17 @@ package client
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/db/keyval"
+	"google.golang.org/protobuf/proto"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator/contextdecorator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
-	protoV2 "google.golang.org/protobuf/proto"
 )
 
 // LocalClient is global client for direct local access.
@@ -53,8 +54,8 @@ func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 	for _, model := range models.RegisteredModels() {
 		if class == "" || model.Spec().Class == class {
 			modules = append(modules, &models.ModelInfo{
-				ModelDetail:       *model.ModelDetail(),
-				MessageDescriptor: proto.MessageV2(model.NewInstance()).ProtoReflect().Descriptor(),
+				ModelDetail:       model.ModelDetail(),
+				MessageDescriptor: model.NewInstance().ProtoReflect().Descriptor(),
 			})
 		}
 	}
@@ -84,7 +85,7 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
 		//  (the value 1 generates from dynamic config the same json/yaml output as the hardcoded
 		//  configurator.Config and therefore serves for backward compatibility)
-		util.PlaceProtosIntoProtos(convertToProtoV2(protos), 1, protoDsts...)
+		util.PlaceProtosIntoProtos(protoMapToList(protos), 1, protoDsts...)
 	} else {
 		util.PlaceProtos(protos, dsts...)
 	}
@@ -162,28 +163,24 @@ func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 	return local.NewProtoTxn(p.registry.PropagateChanges)
 }
 
-func extractProtoMessages(dsts []interface{}) []protoV2.Message {
-	protoDsts := make([]protoV2.Message, 0)
+func extractProtoMessages(dsts []interface{}) []proto.Message {
+	msgs := make([]proto.Message, 0)
 	for _, dst := range dsts {
-		protoV1Dst, isProtoV1 := dst.(proto.Message)
-		if isProtoV1 {
-			protoDsts = append(protoDsts, proto.MessageV2(protoV1Dst))
+		msg, ok := dst.(proto.Message)
+		if ok {
+			msgs = append(msgs, msg)
 		} else {
-			protoV2Dst, isProtoV2 := dst.(protoV2.Message)
-			if isProtoV2 {
-				protoDsts = append(protoDsts, protoV2Dst)
-			} else {
-				break
-			}
+			logrus.Debugf("at least one of the %d items is not proto message, but: %#v", len(dsts), dst)
+			break
 		}
 	}
-	return protoDsts
+	return msgs
 }
 
-func convertToProtoV2(protoMap map[string]proto.Message) []protoV2.Message {
-	result := make([]protoV2.Message, 0, len(protoMap))
+func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
+	result := make([]proto.Message, 0, len(protoMap))
 	for _, msg := range protoMap {
-		result = append(result, proto.MessageV2(msg))
+		result = append(result, msg)
 	}
 	return result
 }

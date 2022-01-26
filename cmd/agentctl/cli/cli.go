@@ -21,7 +21,6 @@ import (
 
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/pkg/term"
-
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api"
@@ -177,6 +176,7 @@ func (cli *AgentCli) Initialize(opts *ClientOptions, ops ...InitializeOpt) error
 func buildClientOptions(cfg *Config) []client.Opt {
 	clientOpts := []client.Opt{
 		client.WithHost(cfg.Host),
+		client.WithTimeout(cfg.Timeout),
 		client.WithServiceLabel(cfg.ServiceLabel),
 		client.WithGrpcPort(cfg.GRPCPort),
 		client.WithHTTPPort(cfg.HTTPPort),

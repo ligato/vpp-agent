@@ -16,11 +16,12 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 // RecordedProtoMessage is a proto.Message suitable for recording and access via
@@ -37,8 +38,8 @@ type ProtoWithName struct {
 	ProtoMsgData string
 }
 
-// MarshalJSON marshalls proto message using the marshaller from jsonpb.
-// The jsonpb package produces a different output than the standard "encoding/json"
+// MarshalJSON marshalls proto message using the marshaller from protojson.
+// The protojson package produces a different output than the standard "encoding/json"
 // package, which does not operate correctly on protocol buffers.
 func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 	var (
@@ -47,8 +48,12 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 		err     error
 	)
 	if p != nil {
-		msgName = proto.MessageName(p.Message)
-		msgData = proto.CompactTextString(p.Message)
+		msgName = string(proto.MessageName(p.Message))
+		b, err := prototext.Marshal(p.Message)
+		if err != nil {
+			return nil, err
+		}
+		msgData = string(b)
 	}
 	pwn, err := json.Marshal(ProtoWithName{
 		ProtoMsgName: msgName,
@@ -60,8 +65,8 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 	return pwn, nil
 }
 
-// UnmarshalJSON un-marshalls proto message using the marshaller from jsonpb.
-// The jsonpb package produces a different output than the standard "encoding/json"
+// UnmarshalJSON un-marshalls proto message using the marshaller from protojson.
+// The protojson package produces a different output than the standard "encoding/json"
 // package, which does not operate correctly on protocol buffers.
 func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	var pwn ProtoWithName
@@ -72,16 +77,15 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	if p.ProtoMsgName == "" {
 		return nil
 	}
-	msgType := proto.MessageType(pwn.ProtoMsgName)
-	if msgType == nil {
-		return fmt.Errorf("unknown proto message: %s", p.ProtoMsgName)
+	msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(pwn.ProtoMsgName))
+	if err != nil {
+		return err
 	}
-	msg := reflect.New(msgType.Elem()).Interface().(proto.Message)
-	var err error
+	msg := msgType.New().Interface()
 	if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
-		err = jsonpb.UnmarshalString(pwn.ProtoMsgData, msg)
+		err = protojson.Unmarshal([]byte(pwn.ProtoMsgData), msg)
 	} else {
-		err = proto.UnmarshalText(pwn.ProtoMsgData, msg)
+		err = prototext.Unmarshal([]byte(pwn.ProtoMsgData), msg)
 	}
 	if err != nil {
 		return err
@@ -100,6 +104,6 @@ func RecordProtoMessage(msg proto.Message) *RecordedProtoMessage {
 	}
 	return &RecordedProtoMessage{
 		Message:      msg,
-		ProtoMsgName: proto.MessageName(msg),
+		ProtoMsgName: string(proto.MessageName(msg)),
 	}
 }

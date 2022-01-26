@@ -18,9 +18,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // LocallyKnownModel represents a registered local model (local model has go types compiled into program binary)

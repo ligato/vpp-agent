@@ -20,16 +20,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
-	"reflect"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/servicelabel"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -184,7 +183,7 @@ func parseImportFile(importFile string) (keyVals []keyVal, err error) {
 		}
 		logrus.Debugf("parse line: %s %s\n", key, data)
 
-		//key = completeFullKey(key)
+		// key = completeFullKey(key)
 		val, err := unmarshalKeyVal(key, data)
 		if err != nil {
 			return nil, fmt.Errorf("decoding value failed: %v", err)
@@ -202,13 +201,12 @@ func unmarshalKeyVal(fullKey string, data string) (proto.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	valueType := proto.MessageType(model.ProtoName())
+	valueType := protoMessageType(model.ProtoName())
 	if valueType == nil {
-		return nil, fmt.Errorf("unknown proto message defined for key %s", key)
+		return nil, fmt.Errorf("unknown proto message defined for: %s", model.ProtoName())
 	}
-	value := reflect.New(valueType.Elem()).Interface().(proto.Message)
-
-	if err := jsonpb.UnmarshalString(data, value); err != nil {
+	value := valueType.New().Interface()
+	if err = protojson.Unmarshal([]byte(data), value); err != nil {
 		return nil, err
 	}
 	return value, nil

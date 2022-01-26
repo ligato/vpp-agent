@@ -19,13 +19,11 @@ import (
 	"path"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-	types "github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
-	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
-	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/known/anypb"
+
+	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
@@ -49,11 +47,11 @@ func MarshalItemUsingModelRegistry(pb proto.Message, modelRegistry Registry) (*a
 		return nil, errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, pb)
 	}
 
-	any, err := types.MarshalAny(pb)
+	any, err := anypb.New(pb)
 	if err != nil {
 		return nil, err
 	}
-	any.TypeUrl = ligatoModels + string(proto.MessageV2(pb).ProtoReflect().Descriptor().FullName())
+	any.TypeUrl = ligatoModels + string(pb.ProtoReflect().Descriptor().FullName())
 
 	item := &api.Item{
 		Id: &api.Item_ID{
@@ -93,25 +91,25 @@ func UnmarshalItemUsingModelRegistry(item *api.Item, modelRegistry Registry) (pr
 
 // unmarshalItemDataAnyOfRemoteModel unmarshalls the generic data part of api.Item that has remote model.
 // The unmarshalled proto.Message will have dynamic type (*dynamicpb.Message).
-func unmarshalItemDataAnyOfRemoteModel(itemAny *any.Any, msgTypeResolver *protoregistry.Types) (proto.Message, error) {
-	msg, err := anypb.UnmarshalNew(itemAny, protoV2.UnmarshalOptions{
+func unmarshalItemDataAnyOfRemoteModel(itemAny *anypb.Any, msgTypeResolver *protoregistry.Types) (proto.Message, error) {
+	msg, err := anypb.UnmarshalNew(itemAny, proto.UnmarshalOptions{
 		Resolver: msgTypeResolver,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return proto.MessageV1(msg), nil
+	return msg, nil
 }
 
 // unmarshalItemDataAnyOfLocalModel unmarshalls the generic data part of api.Item that has local model.
 // The unmarshalled proto.Message will have the go type of model generated go structures (that is due to
 // go type registering in init() method of generated go structures file).
-func unmarshalItemDataAnyOfLocalModel(itemAny *any.Any) (proto.Message, error) {
-	var any types.DynamicAny // local
-	if err := types.UnmarshalAny(itemAny, &any); err != nil {
+func unmarshalItemDataAnyOfLocalModel(itemAny *anypb.Any) (proto.Message, error) {
+	m, err := anypb.UnmarshalNew(itemAny, proto.UnmarshalOptions{})
+	if err != nil {
 		return nil, err
 	}
-	return any.Message, nil
+	return m, nil
 }
 
 // GetModelForItem returns model for given item.

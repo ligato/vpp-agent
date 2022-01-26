@@ -19,10 +19,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
-	"github.com/pkg/errors"
+	"github.com/go-errors/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
@@ -205,7 +205,7 @@ func (d *DHCPDescriptor) DerivedValues(key string, dhcpData proto.Message) (derV
 				{
 					Key: interfaces.InterfaceAddressKey(dhcpLease.InterfaceName, dhcpLease.HostIpAddress,
 						netalloc.IPAddressSource_FROM_DHCP),
-					Value: &prototypes.Empty{},
+					Value: &emptypb.Empty{},
 				},
 			}
 		}

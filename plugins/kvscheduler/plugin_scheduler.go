@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/idxmap/mem"

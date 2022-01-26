@@ -21,11 +21,11 @@ import (
 	"net"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+	empty "google.golang.org/protobuf/types/known/emptypb"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	linux_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/descriptor"
@@ -80,7 +80,7 @@ const (
 	wireguardKeyLength = 44
 
 	// default RDMA attributes
-	defaultRdmaQueueNum = 1
+	defaultRdmaQueueNum  = 1
 	defaultRdmaQueueSize = 1024
 )
 
@@ -187,16 +187,16 @@ var (
 	ErrWgPort = errors.New("invalid wireguard port")
 
 	// ErrRdmaHostInterfaceMissing is returned when host_if_name is not configured for RDMA link.
-	ErrRdmaHostInterfaceMissing =  errors.Errorf("missing the host interface name for RDMA")
+	ErrRdmaHostInterfaceMissing = errors.Errorf("missing the host interface name for RDMA")
 
 	// ErrRdmaInvalidQueueSize is returned when configured Rx or Tx queue size for RDMA driver is not power of 2.
-	ErrRdmaInvalidQueueSize =  errors.Errorf("RDMA Rx/Tx queue size is not power of 2")
+	ErrRdmaInvalidQueueSize = errors.Errorf("RDMA Rx/Tx queue size is not power of 2")
 
 	// ErrRdmaQueueSizeTooLarge is returned when configured Rx or Tx queue size for RDMA driver is too large.
-	ErrRdmaQueueSizeTooLarge =  errors.Errorf("RDMA Rx/Tx queue size is too large (more than 16bits)")
+	ErrRdmaQueueSizeTooLarge = errors.Errorf("RDMA Rx/Tx queue size is too large (more than 16bits)")
 
 	// ErrRdmaQueueNumTooLarge is returned when the number of configured Rx/Tx queues for RDMA driver exceeds the limit.
-	ErrRdmaQueueNumTooLarge =  errors.Errorf("Number of RDMA queues is too large (more than 16bits)")
+	ErrRdmaQueueNumTooLarge = errors.Errorf("Number of RDMA queues is too large (more than 16bits)")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -664,22 +664,22 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if intf.GetRdma().GetHostIfName() == "" {
 			return kvs.NewInvalidValueError(ErrRdmaHostInterfaceMissing, "link.rdma.host_if_name")
 		}
-		if intf.GetRdma().GetRxqNum() >> 16 != 0 {
+		if intf.GetRdma().GetRxqNum()>>16 != 0 {
 			return kvs.NewInvalidValueError(ErrRdmaQueueNumTooLarge, "link.rdma.rxq_num")
 		}
 		if rxQSize := intf.GetRdma().GetRxqSize(); rxQSize > 0 {
-			if rxQSize & (rxQSize - 1) != 0 {
+			if rxQSize&(rxQSize-1) != 0 {
 				return kvs.NewInvalidValueError(ErrRdmaInvalidQueueSize, "link.rdma.rxq_size")
 			}
-			if rxQSize >> 16 != 0 {
+			if rxQSize>>16 != 0 {
 				return kvs.NewInvalidValueError(ErrRdmaQueueSizeTooLarge, "link.rdma.rxq_size")
 			}
 		}
 		if txQSize := intf.GetRdma().GetTxqSize(); txQSize > 0 {
-			if txQSize & (txQSize - 1) != 0 {
+			if txQSize&(txQSize-1) != 0 {
 				return kvs.NewInvalidValueError(ErrRdmaInvalidQueueSize, "link.rdma.txq_size")
 			}
-			if txQSize >> 16 != 0 {
+			if txQSize>>16 != 0 {
 				return kvs.NewInvalidValueError(ErrRdmaQueueSizeTooLarge, "link.rdma.txq_size")
 			}
 		}
@@ -908,7 +908,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	if intf.SetDhcpClient {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.DHCPClientKey(intf.Name),
-			Value: &prototypes.Empty{},
+			Value: &empty.Empty{},
 		})
 	}
 
@@ -924,7 +924,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	for _, ipAddr := range intf.IpAddresses {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr, netalloc_api.IPAddressSource_STATIC),
-			Value: &prototypes.Empty{},
+			Value: &empty.Empty{},
 		})
 	}
 
@@ -933,7 +933,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		// VRF inherited from the target numbered interface
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceInheritedVrfKey(intf.GetName(), intf.GetUnnumbered().GetInterfaceWithIp()),
-			Value: &prototypes.Empty{},
+			Value: &empty.Empty{},
 		})
 	} else {
 		// not unnumbered
@@ -969,7 +969,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		if hasIPv4 || hasIPv6 {
 			derValues = append(derValues, kvs.KeyValuePair{
 				Key:   interfaces.InterfaceVrfKey(intf.GetName(), int(intf.GetVrf()), hasIPv4, hasIPv6),
-				Value: &prototypes.Empty{},
+				Value: &empty.Empty{},
 			})
 		}
 	}
@@ -998,7 +998,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	if len(intf.GetIpAddresses()) > 0 {
 		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceWithIPKey(intf.GetName()),
-			Value: &prototypes.Empty{},
+			Value: &empty.Empty{},
 		})
 	}
 

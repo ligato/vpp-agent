@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/alecthomas/jsonschema"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
@@ -42,7 +42,7 @@ func New(logger *logrus.Logger) *Converter {
 }
 
 // ConvertFrom tells the convert to work on the given input:
-func (c *Converter) ConvertFrom(rd io.Reader) (*plugin.CodeGeneratorResponse, error) {
+func (c *Converter) ConvertFrom(rd io.Reader) (*pluginpb.CodeGeneratorResponse, error) {
 	c.logger.Debug("Reading code generation request")
 	input, err := ioutil.ReadAll(rd)
 	if err != nil {
@@ -50,7 +50,7 @@ func (c *Converter) ConvertFrom(rd io.Reader) (*plugin.CodeGeneratorResponse, er
 		return nil, err
 	}
 
-	req := &plugin.CodeGeneratorRequest{}
+	req := &pluginpb.CodeGeneratorRequest{}
 	err = proto.Unmarshal(input, req)
 	if err != nil {
 		c.logger.WithError(err).Error("Can't unmarshal input")
@@ -95,7 +95,7 @@ func (c *Converter) parseGeneratorParameters(parameters string) {
 }
 
 // Converts a proto "ENUM" into a JSON-Schema:
-func (c *Converter) convertEnumType(enum *descriptor.EnumDescriptorProto) (jsonschema.Type, error) {
+func (c *Converter) convertEnumType(enum *descriptorpb.EnumDescriptorProto) (jsonschema.Type, error) {
 
 	// Prepare a new jsonschema.Type for our eventual return value:
 	jsonSchemaType := jsonschema.Type{
@@ -113,8 +113,8 @@ func (c *Converter) convertEnumType(enum *descriptor.EnumDescriptorProto) (jsons
 	// correct type for enum value but rather chooses random type from oneof and cast value to that type)
 	//
 	// Allow both strings and integers:
-	//jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "string"})
-	//jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "integer"})
+	// jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "string"})
+	// jsonSchemaType.OneOf = append(jsonSchemaType.OneOf, &jsonschema.Type{Type: "integer"})
 
 	// Add the allowed values:
 	for _, enumValue := range enum.Value {
@@ -126,12 +126,12 @@ func (c *Converter) convertEnumType(enum *descriptor.EnumDescriptorProto) (jsons
 }
 
 // Converts a proto file into a JSON-Schema:
-func (c *Converter) convertFile(file *descriptor.FileDescriptorProto) ([]*plugin.CodeGeneratorResponse_File, error) {
+func (c *Converter) convertFile(file *descriptorpb.FileDescriptorProto) ([]*pluginpb.CodeGeneratorResponse_File, error) {
 	// Input filename:
 	protoFileName := path.Base(file.GetName())
 
 	// Prepare a list of responses:
-	var response []*plugin.CodeGeneratorResponse_File
+	var response []*pluginpb.CodeGeneratorResponse_File
 
 	// user wants specific messages
 	genSpecificMessages := len(c.messageTargets) > 0
@@ -166,7 +166,7 @@ func (c *Converter) convertFile(file *descriptor.FileDescriptorProto) ([]*plugin
 			}
 
 			// Add a response:
-			resFile := &plugin.CodeGeneratorResponse_File{
+			resFile := &pluginpb.CodeGeneratorResponse_File{
 				Name:    proto.String(jsonSchemaFileName),
 				Content: proto.String(string(jsonSchemaJSON)),
 			}
@@ -203,7 +203,7 @@ func (c *Converter) convertFile(file *descriptor.FileDescriptorProto) ([]*plugin
 			}
 
 			// Add a response:
-			resFile := &plugin.CodeGeneratorResponse_File{
+			resFile := &pluginpb.CodeGeneratorResponse_File{
 				Name:    proto.String(jsonSchemaFileName),
 				Content: proto.String(string(jsonSchemaJSON)),
 			}
@@ -214,7 +214,7 @@ func (c *Converter) convertFile(file *descriptor.FileDescriptorProto) ([]*plugin
 	return response, nil
 }
 
-func (c *Converter) convert(req *plugin.CodeGeneratorRequest) (*plugin.CodeGeneratorResponse, error) {
+func (c *Converter) convert(req *pluginpb.CodeGeneratorRequest) (*pluginpb.CodeGeneratorResponse, error) {
 	c.parseGeneratorParameters(req.GetParameter())
 
 	generateTargets := make(map[string]bool)
@@ -223,7 +223,7 @@ func (c *Converter) convert(req *plugin.CodeGeneratorRequest) (*plugin.CodeGener
 	}
 
 	c.sourceInfo = newSourceCodeInfo(req.GetProtoFile())
-	res := &plugin.CodeGeneratorResponse{}
+	res := &pluginpb.CodeGeneratorResponse{}
 	for _, file := range req.GetProtoFile() {
 		if file.GetPackage() == "" {
 			c.logger.WithField("filename", file.GetName()).Warn("Proto file doesn't specify a package")
@@ -253,7 +253,7 @@ func (c *Converter) convert(req *plugin.CodeGeneratorRequest) (*plugin.CodeGener
 	return res, nil
 }
 
-func (c *Converter) generateSchemaFilename(file *descriptor.FileDescriptorProto, protoName string) string {
+func (c *Converter) generateSchemaFilename(file *descriptorpb.FileDescriptorProto, protoName string) string {
 	if c.PrefixSchemaFilesWithPackage {
 		return fmt.Sprintf("%s/%s.jsonschema", file.GetPackage(), protoName)
 	}

@@ -3,7 +3,7 @@ package converter
 import (
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // ProtoPackage describes a package of Protobuf, which is an container of message types.
@@ -11,8 +11,8 @@ type ProtoPackage struct {
 	name     string
 	parent   *ProtoPackage
 	children map[string]*ProtoPackage
-	types    map[string]*descriptor.DescriptorProto
-	enums    map[string]*descriptor.EnumDescriptorProto
+	types    map[string]*descriptorpb.DescriptorProto
+	enums    map[string]*descriptorpb.EnumDescriptorProto
 }
 
 func newProtoPackage(parent *ProtoPackage, name string) *ProtoPackage {
@@ -25,12 +25,12 @@ func newProtoPackage(parent *ProtoPackage, name string) *ProtoPackage {
 		name:     pkgName,
 		parent:   parent,
 		children: make(map[string]*ProtoPackage),
-		types:    make(map[string]*descriptor.DescriptorProto),
-		enums:    make(map[string]*descriptor.EnumDescriptorProto),
+		types:    make(map[string]*descriptorpb.DescriptorProto),
+		enums:    make(map[string]*descriptorpb.EnumDescriptorProto),
 	}
 }
 
-func (c *Converter) lookupType(pkg *ProtoPackage, name string) (*descriptor.DescriptorProto, string, bool) {
+func (c *Converter) lookupType(pkg *ProtoPackage, name string) (*descriptorpb.DescriptorProto, string, bool) {
 	if strings.HasPrefix(name, ".") {
 		return c.relativelyLookupType(globalPkg, name[1:])
 	}
@@ -43,7 +43,7 @@ func (c *Converter) lookupType(pkg *ProtoPackage, name string) (*descriptor.Desc
 	return nil, "", false
 }
 
-func (c *Converter) lookupEnum(pkg *ProtoPackage, name string) (*descriptor.EnumDescriptorProto, string, bool) {
+func (c *Converter) lookupEnum(pkg *ProtoPackage, name string) (*descriptorpb.EnumDescriptorProto, string, bool) {
 	if strings.HasPrefix(name, ".") {
 		return c.relativelyLookupEnum(globalPkg, name[1:])
 	}
@@ -56,7 +56,7 @@ func (c *Converter) lookupEnum(pkg *ProtoPackage, name string) (*descriptor.Enum
 	return nil, "", false
 }
 
-func (c *Converter) relativelyLookupType(pkg *ProtoPackage, name string) (*descriptor.DescriptorProto, string, bool) {
+func (c *Converter) relativelyLookupType(pkg *ProtoPackage, name string) (*descriptorpb.DescriptorProto, string, bool) {
 	components := strings.SplitN(name, ".", 2)
 	switch len(components) {
 	case 0:
@@ -83,7 +83,7 @@ func (c *Converter) relativelyLookupType(pkg *ProtoPackage, name string) (*descr
 	}
 }
 
-func (c *Converter) relativelyLookupNestedType(desc *descriptor.DescriptorProto, name string) (*descriptor.DescriptorProto, bool) {
+func (c *Converter) relativelyLookupNestedType(desc *descriptorpb.DescriptorProto, name string) (*descriptorpb.DescriptorProto, bool) {
 	components := strings.Split(name, ".")
 componentLoop:
 	for _, component := range components {
@@ -99,7 +99,7 @@ componentLoop:
 	return desc, true
 }
 
-func (c *Converter) relativelyLookupEnum(pkg *ProtoPackage, name string) (*descriptor.EnumDescriptorProto, string, bool) {
+func (c *Converter) relativelyLookupEnum(pkg *ProtoPackage, name string) (*descriptorpb.EnumDescriptorProto, string, bool) {
 	components := strings.SplitN(name, ".", 2)
 	switch len(components) {
 	case 0:
@@ -126,7 +126,7 @@ func (c *Converter) relativelyLookupEnum(pkg *ProtoPackage, name string) (*descr
 	}
 }
 
-func (c *Converter) relativelyLookupNestedEnum(desc *descriptor.DescriptorProto, name string) (*descriptor.EnumDescriptorProto, bool) {
+func (c *Converter) relativelyLookupNestedEnum(desc *descriptorpb.DescriptorProto, name string) (*descriptorpb.EnumDescriptorProto, bool) {
 	components := strings.Split(name, ".")
 
 	parent := desc

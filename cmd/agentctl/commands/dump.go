@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"go.ligato.io/cn-infra/v2/logging"
@@ -212,7 +211,7 @@ func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
 				name = d.Key
 			}
 		}
-		val = fmt.Sprintf("# %s\n%s", proto.MessageName(d.Value), val)
+		val = fmt.Sprintf("# %s\n%s", d.Value.ProtoReflect().Descriptor().FullName(), val)
 		var row []string
 		row = []string{
 			model,

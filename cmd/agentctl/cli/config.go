@@ -40,6 +40,7 @@ type Config struct {
 	GRPCPort         int           `json:"grpc-port"`
 	HTTPPort         int           `json:"http-port"`
 	HTTPBasicAuth    string        `json:"http-basic-auth"`
+	Timeout          time.Duration `json:"timeout"`
 	EtcdEndpoints    []string      `json:"etcd-endpoints"`
 	EtcdDialTimeout  time.Duration `json:"etcd-dial-timeout"`
 	InsecureTLS      bool          `json:"insecure-tls"`

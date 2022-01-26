@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package mock.interfaces;
 
+option go_package = "go.ligato.io/vpp-agent/v3/examples/kvscheduler/mock_plugins/ifplugin/model;mock_interfaces";
+
 message Interface {
     enum Type {
         UNDEFINED_TYPE = 0;

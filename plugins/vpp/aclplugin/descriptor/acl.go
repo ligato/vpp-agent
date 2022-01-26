@@ -18,11 +18,11 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/golang/protobuf/proto"
-	prototypes "github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/aclidx"
@@ -219,13 +219,13 @@ func (d *ACLDescriptor) DerivedValues(key string, value *acl.ACL) (derived []api
 	for _, ifName := range value.GetInterfaces().GetIngress() {
 		derived = append(derived, api.KeyValuePair{
 			Key:   acl.ToInterfaceKey(value.Name, ifName, acl.IngressFlow),
-			Value: &prototypes.Empty{},
+			Value: &emptypb.Empty{},
 		})
 	}
 	for _, ifName := range value.GetInterfaces().GetEgress() {
 		derived = append(derived, api.KeyValuePair{
 			Key:   acl.ToInterfaceKey(value.Name, ifName, acl.EgressFlow),
-			Value: &prototypes.Empty{},
+			Value: &emptypb.Empty{},
 		})
 	}
 	return derived

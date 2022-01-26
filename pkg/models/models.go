@@ -15,13 +15,14 @@
 package models
 
 import (
+	"fmt"
 	"path"
 	"reflect"
 	"strings"
 
-	"github.com/go-errors/errors"
-	"github.com/golang/protobuf/proto"
-	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -49,7 +50,7 @@ func GetModel(name string) (KnownModel, error) {
 	return GetModelFromRegistry(name, DefaultRegistry)
 }
 
-// GetModel returns registered model in given registry for given model name.
+// GetModelFromRegistry returns registered model in given registry for given model name.
 func GetModelFromRegistry(name string, modelRegistry Registry) (KnownModel, error) {
 	return modelRegistry.GetModel(name)
 }
@@ -94,21 +95,21 @@ func GetKey(x proto.Message) (string, error) {
 	return GetKeyUsingModelRegistry(x, DefaultRegistry)
 }
 
-// GetKey returns complete key for given model from given model registry,
+// GetKeyUsingModelRegistry returns complete key for given model from given model registry,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
 func GetKeyUsingModelRegistry(message proto.Message, modelRegistry Registry) (string, error) {
 	// find model for message
 	model, err := GetModelFromRegistryFor(message, modelRegistry)
 	if err != nil {
-		return "", errors.Errorf("can't find known model "+
-			"for message (while getting key for model) due to: %v (message = %+v)", err, message)
+		return "", fmt.Errorf("cannot find known model "+
+			"for message (while getting key for model) due to: %w (message = %+v)", err, message)
 	}
 
 	// compute Item.ID.Name
 	name, err := model.InstanceName(message)
 	if err != nil {
-		return "", errors.Errorf("can't compute model instance name due to: %v (message %+v)", err, message)
+		return "", fmt.Errorf("cannot compute model instance name due to: %v (message %+v)", err, message)
 	}
 
 	key := path.Join(model.KeyPrefix(), name)
@@ -150,12 +151,12 @@ func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Mess
 	// get go type of statically generated proto message corresponding to locally known dynamic message
 	model, err := GetModelFor(dynamicMessage)
 	if err != nil {
-		return nil, errors.Errorf("can't get model "+
-			"for dynamic message due to: %v (message=%v)", err, dynamicMessage)
+		return nil, fmt.Errorf("can't get model "+
+			"for dynamic message due to: %w (message=%v)", err, dynamicMessage)
 	}
 	goType := model.LocalGoType() // only for locally known models will return meaningful go type
 	if goType == nil {
-		return nil, errors.Errorf("dynamic messages for remote models are not supported due to "+
+		return nil, fmt.Errorf("dynamic messages for remote models are not supported due to "+
 			"not available go type of statically generated proto message (dynamic message=%v)", dynamicMessage)
 	}
 
@@ -166,18 +167,16 @@ func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Mess
 	} else {
 		registeredGoType = reflect.Zero(goType).Interface()
 	}
-	message, isProtoV1 := registeredGoType.(proto.Message)
-	if !isProtoV1 {
-		messageV2, isProtoV2 := registeredGoType.(protoV2.Message)
-		if !isProtoV2 {
-			return nil, errors.Errorf("registered go type(%T) is not proto.Message", registeredGoType)
-		}
-		message = proto.MessageV1(messageV2)
-	}
+
+	message := protoMessageOf(registeredGoType)
 
 	// fill empty statically-generated proto message with data from its dynamic proto message counterpart
 	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
 	proto.Merge(message, dynamicMessage)
 
 	return message, nil
+}
+
+func protoMessageOf(m interface{}) protoreflect.ProtoMessage {
+	return protoimpl.X.ProtoMessageV2Of(m)
 }

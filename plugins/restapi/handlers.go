@@ -19,6 +19,7 @@ package restapi
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,12 +27,18 @@ import (
 	"strings"
 
 	yaml2 "github.com/ghodss/yaml"
-	"github.com/go-errors/errors"
 	"github.com/goccy/go-yaml"
-	"github.com/golang/protobuf/proto"
-	protoc_plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/unrolled/render"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/pluginpb"
+
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -44,12 +51,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/jsonschema/converter"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi/resturl"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	"google.golang.org/protobuf/encoding/protojson"
-	protoV2 "google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -78,7 +79,7 @@ const (
 var (
 	// ErrHandlerUnavailable represents error returned when particular
 	// handler is not available
-	ErrHandlerUnavailable = errors.New("Handler is not available")
+	ErrHandlerUnavailable = errors.New("handler is not available")
 )
 
 func (p *Plugin) registerInfoHandlers() {
@@ -411,7 +412,7 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 			params = append(params, fieldNamesConverterParam)
 		}
 		paramsStr := strings.Join(params, ",")
-		cgReq := &protoc_plugin.CodeGeneratorRequest{
+		cgReq := &pluginpb.CodeGeneratorRequest{
 			ProtoFile:       fileDescriptorProtos,
 			FileToGenerate:  []string{dynConfigFileDescProto.GetName()},
 			Parameter:       &paramsStr,
@@ -425,7 +426,7 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 
 		// use JSON schema converter and handle error cases
 		p.Log.Debug("Processing code generator request")
-		protoConverter := converter.New(logrus.DefaultLogger().StandardLogger())
+		protoConverter := converter.New(logrus.DefaultLogger().Logger)
 		res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
 		if err != nil {
 			if res == nil {
@@ -492,7 +493,7 @@ func allFileDescriptorProtos(knownModels []*client.ModelInfo) []*descriptorpb.Fi
 // versionHandler returns version of Agent.
 func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		version := types.Version{
+		ver := types.Version{
 			App:       version.App(),
 			Version:   version.Version(),
 			GitCommit: version.GitCommit(),
@@ -504,7 +505,7 @@ func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 			OS:        runtime.GOOS,
 			Arch:      runtime.GOARCH,
 		}
-		p.logError(formatter.JSON(w, http.StatusOK, version))
+		p.logError(formatter.JSON(w, http.StatusOK, ver))
 	}
 }
 
@@ -555,7 +556,7 @@ func (p *Plugin) validationHandler(formatter *render.Render) http.HandlerFunc {
 		}
 
 		// run Descriptor validators on config messages
-		err = p.KVScheduler.ValidateSemantically(convertToProtoV1(configMessages))
+		err = p.KVScheduler.ValidateSemantically(configMessages)
 		if err != nil {
 			if validationErrors, ok := err.(*kvscheduler.InvalidMessagesError); ok {
 				convertedValidationErrors := p.ConvertValidationErrorOutput(validationErrors, knownModels, config)
@@ -579,24 +580,24 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 
 	// define types for REST API output (could use map, but struct hold field ordering within each validation error)
 	type singleConfig struct {
-		Path  string "json: path"
-		Error string "json: error"
+		Path  string `json:"path"`
+		Error string `json:"error"`
 	}
 	type repeatedConfig struct {
-		Path            string "json: path"
-		Error           string "json: error"
-		ErrorConfigPart string "json: error_config_part"
+		Path            string `json:"path"`
+		Error           string `json:"error"`
+		ErrorConfigPart string `json:"error_config_part"`
 	}
 	type singleConfigDerivedValue struct {
-		Path                   string "json: path"
-		Error                  string "json: error"
-		ErrorDerivedConfigPart string "json: error_derived_config_part"
+		Path                   string `json:"path"`
+		Error                  string `json:"error"`
+		ErrorDerivedConfigPart string `json:"error_derived_config_part"`
 	}
 	type repeatedConfigDerivedValue struct {
-		Path                   string "json: path"
-		Error                  string "json: error"
-		ErrorDerivedConfigPart string "json: error_derived_config_part"
-		ErrorConfigPart        string "json: error_config_part"
+		Path                   string `json:"path"`
+		Error                  string `json:"error"`
+		ErrorDerivedConfigPart string `json:"error_derived_config_part"`
+		ErrorConfigPart        string `json:"error_config_part"`
 	}
 
 	// convert each validation error to REST API output (data filled structs defined above)
@@ -607,8 +608,7 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 		if messageError.ParentMessage() != nil {
 			nonDerivedMessage = messageError.ParentMessage()
 		}
-		messageModel := nameToModel[proto.MessageV2(nonDerivedMessage).
-			ProtoReflect().Descriptor().FullName()]
+		messageModel := nameToModel[nonDerivedMessage.ProtoReflect().Descriptor().FullName()]
 		groupFieldName := client.DynamicConfigGroupFieldNaming(messageModel)
 		modelFieldProtoName, modelFieldName := client.DynamicConfigKnownModelFieldNaming(messageModel)
 		invalidMessageFields := messageError.InvalidFields()
@@ -625,7 +625,7 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 			// disassemble field reference (can refer to inner message field), guess the yaml name for each
 			// segment and assemble the path again
 			fieldPath := strings.Split(invalidMessageFieldsStr, ".")
-			messageDesc := proto.MessageV2(messageError.Message()).ProtoReflect().Descriptor()
+			messageDesc := messageError.Message().ProtoReflect().Descriptor()
 			for i := range fieldPath {
 				// find current field path segment in proto message fields
 				fieldDesc := messageDesc.Fields().ByName(protoreflect.Name(fieldPath[i]))
@@ -659,26 +659,26 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 		// no direct yaml configuration for derived value)
 		var parentConfigPart string
 		if messageError.ParentMessage() != nil {
-			parentConfigPart = messageError.ParentMessage().String()
-			json, err := protojson.Marshal(proto.MessageV2(messageError.ParentMessage()))
+			parentConfigPart = prototext.Format(messageError.ParentMessage())
+			json, err := protojson.Marshal(messageError.ParentMessage())
 			if err == nil {
 				parentConfigPart = string(json)
-				yaml, err := yaml2.JSONToYAML(json)
+				b, err := yaml2.JSONToYAML(json)
 				if err == nil {
-					parentConfigPart = string(yaml)
+					parentConfigPart = string(b)
 				}
 			}
 		}
 
 		// compute again the string representation of error configuration (yaml is preferred)
 		// (no original reference to REST API string is remembered -> computing it from proto message)
-		configPart := messageError.Message().String()
-		json, err := protojson.Marshal(proto.MessageV2(messageError.Message()))
+		configPart := prototext.Format(messageError.Message())
+		json, err := protojson.Marshal(messageError.Message())
 		if err == nil {
 			configPart = string(json)
-			yaml, err := yaml2.JSONToYAML(json)
+			b, err := yaml2.JSONToYAML(json)
 			if err == nil {
-				configPart = string(yaml)
+				configPart = string(b)
 			}
 		}
 
@@ -722,14 +722,6 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 	return convertedValidationErrors
 }
 
-func convertToProtoV1(messages []protoV2.Message) []proto.Message {
-	result := make([]proto.Message, 0, len(messages))
-	for _, message := range messages {
-		result = append(result, proto.MessageV1(message.ProtoReflect().Interface()))
-	}
-	return result
-}
-
 // configurationGetHandler returns NB configuration of VPP-Agent in yaml format as used by agentctl.
 func (p *Plugin) configurationGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -756,7 +748,7 @@ func (p *Plugin) configurationGetHandler(formatter *render.Render) http.HandlerF
 		}
 
 		// convert data-filled config into yaml
-		jsonBytes, err := protojson.Marshal(protoV2.Message(config))
+		jsonBytes, err := protojson.Marshal(config)
 		if err != nil {
 			p.internalError("failed to convert retrieved configuration "+
 				"to intermediate json output", err, w, formatter)
@@ -891,13 +883,13 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 
 		// create context for data push
 		ctx := context.Background()
-		//// FullResync
+		// // FullResync
 		if _, found := req.URL.Query()[URLReplaceParamName]; found {
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 		}
-		//// Note: using "grpc" data source so that 'agentctl update --replace' can also work with this data
-		//// ('agentctl update' can change data also from non-grpc data sources, but
-		//// 'agentctl update --replace' (=resync) can't)
+		// // Note: using "grpc" data source so that 'agentctl update --replace' can also work with this data
+		// // ('agentctl update' can change data also from non-grpc data sources, but
+		// // 'agentctl update --replace' (=resync) can't)
 		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 
 		// config data pushed into VPP-Agent

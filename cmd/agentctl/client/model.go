@@ -4,8 +4,8 @@ import (
 	"context"
 	"sort"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
@@ -24,7 +24,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, m := range knownModels {
-			logrus.Trace(" - ", proto.CompactTextString(m))
+			logrus.Trace(" - ", prototext.Format(m))
 		}
 	}
 	allModels := convertModels(knownModels)
