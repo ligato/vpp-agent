@@ -65,8 +65,8 @@ func (p *RecordedProtoMessage) MarshalJSON() ([]byte, error) {
 	return pwn, nil
 }
 
-// UnmarshalJSON un-marshalls proto message using the marshaller from jsonpb.
-// The jsonpb package produces a different output than the standard "encoding/json"
+// UnmarshalJSON un-marshalls proto message using the marshaller from protojson.
+// The protojson package produces a different output than the standard "encoding/json"
 // package, which does not operate correctly on protocol buffers.
 func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	var pwn ProtoWithName
