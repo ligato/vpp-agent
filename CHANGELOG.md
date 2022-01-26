@@ -4,6 +4,7 @@
 
 ## Release Notes
 
+- [v3.3.0](#v3.3.0)
 - [v3.2.0](#v3.2.0)
 - [v3.1.0](#v3.1.0)
 - [v3.0.0](#v3.0.0)
@@ -53,8 +54,28 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v3.3.0"></a>
+# [3.3.0](https://github.com/ligato/vpp-agent/compare/v3.2.0...v3.3.0) (2022-01-XX)
+
+### COMPATIBILITY
+- VPP 21.06 (default)
+- VPP 21.01
+- VPP 20.09
+- VPP 20.05
+- ~~VPP 20.01 and older~~ (no longer supported)
+
+### Bug Fixes
+
+### Features
+
+### Improvements
+
+### Documentation
+
+### Other
+
 <a name="v3.2.0"></a>
-# [3.2.0](https://github.com/ligato/vpp-agent/compare/v3.1.0...v3.2.0) (2020-10-XX)
+# [3.2.0](https://github.com/ligato/vpp-agent/compare/v3.1.0...v3.2.0) (2020-11-04)
 
 ### COMPATIBILITY
 - VPP 20.09 (compatible)
