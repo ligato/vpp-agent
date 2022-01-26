@@ -65,14 +65,45 @@ RELEASE CHANGELOG TEMPLATE:
 - ~~VPP 20.01 and older~~ (no longer supported)
 
 ### Bug Fixes
+- DHCP proxy key should include the Rx-VRF ID [#1774](https://github.com/ligato/vpp-agent/pull/1774)
+- Fix metadata Update for Linux interfaces [#1777](https://github.com/ligato/vpp-agent/pull/1777)
+- Fix delete by resync failure of init file data by using agentctl [#1782](https://github.com/ligato/vpp-agent/pull/1782)
+- Report VPP not responding state as unhealthy status [#1783](https://github.com/ligato/vpp-agent/pull/1783)
+- Various JSON schema REST API export fix and enhancements [#1788](https://github.com/ligato/vpp-agent/pull/1788)
+- Do not release mutex for printing log message [#1790](https://github.com/ligato/vpp-agent/pull/1790)
+- bugs VPP-1968 and VPP-1970 were fixed in VPP 21.01 [#1791](https://github.com/ligato/vpp-agent/pull/1791)
+- VPP interface requires IP address with network prefix [#1792](https://github.com/ligato/vpp-agent/pull/1792)
+- Fix VPP config for VPP 20.09 [#1799](https://github.com/ligato/vpp-agent/pull/1799)
+- Add mutex to configurator dump [#1804](https://github.com/ligato/vpp-agent/pull/1804)
+- default linux vrf device mtu for latest linux kernels [#1824](https://github.com/ligato/vpp-agent/pull/1824)
+- linux route metric [#1826](https://github.com/ligato/vpp-agent/pull/1826)
+- make route scope relevant for IPv4 only [#1829](https://github.com/ligato/vpp-agent/pull/1829)
+- route and netalloc plugin integration [#1832](https://github.com/ligato/vpp-agent/pull/1832)
 
 ### Features
+- Add support for VPP interface with RDMA driver [#1761](https://github.com/ligato/vpp-agent/pull/1761)
+- Add reporting capabilities to agentctl [#1762](https://github.com/ligato/vpp-agent/pull/1762)
+- Agentctl support for yaml configuration of 3rd party configuration models [#1754](https://github.com/ligato/vpp-agent/pull/1754)
+- Configurator Notify improvements [#1760](https://github.com/ligato/vpp-agent/pull/1760)
+- Proxied models (remotely learned models used in DefaultRegistry) [#1764](https://github.com/ligato/vpp-agent/pull/1764)
+- Add support for dummy linux interface and existing IPs [#1765](https://github.com/ligato/vpp-agent/pull/1765)
+- Add support for existing Linux VRFs [#1768](https://github.com/ligato/vpp-agent/pull/1768)
+- Add possibility to setup NB configuration from file at VPP-Agent start [#1769](https://github.com/ligato/vpp-agent/pull/1769)
+- Allow multiple grpc-based data sources [#1776](https://github.com/ligato/vpp-agent/pull/1776)
+- Support for cache DNS server in VPP + e2e test refactoring [#1779](https://github.com/ligato/vpp-agent/pull/1779)
+- Add support for VPP 21.01 [#1785](https://github.com/ligato/vpp-agent/pull/1785)
+- Added REST API for retrieving JSON schema for VPP-Agent configuration [#1784](https://github.com/ligato/vpp-agent/pull/1784)
+- added REST API for validating yaml VPP-Agent configuration using validate methods on registered descriptors [#1786](https://github.com/ligato/vpp-agent/pull/1786)
+- added REST API for getting and setting NB VPP-Agent configuration [#1787](https://github.com/ligato/vpp-agent/pull/1787)
+- Add support for VPP 21.06 [#1808](https://github.com/ligato/vpp-agent/pull/1808)
+- remove support for VPP 20.01 [#1812](https://github.com/ligato/vpp-agent/pull/1812)
+- Migrate fully to protov2 [#1833](https://github.com/ligato/vpp-agent/pull/1833)
 
 ### Improvements
-
-### Documentation
+- Run VPP+VPPAgent in a container for e2e tests (support for multi-VPP tests) [#1770](https://github.com/ligato/vpp-agent/pull/1770)
 
 ### Other
+- Add test workflow for integration/e2e [#1816](https://github.com/ligato/vpp-agent/pull/1816)
 
 <a name="v3.2.0"></a>
 # [3.2.0](https://github.com/ligato/vpp-agent/compare/v3.1.0...v3.2.0) (2020-11-04)
