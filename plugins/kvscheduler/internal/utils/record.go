@@ -17,8 +17,11 @@ package utils
 import (
 	"encoding/json"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 // RecordedProtoMessage is a proto.Message suitable for recording and access via
@@ -74,21 +77,20 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	if p.ProtoMsgName == "" {
 		return nil
 	}
-	/*msgType := proto.MessageType(pwn.ProtoMsgName)
-	  if msgType == nil {
-	  	return fmt.Errorf("unknown proto message: %s", p.ProtoMsgName)
-	  }
-	  msg := reflect.New(msgType.Elem()).Interface().(proto.Message)
-	  var err error
-	  if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
-	  	err = jsonpb.UnmarshalString(pwn.ProtoMsgData, msg)
-	  } else {
-	  	err = proto.UnmarshalText(pwn.ProtoMsgData, msg)
-	  }
-	  if err != nil {
-	  	return err
-	  }
-	  p.Message = msg*/
+	msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(pwn.ProtoMsgName))
+	if err != nil {
+		return err
+	}
+	msg := msgType.New().Interface()
+	if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
+		err = protojson.Unmarshal([]byte(pwn.ProtoMsgData), msg)
+	} else {
+		err = prototext.Unmarshal([]byte(pwn.ProtoMsgData), msg)
+	}
+	if err != nil {
+		return err
+	}
+	p.Message = msg
 	return nil
 }
 
