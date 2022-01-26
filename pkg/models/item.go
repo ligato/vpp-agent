@@ -105,7 +105,6 @@ func unmarshalItemDataAnyOfRemoteModel(itemAny *anypb.Any, msgTypeResolver *prot
 // The unmarshalled proto.Message will have the go type of model generated go structures (that is due to
 // go type registering in init() method of generated go structures file).
 func unmarshalItemDataAnyOfLocalModel(itemAny *anypb.Any) (proto.Message, error) {
-	// var any types.DynamicAny
 	m, err := anypb.UnmarshalNew(itemAny, proto.UnmarshalOptions{})
 	if err != nil {
 		return nil, err

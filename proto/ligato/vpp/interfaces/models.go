@@ -655,21 +655,3 @@ func ParseRxModesKey(key string) (ifaceName string, isRxModesKey bool) {
 	}
 	return
 }
-
-/*
-// MarshalJSON ensures that field of type 'oneOf' is correctly marshaled
-// by using protobuf json marshaller
-func (m *Interface) MarshalJSON() ([]byte, error) {
-	marshaller := &jsonpb.Marshaler{}
-	str, err := marshaller.MarshalToString(m)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(str), nil
-}
-
-// UnmarshalJSON ensures that field of type 'oneOf' is correctly unmarshaled
-func (m *Interface) UnmarshalJSON(data []byte) error {
-	return jsonpb.UnmarshalString(string(data), m)
-}
-*/
