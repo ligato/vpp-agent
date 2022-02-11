@@ -23,12 +23,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strings"
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/goccy/go-yaml"
 	"github.com/unrolled/render"
+	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -375,67 +377,15 @@ func (p *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, 
 // URL query parameter value).
 func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		// create FileDescriptorProto for dynamic Config holding all VPP-Agent configuration
-		knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
+		res, err := buildJsonSchema(req.URL.Query())
 		if err != nil {
-			p.internalError("can't get registered models", err, w, formatter)
-			return
-		}
-		config, err := client.NewDynamicConfig(knownModels)
-		if err != nil {
-			p.internalError("can't create dynamic config", err, w, formatter)
-			return
-		}
-		dynConfigFileDescProto := protodesc.ToFileDescriptorProto(config.ProtoReflect().Descriptor().ParentFile())
-
-		// create list of all FileDescriptorProtos (imports should be before converted proto file -> dynConfig is last)
-		fileDescriptorProtos := allFileDescriptorProtos(knownModels)
-		fileDescriptorProtos = append(fileDescriptorProtos, dynConfigFileDescProto)
-
-		// creating input for protoc's plugin (code extracted in plugins/restapi/jsonschema) that can convert
-		// FileDescriptorProtos to JSONSchema
-		params := []string{
-			"messages=[Dynamic_config]",      // targeting only the main config message (proto file has also other messages)
-			"disallow_additional_properties", // additional unknown json fields makes configuration applying fail
-		}
-		fieldNamesConverterParam := "proto_and_json_fieldnames" // create proto and json named fields by default
-		if fieldNames, found := req.URL.Query()[URLFieldNamingParamName]; found && len(fieldNames) > 0 {
-			// converting REST API request params to 3rd party tool params
-			switch fieldNames[0] {
-			case OnlyProtoFieldNames:
-				fieldNamesConverterParam = ""
-			case OnlyJSONFieldNames:
-				fieldNamesConverterParam = "json_fieldnames"
-			}
-		}
-		if fieldNamesConverterParam != "" {
-			params = append(params, fieldNamesConverterParam)
-		}
-		paramsStr := strings.Join(params, ",")
-		cgReq := &pluginpb.CodeGeneratorRequest{
-			ProtoFile:       fileDescriptorProtos,
-			FileToGenerate:  []string{dynConfigFileDescProto.GetName()},
-			Parameter:       &paramsStr,
-			CompilerVersion: nil, // compiler version is not need in this protoc plugin
-		}
-		cgReqMarshalled, err := proto.Marshal(cgReq)
-		if err != nil {
-			p.internalError("can't proto marshal CodeGeneratorRequest", err, w, formatter)
-			return
-		}
-
-		// use JSON schema converter and handle error cases
-		p.Log.Debug("Processing code generator request")
-		protoConverter := converter.New(logrus.DefaultLogger().Logger)
-		res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
-		if err != nil {
-			if res == nil {
-				p.internalError("failed to read registered model configuration input", err, w, formatter)
+			if res != nil {
+				errMsg := fmt.Sprintf("failed generate JSON schema: %v (%v)\n", res.Error, err)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
-			errMsg := fmt.Sprintf("failed generate JSON schema: %v (%v)\n", res.Error, err)
-			p.Log.Error(internalErrorLogPrefix + errMsg)
-			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+			p.internalError("", err, w, formatter)
 			return
 		}
 
@@ -454,6 +404,76 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		w.Header().Set(render.ContentType, render.ContentJSON+"; charset=UTF-8")
 		w.Write([]byte(sb.String())) // will also call WriteHeader(http.StatusOK) automatically
 	}
+}
+
+func buildJsonSchema(query url.Values) (*pluginpb.CodeGeneratorResponse, error) {
+	logging.Debugf("=======================================================")
+	logging.Debugf(" BUILDING JSON SCHEMA ")
+	logging.Debugf("=======================================================")
+
+	// create FileDescriptorProto for dynamic Config holding all VPP-Agent configuration
+	knownModels, err := client.LocalClient.KnownModels("config") // locally registered models
+	if err != nil {
+		return nil, fmt.Errorf("can't get registered models: %w", err)
+	}
+	config, err := client.NewDynamicConfig(knownModels)
+	if err != nil {
+		return nil, fmt.Errorf("can't create dynamic config: %w", err)
+	}
+	dynConfigFileDescProto := protodesc.ToFileDescriptorProto(config.ProtoReflect().Descriptor().ParentFile())
+
+	// create list of all FileDescriptorProtos (imports should be before converted proto file -> dynConfig is last)
+	fileDescriptorProtos := allFileDescriptorProtos(knownModels)
+	fileDescriptorProtos = append(fileDescriptorProtos, dynConfigFileDescProto)
+
+	// creating input for protoc's plugin (code extracted in plugins/restapi/jsonschema) that can convert
+	// FileDescriptorProtos to JSONSchema
+	params := []string{
+		"messages=[Dynamic_config]",      // targeting only the main config message (proto file has also other messages)
+		"disallow_additional_properties", // additional unknown json fields makes configuration applying fail
+	}
+	fieldNamesConverterParam := "proto_and_json_fieldnames" // create proto and json named fields by default
+	if fieldNames, found := query[URLFieldNamingParamName]; found && len(fieldNames) > 0 {
+		// converting REST API request params to 3rd party tool params
+		switch fieldNames[0] {
+		case OnlyProtoFieldNames:
+			fieldNamesConverterParam = ""
+		case OnlyJSONFieldNames:
+			fieldNamesConverterParam = "json_fieldnames"
+		}
+	}
+	if fieldNamesConverterParam != "" {
+		params = append(params, fieldNamesConverterParam)
+	}
+	paramsStr := strings.Join(params, ",")
+	cgReq := &pluginpb.CodeGeneratorRequest{
+		ProtoFile:       fileDescriptorProtos,
+		FileToGenerate:  []string{dynConfigFileDescProto.GetName()},
+		Parameter:       &paramsStr,
+		CompilerVersion: nil, // compiler version is not need in this protoc plugin
+	}
+	cgReqMarshalled, err := proto.Marshal(cgReq)
+	if err != nil {
+		return nil, fmt.Errorf("can't proto marshal CodeGeneratorRequest: %w", err)
+	}
+
+	logging.Debugf("-------------------------------------------------------")
+	logging.Debugf(" CONVERTING SCHEMA ")
+	logging.Debugf("-------------------------------------------------------")
+
+	// use JSON schema converter and handle error cases
+	logging.Debug("Processing code generator request")
+	protoConverter := converter.New(logrus.DefaultLogger().Logger)
+	res, err := protoConverter.ConvertFrom(bytes.NewReader(cgReqMarshalled))
+	if err != nil {
+		if res == nil {
+			// p.internalError("failed to read registered model configuration input", err, w, formatter)
+			return nil, fmt.Errorf("failed to read registered model configuration input: %w", err)
+		}
+		return res, err
+	}
+
+	return res, nil
 }
 
 // allImports retrieves all imports from given FileDescriptor including transitive imports (import

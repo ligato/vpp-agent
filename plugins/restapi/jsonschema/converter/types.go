@@ -141,18 +141,21 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptorpb.FieldD
 		jsonSchemaType.Description = formatDescription(src)
 	}
 
+	c.logger.Tracef("(PKG: %v) CONVERT FIELD %v", curPkg.name, desc)
+
 	// get field annotations
 	var fieldAnnotations *ligato.LigatoOptions
-	val := proto.GetExtension(desc, ligato.E_LigatoOptions)
-	/*if err != nil {
+
+	if proto.HasExtension(desc.Options, ligato.E_LigatoOptions) {
+		val := proto.GetExtension(desc.Options, ligato.E_LigatoOptions)
+		var ok bool
+		if fieldAnnotations, ok = val.(*ligato.LigatoOptions); !ok {
+			c.logger.Debugf("Field %s.%s have ligato option extension, but its value has "+
+				"unexpected type (%T)", msg.GetName(), desc.GetName(), val)
+		}
+	} else {
 		c.logger.Debugf("Field %s.%s doesn't have ligato option extension", msg.GetName(), desc.GetName())
-	} else {*/
-	var ok bool
-	if fieldAnnotations, ok = val.(*ligato.LigatoOptions); !ok {
-		c.logger.Debugf("Field %s.%s have ligato option extension, but its value has "+
-			"unexpected type (%T)", msg.GetName(), desc.GetName(), val)
 	}
-	// }
 
 	// Switch the types, and pick a JSONSchema equivalent:
 	switch desc.GetType() {

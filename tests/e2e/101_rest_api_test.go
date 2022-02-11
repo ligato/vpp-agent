@@ -16,6 +16,8 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -37,4 +39,28 @@ func TestInfoVersionHandler(t *testing.T) {
 	ctx.Expect(version.GoVersion).ToNot(BeEmpty())
 	ctx.Expect(version.OS).ToNot(BeEmpty())
 	ctx.Expect(version.Arch).ToNot(BeEmpty())
+}
+
+func TestJsonschema(t *testing.T) {
+	ctx := Setup(t)
+	defer ctx.Teardown()
+
+	res, err := ctx.agentClient.HTTPClient().Get("http://" + ctx.agentClient.AgentHost() + ":9191/info/configuration/jsonschema")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode > 299 {
+		t.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("BODY: %s", body)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		t.Fatal(err)
+	}
 }
