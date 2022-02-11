@@ -35,8 +35,12 @@ func ProtoToString(msg proto.Message) string {
 	if _, isEmpty := msg.(*emptypb.Empty); isEmpty {
 		return "<EMPTY>"
 	}
+	b, err := prototext.Marshal(msg)
+	if err != nil {
+		return err.Error()
+	}
 	// wrap with curly braces, it is easier to read
-	return "{ " + prototext.Format(msg) + " }"
+	return "{ " + string(b) + " }"
 }
 
 // ErrorToString converts error to string.
