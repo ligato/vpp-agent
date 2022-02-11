@@ -16,7 +16,7 @@ BUF_VERSION := 0.51.1
 # https://github.com/protocolbuffers/protobuf-go 20200624
 PROTOC_GEN_GO_VERSION ?= v1.27.1
 # https://github.com/grpc/grpc-go 20200730
-PROTOC_GEN_GO_GRPC_VERSION ?= v1.31.0
+PROTOC_GEN_GO_GRPC_VERSION ?= v1.38.0
 # https://github.com/protocolbuffers/protobuf/releases 20200729
 PROTOC_VERSION ?= 3.17.3
 

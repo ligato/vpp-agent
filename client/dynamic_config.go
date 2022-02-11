@@ -121,9 +121,13 @@ func createFileDescRegistry(knownModels []*models.ModelInfo) (protodesc.Resolver
 	for _, knownModel := range knownModels {
 		fileDesc := knownModel.MessageDescriptor.ParentFile()
 		if _, err := reg.FindDescriptorByName(fileDesc.FullName()); err == protoregistry.NotFound {
-			reg.RegisterFile(fileDesc)
-			logrus.DefaultLogger().Debugf("Proto file %v was successfully "+
-				"added to dependency registry.", fileDesc.Path())
+			if e := reg.RegisterFile(fileDesc); e != nil {
+				logrus.DefaultLogger().Warnf("Failed to add Proto file %v "+
+					"to dependency registry: %v.", fileDesc.Path(), e)
+			} else {
+				logrus.DefaultLogger().Debugf("Proto file %v was successfully "+
+					"added to dependency registry.", fileDesc.Path())
+			}
 		}
 	}
 	return reg, nil
