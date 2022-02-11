@@ -38,7 +38,7 @@ require (
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df
 	github.com/xeipuuv/gojsonschema v1.1.0
 	go.etcd.io/etcd/client/v3 v3.5.1
-	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220120170329-049260adfdff
+	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 	google.golang.org/grpc v1.38.0
