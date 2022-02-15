@@ -55,7 +55,7 @@ RELEASE CHANGELOG TEMPLATE:
 -->
 
 <a name="v3.3.0"></a>
-# [3.3.0](https://github.com/ligato/vpp-agent/compare/v3.2.0...v3.3.0) (2022-01-XX)
+# [3.3.0](https://github.com/ligato/vpp-agent/compare/v3.2.0...v3.3.0) (2022-02-15)
 
 ### COMPATIBILITY
 - VPP 21.06 (default)
