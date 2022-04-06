@@ -420,7 +420,7 @@ message WireguardLink {
   string src_addr = 4  [(ligato_options).type = IP];
 }
 
-// https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.md
+// https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.rst
 message RDMALink {
     enum Mode {
         AUTO = 0;
