@@ -1,7 +1,7 @@
 ARG DEV_IMG=dev_vpp_agent
 FROM ${DEV_IMG} as devimg
 
-FROM ubuntu:18.04 as base
+FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		# general tools
