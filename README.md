@@ -66,7 +66,7 @@ docker exec -it agent1 agentctl status
 3. Check the configuration (via agentctl or in VPP console):
 ```
 docker exec -it agent1 agentctl dump all
-docker exec -it agent1 vppctl -s localhost:5002 show interface
+docker exec -it agent1 vppctl show interface
 ```
 
 **Next Steps**

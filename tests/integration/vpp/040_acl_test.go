@@ -259,7 +259,7 @@ func TestCRUDIPAcl(t *testing.T) {
 	t.Logf("%v", ifaces[1])
 	t.Logf("%v", ifaces[2])
 	//this does not work for VPP 19.04 and maybe also other version
-	//checked for VPP 21.06 - still does not work
+	//checked for VPP 22.02 - still does not work
 	//Expect(ifaces[0].Ingress).To(Equal([]string{ifName}))
 	//Expect(ifaces[2].Egress).To(Equal([]string{ifName2}))
 
@@ -605,7 +605,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	t.Logf("%v", ifaces[1])
 	t.Logf("%v", ifaces[2])
 	//this does not work for VPP 19.04 and maybe also other version
-	//checked for VPP 21.06 - still does not work
+	//checked for VPP 22.02 - still does not work
 	//Expect(ifaces[0].Ingress).To(Equal([]string{ifName}))
 	//Expect(ifaces[2].Egress).To(Equal([]string{ifName2}))
 

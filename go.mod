@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v3
 go 1.17
 
 require (
-	git.fd.io/govpp.git v0.3.6-0.20210810100027-c0da1f2999a6
+	git.fd.io/govpp.git v0.4.0
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/coreos/go-iptables v0.4.5

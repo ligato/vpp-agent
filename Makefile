@@ -333,7 +333,7 @@ prod-image: ## Build production image
 	agent agentctl build clean install purge \
 	cmd examples clean-examples \
 	test test-cover test-cover-html \
-	generate checknodiffgenerated genereate-binapi generate-proto get-binapi-generators \
+	generate checknodiffgenerated generate-binapi generate-proto get-binapi-generators \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format lint-proto check-proto \
 	get-linkcheck check-links \

@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['2106', '2101', '2009', '2005']
+        version: ['2202', '2106', '2101', '2009', '2005']
 
     steps:
       - name: "Checkout"
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['2106', '2101', '2009', '2005']
+        version: ['2202', '2106', '2101', '2009', '2005']
 
     steps:
       - name: "Checkout"

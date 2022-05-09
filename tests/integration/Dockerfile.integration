@@ -1,6 +1,6 @@
 ARG VPP_IMG=ligato/vpp-base
 
-FROM golang:1.15 as build
+FROM golang:1.17 as build
 
 RUN env CGO_ENABLED=0 \
  	go build -ldflags='-s -w -extldflags "-static"' -o /test2json cmd/test2json

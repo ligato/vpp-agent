@@ -33,6 +33,7 @@ const (
 	vpp2009 = "20.09"
 	vpp2101 = "21.01"
 	vpp2106 = "21.06"
+	vpp2202 = "22.02"
 )
 
 func TestNat44Global(t *testing.T) {
