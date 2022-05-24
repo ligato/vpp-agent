@@ -444,21 +444,21 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 	// TODO: define IPReassembly model in L3 plugin
 	return nil
 	/*req := &vpp_nat.NatSetReass{
-		Timeout:  vrCfg.Timeout,
-		MaxReass: uint16(vrCfg.MaxReassemblies),
-		MaxFrag:  uint8(vrCfg.MaxFragments),
-		DropFrag: boolToUint(vrCfg.DropFragments),
-		IsIP6:    isIpv6,
-	}
-	reply := &vpp_nat.NatSetReassReply{}
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}*/
+	  	Timeout:  vrCfg.Timeout,
+	  	MaxReass: uint16(vrCfg.MaxReassemblies),
+	  	MaxFrag:  uint8(vrCfg.MaxFragments),
+	  	DropFrag: boolToUint(vrCfg.DropFragments),
+	  	IsIP6:    isIpv6,
+	  }
+	  reply := &vpp_nat.NatSetReassReply{}
+	  if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	  	return err
+	  }*/
 }
 
 // Calls VPP binary API to add/remove NAT44 static mapping
 func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
-	var ifIdx = NoInterface
+	var ifIdx interface_types.InterfaceIndex // NOTE: This is a workaround, because NoInterface crashes VPP 22.02
 	var exIPAddr ip_types.IP4Address
 
 	// check tag length limit
@@ -608,7 +608,7 @@ func (h *NatVppHandler) handleNat44EdStaticMappingLb(mapping *nat.DNat44_StaticM
 	req := &vpp_nat_ed.Nat44AddDelLbStaticMapping{
 		Tag:    dnatLabel,
 		Locals: locals,
-		//LocalNum:     uint32(len(locals)), // should not be needed (will be set by struc)
+		// LocalNum:     uint32(len(locals)), // should not be needed (will be set by struc)
 		ExternalAddr: exIPAddrByte,
 		ExternalPort: uint16(mapping.ExternalPort),
 		Protocol:     h.protocolNBValueToNumber(mapping.Protocol),
