@@ -20,11 +20,7 @@ echo "==============================================="
 
 set -x
 
-DOCKERFILE=Dockerfile
-if [ "$VPP_VERSION" -le 2009 ] || [ "$VPP_VERSION" -eq 2106 ]; then
-	DOCKERFILE=Dockerfile-legacy
-fi
-docker build -f ${DOCKERFILE} \
+docker build -f Dockerfile \
     --build-arg DEV_IMG=${DEV_IMG} \
     --build-arg VPP_VERSION=${VPP_VERSION} \
 	  --tag ${IMAGE_TAG} \
