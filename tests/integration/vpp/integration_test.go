@@ -36,6 +36,7 @@ import (
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
+
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
@@ -57,7 +58,6 @@ const (
 		}
 		api-trace {
 			on
-			save-api-table /run/vpp/api-table
 		}
 		socksvr {
 			socket-name /run/vpp/api.sock
@@ -133,8 +133,13 @@ func startVPP(t *testing.T, stdout, stderr io.Writer) *exec.Cmd {
 		}
 		vppCmd.Args = append(vppCmd.Args, config)
 	}
-	vppCmd.Stderr = stderr
-	vppCmd.Stdout = stdout
+	if *debug {
+		vppCmd.Stderr = os.Stderr
+		vppCmd.Stdout = os.Stdout
+	} else {
+		vppCmd.Stderr = stderr
+		vppCmd.Stdout = stdout
+	}
 
 	// ensure that process is killed when current process exits
 	vppCmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
@@ -177,9 +182,6 @@ func hackForBugInGoVPPMessageCache(t *testing.T, adapter adapter.VppAPI, vppCmd 
 }
 
 func setupVPP(t *testing.T) *TestCtx {
-	if os.Getenv("TRAVIS") != "" {
-		t.Skip("skipping test for Travis")
-	}
 	RegisterTestingT(t)
 
 	start := time.Now()

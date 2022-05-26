@@ -15,6 +15,7 @@
 package vpp
 
 import (
+	"encoding/json"
 	"unicode"
 
 	"github.com/onsi/gomega"
@@ -34,4 +35,12 @@ func isAsciiPrintable(s string) bool {
 		}
 	}
 	return true
+}
+
+func pretty(v interface{}) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err.Error()
+	}
+	return string(b)
 }
