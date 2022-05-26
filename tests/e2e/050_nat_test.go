@@ -625,6 +625,10 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
+	if ctx.VppRelease() >= "22.02" {
+		t.Skipf("SKIP testing of deprecated NAT API for VPP>=22.02")
+	}
+
 	const (
 		// public network
 		vppTap1Name       = "vpp-tap1"
