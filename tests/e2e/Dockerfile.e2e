@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -yq \
 
 COPY --from=build /test2json /usr/local/bin/test2json
 
-ARG GOTESTSUM_VERSION=0.6.0
+ARG GOTESTSUM_VERSION=1.8.1
 RUN set -eux; \
 	curl -fsSL https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_linux_amd64.tar.gz -o gotestsum.tar.gz; \
     tar -xf gotestsum.tar.gz gotestsum; \
