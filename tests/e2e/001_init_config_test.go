@@ -39,7 +39,7 @@ vppConfig:
       enabled: true
       ipAddresses:
         - 10.10.1.1/24
-      mtu: 1500
+      mtu: 9000
 `
 	initialConfigFileName := CreateFileOnSharedVolume(ctx, "initial-config.yaml", initialConfig)
 
@@ -75,7 +75,7 @@ func TestInitFromEtcd(t *testing.T) {
 	// put NB config into Etcd
 	ctx.Expect(ctx.Etcd.Put(
 		fmt.Sprintf("/vnf-agent/%v/config/vpp/v2/interfaces/loop-test-from-etcd", AgentInstanceName(ctx)),
-		`{"name":"loop-test-from-etcd","type":"SOFTWARE_LOOPBACK","enabled":true,"ip_addresses":["10.10.1.2/24"], "mtu":1500}`)).
+		`{"name":"loop-test-from-etcd","type":"SOFTWARE_LOOPBACK","enabled":true,"ip_addresses":["10.10.1.2/24"], "mtu":9000}`)).
 		To(Succeed(), "can't insert data into ETCD")
 
 	// prepare Etcd config for VPP-Agent

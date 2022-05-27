@@ -3,7 +3,7 @@ module go.ligato.io/vpp-agent/v3
 go 1.17
 
 require (
-	git.fd.io/govpp.git v0.3.6-0.20210810100027-c0da1f2999a6
+	git.fd.io/govpp.git v0.4.1-0.20220519085400-f06c92da266e
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/coreos/go-iptables v0.4.5
@@ -40,7 +40,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
-	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 )

@@ -144,7 +144,7 @@ func (agent *Agent) LinuxInterfaceHandler() linuxcalls.NetlinkAPI {
 
 // ExecVppctl returns output from vppctl for given action and arguments.
 func (agent *Agent) ExecVppctl(action string, args ...string) (string, error) {
-	cmd := append([]string{"-s", "127.0.0.1:5002", action}, args...)
+	cmd := append([]string{"-s", "/run/vpp/cli.sock", action}, args...)
 	stdout, _, err := agent.ExecCmd("vppctl", cmd...)
 	if err != nil {
 		return "", fmt.Errorf("execute `vppctl %s` error: %v", strings.Join(cmd, " "), err)

@@ -17,6 +17,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -246,12 +247,12 @@ func TestNATPools(t *testing.T) {
 		}
 	}
 	mustBeInVPP := func(ctx *TestCtx, addrs []string) {
-		for _, addr := range addrs { //Eventually is needed due to VPP-Agent to VPP configuration delay
+		for _, addr := range addrs { // Eventually is needed due to VPP-Agent to VPP configuration delay
 			ctx.Eventually(nat44Addresses(ctx)).Should(ContainSubstring(addr))
 		}
 	}
 	cantBeInVPP := func(ctx *TestCtx, addrs []string) {
-		for _, addr := range addrs { //Eventually is needed due to VPP-Agent to VPP configuration delay
+		for _, addr := range addrs { // Eventually is needed due to VPP-Agent to VPP configuration delay
 			ctx.Eventually(nat44Addresses(ctx)).ShouldNot(ContainSubstring(addr))
 		}
 	}
@@ -522,7 +523,12 @@ func TestNATStaticMappings(t *testing.T) {
 	}
 
 	staticMappings := func() (string, error) {
-		return ctx.ExecVppctl("show", "nat44", "static", "mappings")
+		str, err := ctx.ExecVppctl("show", "nat44", "static", "mappings")
+		if err != nil {
+			return "", err
+		}
+		// NOTE: This is a workaround, because case changed in VPP 22.02 (tcp -> TCP)
+		return strings.ToLower(str), nil
 	}
 	containTCP := ContainSubstring(
 		"tcp local %s:%d external %s:%d vrf 0  out2in-only",
@@ -618,6 +624,10 @@ func TestNATStaticMappings(t *testing.T) {
 func TestSourceNATDeprecatedAPI(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
+
+	if ctx.VppRelease() >= "22.02" {
+		t.Skipf("SKIP testing of deprecated NAT API for VPP>=22.02")
+	}
 
 	const (
 		// public network

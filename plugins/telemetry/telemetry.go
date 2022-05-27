@@ -43,6 +43,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2106"
+	_ "go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls/vpp2202"
 )
 
 var debug = os.Getenv("DEBUG_TELEMETRY") != ""
