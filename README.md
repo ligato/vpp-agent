@@ -15,7 +15,7 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswit
 [![CI](https://github.com/ligato/vpp-agent/workflows/CI/badge.svg)](https://github.com/ligato/vpp-agent/actions?query=workflow%3A%22CI%22)
 [![Docker](https://github.com/ligato/vpp-agent/workflows/Docker/badge.svg)](https://github.com/ligato/vpp-agent/actions?query=workflow%3A%22Docker%22)
 [![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
+<!--[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)-->
 
 ### Releases
 
