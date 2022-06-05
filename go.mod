@@ -41,7 +41,7 @@ require (
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
-	google.golang.org/grpc v1.38.0
+	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.27.1
 )
 
