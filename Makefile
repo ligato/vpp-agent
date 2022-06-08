@@ -263,7 +263,7 @@ gotestsumcmd := $(shell command -v gotestsum 2> /dev/null)
 
 test-tools: ## install test tools
 ifndef gotestsumcmd
-	go get gotest.tools/gotestsum
+	go install gotest.tools/gotestsum@v1.8.1
 endif
 	@env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
 
@@ -272,7 +272,7 @@ LINTER := $(shell command -v gometalinter 2> /dev/null)
 get-linters:
 ifndef LINTER
 	@echo "# installing linters"
-	go get -v github.com/alecthomas/gometalinter
+	go install github.com/alecthomas/gometalinter@latest
 	gometalinter --install
 endif
 
