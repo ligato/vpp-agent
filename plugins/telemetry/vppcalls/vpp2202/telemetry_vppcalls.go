@@ -278,7 +278,6 @@ func (h *TelemetryHandler) GetThreads(ctx context.Context) (*vppcalls.ThreadsInf
 	}
 	var items []vppcalls.ThreadsItem
 	for _, thread := range threads {
-		fmt.Printf("thread: %v", thread)
 		items = append(items, vppcalls.ThreadsItem{
 			Name:      thread.Name,
 			ID:        thread.ID,
