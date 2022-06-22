@@ -111,7 +111,7 @@ message Interface {
     // Link defines configuration for specific interface types.
     // It can be nil for some interfaces types like: loopback and DPDK.
     oneof link {
-        SubInterface sub = 100;
+        SubInterfaceLink sub = 100;
         MemifLink memif = 101;
         AfpacketLink afpacket = 102;
         TapLink tap = 103;
@@ -128,11 +128,11 @@ message Interface {
 };
 
 // SubInterface defines configuration for interface type: SUB_INTERFACE
-message SubInterface {
+message SubInterfaceLink {
     // Name of the parent (super) interface
     string parent_name = 1;
     // SubInterface ID, used as VLAN
-    uint32 sub_id = 2;
+    string sub_id = 2;
 
     enum TagRewriteOptions {
         DISABLED = 0;
@@ -229,7 +229,7 @@ message AfpacketLink {
     // if the target interface is managed by the agent and not created externally
     // (see comments for <host_if_name> for explanation).
     // It is mandatory to define either <host_if_name> or <linux_interface>.
-    string linux_interface = 2;
+    string linux_interface = 3;
 }
 
 // TapLink defines configuration for interface type: TAP
