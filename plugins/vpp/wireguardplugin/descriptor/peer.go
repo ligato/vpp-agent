@@ -20,11 +20,11 @@ import (
 
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/utils/addrs"
 	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/ip_types"
 	vpp_ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/wgidx"
 
@@ -130,7 +130,7 @@ func (d *WgPeerDescriptor) Validate(key string, peer *wg.Peer) (err error) {
 	}
 
 	for _, allowedIp := range peer.AllowedIps {
-		_, err := ip_types.ParsePrefix(allowedIp)
+		_, _, err := addrs.ParseIPWithPrefix(allowedIp)
 		if err != nil {
 			return kvs.NewInvalidValueError(ErrWgPeerAllowedIPs, "allowed_ips")
 		}
@@ -181,4 +181,9 @@ func (d *WgPeerDescriptor) Retrieve(correlate []adapter.PeerKVWithMetadata) (dum
 	}
 
 	return dump, nil
+}
+
+func validPrefix(ip string) error {
+	_, _, err := net.ParseCIDR(ip)
+	return err
 }
