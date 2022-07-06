@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vpp2005
+package vpp2106
 
 import (
 	"context"
@@ -24,12 +24,12 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/binapi/syslog"
 	"go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2005"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106"
 )
 
 func init() {
 	// Register this handler implementation for VPP 20.05 in the vppcalls package.
-	vppcalls.AddHandlerVersion(vpp2005.Version, syslog.AllMessages(), NewHandler)
+	vppcalls.AddHandlerVersion(vpp2106.Version, syslog.AllMessages(), NewHandler)
 }
 
 const DefaultMaxMsgSize = 480
