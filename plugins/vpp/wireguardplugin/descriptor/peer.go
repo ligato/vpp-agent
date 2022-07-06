@@ -182,8 +182,3 @@ func (d *WgPeerDescriptor) Retrieve(correlate []adapter.PeerKVWithMetadata) (dum
 
 	return dump, nil
 }
-
-func validPrefix(ip string) error {
-	_, _, err := net.ParseCIDR(ip)
-	return err
-}
