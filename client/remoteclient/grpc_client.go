@@ -153,6 +153,10 @@ func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
 }
 
 func (c *grpcClient) GetConfig(dsts ...interface{}) error {
+	return c.GetConfigWithTags(nil, dsts...)
+}
+
+func (c *grpcClient) GetConfigWithTags(tags []string, dsts ...interface{}) error {
 	ctx := context.Background()
 
 	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
@@ -163,6 +167,11 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
 		var key string
+		rawItemTags := item.GetLabels()[client.TagLabelKey]
+		itemTags := strings.Split(rawItemTags, ",")
+		if !isTagSubset(itemTags, tags) {
+			continue
+		}
 		val, err := models.UnmarshalItemUsingModelRegistry(item.Item, c.modelRegistry)
 		if err != nil {
 			return err
@@ -210,6 +219,10 @@ type setConfigRequest struct {
 }
 
 func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
+	return r.UpdateWithLabels(nil, items...)
+}
+
+func (r *setConfigRequest) UpdateWithLabels(labels map[string]string, items ...proto.Message) client.ChangeRequest {
 	if r.err != nil {
 		return r
 	}
@@ -220,7 +233,8 @@ func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
 			return r
 		}
 		r.req.Updates = append(r.req.Updates, &generic.UpdateItem{
-			Item: item,
+			Item:   item,
+			Labels: labels,
 		})
 	}
 	return r
@@ -362,4 +376,16 @@ func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
 		result = append(result, msg)
 	}
 	return result
+}
+
+func isTagSubset(a []string, b []string) bool {
+	m := make(map[string]struct{})
+	for _, v := range a {
+		m[v] = struct{}{}
+	}
+	l := len(m)
+	for _, v := range b {
+		m[v] = struct{}{}
+	}
+	return l == len(m)
 }

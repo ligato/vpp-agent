@@ -83,6 +83,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 
 	var ops = make(map[string]generic.UpdateResult_Operation)
 	var kvPairs []KeyVal
+	var keyLabels = make(map[string]Labels)
 
 	for _, update := range req.Updates {
 		item := update.Item
@@ -119,6 +120,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 			Key: key,
 			Val: val,
 		})
+		keyLabels[key] = update.GetLabels()
 	}
 
 	md, hasMeta := metadata.FromIncomingContext(ctx)
@@ -131,7 +133,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 	ctx = kvs.WithRetryDefault(ctx)
-	results, err := s.dispatch.PushData(ctx, kvPairs)
+	results, err := s.dispatch.PushData(ctx, kvPairs, keyLabels)
 	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
@@ -199,6 +201,7 @@ func (s *genericService) GetConfig(context.Context, *generic.GetConfigRequest) (
 		items = append(items, &generic.ConfigItem{
 			Item:   item,
 			Status: itemStatus,
+			Labels: s.dispatch.ListLabels(key),
 		})
 	}
 

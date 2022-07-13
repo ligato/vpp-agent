@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -79,7 +80,18 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
+	return c.GetConfigWithTags(nil, dsts...)
+}
+
+func (c *client) GetConfigWithTags(tags []string, dsts ...interface{}) error {
 	protos := c.dispatcher.ListData()
+	for key := range protos {
+		rawItemTags := c.dispatcher.ListLabels(key)[TagLabelKey]
+		itemTags := strings.Split(rawItemTags, ",")
+		if !isTagSubset(itemTags, tags) {
+			delete(protos, key)
+		}
+	}
 	protoDsts := extractProtoMessages(dsts)
 	if len(dsts) == len(protoDsts) { // all dsts are proto messages
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
@@ -119,6 +131,11 @@ func (r *changeRequest) Update(items ...proto.Message) ChangeRequest {
 		r.txn.Put(key, item)
 	}
 	return r
+}
+
+func (r *changeRequest) UpdateWithLabels(labels map[string]string, items ...proto.Message) ChangeRequest {
+	// TODO: labels are discarded, use grpcClient to update the labels
+	return r.Update(items...)
 }
 
 func (r *changeRequest) Delete(items ...proto.Message) ChangeRequest {
@@ -183,4 +200,16 @@ func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
 		result = append(result, msg)
 	}
 	return result
+}
+
+func isTagSubset(a []string, b []string) bool {
+	m := make(map[string]struct{})
+	for _, v := range a {
+		m[v] = struct{}{}
+	}
+	l := len(m)
+	for _, v := range b {
+		m[v] = struct{}{}
+	}
+	return l == len(m)
 }

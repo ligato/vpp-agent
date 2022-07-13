@@ -119,7 +119,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *pb.UpdateRequest
 	} else {
 		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 	}
-	results, err := svc.dispatch.PushData(ctx, kvPairs)
+	results, err := svc.dispatch.PushData(ctx, kvPairs, nil)
 
 	header := map[string]string{}
 	if seqNum := svc.extractTxnSeqNum(results); seqNum >= 0 {
@@ -195,7 +195,7 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *pb.DeleteRequest
 	} else {
 		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 	}
-	results, err := svc.dispatch.PushData(ctx, kvPairs)
+	results, err := svc.dispatch.PushData(ctx, kvPairs, nil)
 
 	header := map[string]string{}
 	if seqNum := svc.extractTxnSeqNum(results); seqNum >= 0 {

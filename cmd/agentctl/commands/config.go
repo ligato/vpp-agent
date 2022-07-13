@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/olekukonko/tablewriter"
@@ -71,11 +72,13 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	flags.StringVar(&opts.Tags, "tags", "", "Output only that have the given tags")
 	return cmd
 }
 
 type ConfigGetOptions struct {
 	Format string
+	Tags   string
 }
 
 func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
@@ -96,8 +99,20 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
 
+	// parse tags: remove whitespaces, do not allow duplicate or empty ("") tags
+	var tags []string
+	if opts.Tags != "" {
+		for _, t := range strings.Split(opts.Tags, ",") {
+			tag := stripWhitespace(t)
+			if tag != "" {
+				tags = append(tags, tag)
+			}
+		}
+		tags = removeDuplicates(tags)
+	}
+
 	// retrieve data into config
-	if err := c.GetConfig(config); err != nil {
+	if err := c.GetConfigWithTags(tags, config); err != nil {
 		return fmt.Errorf("can't retrieve configuration due to: %v", err)
 	}
 
@@ -135,6 +150,7 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	// flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t",
 		5*time.Minute, "Timeout for sending updated data")
+	flags.StringVar(&opts.Tags, "tags", "", "Tags associated with updated config items")
 	return cmd
 }
 
@@ -144,6 +160,7 @@ type ConfigUpdateOptions struct {
 	// WaitDone bool
 	// Verbose  bool
 	Timeout time.Duration
+	Tags    string
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
@@ -197,6 +214,21 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 			"from one big configuration proto message due to: %v", err)
 	}
 
+	// add tags to configuration (comma separated strings, without duplicates)
+	var labels map[string]string
+	if opts.Tags != "" {
+		var tags []string
+		labels = make(map[string]string)
+		for _, t := range strings.Split(opts.Tags, ",") {
+			tag := stripWhitespace(t)
+			if tag != "" {
+				tags = append(tags, tag)
+			}
+		}
+		tags = removeDuplicates(tags)
+		labels["tags"] = strings.Join(tags, ",")
+	}
+
 	// update/resync configuration
 	if opts.Replace {
 		if err := c.ResyncConfig(configMessages...); err != nil {
@@ -204,7 +236,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		}
 	} else {
 		req := c.ChangeRequest()
-		req.Update(configMessages...)
+		req.UpdateWithLabels(labels, configMessages...)
 		if err := req.Send(ctx); err != nil {
 			return fmt.Errorf("send failed: %v", err)
 		}
@@ -784,4 +816,27 @@ func txnErrors(txn *kvs.RecordedTxn) Errors {
 		}
 	}
 	return errs
+}
+
+func stripWhitespace(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, ch := range s {
+		if !unicode.IsSpace(ch) {
+			b.WriteRune(ch)
+		}
+	}
+	return b.String()
+}
+
+func removeDuplicates(s []string) []string {
+	var result []string
+	found := make(map[string]struct{})
+	for _, v := range s {
+		if _, ok := found[v]; !ok {
+			found[v] = struct{}{}
+			result = append(result, v)
+		}
+	}
+	return result
 }

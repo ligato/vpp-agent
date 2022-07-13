@@ -23,10 +23,13 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
+const TagLabelKey = "tags"
+
 // ModelInfo is just retyped models.ModelInfo for backward compatibility purpose
 // Deprecated: use models.ModelInfo instead
 type ModelInfo = models.ModelInfo
 
+type ConfigItem = generic.ConfigItem
 type StateItem = generic.StateItem
 
 // ConfigClient ...
@@ -48,6 +51,10 @@ type GenericClient interface {
 	// TODO: return as list of config items
 	GetConfig(dsts ...interface{}) error
 
+	// GetConfigWithTags retrieves current config that has provided tags into dsts.
+	// TODO: return as list of config items
+	GetConfigWithTags(tags []string, dsts ...interface{}) error
+
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)
 }
@@ -56,6 +63,9 @@ type GenericClient interface {
 type ChangeRequest interface {
 	// Update appends updates for given items to the request.
 	Update(items ...proto.Message) ChangeRequest
+
+	// Update appends updates for given items with labels to the request.
+	UpdateWithLabels(labels map[string]string, items ...proto.Message) ChangeRequest
 
 	// Delete appends deletes for given items to the request.
 	Delete(items ...proto.Message) ChangeRequest

@@ -913,7 +913,7 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 		ctx = contextdecorator.DataSrcContext(ctx, "grpc")
 
 		// config data pushed into VPP-Agent
-		_, err = p.Dispatcher.PushData(ctx, configKVPairs)
+		_, err = p.Dispatcher.PushData(ctx, configKVPairs, nil)
 		if err != nil {
 			p.internalError("can't push data into vpp-agent", err, w, formatter)
 			return

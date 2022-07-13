@@ -217,7 +217,7 @@ func (p *Plugin) watchEvents() {
 			}
 			ctx = kvs.WithRetryDefault(ctx)
 
-			_, err = p.PushData(ctx, kvPairs)
+			_, err = p.PushData(ctx, kvPairs, nil)
 			e.Done(err)
 
 		case e := <-p.resyncChan:
@@ -264,7 +264,7 @@ func (p *Plugin) watchEvents() {
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 
-			_, err := p.PushData(ctx, kvPairs)
+			_, err := p.PushData(ctx, kvPairs, nil)
 			e.Done(err)
 
 		case <-p.quit:

@@ -40,6 +40,8 @@ type KeyVal struct {
 // KVPairs represents key-value pairs.
 type KVPairs map[string]proto.Message
 
+type Labels map[string]string
+
 type Status = kvscheduler.ValueStatus
 
 type Result struct {
@@ -49,16 +51,17 @@ type Result struct {
 
 type Dispatcher interface {
 	ListData() KVPairs
-	PushData(context.Context, []KeyVal) ([]Result, error)
+	PushData(context.Context, []KeyVal, map[string]Labels) ([]Result, error)
 	GetStatus(key string) (*Status, error)
 	ListState() (KVPairs, error)
+	ListLabels(key string) Labels
 }
 
 type dispatcher struct {
 	log logging.Logger
 	kvs kvs.KVScheduler
 	mu  sync.Mutex
-	db  KVStore
+	db  KStore
 }
 
 // ListData retrieves actual data.
@@ -79,7 +82,7 @@ func (p *dispatcher) GetStatus(key string) (*Status, error) {
 }
 
 // PushData updates actual data.
-func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []Result, err error) {
+func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal, keyLabels map[string]Labels) (results []Result, err error) {
 	trace.Logf(ctx, "pushData", "%d KV pairs", len(kvPairs))
 
 	// check key-value pairs for uniqness and validate key
@@ -122,6 +125,10 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 			}
 			p.log.Debugf(" - PUT: %q ", kv.Key)
 			p.db.Update(dataSrc, kv.Key, kv.Val)
+			p.db.ResetLabels(kv.Key)
+			for lkey, lval := range keyLabels[kv.Key] {
+				p.db.AddLabel(kv.Key, lkey, lval)
+			}
 		}
 		allPairs := p.db.ListAll()
 		p.log.Debugf("will resync %d pairs", len(allPairs))
@@ -134,10 +141,17 @@ func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (results []
 				p.log.Debugf(" - DELETE: %q", kv.Key)
 				txn.SetValue(kv.Key, nil)
 				p.db.Delete(dataSrc, kv.Key)
+				for lkey := range keyLabels[kv.Key] {
+					p.db.DeleteLabel(kv.Key, lkey)
+				}
 			} else {
 				p.log.Debugf(" - UPDATE: %q ", kv.Key)
 				txn.SetValue(kv.Key, kv.Val)
 				p.db.Update(dataSrc, kv.Key, kv.Val)
+				p.db.ResetLabels(kv.Key)
+				for lkey, lval := range keyLabels[kv.Key] {
+					p.db.AddLabel(kv.Key, lkey, lval)
+				}
 			}
 		}
 	}
@@ -200,4 +214,11 @@ func (p *dispatcher) ListState() (KVPairs, error) {
 	}
 
 	return pairs, nil
+}
+
+func (p *dispatcher) ListLabels(key string) Labels {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return p.db.ListLabels(key)
 }
