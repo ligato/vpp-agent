@@ -19,13 +19,12 @@ package dnsplugin
 import (
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
+
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2005"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2202"

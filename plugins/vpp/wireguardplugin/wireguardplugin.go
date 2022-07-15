@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
+
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
@@ -27,8 +28,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2009"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/wireguardplugin/vppcalls/vpp2202"
 )

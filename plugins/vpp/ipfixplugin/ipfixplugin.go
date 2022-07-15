@@ -29,8 +29,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2005"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2009"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2202"
