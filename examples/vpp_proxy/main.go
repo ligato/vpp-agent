@@ -27,13 +27,13 @@ import (
 	"git.fd.io/govpp.git/proxy"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009"
-	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/interface"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2009/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106"
+	interfaces "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/interface"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/vpe"
 )
 
 // VPP version used in the example.
-const vppVersion = vpp2009.Version
+const vppVersion = vpp2106.Version
 
 var (
 	address = flag.String("addr", ":9191", "agent address")
