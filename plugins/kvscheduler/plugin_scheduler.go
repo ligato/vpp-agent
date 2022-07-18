@@ -416,7 +416,7 @@ func (s *Scheduler) getDescriptorForKeyPrefix(keyPrefix string) string {
 func (s *Scheduler) DumpValuesByKeyPrefix(keyPrefix string, view kvs.View) (values []kvs.KVWithMetadata, err error) {
 	descriptorName := s.getDescriptorForKeyPrefix(keyPrefix)
 	if descriptorName == "" {
-		err = errors.New("unknown key prefix")
+		err = errors.New("no descriptor found matching the key prefix")
 		return
 	}
 	return s.DumpValuesByDescriptor(descriptorName, view)

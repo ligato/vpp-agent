@@ -431,8 +431,12 @@ func writeKVschedulerReport(subTaskActionName string, view string, ignoreModels 
 			View:      view,
 		})
 		if err != nil {
-			errs = append(errs, fmt.Errorf("Failed to get data for %s view and "+
-				"key prefix %s due to: %v\n", view, keyPrefix, err))
+			if strings.Contains(err.Error(), "no descriptor found matching the key prefix") {
+				cli.Out().Write([]byte(fmt.Sprintf("Skipping key prefix %s due to: %v\n", keyPrefix, err)))
+			} else {
+				errs = append(errs, fmt.Errorf("Failed to get data for %s view and "+
+					"key prefix %s due to: %v\n", view, keyPrefix, err))
+			}
 			continue
 		}
 		dumps = append(dumps, dump...)
