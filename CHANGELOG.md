@@ -67,6 +67,7 @@ RELEASE CHANGELOG TEMPLATE:
 
 ### Bug Fixes
 - fix: Fix generating jsonschema [#1836](https://github.com/ligato/vpp-agent/pull/1836)
+- fix: Fix `agentctl report` command failing in StoneWork [#1857](https://github.com/ligato/vpp-agent/pull/1857)
 
 ### Features
 - feat: Add support for VPP 22.02 [#1842](https://github.com/ligato/vpp-agent/pull/1842)
