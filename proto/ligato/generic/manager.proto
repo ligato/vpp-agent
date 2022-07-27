@@ -65,6 +65,7 @@ message UpdateResult {
 
 message GetConfigRequest {
     repeated Item.ID ids = 1;
+    map<string, string> labels = 2;
 }
 message GetConfigResponse {
     repeated ConfigItem items = 1;

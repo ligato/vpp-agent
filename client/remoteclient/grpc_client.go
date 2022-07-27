@@ -152,11 +152,49 @@ func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
 	return err
 }
 
-func (c *grpcClient) GetConfig(dsts ...interface{}) error {
-	return c.GetConfigWithTags(nil, dsts...)
+func (c *grpcClient) GetConfigItems(filter client.Filter) ([]*client.ConfigItem, error) {
+	ctx := context.Background()
+
+	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	if filter.Keys == nil {
+		filter.Keys = make(map[string]struct{})
+	}
+
+	var items []*client.ConfigItem
+	for _, item := range resp.Items {
+		var key string
+		val, err := models.UnmarshalItemUsingModelRegistry(item.Item, c.modelRegistry)
+		if err != nil {
+			return nil, err
+		}
+		if data := item.Item.GetData(); data != nil {
+			key, err = models.GetKeyUsingModelRegistry(val, c.modelRegistry)
+		} else {
+			key, err = models.GetKeyForItemUsingModelRegistry(item.Item, c.modelRegistry)
+		}
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := filter.Keys[key]; ok {
+			fmt.Println(val)
+			// TODO: should these items be copies? - probably yes
+			items = append(items, &client.ConfigItem{
+				Item:       item.GetItem(),
+				ItemStatus: item.GetStatus(),
+				Key:        key,
+				Value:      val,
+				Labels:     item.GetLabels(),
+			})
+		}
+	}
+	return items, nil
 }
 
-func (c *grpcClient) GetConfigWithTags(tags []string, dsts ...interface{}) error {
+func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	ctx := context.Background()
 
 	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
@@ -167,11 +205,6 @@ func (c *grpcClient) GetConfigWithTags(tags []string, dsts ...interface{}) error
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
 		var key string
-		rawItemTags := item.GetLabels()[client.TagLabelKey]
-		itemTags := strings.Split(rawItemTags, ",")
-		if !isTagSubset(itemTags, tags) {
-			continue
-		}
 		val, err := models.UnmarshalItemUsingModelRegistry(item.Item, c.modelRegistry)
 		if err != nil {
 			return err
@@ -200,6 +233,48 @@ func (c *grpcClient) GetConfigWithTags(tags []string, dsts ...interface{}) error
 	return nil
 }
 
+func (c *grpcClient) UpdateConfigItems(items client.UpdateItems) (*generic.SetConfigResponse, error) {
+	ctx := context.Background()
+	req := &generic.SetConfigRequest{
+		OverwriteAll: items.Overwrite,
+	}
+
+	for _, msg := range items.Msgs {
+		var item *generic.Item
+		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)
+		if err != nil {
+			return nil, err
+		}
+		req.Updates = append(req.Updates, &generic.UpdateItem{
+			Item:   item,
+			Labels: items.Labels,
+		})
+	}
+
+	res, err := c.manager.SetConfig(ctx, req)
+	return res, err
+}
+
+func (c *grpcClient) DeleteConfigItems(items client.UpdateItems) (*generic.SetConfigResponse, error) {
+	ctx := context.Background()
+	req := &generic.SetConfigRequest{}
+
+	for _, msg := range items.Msgs {
+		var item *generic.Item
+		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)
+		if err != nil {
+			return nil, err
+		}
+		item.Data = nil // delete
+		req.Updates = append(req.Updates, &generic.UpdateItem{
+			Item: item,
+		})
+	}
+
+	res, err := c.manager.SetConfig(ctx, req)
+	return res, err
+}
+
 func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
 	ctx := context.Background()
 
@@ -219,10 +294,6 @@ type setConfigRequest struct {
 }
 
 func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
-	return r.UpdateWithLabels(nil, items...)
-}
-
-func (r *setConfigRequest) UpdateWithLabels(labels map[string]string, items ...proto.Message) client.ChangeRequest {
 	if r.err != nil {
 		return r
 	}
@@ -233,8 +304,7 @@ func (r *setConfigRequest) UpdateWithLabels(labels map[string]string, items ...p
 			return r
 		}
 		r.req.Updates = append(r.req.Updates, &generic.UpdateItem{
-			Item:   item,
-			Labels: labels,
+			Item: item,
 		})
 	}
 	return r

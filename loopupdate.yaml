@@ -1,0 +1,13 @@
+vppConfig:
+  interfaces:
+  - name: "loop1"
+    type: SOFTWARE_LOOPBACK
+    enabled: true
+    ipAddresses:
+    - 192.168.1.1/24
+  bridgeDomains:
+    - name: bd1
+      forward: true
+      learn: true
+      interfaces:
+        - name: loop1

@@ -113,7 +113,13 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	}
 
 	// retrieve data into config
-	if err := c.GetConfigWithTags(tags, config); err != nil {
+	filter := client.Filter{}
+	configItems, err := c.GetConfigItems(filter)
+	if err != nil {
+		return fmt.Errorf("can't retrieve configuration due to: %v", err)
+	}
+
+	if err := c.GetConfig(config); err != nil {
 		return fmt.Errorf("can't retrieve configuration due to: %v", err)
 	}
 
@@ -123,6 +129,14 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		format = `yaml`
 	}
 	if err := formatAsTemplate(cli.Out(), format, config); err != nil {
+		return err
+	}
+
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+
+	if err := formatAsTemplate(cli.Out(), format, configItems); err != nil {
 		return err
 	}
 
@@ -216,19 +230,19 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 
 	// add tags to configuration (comma separated strings, without duplicates)
-	var labels map[string]string
-	if opts.Tags != "" {
-		var tags []string
-		labels = make(map[string]string)
-		for _, t := range strings.Split(opts.Tags, ",") {
-			tag := stripWhitespace(t)
-			if tag != "" {
-				tags = append(tags, tag)
-			}
-		}
-		tags = removeDuplicates(tags)
-		labels["tags"] = strings.Join(tags, ",")
-	}
+	// var labels map[string]string
+	// if opts.Tags != "" {
+	// 	var tags []string
+	// 	labels = make(map[string]string)
+	// 	for _, t := range strings.Split(opts.Tags, ",") {
+	// 		tag := stripWhitespace(t)
+	// 		if tag != "" {
+	// 			tags = append(tags, tag)
+	// 		}
+	// 	}
+	// 	tags = removeDuplicates(tags)
+	// 	labels["tags"] = strings.Join(tags, ",")
+	// }
 
 	// update/resync configuration
 	if opts.Replace {
@@ -237,7 +251,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		}
 	} else {
 		req := c.ChangeRequest()
-		req.UpdateWithLabels(labels, configMessages...)
+		req.Update(configMessages...)
 		if err := req.Send(ctx); err != nil {
 			return fmt.Errorf("send failed: %v", err)
 		}

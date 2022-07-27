@@ -23,14 +23,30 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
-const TagLabelKey = "tags"
-
 // ModelInfo is just retyped models.ModelInfo for backward compatibility purpose
 // Deprecated: use models.ModelInfo instead
 type ModelInfo = models.ModelInfo
 
-type ConfigItem = generic.ConfigItem
 type StateItem = generic.StateItem
+
+// type ConfigItem struct {
+// 	*generic.Item
+// 	*generic.ItemStatus
+// 	Value  proto.Message
+// 	Labels map[string]string
+// }
+
+type UpdateItems struct {
+	Msgs      []proto.Message
+	Labels    map[string]string
+	Overwrite bool
+}
+
+// Only set Ids or Labels (if both set )
+type Filter struct {
+	Ids    []generic.Item_ID
+	Labels map[string]string
+}
 
 // ConfigClient ...
 // Deprecated: use GenericClient instead
@@ -48,12 +64,14 @@ type GenericClient interface {
 	ResyncConfig(items ...proto.Message) error
 
 	// GetConfig retrieves current config into dsts.
-	// TODO: return as list of config items
 	GetConfig(dsts ...interface{}) error
 
-	// GetConfigWithTags retrieves current config that has provided tags into dsts.
-	// TODO: return as list of config items
-	GetConfigWithTags(tags []string, dsts ...interface{}) error
+	// GetConfigItems returns current config as a list of config items
+	GetConfigItems(filter Filter) ([]*generic.ConfigItem, error)
+
+	UpdateConfigItems(items UpdateItems) (*generic.SetConfigResponse, error)
+
+	DeleteConfigItems(items UpdateItems) (*generic.SetConfigResponse, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)
@@ -63,9 +81,6 @@ type GenericClient interface {
 type ChangeRequest interface {
 	// Update appends updates for given items to the request.
 	Update(items ...proto.Message) ChangeRequest
-
-	// Update appends updates for given items with labels to the request.
-	UpdateWithLabels(labels map[string]string, items ...proto.Message) ChangeRequest
 
 	// Delete appends deletes for given items to the request.
 	Delete(items ...proto.Message) ChangeRequest

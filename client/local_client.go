@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -80,18 +79,7 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
-	return c.GetConfigWithTags(nil, dsts...)
-}
-
-func (c *client) GetConfigWithTags(tags []string, dsts ...interface{}) error {
 	protos := c.dispatcher.ListData()
-	for key := range protos {
-		rawItemTags := c.dispatcher.ListLabels(key)[TagLabelKey]
-		itemTags := strings.Split(rawItemTags, ",")
-		if !isTagSubset(itemTags, tags) {
-			delete(protos, key)
-		}
-	}
 	protoDsts := extractProtoMessages(dsts)
 	if len(dsts) == len(protoDsts) { // all dsts are proto messages
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
@@ -102,6 +90,21 @@ func (c *client) GetConfigWithTags(tags []string, dsts ...interface{}) error {
 		util.PlaceProtos(protos, dsts...)
 	}
 	return nil
+}
+
+func (c *client) GetConfigItems(filter Filter) ([]*ConfigItem, error) {
+	// TODO: implement this in local client (already implemented in grpc client)
+	return nil, nil
+}
+
+func (c *client) UpdateConfigItems(items UpdateItems) (*generic.SetConfigResponse, error) {
+	// TODO: implement this in local client (already implemented in grpc client)
+	return nil, nil
+}
+
+func (c *client) DeleteConfigItems(items UpdateItems) (*generic.SetConfigResponse, error) {
+	// TODO: implement this in local client (already implemented in grpc client)
+	return nil, nil
 }
 
 func (c *client) DumpState() ([]*generic.StateItem, error) {
@@ -131,11 +134,6 @@ func (r *changeRequest) Update(items ...proto.Message) ChangeRequest {
 		r.txn.Put(key, item)
 	}
 	return r
-}
-
-func (r *changeRequest) UpdateWithLabels(labels map[string]string, items ...proto.Message) ChangeRequest {
-	// TODO: labels are discarded, use grpcClient to update the labels
-	return r.Update(items...)
 }
 
 func (r *changeRequest) Delete(items ...proto.Message) ChangeRequest {
