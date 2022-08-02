@@ -22,6 +22,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // RecordedProtoMessage is a proto.Message suitable for recording and access via
@@ -77,10 +79,17 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	if p.ProtoMsgName == "" {
 		return nil
 	}
-	msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(pwn.ProtoMsgName))
+
+	typeRegistry := models.DefaultRegistry.MessageTypeRegistry()
+	fullMsgName := protoreflect.FullName(pwn.ProtoMsgName)
+	msgType, err := typeRegistry.FindMessageByName(fullMsgName)
+	if err != nil {
+		msgType, err = protoregistry.GlobalTypes.FindMessageByName(fullMsgName)
+	}
 	if err != nil {
 		return err
 	}
+
 	msg := msgType.New().Interface()
 	if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
 		err = protojson.Unmarshal([]byte(pwn.ProtoMsgData), msg)
