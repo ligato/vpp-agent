@@ -17,6 +17,7 @@ package utils
 import (
 	"encoding/json"
 
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -80,10 +81,13 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
+	// try to find the message type in the default registry
 	typeRegistry := models.DefaultRegistry.MessageTypeRegistry()
 	fullMsgName := protoreflect.FullName(pwn.ProtoMsgName)
 	msgType, err := typeRegistry.FindMessageByName(fullMsgName)
 	if err != nil {
+		// if not found use the proto global types registry as a fallback
+		logging.Debugf("cannot get message type from default registry: %v", err)
 		msgType, err = protoregistry.GlobalTypes.FindMessageByName(fullMsgName)
 	}
 	if err != nil {
