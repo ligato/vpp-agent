@@ -87,7 +87,7 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	msgType, err := typeRegistry.FindMessageByName(fullMsgName)
 	if err != nil {
 		// if not found use the proto global types registry as a fallback
-		logging.Debugf("cannot get message type from default registry: %v", err)
+		logging.Debugf("cannot get message type for message name %s from default registry: %v", fullMsgName, err)
 		msgType, err = protoregistry.GlobalTypes.FindMessageByName(fullMsgName)
 	}
 	if err != nil {
