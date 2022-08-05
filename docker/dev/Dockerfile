@@ -93,7 +93,7 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
 # Install debugger
-RUN go get -u github.com/go-delve/delve/cmd/dlv && dlv version
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.9.0 && dlv version
 
 # Copy configs
 COPY \
