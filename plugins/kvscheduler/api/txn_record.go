@@ -172,6 +172,11 @@ type RecordedTxnOps []*RecordedTxnOp
 // RecordedTxns is a list of recorded transactions.
 type RecordedTxns []*RecordedTxn
 
+type RecordedKVWithMetadata struct {
+	RecordedKVPair
+	Metadata Metadata
+}
+
 // String returns a *multi-line* human-readable string representation of recorded transaction.
 func (txn *RecordedTxn) String() string {
 	return txn.StringWithOpts(false, false, 0)
