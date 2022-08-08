@@ -17,11 +17,14 @@ package utils
 import (
 	"encoding/json"
 
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 // RecordedProtoMessage is a proto.Message suitable for recording and access via
@@ -77,10 +80,20 @@ func (p *RecordedProtoMessage) UnmarshalJSON(data []byte) error {
 	if p.ProtoMsgName == "" {
 		return nil
 	}
-	msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(pwn.ProtoMsgName))
+
+	// try to find the message type in the default registry
+	typeRegistry := models.DefaultRegistry.MessageTypeRegistry()
+	fullMsgName := protoreflect.FullName(pwn.ProtoMsgName)
+	msgType, err := typeRegistry.FindMessageByName(fullMsgName)
+	if err != nil {
+		// if not found use the proto global types registry as a fallback
+		logging.Debugf("cannot get message type for message name %s from default registry: %v", fullMsgName, err)
+		msgType, err = protoregistry.GlobalTypes.FindMessageByName(fullMsgName)
+	}
 	if err != nil {
 		return err
 	}
+
 	msg := msgType.New().Interface()
 	if len(pwn.ProtoMsgData) > 0 && pwn.ProtoMsgData[0] == '{' {
 		err = protojson.Unmarshal([]byte(pwn.ProtoMsgData), msg)
