@@ -590,7 +590,10 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 	if err != nil {
 		return err
 	}
-	knownModels, _ := gc.KnownModels("config")
+	knownModels, err := gc.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
 
 	// register the remote config models into the global default registry
 	for _, km := range knownModels {
