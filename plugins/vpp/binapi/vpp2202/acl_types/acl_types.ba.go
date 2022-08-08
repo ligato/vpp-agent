@@ -11,7 +11,7 @@ package acl_types
 import (
 	"strconv"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ethernet_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ip_types"
 )

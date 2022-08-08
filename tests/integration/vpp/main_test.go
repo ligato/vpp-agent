@@ -20,8 +20,8 @@ import (
 	"os"
 	"testing"
 
-	govppcore "git.fd.io/govpp.git/core"
 	"github.com/sirupsen/logrus"
+	govppcore "go.fd.io/govpp/core"
 
 	testutils "go.ligato.io/vpp-agent/v3/tests/testutils"
 )

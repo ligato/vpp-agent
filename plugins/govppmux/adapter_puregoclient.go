@@ -12,6 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+//go:build !mockvpp && !vppapiclient
 // +build !mockvpp,!vppapiclient
 
 package govppmux
@@ -20,9 +21,9 @@ import (
 	"fmt"
 	"os"
 
-	"git.fd.io/govpp.git/adapter"
-	"git.fd.io/govpp.git/adapter/socketclient"
-	"git.fd.io/govpp.git/adapter/statsclient"
+	"go.fd.io/govpp/adapter"
+	"go.fd.io/govpp/adapter/socketclient"
+	"go.fd.io/govpp/adapter/statsclient"
 )
 
 const noShmWarning = `Using shared memory for VPP binary API is not currently supported in pure Go client!

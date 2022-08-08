@@ -23,8 +23,8 @@ import (
 	"io"
 	"log"
 
-	"git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/proxy"
+	"go.fd.io/govpp/api"
+	"go.fd.io/govpp/proxy"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106"

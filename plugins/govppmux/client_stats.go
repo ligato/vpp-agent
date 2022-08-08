@@ -15,8 +15,8 @@
 package govppmux
 
 import (
-	"git.fd.io/govpp.git/adapter"
-	govppapi "git.fd.io/govpp.git/api"
+	"go.fd.io/govpp/adapter"
+	govppapi "go.fd.io/govpp/api"
 )
 
 // ListStats returns all stats names

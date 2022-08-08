@@ -15,8 +15,9 @@
 package vpp2202
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202"
 	vpp_wg "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/wireguard"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

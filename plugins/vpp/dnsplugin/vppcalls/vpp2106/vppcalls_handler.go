@@ -15,8 +15,9 @@
 package vpp2106
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
+
 	core_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	core_vpp2106 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2106"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"

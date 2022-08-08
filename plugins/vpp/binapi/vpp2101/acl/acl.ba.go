@@ -8,8 +8,8 @@
 package acl
 
 import (
-	api "git.fd.io/govpp.git/api"
-	codec "git.fd.io/govpp.git/codec"
+	api "go.fd.io/govpp/api"
+	codec "go.fd.io/govpp/codec"
 	acl_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/acl_types"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/ethernet_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/interface_types"

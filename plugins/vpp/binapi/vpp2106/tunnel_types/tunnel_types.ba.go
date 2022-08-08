@@ -11,7 +11,7 @@ package tunnel_types
 import (
 	"strconv"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/interface_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/ip_types"
 )

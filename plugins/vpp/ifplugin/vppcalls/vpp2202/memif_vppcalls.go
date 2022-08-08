@@ -20,8 +20,8 @@ import (
 	"io"
 	"strings"
 
-	"git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
+	"go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/interface_types"
@@ -177,7 +177,7 @@ func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, interfaces m
 				Master: memifDetails.Role == 0,
 				Mode:   memifModetoNB(memifDetails.Mode),
 				Id:     memifDetails.ID,
-				//Secret: // TODO: Secret - not available in the binary API
+				// Secret: // TODO: Secret - not available in the binary API
 				SocketFilename: func(socketMap map[string]uint32) (filename string) {
 					for filename, id := range socketMap {
 						if memifDetails.SocketID == id {
@@ -191,8 +191,8 @@ func (h *InterfaceVppHandler) dumpMemifDetails(ctx context.Context, interfaces m
 				RingSize:   memifDetails.RingSize,
 				BufferSize: uint32(memifDetails.BufferSize),
 				// TODO: RxQueues, TxQueues - not available in the binary API
-				//RxQueues:
-				//TxQueues:
+				// RxQueues:
+				// TxQueues:
 			},
 		}
 		interfaces[uint32(memifDetails.SwIfIndex)].Interface.Type = ifs.Interface_MEMIF
