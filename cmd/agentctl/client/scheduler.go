@@ -11,7 +11,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
-func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error) {
+func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.RecordedKVWithMetadata, error) {
 	query := url.Values{}
 	query.Set("key-prefix", opts.KeyPrefix)
 	query.Set("view", opts.View)
@@ -20,18 +20,9 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 	if err != nil {
 		return nil, err
 	}
-	var kvdump []api.RecordedKVWithMetadata
-	if err := json.NewDecoder(resp.body).Decode(&kvdump); err != nil {
+	var dump []api.RecordedKVWithMetadata
+	if err := json.NewDecoder(resp.body).Decode(&dump); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
-	}
-	var dump []api.KVWithMetadata
-	for _, kvd := range kvdump {
-		dump = append(dump, api.KVWithMetadata{
-			Key:      kvd.Key,
-			Value:    kvd.Value.Message,
-			Metadata: kvd.Metadata,
-			Origin:   kvd.Origin,
-		})
 	}
 	return dump, nil
 }

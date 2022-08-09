@@ -154,7 +154,7 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	}
 	var (
 		errs  Errors
-		dumps []api.KVWithMetadata
+		dumps []api.RecordedKVWithMetadata
 	)
 	for _, keyPrefix := range keyPrefixes {
 		dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{
@@ -190,11 +190,11 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	return nil
 }
 
-func filterDumpByOrigin(dumps []api.KVWithMetadata, origin string) []api.KVWithMetadata {
+func filterDumpByOrigin(dumps []api.RecordedKVWithMetadata, origin string) []api.RecordedKVWithMetadata {
 	if origin == "" {
 		return dumps
 	}
-	var filtered []api.KVWithMetadata
+	var filtered []api.RecordedKVWithMetadata
 	for _, d := range dumps {
 		if !strings.EqualFold(d.Origin.String(), origin) {
 			continue
@@ -204,7 +204,7 @@ func filterDumpByOrigin(dumps []api.KVWithMetadata, origin string) []api.KVWithM
 	return filtered
 }
 
-func printDumpTable(out io.Writer, dump []api.KVWithMetadata) {
+func printDumpTable(out io.Writer, dump []api.RecordedKVWithMetadata) {
 	table := tablewriter.NewWriter(out)
 	table.SetHeader([]string{
 		"Model", "Origin", "Value", "Metadata", "Key",
