@@ -122,23 +122,6 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	gc, err := cli.Client().GenericClient()
-	if err != nil {
-		return err
-	}
-	knownModels, err := gc.KnownModels("config")
-	if err != nil {
-		return fmt.Errorf("getting registered models: %w", err)
-	}
-	for _, km := range knownModels {
-		kmSpec := models.ToSpec(km.GetSpec())
-		if _, err = models.DefaultRegistry.GetModel(kmSpec.ModelName()); err != nil {
-			if _, err = models.DefaultRegistry.Register(km, kmSpec); err != nil {
-				return fmt.Errorf("registering model failed: %w", err)
-			}
-		}
-	}
-
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
 		Class: "config",
 	})
@@ -171,7 +154,7 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 		logging.Debugf("dump finished with %d errors\n%v", len(errs), errs)
 	}
 	if len(errs) == len(keyPrefixes) {
-		return fmt.Errorf("dump failed\n%v", errs)
+		return fmt.Errorf("dump failed:\n%v", errs)
 	}
 
 	dumps = filterDumpByOrigin(dumps, opts.Origin)
