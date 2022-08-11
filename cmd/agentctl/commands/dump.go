@@ -16,6 +16,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -166,7 +167,11 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	if len(format) == 0 {
 		printDumpTable(cli.Out(), dumps)
 	} else {
-		if err := formatAsTemplate(cli.Out(), format, dumps); err != nil {
+		fdumps, err := convertDumps(dumps)
+		if err != nil {
+			return err
+		}
+		if err := formatAsTemplate(cli.Out(), format, fdumps); err != nil {
 			return err
 		}
 	}
@@ -226,4 +231,39 @@ func printDumpTable(out io.Writer, dump []api.RecordedKVWithMetadata) {
 		table.Append(row)
 	}
 	table.Render()
+}
+
+// formatDump is a helper type that can be used with user defined custom dump formats
+type formatDump struct {
+	Key      string
+	Value    map[string]interface{}
+	Metadata api.Metadata
+	Origin   api.ValueOrigin
+}
+
+func convertDumps(in []api.RecordedKVWithMetadata) (out []formatDump, err error) {
+	for _, d := range in {
+		b, err := d.Value.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		var values map[string]interface{}
+		if err = json.Unmarshal(b, &values); err != nil {
+			return nil, err
+		}
+		// TODO: this "ProtoMsgData" string key has to be the same as the field name of
+		// the ProtoWithName struct that contains the message data. ProtoWithName struct
+		// is a part of kvschedulers internal utils package. Perhaps we could make this
+		// field name a part of the public kvscheduler API so we do not have to rely
+		// on string key here.
+		if val, ok := values["ProtoMsgData"]; ok {
+			out = append(out, formatDump{
+				Key:      d.Key,
+				Value:    val.(map[string]interface{}),
+				Metadata: d.Metadata,
+				Origin:   d.Origin,
+			})
+		}
+	}
+	return out, nil
 }
