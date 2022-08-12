@@ -74,13 +74,26 @@ func ToInterfaceKey(acl, iface, flow string) string {
 // ParseACLToInterfaceKey parses ACL to interface key
 func ParseACLToInterfaceKey(key string) (acl, iface, flow string, isACLToInterface bool) {
 	parts := strings.Split(key, "/")
-	if len(parts) >= 6 &&
-		parts[0] == "vpp" && parts[1] == "acl" && parts[3] == "interface" &&
-		(parts[4] == IngressFlow || parts[4] == EgressFlow || parts[4] == InvalidKeyPart) {
-		acl = parts[2]
-		iface = strings.Join(parts[5:], "/")
+
+	interfaceIndex := -1
+	for index, part := range parts {
+		if part == "interface" {
+			interfaceIndex = index
+			break
+		}
+	}
+
+	if len(parts) > interfaceIndex+1 {
+		flow = parts[interfaceIndex+1]
+	}
+
+	if len(parts) >= 5 &&
+		parts[0] == "vpp" && parts[1] == "acl" && interfaceIndex >= 3 &&
+		(flow == IngressFlow || flow == EgressFlow || flow == InvalidKeyPart) {
+		acl = strings.Join(parts[2:interfaceIndex], "/")
+		iface = strings.Join(parts[interfaceIndex+2:], "/")
 		if iface != "" && acl != "" {
-			return acl, iface, parts[4], true
+			return acl, iface, flow, true
 		}
 	}
 	return "", "", "", false
