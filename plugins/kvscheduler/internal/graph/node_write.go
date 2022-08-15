@@ -369,6 +369,9 @@ func (node *node) removeFromTarget(key, relation, label string) {
 
 // removeFromSources removes given key from the sources for the given relation.
 func (node *node) removeFromSources(relation, label, key string) {
+	if node.sources == nil {
+		return
+	}
 	t, idx := node.sources.GetTargetForLabel(relation, label)
 	updated := t.MatchingKeys.Del(key)
 	if updated {
