@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"git.fd.io/govpp.git/api"
+	"go.fd.io/govpp/api"
 )
 
 func (c *Client) VppRunCli(ctx context.Context, cmd string) (reply string, err error) {

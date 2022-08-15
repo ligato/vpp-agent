@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
+	govppapi "go.fd.io/govpp/api"
 
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/dhcp"
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/interface"

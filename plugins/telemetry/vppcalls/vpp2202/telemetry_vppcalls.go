@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
 )
@@ -252,14 +252,14 @@ func (h *TelemetryHandler) GetBuffersInfo(ctx context.Context) (*vppcalls.Buffer
 		fields := matches[1:]
 
 		items = append(items, vppcalls.BuffersItem{
-			//ThreadID: uint(strToUint64(fields[0])),
+			// ThreadID: uint(strToUint64(fields[0])),
 			Name:  fields[0],
 			Index: uint(strToUint64(fields[1])),
 			Size:  strToUint64(fields[3]),
 			Alloc: strToUint64(fields[7]),
 			Free:  strToUint64(fields[5]),
-			//NumAlloc: strToUint64(fields[6]),
-			//NumFree:  strToUint64(fields[7]),
+			// NumAlloc: strToUint64(fields[6]),
+			// NumFree:  strToUint64(fields[7]),
 		})
 	}
 

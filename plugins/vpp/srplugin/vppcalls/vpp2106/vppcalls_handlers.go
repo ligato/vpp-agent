@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	core_vppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"

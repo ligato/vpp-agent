@@ -17,7 +17,7 @@ package vpp
 import (
 	"errors"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi"
 )

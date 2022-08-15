@@ -24,7 +24,7 @@ import (
 	"testing"
 	"text/tabwriter"
 
-	"git.fd.io/govpp.git/api"
+	"go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 
@@ -71,11 +71,11 @@ func TestBinapiMessage(t *testing.T) {
 	w := tabwriter.NewWriter(b, 0, 0, 1, ' ', 0)
 	fmt.Fprintf(w, "MESSAGE\tCRC\tPKG PATH\t\n")
 	for _, item := range items {
-		//typ := msgType.Elem()
-		//msg := reflect.New(typ).Interface().(api.Message)
-		//id := fmt.Sprintf("%s_%s", msg.GetMessageName(), msg.GetCrcString())
-		//log.Printf("- msg: %s - %s (%v)", typ.String(), typ.PkgPath(), id)
-		//fmt.Fprintf(w, "%s\t%s\t%s\t\n", msg.GetMessageName(), msg.GetCrcString(), typ.PkgPath())
+		// typ := msgType.Elem()
+		// msg := reflect.New(typ).Interface().(api.Message)
+		// id := fmt.Sprintf("%s_%s", msg.GetMessageName(), msg.GetCrcString())
+		// log.Printf("- msg: %s - %s (%v)", typ.String(), typ.PkgPath(), id)
+		// fmt.Fprintf(w, "%s\t%s\t%s\t\n", msg.GetMessageName(), msg.GetCrcString(), typ.PkgPath())
 		fmt.Fprintf(w, "%s\t%s\t%s\t\n", item.message, item.crc, item.pkgPath)
 	}
 	if err := w.Flush(); err != nil {

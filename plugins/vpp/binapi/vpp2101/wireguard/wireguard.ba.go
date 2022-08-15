@@ -12,8 +12,8 @@ package wireguard
 import (
 	"strconv"
 
-	api "git.fd.io/govpp.git/api"
-	codec "git.fd.io/govpp.git/codec"
+	api "go.fd.io/govpp/api"
+	codec "go.fd.io/govpp/codec"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/interface_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/ip_types"
 )

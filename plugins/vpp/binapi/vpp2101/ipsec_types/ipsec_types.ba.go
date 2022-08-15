@@ -11,7 +11,7 @@ package ipsec_types
 import (
 	"strconv"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/ip_types"
 	tunnel_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/tunnel_types"
 )

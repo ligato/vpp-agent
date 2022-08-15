@@ -18,13 +18,12 @@ import (
 	"log"
 	"time"
 
-	"git.fd.io/govpp.git/api"
-
+	"go.fd.io/govpp/api"
+	"go.fd.io/govpp/binapi/ethernet_types"
+	interfaces "go.fd.io/govpp/binapi/interface"
 	"go.ligato.io/cn-infra/v2/agent"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/ethernet_types"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/interface"
 )
 
 func main() {

@@ -18,8 +18,8 @@ import (
 	"net"
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
+	govppapi "go.fd.io/govpp/api"
 
 	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/dhcp"
 	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/gtpu"

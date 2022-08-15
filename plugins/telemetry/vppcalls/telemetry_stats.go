@@ -20,7 +20,7 @@ import (
 	"regexp"
 	"strings"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 )
 
 // TelemetryStats is an implementation of TelemetryVppAPI that uses
@@ -160,7 +160,7 @@ func (h *TelemetryStats) GetBuffersInfo(ctx context.Context) (*BuffersInfo, erro
 			Name:  c.PoolName,
 			Alloc: uint64(c.Used),
 			Free:  uint64(c.Available),
-			//Cached:  c.Cached,
+			// Cached:  c.Cached,
 		})
 	}
 

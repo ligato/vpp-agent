@@ -29,13 +29,13 @@ import (
 	"testing"
 	"time"
 
-	"git.fd.io/govpp.git/adapter"
-	"git.fd.io/govpp.git/adapter/socketclient"
-	"git.fd.io/govpp.git/adapter/statsclient"
-	govppapi "git.fd.io/govpp.git/api"
-	govppcore "git.fd.io/govpp.git/core"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
+	"go.fd.io/govpp/adapter"
+	"go.fd.io/govpp/adapter/socketclient"
+	"go.fd.io/govpp/adapter/statsclient"
+	govppapi "go.fd.io/govpp/api"
+	govppcore "go.fd.io/govpp/core"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
