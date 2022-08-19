@@ -28,15 +28,11 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/sirupsen/logrus"
-	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
-	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
-	agentctl "go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
@@ -46,10 +42,7 @@ import (
 )
 
 var (
-	covPath       = flag.String("cov", "", "Path to collect coverage data")
-	agentHTTPPort = flag.Int("agent-http-port", 9191, "VPP-Agent HTTP port")
-	agentGrpcPort = flag.Int("agent-grpc-port", 9111, "VPP-Agent GRPC port")
-	debug         = flag.Bool("debug", false, "Turn on debug mode.")
+	debug = flag.Bool("debug", false, "Turn on debug mode.")
 )
 
 const (
@@ -72,7 +65,7 @@ const (
 type TestCtx struct {
 	*gomega.WithT
 
-	Agent     *Agent // the default agent (first agent in multi-agent test scenario)
+	Agent     *Agent // the main agent (first agent in multi-agent test scenario)
 	Etcd      *Etcd
 	DNSServer *DNSServer
 
@@ -87,7 +80,6 @@ type TestCtx struct {
 
 	agents        map[string]*Agent
 	dockerClient  *docker.Client
-	agentClient   agentctl.APIClient // TODO move into Agent struct (multiple agents need multiple agentClients)
 	microservices map[string]*Microservice
 	nsCalls       nslinuxcalls.NetworkNamespaceAPI
 	vppVersion    string
@@ -104,7 +96,7 @@ type ComponentRuntime interface {
 	Start(options interface{}) error
 
 	// Stop stops instance of test topology component
-	Stop(options ...interface{}) error
+	Stop(cleanup func() error, options ...interface{}) error
 
 	// IPAddress provides ip address for connecting to the component
 	IPAddress() string
@@ -147,10 +139,10 @@ type Diger interface {
 func NewTest(t *testing.T) *TestCtx {
 	g := gomega.NewWithT(t)
 
-	SetDefaultEventuallyPollingInterval(checkPollingInterval)
-	SetDefaultEventuallyTimeout(checkTimeout)
+	g.SetDefaultEventuallyPollingInterval(checkPollingInterval)
+	g.SetDefaultEventuallyTimeout(checkTimeout)
 
-	logrus.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
+	logging.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
 
 	outputBuf := new(bytes.Buffer)
 	var logW io.Writer
@@ -228,26 +220,27 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 
 	// setup DNS server
 	if opt.SetupDNSServer {
-		testCtx.DNSServer, err = NewDNSServer(testCtx, extractDNSOptions(opt))
+		testCtx.DNSServer, err = NewDNSServer(testCtx, opt.DNSOpt)
 		testCtx.Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	// setup Etcd
 	if opt.SetupEtcd {
-		testCtx.Etcd, err = NewEtcd(testCtx, extractEtcdOptions(opt))
+		testCtx.Etcd, err = NewEtcd(testCtx, opt.EtcdOpt)
 		testCtx.Expect(err).ShouldNot(HaveOccurred())
 	}
 
+	// setup main VPP-Agent
 	if opt.SetupAgent {
-		SetupVPPAgent(testCtx, extractAgentOptions(opt))
+		SetupMainAgent(testCtx, extractAgentOptions(opt))
 	}
 
 	return testCtx
 }
 
-// SetupVPPAgent setups VPP-Agent test component according to options (for container runtime it means to
+// SetupMainAgent setups VPP-Agent test component according to options (for container runtime it means to
 // start VPP-Agent container)
-func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
+func SetupMainAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
 	// prepare options
 	name := nameOfDefaultAgent
 	options := DefaultAgentOpt(testCtx, name)
@@ -256,29 +249,18 @@ func SetupVPPAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
 	}
 
 	// start agent container
-	testCtx.Agent = testCtx.StartAgent(name, opts...) // not passing prepared options due to public visibility
-
-	// interact with the agent using the client from agentctl
-	agentAddr := testCtx.Agent.IPAddress()
-	var err error
-	testCtx.agentClient, err = agentctl.NewClientWithOpts(
-		agentctl.WithHost(agentAddr),
-		agentctl.WithGrpcPort(*agentGrpcPort),
-		agentctl.WithHTTPPort(*agentHTTPPort))
-	if err != nil {
-		testCtx.t.Fatalf("Failed to create VPP-agent client: %v", err)
-	}
+	agent := testCtx.StartAgent(name, opts...) // not passing prepared options due to public visibility
 
 	// wait to agent to start properly
-	testCtx.Eventually(testCtx.checkAgentReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
+	testCtx.Eventually(agent.checkReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
 
 	// run initial resync
 	if !options.NoManualInitialResync {
-		testCtx.syncAgent()
+		agent.Sync()
 	}
 
 	// fill VPP version (this depends on agentctl and that depends on agent to be set up)
-	if version, err := testCtx.ExecVppctl("show version"); err != nil {
+	if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
 		testCtx.t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
 	} else {
 		versionParts := strings.SplitN(version, " ", 3)
@@ -314,20 +296,17 @@ func (test *TestCtx) Teardown() {
 		test.cancel = nil
 	}
 
+	// terminate all agents and close their clients
+	for name, agent := range test.agents {
+		if err := agent.Stop(); err != nil {
+			test.t.Logf("failed to stop agent %s: %v", name, err)
+		}
+	}
+
 	// stop all microservices
-	for msName := range test.microservices {
-		test.StopMicroservice(msName)
-	}
-
-	// close the agentctl client
-	if err := test.agentClient.Close(); err != nil {
-		test.t.Logf("closing the client failed: %v", err)
-	}
-
-	// stop agent
-	if test.Agent != nil {
-		if err := test.Agent.Stop(); err != nil {
-			test.t.Logf("failed to stop vpp-agent: %v", err)
+	for name, ms := range test.microservices {
+		if err := ms.Stop(); err != nil {
+			test.t.Logf("failed to stop microservice %s: %v", name, err)
 		}
 	}
 
@@ -363,54 +342,37 @@ func (test *TestCtx) VppRelease() string {
 }
 
 // GenericClient provides generic client for communication with default VPP-Agent test component
+// Deprecated: use ctx.Agent.GenericClient(...) instead
 func (test *TestCtx) GenericClient() client.GenericClient {
-	c, err := test.agentClient.GenericClient()
-	if err != nil {
-		test.t.Fatalf("Failed to get generic VPP-agent client: %v", err)
-	}
-	return c
+	test.t.Helper()
+	return test.Agent.GenericClient()
 }
 
 // GRPCConn provides GRPC client connection for communication with default VPP-Agent test component
+// Deprecated: use ctx.Agent.GRPCConn(...) instead
 func (test *TestCtx) GRPCConn() *grpc.ClientConn {
-	conn, err := test.agentClient.GRPCConn()
-	if err != nil {
-		test.t.Fatalf("Failed to get gRPC connection: %v", err)
-	}
-	return conn
+	test.t.Helper()
+	return test.Agent.GRPCConn()
 }
 
 // syncAgent runs downstream resync and returns the list of executed operations.
-func (test *TestCtx) syncAgent() (executed kvs.RecordedTxnOps) {
-	txn, err := test.agentClient.SchedulerResync(context.Background(), types.SchedulerResyncOptions{
-		Retry: true,
-	})
-	if err != nil {
-		test.t.Fatalf("Downstream resync request has failed: %v", err)
-	}
-	if txn.Start.IsZero() {
-		test.t.Fatalf("Downstream resync returned empty transaction record: %v", txn)
-	}
-	return txn.Executed
+// Deprecated: use ctx.Agent.Sync(...) instead
+func (test *TestCtx) syncAgent() kvs.RecordedTxnOps {
+	test.t.Helper()
+	return test.Agent.Sync()
 }
 
-// AgentInSync checks if the agent NB config and the SB state (VPP+Linux)
-// are in-sync.
+// AgentInSync checks if the agent NB config and the SB state (VPP+Linux) are in-sync.
+// Deprecated: use ctx.Agent.IsInSync(...) instead
 func (test *TestCtx) AgentInSync() bool {
-	ops := test.syncAgent()
-	for _, op := range ops {
-		if !op.NOOP {
-			return false
-		}
-	}
-	return true
+	test.t.Helper()
+	return test.Agent.IsInSync()
 }
 
 // ExecCmd executes command in agent and returns stdout, stderr as strings and error.
 // Deprecated: use ctx.Agent.ExecCmd(...) instead
 func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
 	test.t.Helper()
-
 	return test.Agent.ExecCmd(cmd, args...)
 }
 
@@ -418,47 +380,45 @@ func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string,
 // Deprecated: use ctx.Agent.ExecVppctl(...) instead
 func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	test.t.Helper()
-
 	return test.Agent.ExecVppctl(action, args...)
 }
 
 // StartMicroservice starts microservice according to given options
-func (test *TestCtx) StartMicroservice(name string, options ...MicroserviceOptModifier) *Microservice {
+func (test *TestCtx) StartMicroservice(name string, opts ...MicroserviceOptModifier) *Microservice {
 	test.t.Helper()
 
 	if _, ok := test.microservices[name]; ok {
-		test.t.Fatalf("microservice %q already started", name)
+		test.t.Fatalf("microservice %s already started", name)
 	}
-	ms, err := createMicroservice(test, name, test.nsCalls, options...)
+
+	// prepare microservice options
+	opt := DefaultMicroserviceOpt(test, name)
+	for _, optionModifier := range opts {
+		optionModifier(opt)
+	}
+
+	ms, err := NewMicroservice(test, name, test.nsCalls, opt)
 	if err != nil {
-		test.t.Fatalf("creating microservice %q failed: %v", name, err)
+		test.t.Fatalf("creating microservice %s failed: %v", name, err)
 	}
 	test.microservices[name] = ms
 	return ms
 }
 
-// TODO StopMicroservice and StopAgent are unnecessary at context level, use ctx cleanup callback function as
-//  in case of DNS server to change the usage to microservce1.Stop(), agent1.Stop()  (Note: the start of Agent
-//  or Microservice stays at ctx level though)
-
 // StopMicroservice stops microservice with given name
+// Deprecated: use ms := ctx.StartAgent(name, opts...); agent.Stop()
 func (test *TestCtx) StopMicroservice(name string) {
 	test.t.Helper()
 
 	ms, found := test.microservices[name]
 	if !found {
 		// bug inside a test
-		test.t.Logf("ERROR: cannot stop unknown microservice %q", name)
+		test.t.Logf("ERROR: cannot stop unknown microservice %s", name)
 	}
-
 	if err := ms.Stop(); err != nil {
-		test.t.Logf("ERROR: stopping microservice %q failed: %v", name, err)
+		test.t.Logf("ERROR: stopping microservice %s failed: %v", name, err)
 	}
 	delete(test.microservices, name)
-}
-
-func (test *TestCtx) dnsServerStopCleanup() {
-	test.DNSServer = nil
 }
 
 // StartAgent starts new VPP-Agent with given name and according to options
@@ -466,7 +426,7 @@ func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 	test.t.Helper()
 
 	if _, ok := test.agents[name]; ok {
-		test.t.Fatalf("agent %q already started", name)
+		test.t.Fatalf("agent %s already started", name)
 	}
 
 	// prepare agent options
@@ -477,9 +437,9 @@ func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 	opt.Env = append(opt.Env, "MICROSERVICE_LABEL="+name)
 	opt.Name = name
 
-	agent, err := startAgent(test, name, opt)
+	agent, err := NewAgent(test, name, opt)
 	if err != nil {
-		test.t.Fatalf("creating agent %q failed: %v", name, err)
+		test.t.Fatalf("creating agent %s failed: %v", name, err)
 	}
 	if test.Agent == nil {
 		test.Agent = agent
@@ -489,17 +449,18 @@ func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 	return agent
 }
 
-// StopAgent stop VPP-Agent with given name
+// StopAgent stops VPP-Agent with given name
+// Deprecated: use agent := ctx.StartAgent(name, opts...); agent.Stop()
 func (test *TestCtx) StopAgent(name string) {
 	test.t.Helper()
 
 	agent, found := test.agents[name]
 	if !found {
 		// bug inside a test
-		test.t.Logf("ERROR: cannot stop unknown agent %q", name)
+		test.t.Logf("ERROR: cannot stop unknown microservice %s", name)
 	}
 	if err := agent.Stop(); err != nil {
-		test.t.Logf("ERROR: stopping agent %q failed: %v", name, err)
+		test.t.Logf("ERROR: stopping agent %s failed: %v", name, err)
 	}
 	if test.Agent.name == name {
 		test.Agent = nil
@@ -515,6 +476,15 @@ func (test *TestCtx) AlreadyRunningMicroservice(msName string) *Microservice {
 		test.t.Fatalf("cannot ping from unknown microservice '%s'", msName)
 	}
 	return ms
+}
+
+func (test *TestCtx) AlreadyRunningAgent(agentName string) *Agent {
+	agent, found := test.agents[agentName]
+	if !found {
+		// bug inside a test
+		test.t.Fatalf("cannot get unknown agent '%s'", agentName)
+	}
+	return agent
 }
 
 // PingFromMs pings <dstAddress> from the microservice <msName>
@@ -537,7 +507,6 @@ func (test *TestCtx) PingFromMsClb(msName, dstAddress string, opts ...PingOptMod
 // Deprecated: use ctx.Agent.PingFromVPP(destAddress) instead
 func (test *TestCtx) PingFromVPP(destAddress string) error {
 	test.t.Helper()
-
 	return test.Agent.PingFromVPP(destAddress)
 }
 
@@ -545,6 +514,7 @@ func (test *TestCtx) PingFromVPP(destAddress string) error {
 // and "Consistently" from Omega.
 // Deprecated: use ctx.Agent.PingFromVPPAsCallback(destAddress) instead
 func (test *TestCtx) PingFromVPPClb(destAddress string) func() error {
+	test.t.Helper()
 	return test.Agent.PingFromVPPAsCallback(destAddress)
 }
 
@@ -638,47 +608,48 @@ func (test *TestCtx) TestConnection(
 	return err
 }
 
+// NumValues returns number of values found under the given model
+// Deprecated: use ctx.Agent.NumValues(...) instead
+func (test *TestCtx) NumValues(value proto.Message, view kvs.View) int {
+	test.t.Helper()
+	return test.Agent.NumValues(value, view)
+}
+
+// GetValue retrieves value(s) as seen by the given view
+// Deprecated: use ctx.Agent.GetValue(...) instead
+func (test *TestCtx) GetValue(value proto.Message, view kvs.View) proto.Message {
+	test.t.Helper()
+	return test.Agent.GetValue(value, view)
+}
+
+// GetValueMetadata retrieves metadata associated with the given value.
+// Deprecated: use ctx.Agent.GetValueMetadata(...) instead
+func (test *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metadata interface{}) {
+	test.t.Helper()
+	return test.Agent.GetValueMetadata(value, view)
+}
+
+// Deprecated: use ctx.Agent.GetValueState(...) instead
 func (test *TestCtx) GetValueState(value proto.Message) kvscheduler.ValueState {
-	key := models.Key(value)
-	return test.getValueStateByKey(key, "")
+	test.t.Helper()
+	return test.Agent.GetValueState(value)
 }
 
+// Deprecated: use ctx.Agent.GetValueStateByKey(...) instead
 func (test *TestCtx) GetValueStateByKey(key string) kvscheduler.ValueState {
-	return test.getValueStateByKey(key, "")
+	test.t.Helper()
+	return test.Agent.GetValueStateByKey(key)
 }
 
+// Deprecated: use ctx.Agent.GetDerivedValueState(...) instead
 func (test *TestCtx) GetDerivedValueState(baseValue proto.Message, derivedKey string) kvscheduler.ValueState {
-	key := models.Key(baseValue)
-	return test.getValueStateByKey(key, derivedKey)
-}
-
-func (test *TestCtx) getValueStateByKey(key, derivedKey string) kvscheduler.ValueState {
-	values, err := test.agentClient.SchedulerValues(context.Background(), types.SchedulerValuesOptions{
-		Key: key,
-	})
-	if err != nil {
-		test.t.Fatalf("Request to obtain value status has failed: %v", err)
-	}
-	if len(values) != 1 {
-		test.t.Fatalf("Expected single value status, got status for %d values", len(values))
-	}
-	st := values[0]
-	if st.GetValue().GetKey() != key {
-		test.t.Fatalf("Received value status for unexpected key: %v", st)
-	}
-	if derivedKey != "" {
-		for _, derVal := range st.DerivedValues {
-			if derVal.Key == derivedKey {
-				return derVal.State
-			}
-		}
-		return kvscheduler.ValueState_NONEXISTENT
-	}
-	return st.GetValue().GetState()
+	test.t.Helper()
+	return test.Agent.GetDerivedValueState(baseValue, derivedKey)
 }
 
 // GetValueStateClb can be used to repeatedly check value state inside the assertions
 // "Eventually" and "Consistently" from Omega.
+// Deprecated: use ctx.Agent.GetValueStateClb(...) instead
 func (test *TestCtx) GetValueStateClb(value proto.Message) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
 		return test.GetValueState(value)
@@ -687,72 +658,23 @@ func (test *TestCtx) GetValueStateClb(value proto.Message) func() kvscheduler.Va
 
 // GetDerivedValueStateClb can be used to repeatedly check derived value state inside
 // the assertions "Eventually" and "Consistently" from Omega.
+// Deprecated: use ctx.Agent.GetDerivedValueStateClb(...) instead
 func (test *TestCtx) GetDerivedValueStateClb(baseValue proto.Message, derivedKey string) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
 		return test.GetDerivedValueState(baseValue, derivedKey)
 	}
 }
 
-// GetValueMetadata retrieves metadata associated with the given value.
-func (test *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metadata interface{}) {
-	key, err := models.GetKey(value)
-	if err != nil {
-		test.t.Fatalf("Failed to get key for value %v: %v", value, err)
-	}
-	kvDump := test.getKVDump(value, view)
-	for _, kv := range kvDump {
-		if kv.Key == key {
-			return kv.Metadata
-		}
-	}
-	return nil
-}
-
-// GetValue retrieves value(s) as seen by the given view
-func (test *TestCtx) GetValue(value proto.Message, view kvs.View) proto.Message {
-	key, err := models.GetKey(value)
-	if err != nil {
-		test.t.Fatalf("Failed to get key for value %v: %v", value, err)
-	}
-	kvDump := test.getKVDump(value, view)
-	for _, kv := range kvDump {
-		if kv.Key == key {
-			return kv.Value
-		}
-	}
-	return nil
-}
-
-// NumValues returns number of values found under the given model
-func (test *TestCtx) NumValues(value proto.Message, view kvs.View) int {
-	return len(test.getKVDump(value, view))
-}
-
-func (test *TestCtx) getKVDump(value proto.Message, view kvs.View) []kvs.KVWithMetadata {
-	model, err := models.GetModelFor(value)
-	if err != nil {
-		test.t.Fatalf("Failed to get model for value %v: %v", value, err)
-	}
-	kvDump, err := test.agentClient.SchedulerDump(context.Background(), types.SchedulerDumpOptions{
-		KeyPrefix: model.KeyPrefix(),
-		View:      view.String(),
-	})
-	if err != nil {
-		test.t.Fatalf("Request to dump values failed: %v", err)
-	}
-	return kvDump
-}
-
 func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 	const tracePacketsMax = 100
 	for i, node := range nodes {
 		if i == 0 {
-			_, err := test.ExecVppctl("clear trace")
+			_, err := test.Agent.ExecVppctl("clear trace")
 			if err != nil {
 				test.t.Errorf("Failed to clear the packet trace: %v", err)
 			}
 		}
-		_, err := test.ExecVppctl("trace add", fmt.Sprintf("%s %d", node, tracePacketsMax))
+		_, err := test.Agent.ExecVppctl("trace add", fmt.Sprintf("%s %d", node, tracePacketsMax))
 		if err != nil {
 			test.t.Errorf("Failed to add packet trace for node '%s': %v", node, err)
 		}
@@ -761,28 +683,13 @@ func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 		if len(nodes) == 0 {
 			return
 		}
-		traces, err := test.ExecVppctl("show trace")
+		traces, err := test.Agent.ExecVppctl("show trace")
 		if err != nil {
 			test.t.Errorf("Failed to show packet trace: %v", err)
 			return
 		}
 		test.Logger.Printf("Packet trace:\n%s\n", traces)
 	}
-}
-
-func (test *TestCtx) checkAgentReady() error {
-	agentStatus, err := test.agentClient.Status(test.ctx)
-	if err != nil {
-		return fmt.Errorf("query to get agent status failed: %v", err)
-	}
-	agent, ok := agentStatus.PluginStatus["VPPAgent"]
-	if !ok {
-		return fmt.Errorf("agent status missing")
-	}
-	if agent.State != status.OperationalState_OK {
-		return fmt.Errorf("agent status: %v", agent.State.String())
-	}
-	return nil
 }
 
 func supportsLinuxVRF() bool {

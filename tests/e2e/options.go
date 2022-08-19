@@ -98,7 +98,7 @@ type SetupOptModifier func(*SetupOpt)
 type AgentOptModifier func(*AgentOpt)
 
 // MicroserviceOptModifier is function customizing Microservice setup options
-type MicroserviceOptModifier func(opt *MicroserviceOpt)
+type MicroserviceOptModifier func(*MicroserviceOpt)
 
 // EtcdOptModifier is function customizing ETCD setup options
 type EtcdOptModifier func(*EtcdOpt)
@@ -107,7 +107,7 @@ type EtcdOptModifier func(*EtcdOpt)
 type DNSOptModifier func(*DNSOpt)
 
 // PingOptModifier is modifiers of pinging options
-type PingOptModifier func(opts *PingOpt)
+type PingOptModifier func(*PingOpt)
 
 // DefaultSetupOpt creates default values for SetupOpt
 func DefaultSetupOpt(testCtx *TestCtx) *SetupOpt {
@@ -141,10 +141,9 @@ func DefaultEtcdOpt(ctx *TestCtx) *EtcdOpt {
 func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
 	return &DNSOpt{
 		Runtime: &ContainerRuntime{
-			ctx:            testCtx,
-			logIdentity:    "DNS server",
-			stopTimeout:    dnsStopTimeout,
-			stopCtxCleanup: testCtx.dnsServerStopCleanup,
+			ctx:         testCtx,
+			logIdentity: "DNS server",
+			stopTimeout: dnsStopTimeout,
 		},
 		RuntimeStartOptions: DNSServerStartOptionsForContainerRuntime,
 		DomainNameSuffix:    "", // no DNS entries => no common domain name suffix
@@ -153,7 +152,7 @@ func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
 }
 
 // DefaultMicroserviceiOpt creates default values for MicroserviceOpt
-func DefaultMicroserviceiOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
+func DefaultMicroserviceOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
 	return &MicroserviceOpt{
 		Runtime: &ContainerRuntime{
 			ctx:         testCtx,

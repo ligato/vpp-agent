@@ -33,11 +33,10 @@ const execTimeout = 10 * time.Second
 
 // ContainerRuntime represents docker container environments for one component of test topology
 type ContainerRuntime struct {
-	ctx            *TestCtx
-	container      *docker.Container
-	logIdentity    string
-	stopTimeout    uint
-	stopCtxCleanup func()
+	ctx         *TestCtx
+	container   *docker.Container
+	logIdentity string
+	stopTimeout uint
 }
 
 // ContainerStartOptions are options for ComponentRuntime.Start(option) method implemented by ContainerRuntime
@@ -84,11 +83,11 @@ func (c *ContainerRuntime) Start(options interface{}) error {
 }
 
 // Stop stops and removes container
-func (c *ContainerRuntime) Stop(options ...interface{}) error {
+func (c *ContainerRuntime) Stop(cleanup func() error, options ...interface{}) error {
 	if err := c.stopContainer(); err != nil {
 		if errors.Is(err, &docker.NoSuchContainer{}) {
-			if c.stopCtxCleanup != nil {
-				c.stopCtxCleanup()
+			if cleanup != nil {
+				return cleanup()
 			}
 			// container no longer exists -> nothing to do about container (state is the same
 			// as after successful termination)
@@ -103,10 +102,9 @@ func (c *ContainerRuntime) Stop(options ...interface{}) error {
 		// it would lock access to further inspection of this component (i.e. why it won't stop)
 		return err
 	}
-	if c.stopCtxCleanup != nil {
-		c.stopCtxCleanup()
+	if cleanup != nil {
+		return cleanup()
 	}
-
 	return nil
 }
 

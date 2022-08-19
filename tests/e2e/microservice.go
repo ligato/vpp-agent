@@ -12,7 +12,7 @@ import (
 
 const (
 	msDefaultImage = "busybox:1.31"
-	msStopTimeout  = 1 // seconds
+	msStopTimeout  = 10 // seconds
 	MsLabelKey     = "e2e.test.ms"
 	MsNamePrefix   = "e2e-test-ms-"
 )
@@ -28,13 +28,9 @@ type Microservice struct {
 	nsCalls nslinuxcalls.NetworkNamespaceAPI
 }
 
-func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.NetworkNamespaceAPI,
-	options ...MicroserviceOptModifier) (*Microservice, error) {
-	// compute options
-	opts := DefaultMicroserviceiOpt(ctx, msName)
-	for _, optionModifier := range options {
-		optionModifier(opts)
-	}
+// NewMicroservice creates and starts new microservice container
+func NewMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.NetworkNamespaceAPI,
+	opts *MicroserviceOpt) (*Microservice, error) {
 
 	// create struct for ETCD server
 	ms := &Microservice{
@@ -63,6 +59,14 @@ func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.Networ
 		return nil, errors.Errorf("can't start microservice %s due to: %v", msName, err)
 	}
 	return ms, nil
+}
+
+func (ms *Microservice) Stop(options ...interface{}) error {
+	cleanup := func() error {
+		delete(ms.ctx.microservices, ms.name)
+		return nil
+	}
+	return ms.ComponentRuntime.Stop(cleanup, options)
 }
 
 // MicroserviceStartOptionsForContainerRuntime translates MicroserviceOpt to options for ComponentRuntime.Start(option)

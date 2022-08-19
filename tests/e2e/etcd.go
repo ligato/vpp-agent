@@ -33,13 +33,7 @@ type Etcd struct {
 }
 
 // NewEtcd creates and starts new ETCD container
-func NewEtcd(ctx *TestCtx, options ...EtcdOptModifier) (*Etcd, error) {
-	// compute options
-	opts := DefaultEtcdOpt(ctx)
-	for _, optionModifier := range options {
-		optionModifier(opts)
-	}
-
+func NewEtcd(ctx *TestCtx, opts *EtcdOpt) (*Etcd, error) {
 	// create struct for ETCD server
 	etcd := &Etcd{
 		ComponentRuntime: opts.Runtime,
@@ -56,6 +50,10 @@ func NewEtcd(ctx *TestCtx, options ...EtcdOptModifier) (*Etcd, error) {
 		return nil, errors.Errorf("can't start ETCD due to: %v", err)
 	}
 	return etcd, nil
+}
+
+func (ec *Etcd) Stop(options ...interface{}) error {
+	return ec.ComponentRuntime.Stop(nil, options)
 }
 
 // Put inserts key-value pair into the ETCD inside its running docker container

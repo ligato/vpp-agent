@@ -15,18 +15,28 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 
-	"github.com/go-errors/errors"
-
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/go-errors/errors"
 	"github.com/vishvananda/netns"
+	"go.ligato.io/cn-infra/v2/health/statuscheck/model/status"
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+
+	"go.ligato.io/vpp-agent/v3/client"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
+	ctl "go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
 const (
@@ -40,11 +50,13 @@ var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) rece
 // Agent represents running VPP-Agent test component
 type Agent struct {
 	ComponentRuntime
-	ctx  *TestCtx
-	name string
+	Client ctl.APIClient
+	ctx    *TestCtx
+	name   string
 }
 
-func startAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
+// NewAgent creates and starts new VPP-Agent container
+func NewAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
 	// create struct for Agent
 	agent := &Agent{
 		ComponentRuntime: opts.Runtime,
@@ -61,7 +73,26 @@ func startAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
 	if err != nil {
 		return nil, errors.Errorf("can't start agent %s due to: %v", name, err)
 	}
+	client, err := ctl.NewClient(agent.IPAddress())
+	if err != nil {
+		return nil, errors.Errorf("can't create client for %s due to: %v", name, err)
+	}
+	agent.Client = client
 	return agent, nil
+}
+
+func (agent *Agent) Stop(options ...interface{}) error {
+	cleanup := func() error {
+		if err := agent.Client.Close(); err != nil {
+			return err
+		}
+		delete(agent.ctx.agents, agent.name)
+		return nil
+	}
+	if err := agent.ComponentRuntime.Stop(cleanup, options); err != nil {
+		return err
+	}
+	return nil
 }
 
 // AgentStartOptionsForContainerRuntime translates AgentOpt to options for ComponentRuntime.Start(option)
@@ -142,6 +173,64 @@ func (agent *Agent) LinuxInterfaceHandler() linuxcalls.NetlinkAPI {
 	return ifHandler
 }
 
+// GenericClient provides generic client for communication with default VPP-Agent test component
+func (agent *Agent) GenericClient() client.GenericClient {
+	c, err := agent.Client.GenericClient()
+	if err != nil {
+		agent.ctx.t.Fatalf("Failed to get generic VPP-agent client: %v", err)
+	}
+	return c
+}
+
+// GRPCConn provides GRPC client connection for communication with default VPP-Agent test component
+func (agent *Agent) GRPCConn() *grpc.ClientConn {
+	conn, err := agent.Client.GRPCConn()
+	if err != nil {
+		agent.ctx.t.Fatalf("Failed to get gRPC connection: %v", err)
+	}
+	return conn
+}
+
+// Sync runs downstream resync and returns the list of executed operations.
+func (agent *Agent) Sync() kvs.RecordedTxnOps {
+	txn, err := agent.Client.SchedulerResync(context.Background(), types.SchedulerResyncOptions{
+		Retry: true,
+	})
+	if err != nil {
+		agent.ctx.t.Fatalf("Downstream resync request has failed: %v", err)
+	}
+	if txn.Start.IsZero() {
+		agent.ctx.t.Fatalf("Downstream resync returned empty transaction record: %v", txn)
+	}
+	return txn.Executed
+}
+
+// IsInSync checks if the agent NB config and the SB state (VPP+Linux) are in-sync.
+func (agent *Agent) IsInSync() bool {
+	ops := agent.Sync()
+	for _, op := range ops {
+		if !op.NOOP {
+			return false
+		}
+	}
+	return true
+}
+
+func (agent *Agent) checkReady() error {
+	agentStatus, err := agent.Client.Status(agent.ctx.ctx)
+	if err != nil {
+		return fmt.Errorf("query to get %s status failed: %v", agent.name, err)
+	}
+	agentPlugin, ok := agentStatus.PluginStatus["VPPAgent"]
+	if !ok {
+		return fmt.Errorf("%s plugin status missing", agent.name)
+	}
+	if agentPlugin.State != status.OperationalState_OK {
+		return fmt.Errorf("%s status: %v", agent.name, agentPlugin.State.String())
+	}
+	return nil
+}
+
 // ExecVppctl returns output from vppctl for given action and arguments.
 func (agent *Agent) ExecVppctl(action string, args ...string) (string, error) {
 	cmd := append([]string{"-s", "/run/vpp/cli.sock", action}, args...)
@@ -185,4 +274,111 @@ func (agent *Agent) PingFromVPP(destAddress string) error {
 		return fmt.Errorf("failed to ping '%s': %s", destAddress, matches[0])
 	}
 	return nil
+}
+
+func (agent *Agent) getKVDump(value proto.Message, view kvs.View) []kvs.KVWithMetadata {
+	model, err := models.GetModelFor(value)
+	if err != nil {
+		agent.ctx.t.Fatalf("Failed to get model for value %v: %v", value, err)
+	}
+	kvDump, err := agent.Client.SchedulerDump(context.Background(), types.SchedulerDumpOptions{
+		KeyPrefix: model.KeyPrefix(),
+		View:      view.String(),
+	})
+	if err != nil {
+		agent.ctx.t.Fatalf("Request to dump values failed: %v", err)
+	}
+	return kvDump
+}
+
+// GetValue retrieves value(s) as seen by the given view
+func (agent *Agent) GetValue(value proto.Message, view kvs.View) proto.Message {
+	key, err := models.GetKey(value)
+	if err != nil {
+		agent.ctx.t.Fatalf("Failed to get key for value %v: %v", value, err)
+	}
+	kvDump := agent.getKVDump(value, view)
+	for _, kv := range kvDump {
+		if kv.Key == key {
+			return kv.Value
+		}
+	}
+	return nil
+}
+
+// GetValueMetadata retrieves metadata associated with the given value.
+func (agent *Agent) GetValueMetadata(value proto.Message, view kvs.View) (metadata interface{}) {
+	key, err := models.GetKey(value)
+	if err != nil {
+		agent.ctx.t.Fatalf("Failed to get key for value %v: %v", value, err)
+	}
+	kvDump := agent.getKVDump(value, view)
+	for _, kv := range kvDump {
+		if kv.Key == key {
+			return kv.Metadata
+		}
+	}
+	return nil
+}
+
+// NumValues returns number of values found under the given model
+func (agent *Agent) NumValues(value proto.Message, view kvs.View) int {
+	return len(agent.getKVDump(value, view))
+}
+
+func (agent *Agent) getValueStateByKey(key, derivedKey string) kvscheduler.ValueState {
+	values, err := agent.Client.SchedulerValues(context.Background(), types.SchedulerValuesOptions{
+		Key: key,
+	})
+	if err != nil {
+		agent.ctx.t.Fatalf("Request to obtain value status has failed: %v", err)
+	}
+	if len(values) != 1 {
+		agent.ctx.t.Fatalf("Expected single value status, got status for %d values", len(values))
+	}
+	st := values[0]
+	if st.GetValue().GetKey() != key {
+		agent.ctx.t.Fatalf("Received value status for unexpected key: %v", st)
+	}
+	if derivedKey != "" {
+		for _, derVal := range st.DerivedValues {
+			if derVal.Key == derivedKey {
+				return derVal.State
+			}
+		}
+		return kvscheduler.ValueState_NONEXISTENT
+	}
+	return st.GetValue().GetState()
+}
+
+func (agent *Agent) GetValueState(value proto.Message) kvscheduler.ValueState {
+	key := models.Key(value)
+	return agent.getValueStateByKey(key, "")
+}
+
+func (agent *Agent) GetValueStateClb(value proto.Message) func() kvscheduler.ValueState {
+	return func() kvscheduler.ValueState {
+		return agent.GetValueState(value)
+	}
+}
+
+func (agent *Agent) GetValueStateByKey(key string) kvscheduler.ValueState {
+	return agent.getValueStateByKey(key, "")
+}
+
+func (agent *Agent) GetValueStateByKeyClb(key string) func() kvscheduler.ValueState {
+	return func() kvscheduler.ValueState {
+		return agent.GetValueStateByKey(key)
+	}
+}
+
+func (agent *Agent) GetDerivedValueState(baseValue proto.Message, derivedKey string) kvscheduler.ValueState {
+	key := models.Key(baseValue)
+	return agent.getValueStateByKey(key, derivedKey)
+}
+
+func (agent *Agent) GetDerivedValueStateClb(baseValue proto.Message, derivedKey string) func() kvscheduler.ValueState {
+	return func() kvscheduler.ValueState {
+		return agent.GetDerivedValueState(baseValue, derivedKey)
+	}
 }
