@@ -360,24 +360,6 @@ func PingWithSourceInterface(iface string) PingOptModifier {
 	}
 }
 
-func extractEtcdOptions(opt *SetupOpt) EtcdOptModifier {
-	return func(etcdOpt *EtcdOpt) {
-		copyOptions(etcdOpt, opt.EtcdOpt)
-	}
-}
-
-func extractDNSOptions(opt *SetupOpt) DNSOptModifier {
-	return func(dnsOpt *DNSOpt) {
-		copyOptions(dnsOpt, opt.DNSOpt)
-	}
-}
-
-func extractAgentOptions(opt *SetupOpt) AgentOptModifier {
-	return func(agentOpt *AgentOpt) {
-		copyOptions(agentOpt, opt.AgentOpt)
-	}
-}
-
 func copyOptions(to interface{}, from interface{}) {
 	fromVal := reflect.ValueOf(from).Elem()
 	toVal := reflect.ValueOf(to).Elem()
