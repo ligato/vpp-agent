@@ -66,7 +66,8 @@ func TestDummyInterface(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(msName)
+	ms := ctx.StartMicroservice(msName)
+
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		dummyIf1,
@@ -96,7 +97,7 @@ func TestDummyInterface(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.StopMicroservice(msName)
+	ctx.Expect(ms.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(dummyIf1)).Should(Equal(kvscheduler.ValueState_PENDING))
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 	ctx.StartMicroservice(msName)

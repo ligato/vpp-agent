@@ -70,7 +70,7 @@ func TestInterfaceConnTap(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(msName)
+	ms := ctx.StartMicroservice(msName)
 
 	// configure TAPs
 	err := ctx.GenericClient().ChangeRequest().Update(
@@ -98,13 +98,13 @@ func TestInterfaceConnTap(t *testing.T) {
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
-		ctx.StopMicroservice(msName)
+		ctx.Expect(ms.Stop()).To(Succeed())
 		ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Eventually(ctx.GetValueStateClb(linuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Expect(ctx.PingFromVPP(linuxTapIP)).NotTo(Succeed())
 		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
-		ctx.StartMicroservice(msName)
+		ms = ctx.StartMicroservice(msName)
 		ctx.Eventually(ctx.GetValueStateClb(vppTap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.GetValueState(linuxTap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.PingFromVPP(linuxTapIP)).To(Succeed())
@@ -345,7 +345,8 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(msName)
+	ms := ctx.StartMicroservice(msName)
+
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		afPacket,
@@ -362,14 +363,14 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
-		ctx.StopMicroservice(msName)
+		ctx.Expect(ms.Stop()).To(Succeed())
 		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Eventually(ctx.GetValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Eventually(ctx.GetValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
 		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
-		ctx.StartMicroservice(msName)
+		ms = ctx.StartMicroservice(msName)
 		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
@@ -476,7 +477,8 @@ func TestInterfaceAfPacketWithLogicalReference(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(msName)
+	ms := ctx.StartMicroservice(msName)
+
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		afPacket,
@@ -493,14 +495,14 @@ func TestInterfaceAfPacketWithLogicalReference(t *testing.T) {
 
 	// restart microservice twice
 	for i := 0; i < 2; i++ {
-		ctx.StopMicroservice(msName)
+		ctx.Expect(ms.Stop()).To(Succeed())
 		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Eventually(ctx.GetValueStateClb(veth1)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Eventually(ctx.GetValueStateClb(veth2)).Should(Equal(kvscheduler.ValueState_PENDING))
 		ctx.Expect(ctx.PingFromVPP(veth2IP)).NotTo(Succeed())
 		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
-		ctx.StartMicroservice(msName)
+		ms = ctx.StartMicroservice(msName)
 		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))

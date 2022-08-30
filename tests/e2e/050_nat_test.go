@@ -155,7 +155,7 @@ func TestSourceNAT(t *testing.T) {
 		return ctx.PingFromMs(ms2Name, linuxTap1IP)
 	}
 
-	ctx.StartMicroservice(ms1Name)
+	ms1 := ctx.StartMicroservice(ms1Name)
 	ctx.StartMicroservice(ms2Name)
 	ctx.Expect(nat44Addresses()).ShouldNot(SatisfyAny(
 		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
@@ -218,7 +218,7 @@ func TestSourceNAT(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart microservice with S-NAT attached
-	ctx.StopMicroservice(ms1Name)
+	ctx.Expect(ms1.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.StartMicroservice(ms1Name)
@@ -547,8 +547,9 @@ func TestNATStaticMappings(t *testing.T) {
 			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)
 	}
 
-	ctx.StartMicroservice(ms1Name)
-	ctx.StartMicroservice(ms2Name)
+	ms1 := ctx.StartMicroservice(ms1Name)
+	ms2 := ctx.StartMicroservice(ms2Name)
+
 	ctx.Expect(staticMappings()).ShouldNot(SatisfyAny(containTCP, containUDP))
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
@@ -600,8 +601,8 @@ func TestNATStaticMappings(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart both microservices
-	ctx.StopMicroservice(ms1Name)
-	ctx.StopMicroservice(ms2Name)
+	ctx.Expect(ms1.Stop()).To(Succeed())
+	ctx.Expect(ms2.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),
@@ -756,7 +757,7 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 		return ctx.PingFromMs(ms2Name, linuxTap1IP)
 	}
 
-	ctx.StartMicroservice(ms1Name)
+	ms1 := ctx.StartMicroservice(ms1Name)
 	ctx.StartMicroservice(ms2Name)
 	ctx.Expect(nat44Addresses()).ShouldNot(SatisfyAny(
 		ContainSubstring(sNatAddr1), ContainSubstring(sNatAddr2), ContainSubstring(sNatAddr3)))
@@ -813,7 +814,7 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart microservice with S-NAT attached
-	ctx.StopMicroservice(ms1Name)
+	ctx.Expect(ms1.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.StartMicroservice(ms1Name)

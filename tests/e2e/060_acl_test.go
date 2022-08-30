@@ -344,8 +344,9 @@ func TestL3ACLs(t *testing.T) {
 			9999, 9999, true, tapv2InputNode)).To(beAllowed)
 	}
 
-	ctx.StartMicroservice(ms1Name)
-	ctx.StartMicroservice(ms2Name)
+	ms1 := ctx.StartMicroservice(ms1Name)
+	ms2 := ctx.StartMicroservice(ms2Name)
+
 	ctx.Expect(vppACLs(ctx)).ShouldNot(SatisfyAny(
 		ContainSubstring(showMs1IngressACL), ContainSubstring(showMs1EgressACL),
 		ContainSubstring(showMs2IngressACL), ContainSubstring(showMs2EgressACL)))
@@ -401,8 +402,8 @@ func TestL3ACLs(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart both microservices
-	ctx.StopMicroservice(ms1Name)
-	ctx.StopMicroservice(ms2Name)
+	ctx.Expect(ms1.Stop()).To(Succeed())
+	ctx.Expect(ms2.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.Eventually(ctx.GetValueStateClb(vppTap2)).Should(Equal(kvscheduler.ValueState_PENDING),

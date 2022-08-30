@@ -168,8 +168,9 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(ms1Name)
+	ms1 := ctx.StartMicroservice(ms1Name)
 	ctx.StartMicroservice(ms2Name)
+
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTap1,
@@ -207,7 +208,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	// kill one of the microservices
 	// - "Eventually" is also used with linuxTap1 to wait for retry txn that
 	//   will change state from RETRYING to PENDING
-	ctx.StopMicroservice(ms1Name)
+	ctx.Expect(ms1.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated VPP-TAP should be pending")
 	ctx.Eventually(ctx.GetValueStateClb(linuxTap1)).Should(Equal(kvscheduler.ValueState_PENDING),
@@ -228,7 +229,7 @@ func TestBridgeDomainWithTAPs(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
-	ctx.StartMicroservice(ms1Name)
+	ms1 = ctx.StartMicroservice(ms1Name)
 	ctx.Eventually(ctx.GetValueStateClb(vppTap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"VPP-TAP attached to a re-started microservice1 should be eventually configured")
 	ctx.Expect(ctx.GetValueState(linuxTap1)).To(Equal(kvscheduler.ValueState_CONFIGURED),
@@ -407,8 +408,9 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(ms1Name)
+	ms1 := ctx.StartMicroservice(ms1Name)
 	ctx.StartMicroservice(ms2Name)
+
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		afPacket1,
@@ -446,7 +448,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	// kill one of the microservices
 	// - both AF-PACKET and VETH use separate "Eventually" assertion since
 	//   they react to different SB notifications
-	ctx.StopMicroservice(ms1Name)
+	ctx.Expect(ms1.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Without microservice, the associated AF-PACKET should be pending")
 	ctx.Eventually(ctx.GetValueStateClb(veth1a)).Should(Equal(kvscheduler.ValueState_PENDING),
@@ -471,7 +473,7 @@ func TestBridgeDomainWithAfPackets(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue(), "Agent is not in-sync")
 
 	// restart the microservice
-	ctx.StartMicroservice(ms1Name)
+	ms1 = ctx.StartMicroservice(ms1Name)
 	ctx.Eventually(ctx.GetValueStateClb(afPacket1)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"AF-PACKET attached to a re-started microservice1 should be eventually configured")
 	ctx.Expect(ctx.GetValueState(veth1a)).To(Equal(kvscheduler.ValueState_CONFIGURED),

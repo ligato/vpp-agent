@@ -187,7 +187,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 		},
 	}
 
-	ctx.StartMicroservice(msName)
+	ms := ctx.StartMicroservice(msName)
 
 	// configure everything in one resync
 	err := ctx.GenericClient().ResyncConfig(
@@ -219,7 +219,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.StopMicroservice(msName)
+	ctx.Expect(ms.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 	ctx.Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
@@ -425,7 +425,7 @@ func TestVRFRoutes(t *testing.T) {
 		GwAddr:            vrf2VppIP,
 	}
 
-	ctx.StartMicroservice(msName)
+	ms := ctx.StartMicroservice(msName)
 
 	// configure everything in one resync
 	err := ctx.GenericClient().ResyncConfig(
@@ -453,7 +453,7 @@ func TestVRFRoutes(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.StopMicroservice(msName)
+	ctx.Expect(ms.Stop()).To(Succeed())
 	ctx.Eventually(ctx.GetValueStateClb(vrf1LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 	ctx.Eventually(ctx.GetValueStateClb(vrf2LinuxTap)).Should(Equal(kvscheduler.ValueState_PENDING))
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
