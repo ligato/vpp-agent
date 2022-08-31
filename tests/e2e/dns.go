@@ -34,7 +34,13 @@ type DNSServer struct {
 }
 
 // NewDNSServer creates and starts new DNS server container
-func NewDNSServer(ctx *TestCtx, opts *DNSOpt) (*DNSServer, error) {
+func NewDNSServer(ctx *TestCtx, optMods ...DNSOptModifier) (*DNSServer, error) {
+	// compute options
+	opts := DefaultDNSOpt(ctx)
+	for _, mod := range optMods {
+		mod(opts)
+	}
+
 	// create struct for DNS server
 	dnsServer := &DNSServer{
 		ComponentRuntime: opts.Runtime,

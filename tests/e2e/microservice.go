@@ -29,8 +29,17 @@ type Microservice struct {
 }
 
 // NewMicroservice creates and starts new microservice container
-func NewMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.NetworkNamespaceAPI,
-	opts *MicroserviceOpt) (*Microservice, error) {
+func NewMicroservice(
+	ctx *TestCtx,
+	msName string,
+	nsCalls nslinuxcalls.NetworkNamespaceAPI,
+	optMods ...MicroserviceOptModifier,
+) (*Microservice, error) {
+	// compute options
+	opts := DefaultMicroserviceOpt(ctx, msName)
+	for _, mod := range optMods {
+		mod(opts)
+	}
 
 	// create struct for ETCD server
 	ms := &Microservice{
@@ -39,6 +48,7 @@ func NewMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.NetworkNa
 		name:             msName,
 		nsCalls:          nsCalls,
 	}
+
 	// Note: if runtime doesn't implement Pinger/Diger interface and test use it, then compilation
 	// will be ok but runtime will throw "panic: runtime error: invalid memory address or nil pointer
 	// dereference" when referencing Ping/Dig function

@@ -52,7 +52,7 @@ const (
 	checkTimeout         = time.Second * 6
 	defaultTestShareDir  = "/test-share"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
-	nameOfDefaultAgent   = "agent0"
+	nameOfMainAgent      = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
 	tapv2InputNode = "virtio-input"
@@ -171,13 +171,13 @@ func NewTest(t *testing.T) *TestCtx {
 }
 
 // Setup setups the testing environment according to options
-func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
+func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 	testCtx := NewTest(t)
 
 	// prepare setup options
-	opt := DefaultSetupOpt(testCtx)
-	for _, optModifier := range options {
-		optModifier(opt)
+	opts := DefaultSetupOpt(testCtx)
+	for _, mod := range optMods {
+		mod(opts)
 	}
 
 	// connect to the docker daemon
@@ -219,58 +219,37 @@ func Setup(t *testing.T, options ...SetupOptModifier) *TestCtx {
 	}()
 
 	// setup DNS server
-	if opt.SetupDNSServer {
-		testCtx.DNSServer, err = NewDNSServer(testCtx, opt.DNSOpt)
+	if opts.SetupDNSServer {
+		testCtx.DNSServer, err = NewDNSServer(testCtx, opts.DNSOptMods...)
 		testCtx.Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	// setup Etcd
-	if opt.SetupEtcd {
-		testCtx.Etcd, err = NewEtcd(testCtx, opt.EtcdOpt)
+	if opts.SetupEtcd {
+		testCtx.Etcd, err = NewEtcd(testCtx, opts.EtcdOptMods...)
 		testCtx.Expect(err).ShouldNot(HaveOccurred())
 	}
 
 	// setup main VPP-Agent
-	if opt.SetupAgent {
-		SetupMainAgent(testCtx, extractAgentOptions(opt))
+	if opts.SetupAgent {
+		testCtx.Agent = testCtx.StartAgent(nameOfMainAgent, opts.AgentOptMods...)
+		testCtx.Eventually(testCtx.Agent.checkReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
+
+		// fill VPP version (this depends on agentctl and that depends on agent to be set up)
+		if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
+			testCtx.t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
+		} else {
+			versionParts := strings.SplitN(version, " ", 3)
+			if len(versionParts) > 1 {
+				testCtx.vppVersion = version
+				testCtx.t.Logf("VPP version: %v", testCtx.vppVersion)
+			} else {
+				testCtx.t.Logf("invalid VPP version: %q", version)
+			}
+		}
 	}
 
 	return testCtx
-}
-
-// SetupMainAgent setups VPP-Agent test component according to options (for container runtime it means to
-// start VPP-Agent container)
-func SetupMainAgent(testCtx *TestCtx, opts ...AgentOptModifier) {
-	// prepare options
-	name := nameOfDefaultAgent
-	options := DefaultAgentOpt(testCtx, name)
-	for _, optionsModifier := range opts {
-		optionsModifier(options)
-	}
-
-	// start agent container
-	agent := testCtx.StartAgent(name, opts...) // not passing prepared options due to public visibility
-
-	// wait to agent to start properly
-	testCtx.Eventually(agent.checkReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
-
-	// run initial resync
-	if !options.NoManualInitialResync {
-		agent.Sync()
-	}
-
-	// fill VPP version (this depends on agentctl and that depends on agent to be set up)
-	if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
-		testCtx.t.Fatalf("Retrieving VPP version via vppctl failed: %v", err)
-	} else {
-		versionParts := strings.SplitN(version, " ", 3)
-		if len(versionParts) > 1 {
-			testCtx.vppVersion = version
-			testCtx.t.Logf("VPP version: %v", testCtx.vppVersion)
-		} else {
-			testCtx.t.Logf("invalid VPP version: %q", version)
-		}
-	}
 }
 
 // AgentInstanceName provides instance name of VPP-Agent that is created by setup by default. This name is
@@ -282,7 +261,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	if testCtx.Agent != nil {
 		return testCtx.Agent.name
 	}
-	return nameOfDefaultAgent
+	return nameOfMainAgent
 }
 
 // Teardown perform test cleanup
@@ -328,7 +307,7 @@ func (test *TestCtx) Teardown() {
 func (test *TestCtx) dumpLog() {
 	output := test.outputBuf.String()
 	test.outputBuf.Reset()
-	test.t.Logf("OUTPUT:\n-----------------\n%s\n------------------\n\n", output)
+	test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
 }
 
 // VppRelease provides VPP version of VPP in default VPP-Agent test component
@@ -384,20 +363,13 @@ func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 }
 
 // StartMicroservice starts microservice according to given options
-func (test *TestCtx) StartMicroservice(name string, opts ...MicroserviceOptModifier) *Microservice {
+func (test *TestCtx) StartMicroservice(name string, optMods ...MicroserviceOptModifier) *Microservice {
 	test.t.Helper()
 
 	if _, ok := test.microservices[name]; ok {
 		test.t.Fatalf("microservice %s already started", name)
 	}
-
-	// prepare microservice options
-	opt := DefaultMicroserviceOpt(test, name)
-	for _, optionModifier := range opts {
-		optionModifier(opt)
-	}
-
-	ms, err := NewMicroservice(test, name, test.nsCalls, opt)
+	ms, err := NewMicroservice(test, name, test.nsCalls, optMods...)
 	if err != nil {
 		test.t.Fatalf("creating microservice %s failed: %v", name, err)
 	}
@@ -422,22 +394,13 @@ func (test *TestCtx) StopMicroservice(name string) {
 }
 
 // StartAgent starts new VPP-Agent with given name and according to options
-func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
+func (test *TestCtx) StartAgent(name string, optMods ...AgentOptModifier) *Agent {
 	test.t.Helper()
 
 	if _, ok := test.agents[name]; ok {
 		test.t.Fatalf("agent %s already started", name)
 	}
-
-	// prepare agent options
-	opt := DefaultAgentOpt(test, name)
-	for _, optModifier := range opts {
-		optModifier(opt)
-	}
-	opt.Env = append(opt.Env, "MICROSERVICE_LABEL="+name)
-	opt.Name = name
-
-	agent, err := NewAgent(test, name, opt)
+	agent, err := NewAgent(test, name, optMods...)
 	if err != nil {
 		test.t.Fatalf("creating agent %s failed: %v", name, err)
 	}
@@ -445,7 +408,6 @@ func (test *TestCtx) StartAgent(name string, opts ...AgentOptModifier) *Agent {
 		test.Agent = agent
 	}
 	test.agents[name] = agent
-
 	return agent
 }
 

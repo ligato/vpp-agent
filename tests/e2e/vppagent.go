@@ -37,6 +37,8 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+
+	. "github.com/onsi/gomega"
 )
 
 const (
@@ -56,7 +58,13 @@ type Agent struct {
 }
 
 // NewAgent creates and starts new VPP-Agent container
-func NewAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
+func NewAgent(ctx *TestCtx, name string, optMods ...AgentOptModifier) (*Agent, error) {
+	// compute options
+	opts := DefaultAgentOpt(ctx, name)
+	for _, mod := range optMods {
+		mod(opts)
+	}
+
 	// create struct for Agent
 	agent := &Agent{
 		ComponentRuntime: opts.Runtime,
@@ -78,6 +86,11 @@ func NewAgent(ctx *TestCtx, name string, opts *AgentOpt) (*Agent, error) {
 		return nil, errors.Errorf("can't create client for %s due to: %v", name, err)
 	}
 	agent.Client = client
+
+	agent.ctx.Eventually(agent.checkReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
+	if opts.InitialResync {
+		agent.Sync()
+	}
 	return agent, nil
 }
 

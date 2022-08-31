@@ -31,9 +31,9 @@ const vppAgentDefaultImg = "ligato/vpp-agent:latest"
 
 // SetupOpt is options data holder for customizing setup of tests
 type SetupOpt struct {
-	*AgentOpt
-	*EtcdOpt
-	*DNSOpt
+	AgentOptMods   []AgentOptModifier
+	EtcdOptMods    []EtcdOptModifier
+	DNSOptMods     []DNSOptModifier
 	SetupAgent     bool
 	SetupEtcd      bool
 	SetupDNSServer bool
@@ -43,14 +43,14 @@ type SetupOpt struct {
 
 // AgentOpt is options data holder for customizing setup of agent
 type AgentOpt struct {
-	Runtime               ComponentRuntime
-	RuntimeStartOptions   RuntimeStartOptionsFunc
-	Name                  string
-	Image                 string
-	Env                   []string
-	UseEtcd               bool
-	NoManualInitialResync bool
-	ContainerOptsHook     func(*docker.CreateContainerOptions)
+	Runtime             ComponentRuntime
+	RuntimeStartOptions RuntimeStartOptionsFunc
+	Name                string
+	Image               string
+	Env                 []string
+	UseEtcd             bool
+	InitialResync       bool
+	ContainerOptsHook   func(*docker.CreateContainerOptions)
 }
 
 // MicroserviceOpt is options data holder for customizing setup of microservice
@@ -112,9 +112,9 @@ type PingOptModifier func(*PingOpt)
 // DefaultSetupOpt creates default values for SetupOpt
 func DefaultSetupOpt(testCtx *TestCtx) *SetupOpt {
 	opt := &SetupOpt{
-		AgentOpt:       DefaultAgentOpt(testCtx, ""),
-		EtcdOpt:        DefaultEtcdOpt(testCtx),
-		DNSOpt:         DefaultDNSOpt(testCtx),
+		AgentOptMods:   nil,
+		EtcdOptMods:    nil,
+		DNSOptMods:     nil,
 		SetupAgent:     true,
 		SetupEtcd:      false,
 		SetupDNSServer: false,
@@ -184,16 +184,17 @@ func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
 			logIdentity: "Agent " + agentName,
 			stopTimeout: defaultStopContainerTimeoutSec,
 		},
-		RuntimeStartOptions:   AgentStartOptionsForContainerRuntime,
-		Name:                  agentName,
-		Image:                 agentImg,
-		UseEtcd:               false,
-		NoManualInitialResync: false,
+		RuntimeStartOptions: AgentStartOptionsForContainerRuntime,
+		Name:                agentName,
+		Image:               agentImg,
+		UseEtcd:             false,
+		InitialResync:       true,
 		Env: []string{
 			"INITIAL_LOGLVL=" + logging.DefaultLogger.GetLevel().String(),
 			"ETCD_CONFIG=" + etcdConfig,
 			"GRPC_CONFIG=" + grpcConfig,
 			"DEBUG=" + os.Getenv("DEBUG"),
+			"MICROSERVICE_LABEL=" + agentName,
 		},
 	}
 	return opt
@@ -217,20 +218,17 @@ func WithoutVPPAgent() SetupOptModifier {
 // WithCustomVPPAgent is test setup option using alternative vpp-agent image (customized original vpp-agent)
 func WithCustomVPPAgent() SetupOptModifier {
 	return func(o *SetupOpt) {
-		o.AgentOpt.Image = "vppagent.test.ligato.io:custom"
+		o.AgentOptMods = append(o.AgentOptMods, func(ao *AgentOpt) {
+			ao.Image = "vppagent.test.ligato.io:custom"
+		})
 	}
 }
 
 // WithEtcd is test setup option enabling etcd setup
-func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
+func WithEtcd(etcdOptMods ...EtcdOptModifier) SetupOptModifier {
 	return func(o *SetupOpt) {
 		o.SetupEtcd = true
-		if o.EtcdOpt == nil {
-			o.EtcdOpt = DefaultEtcdOpt(o.ctx)
-		}
-		for _, etcdOptModifier := range etcdOpts {
-			etcdOptModifier(o.EtcdOpt)
-		}
+		o.EtcdOptMods = append(o.EtcdOptMods, etcdOptMods...)
 	}
 }
 
@@ -238,19 +236,13 @@ func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
 func WithDNSServer(dnsOpts ...DNSOptModifier) SetupOptModifier {
 	return func(o *SetupOpt) {
 		o.SetupDNSServer = true
-		if o.DNSOpt == nil {
-			o.DNSOpt = DefaultDNSOpt(o.ctx)
-		}
-		for _, dnsOptModifier := range dnsOpts {
-			dnsOptModifier(o.DNSOpt)
-		}
 	}
 }
 
 // WithoutManualInitialAgentResync is test setup option disabling manual agent resync just after agent setup
 func WithoutManualInitialAgentResync() AgentOptModifier {
 	return func(o *AgentOpt) {
-		o.NoManualInitialResync = true
+		o.InitialResync = false
 	}
 }
 
