@@ -42,9 +42,11 @@ import (
 )
 
 const (
-	vppAgentLabelKey               = "e2e.test.vppagent"
-	vppAgentNamePrefix             = "e2e-test-vppagent-"
-	defaultStopContainerTimeoutSec = 3
+	agentImage       = "ligato/vpp-agent:latest"
+	agentLabelKey    = "e2e.test.vppagent"
+	agentNamePrefix  = "e2e-test-vppagent-"
+	agentInitTimeout = 15 // seconds
+	agentStopTimeout = 3  // seconds
 )
 
 var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) received, ([0-9]+)% packet loss")
@@ -117,14 +119,14 @@ func AgentStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (in
 	}
 
 	// construct vpp-agent container creation options
-	agentLabel := vppAgentNamePrefix + opts.Name
+	agentLabel := agentNamePrefix + opts.Name
 	createOpts := &docker.CreateContainerOptions{
 		Context: ctx.ctx,
 		Name:    agentLabel,
 		Config: &docker.Config{
 			Image: opts.Image,
 			Labels: map[string]string{
-				vppAgentLabelKey: opts.Name,
+				agentLabelKey: opts.Name,
 			},
 			Env:          opts.Env,
 			AttachStderr: true,
@@ -158,7 +160,7 @@ func removeDanglingAgents(t *testing.T, dockerClient *docker.Client) {
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,
 		Filters: map[string][]string{
-			"label": {vppAgentLabelKey},
+			"label": {agentLabelKey},
 		},
 	})
 	if err != nil {
@@ -172,7 +174,7 @@ func removeDanglingAgents(t *testing.T, dockerClient *docker.Client) {
 		if err != nil {
 			t.Fatalf("failed to remove existing vpp-agents: %v", err)
 		} else {
-			t.Logf("removed existing vpp-agent: %s", container.Labels[vppAgentLabelKey])
+			t.Logf("removed existing vpp-agent: %s", container.Labels[agentLabelKey])
 		}
 	}
 }

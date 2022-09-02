@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const execTimeout = 10 * time.Second
+const containerExecTimeout = 10 * time.Second
 
 // ContainerRuntime represents docker container environments for one component of test topology
 type ContainerRuntime struct {
@@ -125,7 +125,7 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(c.ctx.ctx, execTimeout)
+	ctx, cancel := context.WithTimeout(c.ctx.ctx, containerExecTimeout)
 	defer cancel()
 
 	var stdoutBuf, stderrBuf bytes.Buffer

@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	msDefaultImage = "busybox:1.31"
-	msStopTimeout  = 10 // seconds
-	MsLabelKey     = "e2e.test.ms"
-	MsNamePrefix   = "e2e-test-ms-"
+	msImage       = "busybox:1.31"
+	msLabelKey    = "e2e.test.ms"
+	MsNamePrefix  = "e2e-test-ms-"
+	msStopTimeout = 1 // seconds
 )
 
 // Microservice represents running microservice
@@ -92,9 +92,9 @@ func MicroserviceStartOptionsForContainerRuntime(ctx *TestCtx, options interface
 		Context: ctx.ctx,
 		Name:    msLabel,
 		Config: &docker.Config{
-			Image: msDefaultImage,
+			Image: msImage,
 			Labels: map[string]string{
-				MsLabelKey: opts.Name,
+				msLabelKey: opts.Name,
 			},
 			//Entrypoint:
 			Env: []string{"MICROSERVICE_LABEL=" + msLabel},
@@ -122,7 +122,7 @@ func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,
 		Filters: map[string][]string{
-			"label": {MsLabelKey},
+			"label": {msLabelKey},
 		},
 	})
 	if err != nil {
@@ -136,7 +136,7 @@ func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 		if err != nil {
 			t.Fatalf("failed to remove existing microservices: %v", err)
 		} else {
-			t.Logf("removed existing microservice: %s", container.Labels[MsLabelKey])
+			t.Logf("removed existing microservice: %s", container.Labels[msLabelKey])
 		}
 	}
 }

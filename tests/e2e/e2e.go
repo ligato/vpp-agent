@@ -41,21 +41,17 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var (
-	debug = flag.Bool("debug", false, "Turn on debug mode.")
-)
+var debug = flag.Bool("debug", false, "Turn on debug mode.")
 
 const (
-	agentInitTimeout     = time.Second * 15
-	processExitTimeout   = time.Second * 3
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
-	defaultTestShareDir  = "/test-share"
+	shareDir             = "/test-share"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
-	nameOfMainAgent      = "agent0"
+	MainAgentName        = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
-	tapv2InputNode = "virtio-input"
+	Tapv2InputNode = "virtio-input"
 	// tapv1InputNode    = "tapcli-rx"
 	// afPacketInputNode = "af-packet-input"
 	// memifInputNode    = "memif-input"
@@ -159,7 +155,7 @@ func NewTest(t *testing.T) *TestCtx {
 		WithT:         g,
 		t:             t,
 		testDataDir:   os.Getenv("TESTDATA_DIR"),
-		testShareDir:  defaultTestShareDir,
+		testShareDir:  shareDir,
 		agents:        make(map[string]*Agent),
 		microservices: make(map[string]*Microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
@@ -232,8 +228,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// setup main VPP-Agent
 	if opts.SetupAgent {
-		testCtx.Agent = testCtx.StartAgent(nameOfMainAgent, opts.AgentOptMods...)
-		testCtx.Eventually(testCtx.Agent.checkReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
+		testCtx.Agent = testCtx.StartAgent(MainAgentName, opts.AgentOptMods...)
 
 		// fill VPP version (this depends on agentctl and that depends on agent to be set up)
 		if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
@@ -261,7 +256,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	if testCtx.Agent != nil {
 		return testCtx.Agent.name
 	}
-	return nameOfMainAgent
+	return MainAgentName
 }
 
 // Teardown perform test cleanup

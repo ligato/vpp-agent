@@ -27,8 +27,6 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
-const vppAgentDefaultImg = "ligato/vpp-agent:latest"
-
 // SetupOpt is options data holder for customizing setup of tests
 type SetupOpt struct {
 	AgentOptMods   []AgentOptModifier
@@ -166,7 +164,7 @@ func DefaultMicroserviceOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
 
 // DefaultAgentOpt creates default values for AgentOpt
 func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
-	agentImg := vppAgentDefaultImg
+	agentImg := agentImage
 	if img := os.Getenv("VPP_AGENT"); img != "" {
 		agentImg = img
 	}
@@ -182,7 +180,7 @@ func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
 		Runtime: &ContainerRuntime{
 			ctx:         testCtx,
 			logIdentity: "Agent " + agentName,
-			stopTimeout: defaultStopContainerTimeoutSec,
+			stopTimeout: agentStopTimeout,
 		},
 		RuntimeStartOptions: AgentStartOptionsForContainerRuntime,
 		Name:                agentName,
