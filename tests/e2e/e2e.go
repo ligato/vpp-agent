@@ -334,13 +334,6 @@ func (test *TestCtx) GRPCConn() *grpc.ClientConn {
 	return test.Agent.GRPCConn()
 }
 
-// syncAgent runs downstream resync and returns the list of executed operations.
-// Deprecated: use ctx.Agent.Sync(...) instead
-func (test *TestCtx) syncAgent() kvs.RecordedTxnOps {
-	test.t.Helper()
-	return test.Agent.Sync()
-}
-
 // AgentInSync checks if the agent NB config and the SB state (VPP+Linux) are in-sync.
 // Deprecated: use ctx.Agent.IsInSync(...) instead
 func (test *TestCtx) AgentInSync() bool {
