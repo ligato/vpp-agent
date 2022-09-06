@@ -15,8 +15,9 @@
 package vppcalls
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
+
 	wg "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/wireguard"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"

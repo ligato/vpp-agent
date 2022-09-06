@@ -3,7 +3,6 @@ module go.ligato.io/vpp-agent/v3
 go 1.17
 
 require (
-	git.fd.io/govpp.git v0.4.1-0.20220519085400-f06c92da266e
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/coreos/go-iptables v0.5.0
@@ -24,7 +23,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
 	github.com/olekukonko/tablewriter v0.0.4
-	github.com/onsi/gomega v1.10.3
+	github.com/onsi/gomega v1.19.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.5.0
 	github.com/prometheus/client_golang v1.11.0
@@ -38,6 +37,7 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	github.com/xeipuuv/gojsonschema v1.1.0
 	go.etcd.io/etcd/client/v3 v3.5.1
+	go.fd.io/govpp v0.6.0-alpha.0.20220808231750-0eff8d05da27
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a

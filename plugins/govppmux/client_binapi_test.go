@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
+	"go.fd.io/govpp/core"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
 )

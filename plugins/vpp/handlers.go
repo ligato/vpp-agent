@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"sort"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
@@ -55,10 +55,10 @@ func (h *Handler) AddVersion(hv HandlerVersion) {
 	}
 	// TODO: check if given handler version implementes handler API interface
 	/*ht := reflect.TypeOf(h.desc.HandlerAPI).Elem()
-	hc := reflect.TypeOf(hv.New).Out(0)
-	if !hc.Implements(ht) {
-		logging.DefaultLogger.Warnf("vpphandlers: AddVersion found the handler of type %v that does not satisfy %v", hc, ht)
-	}*/
+	  hc := reflect.TypeOf(hv.New).Out(0)
+	  if !hc.Implements(ht) {
+	  	logging.DefaultLogger.Warnf("vpphandlers: AddVersion found the handler of type %v that does not satisfy %v", hc, ht)
+	  }*/
 	h.versions[hv.Version] = &hv
 }
 

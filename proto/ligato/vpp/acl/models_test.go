@@ -188,6 +188,14 @@ func TestParseACLToInterfaceKey(t *testing.T) {
 			expectedIsACLIfaceKey: true,
 		},
 		{
+			name:                  "multi-part acl and interface name",
+			key:                   "vpp/acl/base/test/acl1/interface/egress/local/tap0",
+			expectedACLName:       "base/test/acl1",
+			expectedIface:         "local/tap0",
+			expectedFlow:          EgressFlow,
+			expectedIsACLIfaceKey: true,
+		},
+		{
 			name:                  "Gbe interface",
 			key:                   "vpp/acl/acl1/interface/ingress/GigabitEthernet0/8/0",
 			expectedACLName:       "acl1",
@@ -238,6 +246,14 @@ func TestParseACLToInterfaceKey(t *testing.T) {
 		{
 			name:                  "not ACLToInterface key (cut after interface)",
 			key:                   "vpp/acl/acl1/interface/",
+			expectedACLName:       "",
+			expectedIface:         "",
+			expectedFlow:          "",
+			expectedIsACLIfaceKey: false,
+		},
+		{
+			name:                  "not ACLToInterface key (cut after interface, no traling slash)",
+			key:                   "vpp/acl/base/acl1/interface",
 			expectedACLName:       "",
 			expectedIface:         "",
 			expectedFlow:          "",

@@ -17,8 +17,9 @@ package vppcalls
 import (
 	"net"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
+
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 )
 
@@ -49,7 +50,7 @@ type DNSVPPRead interface {
 	//   no dump binapi or VPP CLI check whether the functionality is enabled - dns cache is not good indicator
 	//   because it can't detect feature disabling after first enabling)
 	// DumpDNSCache retrieves DNSCache if DNS cache server functionality is enabled, otherwise it returns nil
-	//DumpDNSCache() (dnsCache *dns.DNSCache, err error)
+	// DumpDNSCache() (dnsCache *dns.DNSCache, err error)
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

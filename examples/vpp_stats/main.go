@@ -20,16 +20,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"git.fd.io/govpp.git/api"
+	"log"
+	"time"
+
+	"go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
+
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry/vppcalls"
-	"log"
-	"time"
 )
 
 const PluginName = "stats-example"

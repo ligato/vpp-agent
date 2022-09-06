@@ -450,12 +450,18 @@ func (s *Scheduler) dumpGetHandler(formatter *render.Render) http.HandlerFunc {
 		var dump []kvs.KVWithMetadata
 		if descriptor != "" {
 			dump, err = s.DumpValuesByDescriptor(descriptor, view)
+
+			if err != nil {
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+				return
+			}
 		} else {
 			dump, err = s.DumpValuesByKeyPrefix(keyPrefix, view)
-		}
-		if err != nil {
-			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-			return
+
+			if err != nil {
+				s.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
+				return
+			}
 		}
 		s.logError(formatter.JSON(w, http.StatusOK, kvsWithMetaForREST(dump)))
 	}

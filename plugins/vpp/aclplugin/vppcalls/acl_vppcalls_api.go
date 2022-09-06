@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"

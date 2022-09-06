@@ -99,7 +99,7 @@ jobs:
       - name: Get tag
         id: vars
         run: |
-          echo ::set-output name=tag::$(echo ${GITHUB_REF:11:14})
+          echo ::set-output name=tag::$(echo ${GITHUB_REF:19:22})
 
           echo ::group::Env vars
           echo $(env | sort)

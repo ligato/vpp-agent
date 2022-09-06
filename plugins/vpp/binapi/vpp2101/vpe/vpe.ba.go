@@ -9,8 +9,8 @@
 package vpe
 
 import (
-	api "git.fd.io/govpp.git/api"
-	codec "git.fd.io/govpp.git/codec"
+	api "go.fd.io/govpp/api"
+	codec "go.fd.io/govpp/codec"
 	vpe_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe_types"
 )
 

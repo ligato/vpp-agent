@@ -198,7 +198,7 @@ generate: generate-proto generate-binapi generate-desc-adapters ## Generate all
 generate-proto: protocgengo ## Generate Protobuf files
 
 get-binapi-generators:
-	go install -mod=readonly git.fd.io/govpp.git/cmd/binapi-generator
+	go install -mod=readonly go.fd.io/govpp/cmd/binapi-generator
 
 generate-binapi: get-binapi-generators ## Generate Go code for VPP binary API
 	@echo "# generating VPP binapi"
