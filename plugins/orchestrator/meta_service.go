@@ -93,9 +93,8 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		var (
 			key string
 			val proto.Message
+			err error
 		)
-
-		var err error
 		if item.Data != nil {
 			val, err = models.UnmarshalItem(item)
 			if err != nil {
@@ -174,38 +173,46 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 	return &generic.SetConfigResponse{Results: updateResults}, nil
 }
 
-func (s *genericService) GetConfig(context.Context, *generic.GetConfigRequest) (*generic.GetConfigResponse, error) {
-	var items []*generic.ConfigItem
+func (s *genericService) GetConfig(ctx context.Context, req *generic.GetConfigRequest) (*generic.GetConfigResponse, error) {
+	var configItems []*generic.ConfigItem
 
 	for key, data := range s.dispatch.ListData() {
+		labels := s.dispatch.ListLabels(key)
+		fmt.Println(labels)
+		if !containsAllLabels(req.Labels, labels) {
+			continue
+		}
 		item, err := models.MarshalItem(data)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
+		if !containsItemID(req.Ids, item.Id) {
+			continue
+		}
 		var itemStatus *generic.ItemStatus
-		st, err := s.dispatch.GetStatus(key)
+		status, err := s.dispatch.GetStatus(key)
 		if err != nil {
 			s.log.Warnf("GetStatus failed: %v", err)
 		} else {
 			var msg string
-			if details := st.GetDetails(); len(details) > 0 {
-				msg = strings.Join(st.GetDetails(), ", ")
+			if details := status.GetDetails(); len(details) > 0 {
+				msg = strings.Join(status.GetDetails(), ", ")
 			} else {
-				msg = st.GetError()
+				msg = status.GetError()
 			}
 			itemStatus = &generic.ItemStatus{
-				Status:  st.GetState().String(),
+				Status:  status.GetState().String(),
 				Message: msg,
 			}
 		}
-		items = append(items, &generic.ConfigItem{
+		configItems = append(configItems, &generic.ConfigItem{
 			Item:   item,
 			Status: itemStatus,
-			Labels: s.dispatch.ListLabels(key),
+			Labels: labels,
 		})
 	}
 
-	return &generic.GetConfigResponse{Items: items}, nil
+	return &generic.GetConfigResponse{Items: configItems}, nil
 }
 
 func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (*generic.DumpStateResponse, error) {
@@ -264,4 +271,27 @@ func allImports(desc protoreflect.FileDescriptor) []protoreflect.FileDescriptor 
 		results = append(results, allImports(importFD)...)
 	}
 	return results
+}
+
+func containsAllLabels(want map[string]string, have Labels) bool {
+	for wk, wv := range want {
+		if hv, ok := have[wk]; ok {
+			if wv != "" && wv != hv {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func containsItemID(want []*generic.Item_ID, have *generic.Item_ID) bool {
+	if len(want) == 0 {
+		return true
+	}
+	for _, w := range want {
+		if w.Model == have.Model && w.Name == have.Name {
+			return true
+		}
+	}
+	return false
 }

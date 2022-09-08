@@ -152,52 +152,10 @@ func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
 	return err
 }
 
-func (c *grpcClient) GetConfigItems(filter client.Filter) ([]*client.ConfigItem, error) {
+func (c *grpcClient) GetFilteredConfig(filter client.Filter, dsts ...interface{}) error {
 	ctx := context.Background()
 
-	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	if filter.Keys == nil {
-		filter.Keys = make(map[string]struct{})
-	}
-
-	var items []*client.ConfigItem
-	for _, item := range resp.Items {
-		var key string
-		val, err := models.UnmarshalItemUsingModelRegistry(item.Item, c.modelRegistry)
-		if err != nil {
-			return nil, err
-		}
-		if data := item.Item.GetData(); data != nil {
-			key, err = models.GetKeyUsingModelRegistry(val, c.modelRegistry)
-		} else {
-			key, err = models.GetKeyForItemUsingModelRegistry(item.Item, c.modelRegistry)
-		}
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := filter.Keys[key]; ok {
-			fmt.Println(val)
-			// TODO: should these items be copies? - probably yes
-			items = append(items, &client.ConfigItem{
-				Item:       item.GetItem(),
-				ItemStatus: item.GetStatus(),
-				Key:        key,
-				Value:      val,
-				Labels:     item.GetLabels(),
-			})
-		}
-	}
-	return items, nil
-}
-
-func (c *grpcClient) GetConfig(dsts ...interface{}) error {
-	ctx := context.Background()
-
-	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
+	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{Ids: filter.Ids, Labels: filter.Labels})
 	if err != nil {
 		return err
 	}
@@ -233,13 +191,17 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	return nil
 }
 
-func (c *grpcClient) UpdateConfigItems(items client.UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) GetConfig(dsts ...interface{}) error {
+	return c.GetFilteredConfig(client.Filter{}, dsts)
+}
+
+func (c *grpcClient) UpdateConfig(items client.UpdateItems) (*generic.SetConfigResponse, error) {
 	ctx := context.Background()
 	req := &generic.SetConfigRequest{
-		OverwriteAll: items.Overwrite,
+		OverwriteAll: items.OverwriteAll,
 	}
 
-	for _, msg := range items.Msgs {
+	for _, msg := range items.Messages {
 		var item *generic.Item
 		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)
 		if err != nil {
@@ -255,11 +217,11 @@ func (c *grpcClient) UpdateConfigItems(items client.UpdateItems) (*generic.SetCo
 	return res, err
 }
 
-func (c *grpcClient) DeleteConfigItems(items client.UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) DeleteConfig(items client.UpdateItems) (*generic.SetConfigResponse, error) {
 	ctx := context.Background()
 	req := &generic.SetConfigRequest{}
 
-	for _, msg := range items.Msgs {
+	for _, msg := range items.Messages {
 		var item *generic.Item
 		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)
 		if err != nil {
@@ -446,16 +408,4 @@ func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
 		result = append(result, msg)
 	}
 	return result
-}
-
-func isTagSubset(a []string, b []string) bool {
-	m := make(map[string]struct{})
-	for _, v := range a {
-		m[v] = struct{}{}
-	}
-	l := len(m)
-	for _, v := range b {
-		m[v] = struct{}{}
-	}
-	return l == len(m)
 }

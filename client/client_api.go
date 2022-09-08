@@ -29,22 +29,17 @@ type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
 
-// type ConfigItem struct {
-// 	*generic.Item
-// 	*generic.ItemStatus
-// 	Value  proto.Message
-// 	Labels map[string]string
-// }
-
 type UpdateItems struct {
-	Msgs      []proto.Message
-	Labels    map[string]string
-	Overwrite bool
+	Messages     []proto.Message
+	Labels       map[string]string
+	OverwriteAll bool
 }
 
-// Only set Ids or Labels (if both set )
+// If Ids|Labels is nil that means no filtering for Ids|Labels
+// If for a given label key the corresponding value is "" then items are
+// only matched using the key
 type Filter struct {
-	Ids    []generic.Item_ID
+	Ids    []*generic.Item_ID
 	Labels map[string]string
 }
 
@@ -66,12 +61,12 @@ type GenericClient interface {
 	// GetConfig retrieves current config into dsts.
 	GetConfig(dsts ...interface{}) error
 
-	// GetConfigItems returns current config as a list of config items
-	GetConfigItems(filter Filter) ([]*generic.ConfigItem, error)
+	GetFilteredConfig(filter Filter, dsts ...interface{}) error
 
-	UpdateConfigItems(items UpdateItems) (*generic.SetConfigResponse, error)
+	// TODO(pemoticak): add context.Context as parameter for timeouts etc.
+	UpdateConfig(items UpdateItems) (*generic.SetConfigResponse, error)
 
-	DeleteConfigItems(items UpdateItems) (*generic.SetConfigResponse, error)
+	DeleteConfig(items UpdateItems) (*generic.SetConfigResponse, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)

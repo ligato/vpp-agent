@@ -78,7 +78,7 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 	return txn.Commit(ctx)
 }
 
-func (c *client) GetConfig(dsts ...interface{}) error {
+func (c *client) GetFilteredConfig(filter Filter, dsts ...interface{}) error {
 	protos := c.dispatcher.ListData()
 	protoDsts := extractProtoMessages(dsts)
 	if len(dsts) == len(protoDsts) { // all dsts are proto messages
@@ -92,17 +92,16 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return nil
 }
 
-func (c *client) GetConfigItems(filter Filter) ([]*ConfigItem, error) {
+func (c *client) GetConfig(dsts ...interface{}) error {
+	return c.GetFilteredConfig(Filter{}, dsts)
+}
+
+func (c *client) UpdateConfig(items UpdateItems) (*generic.SetConfigResponse, error) {
 	// TODO: implement this in local client (already implemented in grpc client)
 	return nil, nil
 }
 
-func (c *client) UpdateConfigItems(items UpdateItems) (*generic.SetConfigResponse, error) {
-	// TODO: implement this in local client (already implemented in grpc client)
-	return nil, nil
-}
-
-func (c *client) DeleteConfigItems(items UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *client) DeleteConfig(items UpdateItems) (*generic.SetConfigResponse, error) {
 	// TODO: implement this in local client (already implemented in grpc client)
 	return nil, nil
 }
@@ -198,16 +197,4 @@ func protoMapToList(protoMap map[string]proto.Message) []proto.Message {
 		result = append(result, msg)
 	}
 	return result
-}
-
-func isTagSubset(a []string, b []string) bool {
-	m := make(map[string]struct{})
-	for _, v := range a {
-		m[v] = struct{}{}
-	}
-	l := len(m)
-	for _, v := range b {
-		m[v] = struct{}{}
-	}
-	return l == len(m)
 }
