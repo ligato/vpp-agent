@@ -64,10 +64,9 @@ type GenericClient interface {
 
 	GetFilteredConfig(filter Filter, dsts ...interface{}) error
 
-	// TODO(pemoticak): add context.Context as parameter for timeouts etc.
-	UpdateConfig(items UpdateItems) (*generic.SetConfigResponse, error)
+	UpdateConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error)
 
-	DeleteConfig(items UpdateItems) (*generic.SetConfigResponse, error)
+	DeleteConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)

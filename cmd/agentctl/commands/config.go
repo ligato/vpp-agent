@@ -152,6 +152,9 @@ type ConfigUpdateOptions struct {
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
+	defer cancel()
+
 	// get input file
 	if len(args) == 0 {
 		return fmt.Errorf("missing file argument")
@@ -200,7 +203,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 
 	// update/resync configuration
-	c.UpdateConfig(client.UpdateItems{
+	c.UpdateConfig(ctx, client.UpdateItems{
 		Messages:     configMessages,
 		Labels:       parseLabels(opts.Labels),
 		OverwriteAll: opts.Replace,

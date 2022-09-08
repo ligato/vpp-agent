@@ -96,12 +96,12 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return c.GetFilteredConfig(Filter{}, dsts)
 }
 
-func (c *client) UpdateConfig(items UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *client) UpdateConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error) {
 	// TODO: implement this in local client (already implemented in grpc client)
 	return nil, nil
 }
 
-func (c *client) DeleteConfig(items UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *client) DeleteConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error) {
 	// TODO: implement this in local client (already implemented in grpc client)
 	return nil, nil
 }
