@@ -153,9 +153,6 @@ type ConfigUpdateOptions struct {
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
-	// ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
-	// defer cancel()
-
 	// get input file
 	if len(args) == 0 {
 		return fmt.Errorf("missing file argument")
@@ -203,29 +200,12 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 			"from one big configuration proto message due to: %v", err)
 	}
 
-	labels := parseLabels(opts.Labels)
-	fmt.Println(opts.Labels)
-	fmt.Println(labels)
-
 	// update/resync configuration
 	c.UpdateConfig(client.UpdateItems{
 		Messages:     configMessages,
-		Labels:       labels,
+		Labels:       parseLabels(opts.Labels),
 		OverwriteAll: opts.Replace,
 	})
-
-	// update/resync configuration
-	// if opts.Replace {
-	// 	if err := c.ResyncConfig(configMessages...); err != nil {
-	// 		return fmt.Errorf("resync failed: %v", err)
-	// 	}
-	// } else {
-	// 	req := c.ChangeRequest()
-	// 	req.Update(configMessages...)
-	// 	if err := req.Send(ctx); err != nil {
-	// 		return fmt.Errorf("send failed: %v", err)
-	// 	}
-	// }
 
 	// handle configuration update result and command output
 	format := opts.Format

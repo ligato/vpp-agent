@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -119,8 +118,6 @@ func (c *Client) SchedulerHistory(ctx context.Context, opts types.SchedulerHisto
 		return nil, err
 	}
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.body)
 	if opts.SeqNum >= 0 {
 		var rectxn api.RecordedTxn
 		if err := json.NewDecoder(resp.body).Decode(&rectxn); err != nil {
@@ -128,8 +125,9 @@ func (c *Client) SchedulerHistory(ctx context.Context, opts types.SchedulerHisto
 		}
 		return api.RecordedTxns{&rectxn}, nil
 	}
+
 	var rectxn api.RecordedTxns
-	if err := json.Unmarshal(buf.Bytes(), &rectxn); err != nil {
+	if err := json.NewDecoder(resp.body).Decode(&rectxn); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
 	}
 

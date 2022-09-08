@@ -59,6 +59,7 @@ type GenericClient interface {
 	ResyncConfig(items ...proto.Message) error
 
 	// GetConfig retrieves current config into dsts.
+	// TODO: return as list of config items
 	GetConfig(dsts ...interface{}) error
 
 	GetFilteredConfig(filter Filter, dsts ...interface{}) error
