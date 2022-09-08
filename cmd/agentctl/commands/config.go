@@ -18,8 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	// TODO(pemoticak): remove deprecated ioutil import
-	"io/ioutil"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -158,7 +157,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		return fmt.Errorf("missing file argument")
 	}
 	file := args[0]
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("reading file %s: %w", file, err)
 	}
@@ -258,7 +257,7 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 		return fmt.Errorf("missing file argument")
 	}
 	file := args[0]
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("reading file %s: %w", file, err)
 	}
