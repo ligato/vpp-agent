@@ -365,15 +365,15 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	stdout, stderr, err := ctx.ExecCmd(
 		"agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces")
 	ctx.Expect(err).To(Not(BeNil()))
+	ctx.Expect(stdout).To(BeEmpty())
 	ctx.Expect(stderr).To(ContainSubstring("dump failed:"))
-	ctx.Expect(err).To(Not(BeNil()))
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err = ctx.ExecCmd(
 		"agentctl", "--debug", "--config=/testdata/agentctl.conf", "dump", "vpp.interfaces")
+	ctx.Expect(err).To(Not(BeNil()))
 	ctx.Expect(stdout).To(BeEmpty())
 	ctx.Expect(stderr).To(ContainSubstring("dump failed:"))
-	ctx.Expect(stdout).To(BeEmpty())
 }
 
 func TestAgentCtlSecureETCD(t *testing.T) {
