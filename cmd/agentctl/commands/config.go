@@ -203,11 +203,14 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 
 	// update/resync configuration
-	c.UpdateConfig(ctx, client.UpdateItems{
+	_, err = c.UpdateConfig(ctx, client.UpdateItems{
 		Messages:     configMessages,
 		Labels:       parseLabels(opts.Labels),
 		OverwriteAll: opts.Replace,
 	})
+	if err != nil {
+		return fmt.Errorf("update failed: %w", err)
+	}
 
 	// handle configuration update result and command output
 	format := opts.Format

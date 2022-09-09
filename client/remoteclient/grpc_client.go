@@ -199,7 +199,6 @@ func (c *grpcClient) UpdateConfig(ctx context.Context, items client.UpdateItems)
 	req := &generic.SetConfigRequest{
 		OverwriteAll: items.OverwriteAll,
 	}
-
 	for _, msg := range items.Messages {
 		var item *generic.Item
 		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)

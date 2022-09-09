@@ -31,8 +31,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
-var reservedLabelKeys = [...]string{"grpc", "local", "etcd", "timestamp"}
-
 // KeyVal associates value with its key.
 type KeyVal struct {
 	Key string

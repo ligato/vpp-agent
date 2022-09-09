@@ -62,6 +62,7 @@ type GenericClient interface {
 	// TODO: return as list of config items
 	GetConfig(dsts ...interface{}) error
 
+	// GetFilteredConfig retrieves current config into dsts according to the provided filter.
 	GetFilteredConfig(filter Filter, dsts ...interface{}) error
 
 	UpdateConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error)
