@@ -288,10 +288,8 @@ func allImports(desc protoreflect.FileDescriptor) []protoreflect.FileDescriptor 
 
 func containsAllLabels(want map[string]string, have Labels) bool {
 	for wk, wv := range want {
-		if hv, ok := have[wk]; ok {
-			if wv != "" && wv != hv {
-				return false
-			}
+		if hv, ok := have[wk]; !ok || wv != "" && wv != hv {
+			return false
 		}
 	}
 	return true

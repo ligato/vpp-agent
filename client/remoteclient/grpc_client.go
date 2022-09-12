@@ -210,7 +210,6 @@ func (c *grpcClient) UpdateConfig(ctx context.Context, items client.UpdateItems)
 			Labels: items.Labels,
 		})
 	}
-
 	res, err := c.manager.SetConfig(ctx, req)
 	return res, err
 }
