@@ -192,14 +192,14 @@ func (s *genericService) GetConfig(ctx context.Context, req *generic.GetConfigRe
 	for key, data := range s.dispatch.ListData() {
 		labels := s.dispatch.ListLabels(key)
 		fmt.Println(labels)
-		if !containsAllLabels(req.Labels, labels) {
+		if !ContainsAllLabels(req.Labels, labels) {
 			continue
 		}
 		item, err := models.MarshalItem(data)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		if !containsItemID(req.Ids, item.Id) {
+		if !ContainsItemID(req.Ids, item.Id) {
 			continue
 		}
 		var itemStatus *generic.ItemStatus
@@ -284,25 +284,4 @@ func allImports(desc protoreflect.FileDescriptor) []protoreflect.FileDescriptor 
 		results = append(results, allImports(importFD)...)
 	}
 	return results
-}
-
-func containsAllLabels(want map[string]string, have Labels) bool {
-	for wk, wv := range want {
-		if hv, ok := have[wk]; !ok || wv != "" && wv != hv {
-			return false
-		}
-	}
-	return true
-}
-
-func containsItemID(want []*generic.Item_ID, have *generic.Item_ID) bool {
-	if len(want) == 0 {
-		return true
-	}
-	for _, w := range want {
-		if w.Model == have.Model && w.Name == have.Name {
-			return true
-		}
-	}
-	return false
 }

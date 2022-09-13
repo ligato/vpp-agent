@@ -36,6 +36,10 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
+const (
+	LabelsCtxKey = "keyLabels"
+)
+
 var (
 	// EnableStatusPublishing enables status publishing.
 	EnableStatusPublishing = os.Getenv("ENABLE_STATUS_PUBLISHING") != ""
@@ -184,10 +188,21 @@ func (p *Plugin) watchEvents() {
 
 			var err error
 			var kvPairs []KeyVal
+			var keyLabels map[string]Labels
+
+			ctx := e.GetContext()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			labels, ok := ctx.Value(LabelsCtxKey).(Labels)
+			if !ok {
+				labels = Labels{}
+			}
 
 			for _, x := range e.GetChanges() {
+				key := x.GetKey()
 				kv := KeyVal{
-					Key: x.GetKey(),
+					Key: key,
 				}
 				if x.GetChangeType() != datasync.Delete {
 					kv.Val, err = UnmarshalLazyValue(kv.Key, x)
@@ -197,6 +212,7 @@ func (p *Plugin) watchEvents() {
 					}
 				}
 				kvPairs = append(kvPairs, kv)
+				keyLabels[key] = labels
 			}
 
 			if len(kvPairs) == 0 {
@@ -207,17 +223,12 @@ func (p *Plugin) watchEvents() {
 
 			p.log.Debugf("Change with %d items", len(kvPairs))
 
-			ctx := e.GetContext()
-			if ctx == nil {
-				ctx = context.Background()
-			}
 			_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
 			if !withDataSrc {
 				ctx = contextdecorator.DataSrcContext(ctx, "datasync")
 			}
 			ctx = kvs.WithRetryDefault(ctx)
-
-			_, err = p.PushData(ctx, kvPairs, nil)
+			_, err = p.PushData(ctx, kvPairs, keyLabels)
 			e.Done(err)
 
 		case e := <-p.resyncChan:
@@ -337,4 +348,25 @@ func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, err
 		return nil, err
 	}
 	return instance, nil
+}
+
+func ContainsAllLabels(want map[string]string, have Labels) bool {
+	for wk, wv := range want {
+		if hv, ok := have[wk]; !ok || wv != "" && wv != hv {
+			return false
+		}
+	}
+	return true
+}
+
+func ContainsItemID(want []*generic.Item_ID, have *generic.Item_ID) bool {
+	if len(want) == 0 {
+		return true
+	}
+	for _, w := range want {
+		if w.Model == have.Model && w.Name == have.Name {
+			return true
+		}
+	}
+	return false
 }

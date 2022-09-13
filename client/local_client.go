@@ -80,6 +80,17 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 
 func (c *client) GetFilteredConfig(filter Filter, dsts ...interface{}) error {
 	protos := c.dispatcher.ListData()
+	for key, data := range protos {
+		item, err := models.MarshalItem(data)
+		if err != nil {
+			return err
+		}
+		labels := c.dispatcher.ListLabels(key)
+		if !orchestrator.ContainsAllLabels(filter.Labels, labels) ||
+			!orchestrator.ContainsItemID(filter.Ids, item.Id) {
+			delete(protos, key)
+		}
+	}
 	protoDsts := extractProtoMessages(dsts)
 	if len(dsts) == len(protoDsts) { // all dsts are proto messages
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
@@ -97,12 +108,32 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 }
 
 func (c *client) UpdateConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error) {
-	// TODO: implement this in local client (already implemented in grpc client)
-	return nil, nil
+	txn := c.txnFactory.NewTxn(items.OverwriteAll)
+	for _, item := range items.Messages {
+		key, err := models.GetKey(item)
+		if err != nil {
+			return nil, err
+		}
+		txn.Put(key, item)
+		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
+		if !withDataSrc {
+			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
+		}
+		ctx = context.WithValue(ctx, orchestrator.LabelsCtxKey, items.Labels)
+	}
+	err := txn.Commit(ctx)
+	return nil, err
 }
 
 func (c *client) DeleteConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error) {
-	// TODO: implement this in local client (already implemented in grpc client)
+	txn := c.txnFactory.NewTxn(items.OverwriteAll)
+	for _, item := range items.Messages {
+		key, err := models.GetKey(item)
+		if err != nil {
+			return nil, err
+		}
+		txn.Delete(key)
+	}
 	return nil, nil
 }
 
