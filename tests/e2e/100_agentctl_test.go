@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -32,12 +33,30 @@ func TestAgentCtlCommands(t *testing.T) {
 	var err error
 	var stdout, stderr string
 
+	nextDummyIf := dummyIfFactory(ctx)
 	// file created below is required to test `import` action
-	err = createFileWithContent(
-		"/tmp/config1",
+	config1File := ctx.testShareDir + "/agentctl-config1.yaml"
+	_, err = createFileWithContent(
+		config1File,
 		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
 	)
 	ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+
+	updateLabels := []string{"if=dummy", "\"if=dummy\",\"source=test\"", "\"if=differentvalue\",\"source=test\"", "", "\"onlykey=\""}
+	for _, ul := range updateLabels {
+		file, err := createFileWithContent(nextDummyIf())
+		ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+		stdout, _, err = ctx.Agent.ExecCmd("agentctl", "config", "update", file, "--labels="+ul)
+		ctx.Expect(err).ToNot(HaveOccurred())
+		// ctx.Expect(stderr).To(BeEmpty()) TODO: uncomment this once the warning log has been cleaned up
+		ctx.Expect(stdout).To(ContainSubstring("OK"))
+
+		// cleanup the file
+		defer func() {
+			err = os.Remove(file)
+			ctx.Expect(err).ToNot(HaveOccurred())
+		}()
+	}
 
 	type KeyVal struct {
 		Key   string
@@ -50,7 +69,9 @@ func TestAgentCtlCommands(t *testing.T) {
 		expectNotEmptyStdout bool
 		expectStdout         string
 		expectInStdout       string
+		expectNotInStdout    string
 		expectReStdout       string
+		expectNotReStdout    string
 		expectInStderr       string
 		expectJsonKeyVals    []KeyVal
 	}{
@@ -58,6 +79,85 @@ func TestAgentCtlCommands(t *testing.T) {
 			name:                 "Check if executable is present",
 			cmd:                  "--help",
 			expectNotEmptyStdout: true,
+		},
+		{
+			name:           "Test `config get`",
+			cmd:            "config get",
+			expectInStdout: "type: DUMMY",
+			expectReStdout: "name: dummyif(0|1|2|3|4)",
+		},
+		{
+			name:              "Test `config get` with full label",
+			cmd:               "config get --labels=\"if=dummy\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(0|1)",
+			expectNotReStdout: "name: dummyif(2|3|4)",
+		},
+		{
+			name:              "Test `config get` with label key",
+			cmd:               "config get --labels=\"if\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(0|1|2)",
+			expectNotReStdout: "name: dummyif(4|5)",
+		},
+		{
+			name:              "Test `config get` with label key",
+			cmd:               "config get --labels=\"if=\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(0|1|2)",
+			expectNotReStdout: "name: dummyif(3|4)",
+		},
+		{
+			name:              "Test `config get` with multiple full labels",
+			cmd:               "config get --labels=\"if=dummy\" --labels=\"source=test\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(1)",
+			expectNotReStdout: "name: dummyif(0|2|3|4)",
+		},
+		{
+			name:              "Test `config get` with multiple label keys",
+			cmd:               "config get --labels=\"if\",\"source\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(1|2)",
+			expectNotReStdout: "name: dummyif(0|3|4)",
+		},
+		{
+			name:              "Test `config get` with multiple label keys",
+			cmd:               "config get --labels=\"if=\",\"source=\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(1|2)",
+			expectNotReStdout: "name: dummyif(0|3|4)",
+		},
+		{
+			name:              "Test `config get` with multiple label keys",
+			cmd:               "config get --labels=\"if\" --labels=\"source=\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(1|2)",
+			expectNotReStdout: "name: dummyif(0|3|4)",
+		},
+		{
+			name:              "Test `config get` with label key and full label",
+			cmd:               "config get --labels=\"if=dummy\",\"source\"",
+			expectReStdout:    "name: dummyif(1)",
+			expectNotReStdout: "name: dummyif(0|2|3|4)",
+		},
+		{
+			name:              "Test `config get` with bad label",
+			cmd:               "config get --labels=\"missingkey=missingvalue\"",
+			expectInStdout:    "linuxConfig: {}",
+			expectNotReStdout: "name: dummyif(0|1|2|3|4)",
+		},
+		{
+			name:              "Test `config get` with bad label",
+			cmd:               "config get --labels=\"missingkey\"",
+			expectInStdout:    "linuxConfig: {}",
+			expectNotReStdout: "name: dummyif(0|1|2|3|4)",
+		},
+		{
+			name:              "Test `config get` with bad label",
+			cmd:               "config get --labels=\"missingkey\",\"if=dummy\"",
+			expectInStdout:    "linuxConfig: {}",
+			expectNotReStdout: "name: dummyif(0|1|2|3|4)",
 		},
 		{
 			name:           "Test `dump all` action",
@@ -140,19 +240,19 @@ func TestAgentCtlCommands(t *testing.T) {
 				{"type", "UNDEFINED_TYPE"},
 			},
 		},
-		/*{
-		  	// This test depends on file (/tmp/config1) which was created before.
-		  	name:           "Test `import` action",
-		  	cmd:            "import /tmp/config1 --service-label vpp1",
-		  	expectErr:      true,
-		  	expectInStderr: "connecting to Etcd failed",
-		  },
-		  {
-		  	// This test depends on file (/tmp/config1) which was created before.
-		  	name:         "Test `import` action (grpc)",
-		  	cmd:          "import /tmp/config1 --service-label vpp1 --grpc",
-		  	expectStdout: "importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
-		  },*/
+		{
+			// This test depends on file (/tmp/config1) which was created before.
+			name:           "Test `import` action",
+			cmd:            "import " + config1File,
+			expectErr:      true,
+			expectInStderr: "connecting to Etcd failed",
+		},
+		{
+			// This test depends on file (/tmp/config1) which was created before.
+			name:         "Test `import` action (grpc)",
+			cmd:          "import " + config1File + " --grpc",
+			expectStdout: "importing 1 key-value pairs\n - config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
+		},
 		{
 			name:           "Test `kvdb list` action",
 			cmd:            "kvdb list",
@@ -217,11 +317,11 @@ func TestAgentCtlCommands(t *testing.T) {
 			cmd:            "values",
 			expectReStdout: `vpp.interfaces\s+UNTAGGED-local0\s+obtained`,
 		},
-		/*{
+		{
 			name:           "Test `values` action (with model)",
 			cmd:            "values vpp.proxyarp-global",
 			expectReStdout: `vpp.proxyarp-global\s+obtained `,
-		},*/
+		},
 		{
 			name:           "Test `vpp info` action",
 			cmd:            "vpp info",
@@ -260,6 +360,10 @@ func TestAgentCtlCommands(t *testing.T) {
 				g.Expect(stdout).To(ContainSubstring(test.expectInStdout),
 					"Expected string not found in stdout")
 			}
+			if test.expectNotInStdout != "" {
+				g.Expect(stdout).ToNot(ContainSubstring(test.expectNotInStdout),
+					"Unexpected string found in stdout")
+			}
 			if test.expectJsonKeyVals != nil {
 				var data map[string]interface{}
 				err := json.Unmarshal([]byte(stdout), &data)
@@ -269,12 +373,18 @@ func TestAgentCtlCommands(t *testing.T) {
 				var matchers []types.GomegaMatcher
 				for _, kv := range test.expectJsonKeyVals {
 					matchers = append(matchers, HaveKeyWithValue(kv.Key, kv.Value))
-
 				}
 				g.Expect(data).To(SatisfyAll(matchers...), "Expected key-value not found in JSON data from stdout")
 			}
 			if test.expectReStdout != "" {
-				g.Expect(stdout).To(MatchRegexp(test.expectReStdout), "Expect regexp %q to match stdout for command %q, stdout:\n%s", test.expectReStdout, test.cmd, stdout)
+				g.Expect(stdout).To(MatchRegexp(test.expectReStdout),
+					"Expect regexp %q to match stdout for command %q, stdout:\n%s",
+					test.expectReStdout, test.cmd, stdout)
+			}
+			if test.expectNotReStdout != "" {
+				g.Expect(stdout).ToNot(MatchRegexp(test.expectNotReStdout),
+					"Expect regexp %q to not match stdout for command %q, stdout:\n%s,",
+					test.expectReStdout, test.cmd, stdout)
 			}
 			// Check STDERR:
 			if test.expectInStderr != "" {
@@ -397,16 +507,33 @@ func TestAgentCtlSecureETCD(t *testing.T) {
 	  })*/
 }
 
-func createFileWithContent(path, content string) error {
+func createFileWithContent(path, content string) (string, error) {
 	f, err := os.Create(path)
 	if err != nil {
-		return err
+		return path, err
 	}
 	w := bufio.NewWriter(f)
 	_, err = w.WriteString(content)
 	if err != nil {
-		return err
+		return path, err
 	}
 	w.Flush()
-	return nil
+	return path, nil
+}
+
+func dummyIfFactory(ctx *TestCtx) func() (string, string) {
+	seq := 0
+	return func() (string, string) {
+		strseq := strconv.Itoa(seq)
+		file := ctx.testShareDir + "/agentctl-dummyif" + strseq + ".yaml"
+		content := `linuxConfig:
+  interfaces:
+  - name: "dummyif` + strseq + `"
+    type: DUMMY
+    enabled: true
+    ipAddresses:
+    - 9.9.9.9/24`
+		seq += 1
+		return file, content
+	}
 }
