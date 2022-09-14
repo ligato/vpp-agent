@@ -41,6 +41,10 @@ func TestAgentCtlCommands(t *testing.T) {
 		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
 	)
 	ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+	defer func() {
+		err = os.Remove(config1File)
+		ctx.Expect(err).To(BeNil())
+	}()
 
 	updateLabels := []string{"if=dummy", "\"if=dummy\",\"source=test\"", "\"if=differentvalue\",\"source=test\"", "", "\"onlykey=\""}
 	for _, ul := range updateLabels {
