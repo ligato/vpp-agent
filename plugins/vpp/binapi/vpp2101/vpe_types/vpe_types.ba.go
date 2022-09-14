@@ -12,7 +12,7 @@ package vpe_types
 import (
 	"strconv"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 )
 
 // This is a compile-time assertion to ensure that this generated file

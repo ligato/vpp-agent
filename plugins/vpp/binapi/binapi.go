@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
 )
 

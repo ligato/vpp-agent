@@ -8,8 +8,8 @@
 package interfaces
 
 import (
-	api "git.fd.io/govpp.git/api"
-	codec "git.fd.io/govpp.git/codec"
+	api "go.fd.io/govpp/api"
+	codec "go.fd.io/govpp/codec"
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/ethernet_types"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/interface_types"
 	ip_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/ip_types"

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net"
 
-	"git.fd.io/govpp.git/api"
+	"go.fd.io/govpp/api"
 
 	"github.com/pkg/errors"
 

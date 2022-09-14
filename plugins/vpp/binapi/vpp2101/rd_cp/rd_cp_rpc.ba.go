@@ -5,7 +5,7 @@ package rd_cp
 import (
 	"context"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 )
 
 // RPCService defines RPC service  rd_cp.

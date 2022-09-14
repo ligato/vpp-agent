@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"git.fd.io/govpp.git/api"
 	"github.com/pkg/errors"
+	"go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/memclnt"

@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	api "git.fd.io/govpp.git/api"
-	codec "git.fd.io/govpp.git/codec"
+	api "go.fd.io/govpp/api"
+	codec "go.fd.io/govpp/codec"
 )
 
 // This is a compile-time assertion to ensure that this generated file

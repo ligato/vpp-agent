@@ -30,9 +30,10 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	govppapi "go.fd.io/govpp/api"
+
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 	"go.ligato.io/vpp-agent/v3/pkg/version"

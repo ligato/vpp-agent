@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -184,10 +184,10 @@ func (c *InterfaceStateUpdater) startUpdatingIfStateDetails(ctx context.Context)
 	defer c.wg.Done()
 
 	/*timer := time.NewTimer(PeriodicPollingPeriod)
-	if !ifUpdateTimer.Stop() {
-		<-ifUpdateTimer.C
-	}
-	ifUpdateTimer.Reset(PeriodicPollingPeriod)*/
+	  if !ifUpdateTimer.Stop() {
+	  	<-ifUpdateTimer.C
+	  }
+	  ifUpdateTimer.Reset(PeriodicPollingPeriod)*/
 
 	tick := time.NewTicker(StateUpdateDelay)
 	for {

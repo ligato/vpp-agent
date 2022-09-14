@@ -19,8 +19,8 @@ import (
 	"net"
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/interface"
@@ -293,7 +293,7 @@ func TestAddLocalSID(t *testing.T) {
 				Sid:               sidToStr(sidA),
 				InstallationVrfId: 10,
 				EndFunction: &srv6.LocalSID_EndFunctionAd{
-					EndFunctionAd: &srv6.LocalSID_EndAD{ //missing L3ServiceAddress means it is L2 service
+					EndFunctionAd: &srv6.LocalSID_EndAD{ // missing L3ServiceAddress means it is L2 service
 						OutgoingInterface: ifaceA,
 						IncomingInterface: ifaceB,
 					},
@@ -612,7 +612,7 @@ func TestAddLocalSID(t *testing.T) {
 			// prepare reply
 			if td.MockInterfaceDump != nil {
 				if td.FailInVPPDump {
-					ctx.MockVpp.MockReply(&vpp_sr.SrPolicyDelReply{}) //unexpected type of message creates error (swInterfaceDetail doesn't have way how to indicate failure)
+					ctx.MockVpp.MockReply(&vpp_sr.SrPolicyDelReply{}) // unexpected type of message creates error (swInterfaceDetail doesn't have way how to indicate failure)
 				} else {
 					ctx.MockVpp.MockReply(td.MockInterfaceDump...)
 					ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})

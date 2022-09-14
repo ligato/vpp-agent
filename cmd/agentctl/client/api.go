@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/health/probe"
 	"google.golang.org/grpc"

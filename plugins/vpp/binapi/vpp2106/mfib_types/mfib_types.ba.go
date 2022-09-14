@@ -11,7 +11,7 @@ package mfib_types
 import (
 	"strconv"
 
-	api "git.fd.io/govpp.git/api"
+	api "go.fd.io/govpp/api"
 	fib_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/fib_types"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/ip_types"
 )

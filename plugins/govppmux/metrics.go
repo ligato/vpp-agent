@@ -18,8 +18,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/prometheus/client_golang/prometheus"
+	govppapi "go.fd.io/govpp/api"
 )
 
 // Set of raw Prometheus metrics.

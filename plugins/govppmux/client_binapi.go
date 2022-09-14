@@ -19,8 +19,8 @@ import (
 	"runtime/trace"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
+	govppapi "go.fd.io/govpp/api"
+	"go.fd.io/govpp/core"
 	"go.ligato.io/cn-infra/v2/logging"
 )
 

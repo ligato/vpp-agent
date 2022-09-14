@@ -17,8 +17,8 @@ package vpp2101_test
 import (
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
+	govppapi "go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/ethernet_types"

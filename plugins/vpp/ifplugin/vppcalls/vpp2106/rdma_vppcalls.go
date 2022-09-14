@@ -16,8 +16,9 @@ package vpp2106
 
 import (
 	"context"
-	"git.fd.io/govpp.git/api"
+
 	"github.com/pkg/errors"
+	"go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"

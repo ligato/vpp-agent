@@ -33,11 +33,16 @@ func TestAgentCtlCommands(t *testing.T) {
 	var stdout, stderr string
 
 	// file created below is required to test `import` action
+	config1File := ctx.testShareDir + "/agentctl-config1.yaml"
 	err = createFileWithContent(
-		"/tmp/config1",
+		config1File,
 		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
 	)
 	ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+	defer func() {
+		err = os.Remove(config1File)
+		ctx.Expect(err).To(BeNil())
+	}()
 
 	type KeyVal struct {
 		Key   string
@@ -140,19 +145,19 @@ func TestAgentCtlCommands(t *testing.T) {
 				{"type", "UNDEFINED_TYPE"},
 			},
 		},
-		/*{
-		  	// This test depends on file (/tmp/config1) which was created before.
-		  	name:           "Test `import` action",
-		  	cmd:            "import /tmp/config1 --service-label vpp1",
-		  	expectErr:      true,
-		  	expectInStderr: "connecting to Etcd failed",
-		  },
-		  {
-		  	// This test depends on file (/tmp/config1) which was created before.
-		  	name:         "Test `import` action (grpc)",
-		  	cmd:          "import /tmp/config1 --service-label vpp1 --grpc",
-		  	expectStdout: "importing 1 key vals\n - /vnf-agent/vpp1/config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
-		  },*/
+		{
+			// This test depends on file (/tmp/config1) which was created before.
+			name:           "Test `import` action",
+			cmd:            "import " + config1File,
+			expectErr:      true,
+			expectInStderr: "connecting to Etcd failed",
+		},
+		{
+			// This test depends on file (/tmp/config1) which was created before.
+			name:         "Test `import` action (grpc)",
+			cmd:          "import " + config1File + " --grpc",
+			expectStdout: "importing 1 key-value pairs\n - config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
+		},
 		{
 			name:           "Test `kvdb list` action",
 			cmd:            "kvdb list",
@@ -217,11 +222,11 @@ func TestAgentCtlCommands(t *testing.T) {
 			cmd:            "values",
 			expectReStdout: `vpp.interfaces\s+UNTAGGED-local0\s+obtained`,
 		},
-		/*{
+		{
 			name:           "Test `values` action (with model)",
 			cmd:            "values vpp.proxyarp-global",
 			expectReStdout: `vpp.proxyarp-global\s+obtained `,
-		},*/
+		},
 		{
 			name:           "Test `vpp info` action",
 			cmd:            "vpp info",

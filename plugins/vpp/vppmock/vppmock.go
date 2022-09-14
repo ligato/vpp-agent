@@ -19,11 +19,11 @@ import (
 	"strings"
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
-	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
-	govpp "git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
+	"go.fd.io/govpp/adapter/mock"
+	govppapi "go.fd.io/govpp/api"
+	"go.fd.io/govpp/core"
+	govpp "go.fd.io/govpp/core"
 	log "go.ligato.io/cn-infra/v2/logging/logrus"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
@@ -44,10 +44,10 @@ type TestCtx struct {
 // SetupTestCtx sets up all fields of TestCtx structure at the begining of test
 func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
-	//g := NewGomegaWithT(t) // TODO: use GomegaWithT
+	// g := NewGomegaWithT(t) // TODO: use GomegaWithT
 
 	ctx := &TestCtx{
-		//GomegaWithT: g,
+		// GomegaWithT: g,
 		Context:      context.Background(),
 		MockVpp:      mock.NewVppAdapter(),
 		MockStats:    mock.NewStatsAdapter(),
