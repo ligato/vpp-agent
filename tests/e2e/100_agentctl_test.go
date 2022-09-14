@@ -33,19 +33,22 @@ func TestAgentCtlCommands(t *testing.T) {
 	var err error
 	var stdout, stderr string
 
-	nextDummyIf := dummyIfFactory(ctx)
-	// file created below is required to test `import` action
+	// File created below is required to test `import` action.
 	config1File := ctx.testShareDir + "/agentctl-config1.yaml"
 	_, err = createFileWithContent(
 		config1File,
 		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
 	)
 	ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+	// cleanup the file
 	defer func() {
 		err = os.Remove(config1File)
 		ctx.Expect(err).To(BeNil())
 	}()
 
+	// These update files created below are required to test `get` and `update` action with labels.
+	// All tests using `agentctl get` depend on the existence of these files.
+	nextDummyIf := dummyIfFactory(ctx)
 	updateLabels := []string{"if=dummy", "\"if=dummy\",\"source=test\"", "\"if=differentvalue\",\"source=test\"", "", "\"onlykey=\""}
 	for _, ul := range updateLabels {
 		file, err := createFileWithContent(nextDummyIf())
@@ -142,6 +145,7 @@ func TestAgentCtlCommands(t *testing.T) {
 		{
 			name:              "Test `config get` with label key and full label",
 			cmd:               "config get --labels=\"if=dummy\",\"source\"",
+			expectInStdout:    "type: DUMMY",
 			expectReStdout:    "name: dummyif(1)",
 			expectNotReStdout: "name: dummyif(0|2|3|4)",
 		},
@@ -245,14 +249,14 @@ func TestAgentCtlCommands(t *testing.T) {
 			},
 		},
 		{
-			// This test depends on file (/tmp/config1) which was created before.
+			// This test depends on file (agentctl-config1.yaml) which was created before.
 			name:           "Test `import` action",
 			cmd:            "import " + config1File,
 			expectErr:      true,
 			expectInStderr: "connecting to Etcd failed",
 		},
 		{
-			// This test depends on file (/tmp/config1) which was created before.
+			// This test depends on file (agentctl-config1.yaml) which was created before.
 			name:         "Test `import` action (grpc)",
 			cmd:          "import " + config1File + " --grpc",
 			expectStdout: "importing 1 key-value pairs\n - config/vpp/v2/interfaces/tap1\nsending via gRPC\n",
