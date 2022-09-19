@@ -291,7 +291,7 @@ func (agent *Agent) PingFromVPP(destAddress string) error {
 	return nil
 }
 
-func (agent *Agent) getKVDump(value proto.Message, view kvs.View) []kvs.KVWithMetadata {
+func (agent *Agent) getKVDump(value proto.Message, view kvs.View) []kvs.RecordedKVWithMetadata {
 	model, err := models.GetModelFor(value)
 	if err != nil {
 		agent.ctx.t.Fatalf("Failed to get model for value %v: %v", value, err)
@@ -315,7 +315,7 @@ func (agent *Agent) GetValue(value proto.Message, view kvs.View) proto.Message {
 	kvDump := agent.getKVDump(value, view)
 	for _, kv := range kvDump {
 		if kv.Key == key {
-			return kv.Value
+			return kv.Value.Message
 		}
 	}
 	return nil
