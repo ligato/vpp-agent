@@ -133,15 +133,17 @@ type dumpIndex struct {
 	Views       []string
 }
 
-// kvsWithMetaForREST converts a list of key-value pairs with metadata
+// recordKVsWithMetadata converts a list of key-value pairs with metadata
 // into an equivalent list with proto.Message recorded for proper marshalling.
-func kvsWithMetaForREST(in []kvs.KVWithMetadata) (out []kvs.KVWithMetadata) {
+func recordKVsWithMetadata(in []kvs.KVWithMetadata) (out []kvs.RecordedKVWithMetadata) {
 	for _, kv := range in {
-		out = append(out, kvs.KVWithMetadata{
-			Key:      kv.Key,
-			Value:    utils.RecordProtoMessage(kv.Value),
+		out = append(out, kvs.RecordedKVWithMetadata{
+			RecordedKVPair: kvs.RecordedKVPair{
+				Key:    kv.Key,
+				Value:  utils.RecordProtoMessage(kv.Value),
+				Origin: kv.Origin,
+			},
 			Metadata: kv.Metadata,
-			Origin:   kv.Origin,
 		})
 	}
 	return out
@@ -463,7 +465,7 @@ func (s *Scheduler) dumpGetHandler(formatter *render.Render) http.HandlerFunc {
 				return
 			}
 		}
-		s.logError(formatter.JSON(w, http.StatusOK, kvsWithMetaForREST(dump)))
+		s.logError(formatter.JSON(w, http.StatusOK, recordKVsWithMetadata(dump)))
 	}
 }
 

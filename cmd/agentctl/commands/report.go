@@ -424,7 +424,7 @@ func writeKVschedulerReport(subTaskActionName string, view string, ignoreModels 
 	// retrieve KVScheduler data
 	var (
 		errs  Errors
-		dumps []api.KVWithMetadata
+		dumps []api.RecordedKVWithMetadata
 	)
 	for _, keyPrefix := range keyPrefixes {
 		dump, err := cli.Client().SchedulerDump(ctx, types.SchedulerDumpOptions{

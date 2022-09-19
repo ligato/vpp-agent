@@ -208,9 +208,13 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	ctx.Expect(ctx.GetValueState(vppVrf2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
 	// vrf mtu check
-	linuxVrf1Mtu := ctx.GetValue(linuxVrf1, kvs.SBView).(*linux_interfaces.Interface).Mtu
+	linuxVrf1Msg := ctx.GetValue(linuxVrf1, kvs.SBView).ProtoReflect()
+	linuxVrf1Desc := linuxVrf1Msg.Descriptor().Fields().ByTextName("mtu")
+	linuxVrf1Mtu := linuxVrf1Msg.Get(linuxVrf1Desc).Uint()
 	ctx.Expect(int(linuxVrf1Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
-	linuxVrf2Mtu := ctx.GetValue(linuxVrf2, kvs.SBView).(*linux_interfaces.Interface).Mtu
+	linuxVrf2Msg := ctx.GetValue(linuxVrf2, kvs.SBView).ProtoReflect()
+	linuxVrf2Desc := linuxVrf2Msg.Descriptor().Fields().ByTextName("mtu")
+	linuxVrf2Mtu := linuxVrf2Msg.Get(linuxVrf2Desc).Uint()
 	ctx.Expect(int(linuxVrf2Mtu)).To(SatisfyAny(Equal(vrf.DefaultVrfDevMTU), Equal(vrf.DefaultVrfDevLegacyMTU)))
 
 	// try to ping in both VRFs
@@ -244,8 +248,10 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 	ctx.Expect(err).ToNot(HaveOccurred())
 
 	// vrf 1 mtu re-check
-	linuxVrf1Mtu = ctx.GetValue(linuxVrf1, kvs.SBView).(*linux_interfaces.Interface).Mtu
-	ctx.Expect(linuxVrf1Mtu).To(Equal(vrf1Mtu))
+	linuxVrf1Msg = ctx.GetValue(linuxVrf1, kvs.SBView).ProtoReflect()
+	linuxVrf1Desc = linuxVrf1Msg.Descriptor().Fields().ByTextName("mtu")
+	linuxVrf1Mtu = linuxVrf1Msg.Get(linuxVrf1Desc).Uint()
+	ctx.Expect(uint32(linuxVrf1Mtu)).To(Equal(vrf1Mtu))
 
 	ctx.Eventually(ctx.PingFromMsClb(msName, vrfVppIP, PingWithSourceInterface(vrf1Label+tapNameSuffix))).Should(Succeed())
 	ctx.Expect(ctx.PingFromMs(msName, vrfVppIP, PingWithSourceInterface(vrf2Label+tapNameSuffix))).To(Succeed())
