@@ -172,6 +172,15 @@ type RecordedTxnOps []*RecordedTxnOp
 // RecordedTxns is a list of recorded transactions.
 type RecordedTxns []*RecordedTxn
 
+// RecordedKVWithMetadata is the same as KVWithMetadata but with the field Value
+// of type utils.RecordedProtoMessage instead of proto.Message. This allows for
+// proper JSON marshalling and unmarshalling. Values of this type are used in
+// KVScheduler's REST API.
+type RecordedKVWithMetadata struct {
+	RecordedKVPair
+	Metadata Metadata
+}
+
 // String returns a *multi-line* human-readable string representation of recorded transaction.
 func (txn *RecordedTxn) String() string {
 	return txn.StringWithOpts(false, false, 0)

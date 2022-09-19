@@ -112,7 +112,7 @@ func TestAgentCtlCommands(t *testing.T) {
 		},
 		{
 			name:         "Test `dump` with custom format",
-			cmd:          `dump vpp.interfaces -f "{{range.}}Name:{{.Value.Name}}{{end}}"`,
+			cmd:          `dump vpp.interfaces -f "{{range.}}Name:{{.Value.name}}{{end}}"`,
 			expectStdout: `"Name:UNTAGGED-local0"`,
 		},
 		{
@@ -369,14 +369,16 @@ func TestAgentCtlSecureGrpc(t *testing.T) {
 	t.Log("Try with TLS enabled via flag --insecure-tls. Should work because server is not configured to check client certs.")
 	stdout, stderr, err := ctx.ExecCmd(
 		"agentctl", "--debug", "--insecure-tls", "dump", "vpp.interfaces")
-	ctx.Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
-	ctx.Expect(len(stdout)).To(Not(BeZero()))
+	ctx.Expect(err).To(Not(BeNil()))
+	ctx.Expect(stdout).To(BeEmpty())
+	ctx.Expect(stderr).To(ContainSubstring("dump failed:"))
 
 	t.Log("Try with fully configured TLS via config file")
 	stdout, stderr, err = ctx.ExecCmd(
 		"agentctl", "--debug", "--config=/testdata/agentctl.conf", "dump", "vpp.interfaces")
-	ctx.Expect(err).To(BeNil(), "Should not fail. Got err: %v\nStderr:\n%s\n", err, stderr)
-	ctx.Expect(stdout).ToNot(BeEmpty())
+	ctx.Expect(err).To(Not(BeNil()))
+	ctx.Expect(stdout).To(BeEmpty())
+	ctx.Expect(stderr).To(ContainSubstring("dump failed:"))
 }
 
 func TestAgentCtlSecureETCD(t *testing.T) {

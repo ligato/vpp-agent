@@ -6,25 +6,12 @@ import (
 	"fmt"
 	"net/url"
 
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
-
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
-func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error) {
-	type ProtoWithName struct {
-		ProtoMsgName string
-		ProtoMsgData string
-	}
-	type KVWithMetadata struct {
-		api.KVWithMetadata
-		Value ProtoWithName
-	}
+func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.RecordedKVWithMetadata, error) {
 	query := url.Values{}
 	query.Set("key-prefix", opts.KeyPrefix)
 	query.Set("view", opts.View)
@@ -33,31 +20,9 @@ func (c *Client) SchedulerDump(ctx context.Context, opts types.SchedulerDumpOpti
 	if err != nil {
 		return nil, err
 	}
-	var kvdump []KVWithMetadata
-	if err := json.NewDecoder(resp.body).Decode(&kvdump); err != nil {
+	var dump []api.RecordedKVWithMetadata
+	if err := json.NewDecoder(resp.body).Decode(&dump); err != nil {
 		return nil, fmt.Errorf("decoding reply failed: %v", err)
-	}
-	var dump []api.KVWithMetadata
-	for _, kvd := range kvdump {
-		d := kvd.KVWithMetadata
-		if kvd.Value.ProtoMsgName == "" {
-			return nil, fmt.Errorf("empty proto message name for key %s", d.Key)
-		}
-		valueType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(kvd.Value.ProtoMsgName))
-		if err != nil {
-			return nil, fmt.Errorf("proto message defined for key %s error: %v", d.Key, err)
-		}
-		d.Value = valueType.New().Interface()
-
-		if len(kvd.Value.ProtoMsgData) > 0 && kvd.Value.ProtoMsgData[0] == '{' {
-			err = protojson.Unmarshal([]byte(kvd.Value.ProtoMsgData), d.Value)
-		} else {
-			err = prototext.Unmarshal([]byte(kvd.Value.ProtoMsgData), d.Value)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("decoding dump reply for %v failed: %v", valueType, err)
-		}
-		dump = append(dump, d)
 	}
 	return dump, nil
 }

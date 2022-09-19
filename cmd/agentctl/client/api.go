@@ -54,7 +54,7 @@ type ModelAPIClient interface {
 
 // SchedulerAPIClient defines API client methods for the scheduler
 type SchedulerAPIClient interface {
-	SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.KVWithMetadata, error)
+	SchedulerDump(ctx context.Context, opts types.SchedulerDumpOptions) ([]api.RecordedKVWithMetadata, error)
 	SchedulerValues(ctx context.Context, opts types.SchedulerValuesOptions) ([]*kvscheduler.BaseValueStatus, error)
 	SchedulerResync(ctx context.Context, opts types.SchedulerResyncOptions) (*api.RecordedTxn, error)
 	SchedulerHistory(ctx context.Context, opts types.SchedulerHistoryOptions) (api.RecordedTxns, error)
