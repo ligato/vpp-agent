@@ -58,10 +58,6 @@ func NewEtcd(ctx *TestCtx, optMods ...EtcdOptModifier) (*Etcd, error) {
 	return etcd, nil
 }
 
-func (ec *Etcd) Stop(options ...interface{}) error {
-	return ec.ComponentRuntime.Stop(nil, options)
-}
-
 // Put inserts key-value pair into the ETCD inside its running docker container
 func (ec *Etcd) Put(key string, value string) error {
 	_, _, err := ec.ExecCmd("etcdctl", "put", key, value)

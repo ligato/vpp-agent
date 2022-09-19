@@ -83,27 +83,17 @@ func (c *ContainerRuntime) Start(options interface{}) error {
 }
 
 // Stop stops and removes container
-func (c *ContainerRuntime) Stop(cleanup func() error, options ...interface{}) error {
+func (c *ContainerRuntime) Stop(options ...interface{}) error {
 	if err := c.stopContainer(); err != nil {
 		if errors.Is(err, &docker.NoSuchContainer{}) {
-			if cleanup != nil {
-				return cleanup()
-			}
 			// container no longer exists -> nothing to do about container (state is the same
 			// as after successful termination)
 			return nil
 		}
-		// not additionally cleaning ctx for stopping test topology component because
-		// it would lock access to further inspection of this component (i.e. why it won't stop)
 		return err
 	}
 	if err := c.removeContainer(); err != nil {
-		// not additionally cleaning ctx for stopping test topology component because
-		// it would lock access to further inspection of this component (i.e. why it won't stop)
 		return err
-	}
-	if cleanup != nil {
-		return cleanup()
 	}
 	return nil
 }

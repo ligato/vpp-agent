@@ -72,11 +72,14 @@ func NewMicroservice(
 }
 
 func (ms *Microservice) Stop(options ...interface{}) error {
-	cleanup := func() error {
-		delete(ms.ctx.microservices, ms.name)
-		return nil
+	if err := ms.ComponentRuntime.Stop(options); err != nil {
+		// not additionally cleaning up after attempting to stop test topology component because
+		// it would lock access to further inspection of this component (i.e. why it won't stop)
+		return err
 	}
-	return ms.ComponentRuntime.Stop(cleanup, options)
+	// cleanup
+	delete(ms.ctx.microservices, ms.name)
+	return nil
 }
 
 // MicroserviceStartOptionsForContainerRuntime translates MicroserviceOpt to options for ComponentRuntime.Start(option)

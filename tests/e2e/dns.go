@@ -61,11 +61,14 @@ func NewDNSServer(ctx *TestCtx, optMods ...DNSOptModifier) (*DNSServer, error) {
 }
 
 func (dns *DNSServer) Stop(options ...interface{}) error {
-	cleanup := func() error {
-		dns.ctx.DNSServer = nil
-		return nil
+	if err := dns.ComponentRuntime.Stop(options); err != nil {
+		// not additionally cleaning up after attempting to stop test topology component because
+		// it would lock access to further inspection of this component (i.e. why it won't stop)
+		return err
 	}
-	return dns.ComponentRuntime.Stop(cleanup, options)
+	// cleanup
+	dns.ctx.DNSServer = nil
+	return nil
 }
 
 // DNSServerStartOptionsForContainerRuntime translates DNSOpt to options for ComponentRuntime.Start(option)

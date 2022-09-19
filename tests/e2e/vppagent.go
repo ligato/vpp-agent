@@ -96,16 +96,16 @@ func NewAgent(ctx *TestCtx, name string, optMods ...AgentOptModifier) (*Agent, e
 }
 
 func (agent *Agent) Stop(options ...interface{}) error {
-	cleanup := func() error {
-		if err := agent.client.Close(); err != nil {
-			return err
-		}
-		delete(agent.ctx.agents, agent.name)
-		return nil
-	}
-	if err := agent.ComponentRuntime.Stop(cleanup, options); err != nil {
+	if err := agent.ComponentRuntime.Stop(options); err != nil {
+		// not additionally cleaning up after attempting to stop test topology component because
+		// it would lock access to further inspection of this component (i.e. why it won't stop)
 		return err
 	}
+	// cleanup
+	if err := agent.client.Close(); err != nil {
+		return err
+	}
+	delete(agent.ctx.agents, agent.name)
 	return nil
 }
 

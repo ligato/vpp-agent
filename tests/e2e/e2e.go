@@ -92,7 +92,7 @@ type ComponentRuntime interface {
 	Start(options interface{}) error
 
 	// Stop stops instance of test topology component
-	Stop(cleanup func() error, options ...interface{}) error
+	Stop(options ...interface{}) error
 
 	// IPAddress provides ip address for connecting to the component
 	IPAddress() string
