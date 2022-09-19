@@ -107,28 +107,28 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return c.GetFilteredConfig(Filter{}, dsts)
 }
 
-func (c *client) UpdateConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error) {
-	txn := c.txnFactory.NewTxn(items.OverwriteAll)
-	for _, item := range items.Messages {
-		key, err := models.GetKey(item)
+func (c *client) UpdateConfig(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
+	txn := c.txnFactory.NewTxn(resync)
+	for _, ui := range items {
+		key, err := models.GetKey(ui.Message)
 		if err != nil {
 			return nil, err
 		}
-		txn.Put(key, item)
+		txn.Put(key, ui.Message)
 		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
 		if !withDataSrc {
 			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
 		}
-		ctx = context.WithValue(ctx, orchestrator.LabelsCtxKey, items.Labels)
+		ctx = context.WithValue(ctx, orchestrator.LabelsCtxKey, ui.Labels)
 	}
 	err := txn.Commit(ctx)
 	return nil, err
 }
 
-func (c *client) DeleteConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error) {
-	txn := c.txnFactory.NewTxn(items.OverwriteAll)
-	for _, item := range items.Messages {
-		key, err := models.GetKey(item)
+func (c *client) DeleteConfig(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error) {
+	txn := c.txnFactory.NewTxn(false)
+	for _, ui := range items {
+		key, err := models.GetKey(ui.Message)
 		if err != nil {
 			return nil, err
 		}

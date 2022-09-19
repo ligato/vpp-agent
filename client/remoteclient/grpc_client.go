@@ -195,31 +195,31 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	return c.GetFilteredConfig(client.Filter{}, dsts)
 }
 
-func (c *grpcClient) UpdateConfig(ctx context.Context, items client.UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) UpdateConfig(ctx context.Context, items []client.UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
 	req := &generic.SetConfigRequest{
-		OverwriteAll: items.OverwriteAll,
+		OverwriteAll: resync,
 	}
-	for _, msg := range items.Messages {
+	for _, ui := range items {
 		var item *generic.Item
-		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)
+		item, err := models.MarshalItemUsingModelRegistry(ui.Message, c.modelRegistry)
 		if err != nil {
 			return nil, err
 		}
 		req.Updates = append(req.Updates, &generic.UpdateItem{
 			Item:   item,
-			Labels: items.Labels,
+			Labels: ui.Labels,
 		})
 	}
 	res, err := c.manager.SetConfig(ctx, req)
 	return res, err
 }
 
-func (c *grpcClient) DeleteConfig(ctx context.Context, items client.UpdateItems) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) DeleteConfig(ctx context.Context, items []client.UpdateItem) (*generic.SetConfigResponse, error) {
 	req := &generic.SetConfigRequest{}
 
-	for _, msg := range items.Messages {
+	for _, ui := range items {
 		var item *generic.Item
-		item, err := models.MarshalItemUsingModelRegistry(msg, c.modelRegistry)
+		item, err := models.MarshalItemUsingModelRegistry(ui.Message, c.modelRegistry)
 		if err != nil {
 			return nil, err
 		}

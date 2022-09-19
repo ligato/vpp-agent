@@ -29,10 +29,9 @@ type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
 
-type UpdateItems struct {
-	Messages     []proto.Message
-	Labels       map[string]string
-	OverwriteAll bool
+type UpdateItem struct {
+	Message proto.Message
+	Labels  map[string]string
 }
 
 // If Ids|Labels is nil that means no filtering for Ids|Labels
@@ -65,9 +64,9 @@ type GenericClient interface {
 	// GetFilteredConfig retrieves current config into dsts according to the provided filter.
 	GetFilteredConfig(filter Filter, dsts ...interface{}) error
 
-	UpdateConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error)
+	UpdateConfig(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error)
 
-	DeleteConfig(ctx context.Context, items UpdateItems) (*generic.SetConfigResponse, error)
+	DeleteConfig(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)

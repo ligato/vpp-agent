@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
@@ -203,11 +204,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	}
 
 	// update/resync configuration
-	_, err = c.UpdateConfig(ctx, client.UpdateItems{
-		Messages:     configMessages,
-		Labels:       parseLabels(opts.Labels),
-		OverwriteAll: opts.Replace,
-	})
+	_, err = c.UpdateConfig(ctx, createUpdateItems(configMessages, parseLabels(opts.Labels)), opts.Replace)
 	if err != nil {
 		return fmt.Errorf("update failed: %w", err)
 	}
@@ -825,4 +822,12 @@ func parseLabels(rawLabels []string) map[string]string {
 		}
 	}
 	return labels
+}
+
+func createUpdateItems(msgs []proto.Message, labels map[string]string) []client.UpdateItem {
+	var result []client.UpdateItem
+	for _, msg := range msgs {
+		result = append(result, client.UpdateItem{Message: msg, Labels: labels})
+	}
+	return result
 }
