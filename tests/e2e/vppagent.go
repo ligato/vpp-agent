@@ -54,7 +54,7 @@ var vppPingRegexp = regexp.MustCompile("Statistics: ([0-9]+) sent, ([0-9]+) rece
 // Agent represents running VPP-Agent test component
 type Agent struct {
 	ComponentRuntime
-	Client ctl.APIClient
+	client ctl.APIClient
 	ctx    *TestCtx
 	name   string
 }
@@ -83,11 +83,10 @@ func NewAgent(ctx *TestCtx, name string, optMods ...AgentOptModifier) (*Agent, e
 	if err != nil {
 		return nil, errors.Errorf("can't start agent %s due to: %v", name, err)
 	}
-	client, err := ctl.NewClient(agent.IPAddress())
+	agent.client, err = ctl.NewClient(agent.IPAddress())
 	if err != nil {
 		return nil, errors.Errorf("can't create client for %s due to: %v", name, err)
 	}
-	agent.Client = client
 
 	agent.ctx.Eventually(agent.checkReady, agentInitTimeout, checkPollingInterval).Should(Succeed())
 	if opts.InitialResync {
@@ -98,7 +97,7 @@ func NewAgent(ctx *TestCtx, name string, optMods ...AgentOptModifier) (*Agent, e
 
 func (agent *Agent) Stop(options ...interface{}) error {
 	cleanup := func() error {
-		if err := agent.Client.Close(); err != nil {
+		if err := agent.client.Close(); err != nil {
 			return err
 		}
 		delete(agent.ctx.agents, agent.name)
@@ -190,7 +189,7 @@ func (agent *Agent) LinuxInterfaceHandler() linuxcalls.NetlinkAPI {
 
 // GenericClient provides generic client for communication with default VPP-Agent test component
 func (agent *Agent) GenericClient() client.GenericClient {
-	c, err := agent.Client.GenericClient()
+	c, err := agent.client.GenericClient()
 	if err != nil {
 		agent.ctx.t.Fatalf("Failed to get generic VPP-agent client: %v", err)
 	}
@@ -199,7 +198,7 @@ func (agent *Agent) GenericClient() client.GenericClient {
 
 // GRPCConn provides GRPC client connection for communication with default VPP-Agent test component
 func (agent *Agent) GRPCConn() *grpc.ClientConn {
-	conn, err := agent.Client.GRPCConn()
+	conn, err := agent.client.GRPCConn()
 	if err != nil {
 		agent.ctx.t.Fatalf("Failed to get gRPC connection: %v", err)
 	}
@@ -208,7 +207,7 @@ func (agent *Agent) GRPCConn() *grpc.ClientConn {
 
 // Sync runs downstream resync and returns the list of executed operations.
 func (agent *Agent) Sync() kvs.RecordedTxnOps {
-	txn, err := agent.Client.SchedulerResync(context.Background(), types.SchedulerResyncOptions{
+	txn, err := agent.client.SchedulerResync(context.Background(), types.SchedulerResyncOptions{
 		Retry: true,
 	})
 	if err != nil {
@@ -232,7 +231,7 @@ func (agent *Agent) IsInSync() bool {
 }
 
 func (agent *Agent) checkReady() error {
-	agentStatus, err := agent.Client.Status(agent.ctx.ctx)
+	agentStatus, err := agent.client.Status(agent.ctx.ctx)
 	if err != nil {
 		return fmt.Errorf("query to get %s status failed: %v", agent.name, err)
 	}
@@ -296,7 +295,7 @@ func (agent *Agent) getKVDump(value proto.Message, view kvs.View) []kvs.Recorded
 	if err != nil {
 		agent.ctx.t.Fatalf("Failed to get model for value %v: %v", value, err)
 	}
-	kvDump, err := agent.Client.SchedulerDump(context.Background(), types.SchedulerDumpOptions{
+	kvDump, err := agent.client.SchedulerDump(context.Background(), types.SchedulerDumpOptions{
 		KeyPrefix: model.KeyPrefix(),
 		View:      view.String(),
 	})
@@ -342,7 +341,7 @@ func (agent *Agent) NumValues(value proto.Message, view kvs.View) int {
 }
 
 func (agent *Agent) getValueStateByKey(key, derivedKey string) kvscheduler.ValueState {
-	values, err := agent.Client.SchedulerValues(context.Background(), types.SchedulerValuesOptions{
+	values, err := agent.client.SchedulerValues(context.Background(), types.SchedulerValuesOptions{
 		Key: key,
 	})
 	if err != nil {

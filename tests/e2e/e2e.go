@@ -48,10 +48,10 @@ const (
 	checkTimeout         = time.Second * 6
 	shareDir             = "/test-share"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
-	MainAgentName        = "agent0"
+	mainAgentName        = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
-	Tapv2InputNode = "virtio-input"
+	tapv2InputNode = "virtio-input"
 	// tapv1InputNode    = "tapcli-rx"
 	// afPacketInputNode = "af-packet-input"
 	// memifInputNode    = "memif-input"
@@ -228,7 +228,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// setup main VPP-Agent
 	if opts.SetupAgent {
-		testCtx.Agent = testCtx.StartAgent(MainAgentName, opts.AgentOptMods...)
+		testCtx.Agent = testCtx.StartAgent(mainAgentName, opts.AgentOptMods...)
 
 		// fill VPP version (this depends on agentctl and that depends on agent to be set up)
 		if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
@@ -256,7 +256,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	if testCtx.Agent != nil {
 		return testCtx.Agent.name
 	}
-	return MainAgentName
+	return mainAgentName
 }
 
 // Teardown perform test cleanup

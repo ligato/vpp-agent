@@ -145,11 +145,11 @@ func TestSourceNAT(t *testing.T) {
 	}
 	connectTCP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, false, Tapv2InputNode)
+			8000, 8000, false, tapv2InputNode)
 	}
 	connectUDP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, true, Tapv2InputNode)
+			8000, 8000, true, tapv2InputNode)
 	}
 	ping := func() error {
 		return ctx.PingFromMs(ms2Name, linuxTap1IP)
@@ -540,11 +540,11 @@ func TestNATStaticMappings(t *testing.T) {
 
 	connectTCP := func() error {
 		return ctx.TestConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
-			tcpSvcExtPort, tcpSvcLocalPort, false, Tapv2InputNode)
+			tcpSvcExtPort, tcpSvcLocalPort, false, tapv2InputNode)
 	}
 	connectUDP := func() error {
 		return ctx.TestConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
-			udpSvcExtPort, udpSvcLocalPort, true, Tapv2InputNode)
+			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)
 	}
 
 	ms1 := ctx.StartMicroservice(ms1Name)
@@ -747,11 +747,11 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	}
 	connectTCP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, false, Tapv2InputNode)
+			8000, 8000, false, tapv2InputNode)
 	}
 	connectUDP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, true, Tapv2InputNode)
+			8000, 8000, true, tapv2InputNode)
 	}
 	ping := func() error {
 		return ctx.PingFromMs(ms2Name, linuxTap1IP)

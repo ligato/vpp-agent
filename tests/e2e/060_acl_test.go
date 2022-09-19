@@ -321,27 +321,27 @@ func TestL3ACLs(t *testing.T) {
 
 		// TCP
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
-			ms2BlockedTCPPort, ms2BlockedTCPPort, false, Tapv2InputNode)).To(beBlocked) // blocked by ms2EgressACL
+			ms2BlockedTCPPort, ms2BlockedTCPPort, false, tapv2InputNode)).To(beBlocked) // blocked by ms2EgressACL
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
-			8080, 8080, false, Tapv2InputNode)).To(beAllowed)
+			8080, 8080, false, tapv2InputNode)).To(beAllowed)
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
-			80, 80, false, Tapv2InputNode)).To(beAllowed)
+			80, 80, false, tapv2InputNode)).To(beAllowed)
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			ms2BlockedTCPPort, ms2BlockedTCPPort, false, Tapv2InputNode)).To(beAllowed)
+			ms2BlockedTCPPort, ms2BlockedTCPPort, false, tapv2InputNode)).To(beAllowed)
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8080, 8080, false, Tapv2InputNode)).To(beAllowed)
+			8080, 8080, false, tapv2InputNode)).To(beAllowed)
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			80, 80, false, Tapv2InputNode)).To(beBlocked) // blocked by ms2IngressACL
+			80, 80, false, tapv2InputNode)).To(beBlocked) // blocked by ms2IngressACL
 
 		// UDP
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
-			ms1BlockedUDPPort, ms1BlockedUDPPort, true, Tapv2InputNode)).To(beAllowed)
+			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beAllowed)
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms1Name, ms2Name, linuxTap2IP, linuxTap2IP,
-			9999, 9999, true, Tapv2InputNode)).To(beAllowed)
+			9999, 9999, true, tapv2InputNode)).To(beAllowed)
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			ms1BlockedUDPPort, ms1BlockedUDPPort, true, Tapv2InputNode)).To(beBlocked) // blocked by ms1EgressACL
+			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beBlocked) // blocked by ms1EgressACL
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			9999, 9999, true, Tapv2InputNode)).To(beAllowed)
+			9999, 9999, true, tapv2InputNode)).To(beAllowed)
 	}
 
 	ms1 := ctx.StartMicroservice(ms1Name)
