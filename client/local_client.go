@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -107,7 +108,40 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return c.GetFilteredConfig(Filter{}, dsts)
 }
 
-func (c *client) UpdateConfig(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
+func (c *client) GetItems(ctx context.Context) ([]*ConfigItem, error) {
+	var configItems []*ConfigItem
+	for key, data := range c.dispatcher.ListData() {
+		labels := c.dispatcher.ListLabels(key)
+		item, err := models.MarshalItem(data)
+		if err != nil {
+			return nil, err
+		}
+		var itemStatus *generic.ItemStatus
+		status, err := c.dispatcher.GetStatus(key)
+		if err != nil {
+			logrus.Warnf("GetStatus failed: %w", err)
+		} else {
+			var msg string
+			if details := status.GetDetails(); len(details) > 0 {
+				msg = strings.Join(status.GetDetails(), ", ")
+			} else {
+				msg = status.GetError()
+			}
+			itemStatus = &generic.ItemStatus{
+				Status:  status.GetState().String(),
+				Message: msg,
+			}
+		}
+		configItems = append(configItems, &ConfigItem{
+			Item:   item,
+			Status: itemStatus,
+			Labels: labels,
+		})
+	}
+	return configItems, nil
+}
+
+func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
 	txn := c.txnFactory.NewTxn(resync)
 	for _, ui := range items {
 		key, err := models.GetKey(ui.Message)
@@ -125,7 +159,7 @@ func (c *client) UpdateConfig(ctx context.Context, items []UpdateItem, resync bo
 	return nil, err
 }
 
-func (c *client) DeleteConfig(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error) {
+func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error) {
 	txn := c.txnFactory.NewTxn(false)
 	for _, ui := range items {
 		key, err := models.GetKey(ui.Message)

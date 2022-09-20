@@ -28,6 +28,7 @@ import (
 type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
+type ConfigItem = generic.ConfigItem
 
 type UpdateItem struct {
 	Message proto.Message
@@ -64,9 +65,11 @@ type GenericClient interface {
 	// GetFilteredConfig retrieves current config into dsts according to the provided filter.
 	GetFilteredConfig(filter Filter, dsts ...interface{}) error
 
-	UpdateConfig(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error)
+	GetItems(ctx context.Context) ([]*ConfigItem, error)
 
-	DeleteConfig(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error)
+	UpdateItems(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error)
+
+	DeleteItems(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)

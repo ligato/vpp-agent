@@ -195,7 +195,15 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	return c.GetFilteredConfig(client.Filter{}, dsts)
 }
 
-func (c *grpcClient) UpdateConfig(ctx context.Context, items []client.UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) GetItems(ctx context.Context) ([]*client.ConfigItem, error) {
+	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Items, err
+}
+
+func (c *grpcClient) UpdateItems(ctx context.Context, items []client.UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
 	req := &generic.SetConfigRequest{
 		OverwriteAll: resync,
 	}
@@ -214,7 +222,7 @@ func (c *grpcClient) UpdateConfig(ctx context.Context, items []client.UpdateItem
 	return res, err
 }
 
-func (c *grpcClient) DeleteConfig(ctx context.Context, items []client.UpdateItem) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) DeleteItems(ctx context.Context, items []client.UpdateItem) (*generic.SetConfigResponse, error) {
 	req := &generic.SetConfigRequest{}
 
 	for _, ui := range items {
