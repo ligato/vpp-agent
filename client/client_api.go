@@ -72,6 +72,7 @@ type GenericClient interface {
 	// GetFilteredConfig retrieves current config into dsts according to the provided filter.
 	GetFilteredConfig(filter Filter, dsts ...interface{}) error
 
+	// GetItems returns list of all current ConfigItems.
 	GetItems(ctx context.Context) ([]*ConfigItem, error)
 
 	UpdateItems(ctx context.Context, items []UpdateItem, resync bool) ([]*UpdateResult, error)

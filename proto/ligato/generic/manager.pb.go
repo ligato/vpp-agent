@@ -365,6 +365,14 @@ type UpdateItem struct {
 	// For a delete operation set fields item.Data to nil.
 	Item *Item `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
 	// The labels can be used to define user-defined labels for item.
+	// Label is string key-value pair associated with configuration item.
+	// Label key format guidelines: label key should be a lower-case alphanumeric
+	// string which may contain periods and hyphens (but it should not contain
+	// consecutive periods/hyphens and it should not start with period/hyphen).
+	// Labels for configuration items should be prefixed with the reverse DNS
+	// notation of a domain they originate from (with domain owner's permission)
+	// for example: com.example.foo-bar-label.
+	// The io.ligato.* and ligato.* prefixes are reserved by vpp-agent for internal use.
 	Labels map[string]string `protobuf:"bytes,2,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
