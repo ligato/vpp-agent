@@ -166,7 +166,7 @@ func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync boo
 	r, _ := contextdecorator.PushDataResultFromContext(ctx)
 	resWrapper, ok := r.(orchestrator.ResultWrapper)
 	if !ok {
-		return updateResults, nil
+		return nil, fmt.Errorf("cannot retrieve update results!")
 	}
 	for _, res := range resWrapper.Results {
 		var msg string

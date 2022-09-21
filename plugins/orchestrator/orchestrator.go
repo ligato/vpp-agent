@@ -225,7 +225,9 @@ func (p *Plugin) watchEvents() {
 			}
 			ctx = kvs.WithRetryDefault(ctx)
 			res, err := p.PushData(ctx, kvPairs, keyLabels)
-			ctx = contextdecorator.PushDataResultContext(ctx, ResultWrapper{Results: res})
+			if err == nil {
+				ctx = contextdecorator.PushDataResultContext(ctx, ResultWrapper{Results: res})
+			}
 			e.Done(err)
 
 		case e := <-p.resyncChan:
