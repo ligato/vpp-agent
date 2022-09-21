@@ -199,8 +199,31 @@ func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) ([]*Update
 			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
 		}
 	}
-	err := txn.Commit(ctx)
-	return nil, err
+	if err := txn.Commit(ctx); err != nil {
+		return nil, err
+	}
+	var updateResults []*UpdateResult
+	r, _ := contextdecorator.PushDataResultFromContext(ctx)
+	resWrapper, ok := r.(orchestrator.ResultWrapper)
+	if !ok {
+		return nil, fmt.Errorf("cannot retrieve update results!")
+	}
+	for _, res := range resWrapper.Results {
+		var msg string
+		if details := res.Status.GetDetails(); len(details) > 0 {
+			msg = strings.Join(res.Status.GetDetails(), ", ")
+		} else {
+			msg = res.Status.GetError()
+		}
+		updateResults = append(updateResults, &UpdateResult{
+			Key: res.Key,
+			Status: &generic.ItemStatus{
+				Status:  res.Status.State.String(),
+				Message: msg,
+			},
+		})
+	}
+	return updateResults, nil
 }
 
 func (c *client) DumpState() ([]*generic.StateItem, error) {
