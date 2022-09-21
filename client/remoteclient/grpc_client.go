@@ -200,10 +200,10 @@ func (c *grpcClient) GetItems(ctx context.Context) ([]*client.ConfigItem, error)
 	if err != nil {
 		return nil, err
 	}
-	return resp.Items, err
+	return resp.GetItems(), err
 }
 
-func (c *grpcClient) UpdateItems(ctx context.Context, items []client.UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) UpdateItems(ctx context.Context, items []client.UpdateItem, resync bool) ([]*client.UpdateResult, error) {
 	req := &generic.SetConfigRequest{
 		OverwriteAll: resync,
 	}
@@ -219,12 +219,21 @@ func (c *grpcClient) UpdateItems(ctx context.Context, items []client.UpdateItem,
 		})
 	}
 	res, err := c.manager.SetConfig(ctx, req)
-	return res, err
+	if err != nil {
+		return nil, err
+	}
+	var updateResults []*client.UpdateResult
+	for _, r := range res.Results {
+		updateResults = append(updateResults, &client.UpdateResult{
+			Key:    r.Key,
+			Status: r.Status,
+		})
+	}
+	return updateResults, nil
 }
 
-func (c *grpcClient) DeleteItems(ctx context.Context, items []client.UpdateItem) (*generic.SetConfigResponse, error) {
+func (c *grpcClient) DeleteItems(ctx context.Context, items []client.UpdateItem) ([]*client.UpdateResult, error) {
 	req := &generic.SetConfigRequest{}
-
 	for _, ui := range items {
 		var item *generic.Item
 		item, err := models.MarshalItemUsingModelRegistry(ui.Message, c.modelRegistry)
@@ -236,9 +245,18 @@ func (c *grpcClient) DeleteItems(ctx context.Context, items []client.UpdateItem)
 			Item: item,
 		})
 	}
-
 	res, err := c.manager.SetConfig(ctx, req)
-	return res, err
+	if err != nil {
+		return nil, err
+	}
+	var updateResults []*client.UpdateResult
+	for _, r := range res.Results {
+		updateResults = append(updateResults, &client.UpdateResult{
+			Key:    r.Key,
+			Status: r.Status,
+		})
+	}
+	return updateResults, nil
 }
 
 func (c *grpcClient) DumpState() ([]*client.StateItem, error) {

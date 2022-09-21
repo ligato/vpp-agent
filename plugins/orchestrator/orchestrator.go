@@ -36,10 +36,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
-const (
-	LabelsCtxKey = "keyLabels"
-)
-
 var (
 	// EnableStatusPublishing enables status publishing.
 	EnableStatusPublishing = os.Getenv("ENABLE_STATUS_PUBLISHING") != ""
@@ -194,7 +190,7 @@ func (p *Plugin) watchEvents() {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			labels, ok := ctx.Value(LabelsCtxKey).(Labels)
+			labels, ok := contextdecorator.LabelsFromContext(ctx)
 			if !ok {
 				labels = Labels{}
 			}
@@ -228,7 +224,8 @@ func (p *Plugin) watchEvents() {
 				ctx = contextdecorator.DataSrcContext(ctx, "datasync")
 			}
 			ctx = kvs.WithRetryDefault(ctx)
-			_, err = p.PushData(ctx, kvPairs, keyLabels)
+			res, err := p.PushData(ctx, kvPairs, keyLabels)
+			ctx = contextdecorator.PushDataResultContext(ctx, ResultWrapper{Results: res})
 			e.Done(err)
 
 		case e := <-p.resyncChan:
@@ -275,7 +272,10 @@ func (p *Plugin) watchEvents() {
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 
-			_, err := p.PushData(ctx, kvPairs, nil)
+			res, err := p.PushData(ctx, kvPairs, nil)
+			if err == nil {
+				ctx = contextdecorator.PushDataResultContext(ctx, ResultWrapper{Results: res})
+			}
 			e.Done(err)
 
 		case <-p.quit:
@@ -370,3 +370,10 @@ func ContainsItemID(want []*generic.Item_ID, have *generic.Item_ID) bool {
 	}
 	return false
 }
+
+// hack to avoid import cycle
+type ResultWrapper struct {
+	Results []Result
+}
+
+func (r ResultWrapper) IsPushDataResult() {}

@@ -29,3 +29,34 @@ func DataSrcFromContext(ctx context.Context) (dataSrc string, ok bool) {
 	dataSrc, ok = ctx.Value(dataSrcKey).(string)
 	return
 }
+
+type labelsKeyT string
+
+var labelsKey = labelsKeyT("labels")
+
+func LabelsContext(ctx context.Context, labels map[string]string) context.Context {
+	return context.WithValue(ctx, labelsKey, labels)
+}
+
+func LabelsFromContext(ctx context.Context) (labels map[string]string, ok bool) {
+	labels, ok = ctx.Value(labelsKey).(map[string]string)
+	return
+}
+
+// hack to avoid import cycle
+type resulter interface {
+	IsPushDataResult()
+}
+
+type pushDataResultKeyT string
+
+var pushDataResultKey = pushDataResultKeyT("pushDataResult")
+
+func PushDataResultContext(ctx context.Context, pushDataResult resulter) context.Context {
+	return context.WithValue(ctx, pushDataResultKey, pushDataResult)
+}
+
+func PushDataResultFromContext(ctx context.Context) (pushDataResult resulter, ok bool) {
+	pushDataResult, ok = ctx.Value(pushDataResultKey).(resulter)
+	return
+}

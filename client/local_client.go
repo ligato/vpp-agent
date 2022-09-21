@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -80,6 +81,9 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 }
 
 func (c *client) GetFilteredConfig(filter Filter, dsts ...interface{}) error {
+	if filter.Ids != nil && filter.Labels != nil {
+		return fmt.Errorf("both fields of the filter are not nil!")
+	}
 	protos := c.dispatcher.ListData()
 	for key, data := range protos {
 		item, err := models.MarshalItem(data)
@@ -141,7 +145,7 @@ func (c *client) GetItems(ctx context.Context) ([]*ConfigItem, error) {
 	return configItems, nil
 }
 
-func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error) {
+func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync bool) ([]*UpdateResult, error) {
 	txn := c.txnFactory.NewTxn(resync)
 	for _, ui := range items {
 		key, err := models.GetKey(ui.Message)
@@ -153,13 +157,36 @@ func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync boo
 		if !withDataSrc {
 			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
 		}
-		ctx = context.WithValue(ctx, orchestrator.LabelsCtxKey, ui.Labels)
+		ctx = contextdecorator.LabelsContext(ctx, ui.Labels)
 	}
-	err := txn.Commit(ctx)
-	return nil, err
+	if err := txn.Commit(ctx); err != nil {
+		return nil, err
+	}
+	var updateResults []*UpdateResult
+	r, _ := contextdecorator.PushDataResultFromContext(ctx)
+	resWrapper, ok := r.(orchestrator.ResultWrapper)
+	if !ok {
+		return updateResults, nil
+	}
+	for _, res := range resWrapper.Results {
+		var msg string
+		if details := res.Status.GetDetails(); len(details) > 0 {
+			msg = strings.Join(res.Status.GetDetails(), ", ")
+		} else {
+			msg = res.Status.GetError()
+		}
+		updateResults = append(updateResults, &UpdateResult{
+			Key: res.Key,
+			Status: &generic.ItemStatus{
+				Status:  res.Status.State.String(),
+				Message: msg,
+			},
+		})
+	}
+	return updateResults, nil
 }
 
-func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error) {
+func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) ([]*UpdateResult, error) {
 	txn := c.txnFactory.NewTxn(false)
 	for _, ui := range items {
 		key, err := models.GetKey(ui.Message)
@@ -167,8 +194,13 @@ func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) (*generic.
 			return nil, err
 		}
 		txn.Delete(key)
+		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
+		if !withDataSrc {
+			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
+		}
 	}
-	return nil, nil
+	err := txn.Commit(ctx)
+	return nil, err
 }
 
 func (c *client) DumpState() ([]*generic.StateItem, error) {

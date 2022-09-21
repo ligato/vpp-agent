@@ -189,6 +189,9 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 func (s *genericService) GetConfig(ctx context.Context, req *generic.GetConfigRequest) (*generic.GetConfigResponse, error) {
 	var configItems []*generic.ConfigItem
 
+	if req.Ids != nil && req.Labels != nil {
+		return nil, status.Error(codes.InvalidArgument, "both fields of the request are not nil!")
+	}
 	for key, data := range s.dispatch.ListData() {
 		labels := s.dispatch.ListLabels(key)
 		fmt.Println(labels)

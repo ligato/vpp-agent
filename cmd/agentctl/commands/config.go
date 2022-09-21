@@ -103,7 +103,7 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	// retrieve data into config
 	err = c.GetFilteredConfig(client.Filter{Labels: parseLabels(opts.Labels)}, config)
 	if err != nil {
-		return fmt.Errorf("can't retrieve configuration due to: %v", err)
+		return fmt.Errorf("can't retrieve configuration due to: %w", err)
 	}
 
 	// handle data output
@@ -808,6 +808,9 @@ func txnErrors(txn *kvs.RecordedTxn) Errors {
 // parseLabels parses labels obtained from command line flags
 // This function does not allow duplicate or empty ("") keys
 func parseLabels(rawLabels []string) map[string]string {
+	if len(rawLabels) == 0 {
+		return nil
+	}
 	labels := make(map[string]string)
 	var lkey, lval string
 	for _, rawLabel := range rawLabels {

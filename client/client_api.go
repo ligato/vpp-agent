@@ -35,6 +35,11 @@ type UpdateItem struct {
 	Labels  map[string]string
 }
 
+type UpdateResult struct {
+	Key    string
+	Status *generic.ItemStatus
+}
+
 // If Ids|Labels is nil that means no filtering for Ids|Labels
 // If for a given label key the corresponding value is "" then items are
 // only matched using the key
@@ -67,9 +72,9 @@ type GenericClient interface {
 
 	GetItems(ctx context.Context) ([]*ConfigItem, error)
 
-	UpdateItems(ctx context.Context, items []UpdateItem, resync bool) (*generic.SetConfigResponse, error)
+	UpdateItems(ctx context.Context, items []UpdateItem, resync bool) ([]*UpdateResult, error)
 
-	DeleteItems(ctx context.Context, items []UpdateItem) (*generic.SetConfigResponse, error)
+	DeleteItems(ctx context.Context, items []UpdateItem) ([]*UpdateResult, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)
