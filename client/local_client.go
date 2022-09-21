@@ -123,7 +123,7 @@ func (c *client) GetItems(ctx context.Context) ([]*ConfigItem, error) {
 		var itemStatus *generic.ItemStatus
 		status, err := c.dispatcher.GetStatus(key)
 		if err != nil {
-			logrus.Warnf("GetStatus failed: %w", err)
+			logrus.Warnf("GetStatus failed: %v", err)
 		} else {
 			var msg string
 			if details := status.GetDetails(); len(details) > 0 {
