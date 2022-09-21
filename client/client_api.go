@@ -40,9 +40,11 @@ type UpdateResult struct {
 	Status *generic.ItemStatus
 }
 
-// If Ids|Labels is nil that means no filtering for Ids|Labels
+// If (Ids|Labels) is nil that means no filtering for (Ids|Labels)
+// But if both are not nil then an error is returned
+// (because of ambiguity in what should the result be filtered by).
 // If for a given label key the corresponding value is "" then items are
-// only matched using the key
+// only matched using the key.
 type Filter struct {
 	Ids    []*generic.Item_ID
 	Labels map[string]string

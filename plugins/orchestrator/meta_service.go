@@ -35,13 +35,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
-var reservedLabelKeys = map[string]struct{}{
-	"grpc":      {},
-	"local":     {},
-	"etcd":      {},
-	"timestamp": {},
-}
-
 type genericService struct {
 	generic.UnimplementedMetaServiceServer
 	generic.UnimplementedManagerServiceServer
@@ -96,12 +89,6 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		item := update.Item
 		if item == nil {
 			return nil, status.Error(codes.InvalidArgument, "change item is nil")
-		}
-		for lkey := range update.Labels {
-			if _, ok := reservedLabelKeys[lkey]; ok {
-				return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("label key %s associated with item is reserved "+
-					"for internal use", lkey))
-			}
 		}
 		var (
 			key string
