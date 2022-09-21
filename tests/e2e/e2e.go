@@ -316,7 +316,6 @@ func (test *TestCtx) VppRelease() string {
 }
 
 // GenericClient provides generic client for communication with default VPP-Agent test component
-// Deprecated: use ctx.Agent.GenericClient(...) instead
 func (test *TestCtx) GenericClient() client.GenericClient {
 	test.t.Helper()
 	return test.Agent.GenericClient()
