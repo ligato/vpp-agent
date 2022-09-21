@@ -373,9 +373,12 @@ func ContainsItemID(want []*generic.Item_ID, have *generic.Item_ID) bool {
 	return false
 }
 
-// hack to avoid import cycle
+// TODO: This is hack to avoid import cycle between orchestrator and contextdecorator package.
+// Figure out a way to pass result into local client without using wrapper type that implements
+// a dummy interface defined inside contextdecorator package.
 type ResultWrapper struct {
 	Results []Result
 }
 
+// implement the dummy interface (see comment above ResultWrapper struct definition)
 func (r ResultWrapper) IsPushDataResult() {}

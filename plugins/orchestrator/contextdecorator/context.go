@@ -43,7 +43,9 @@ func LabelsFromContext(ctx context.Context) (labels map[string]string, ok bool) 
 	return
 }
 
-// hack to avoid import cycle
+// TODO: This is hack to avoid import cycle between orchestrator and contextdecorator package.
+// Figure out a way to pass result into local client without using interface implemented by
+// a wrapper type defined inside orchestrator package.
 type resulter interface {
 	IsPushDataResult()
 }
