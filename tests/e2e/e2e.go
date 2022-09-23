@@ -322,28 +322,24 @@ func (test *TestCtx) GenericClient() client.GenericClient {
 }
 
 // GRPCConn provides GRPC client connection for communication with default VPP-Agent test component
-// Deprecated: use ctx.Agent.GRPCConn(...) instead
 func (test *TestCtx) GRPCConn() *grpc.ClientConn {
 	test.t.Helper()
 	return test.Agent.GRPCConn()
 }
 
 // AgentInSync checks if the agent NB config and the SB state (VPP+Linux) are in-sync.
-// Deprecated: use ctx.Agent.IsInSync(...) instead
 func (test *TestCtx) AgentInSync() bool {
 	test.t.Helper()
 	return test.Agent.IsInSync()
 }
 
 // ExecCmd executes command in agent and returns stdout, stderr as strings and error.
-// Deprecated: use ctx.Agent.ExecCmd(...) instead
 func (test *TestCtx) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
 	test.t.Helper()
 	return test.Agent.ExecCmd(cmd, args...)
 }
 
 // ExecVppctl returns output from vppctl for given action and arguments.
-// Deprecated: use ctx.Agent.ExecVppctl(...) instead
 func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	test.t.Helper()
 	return test.Agent.ExecVppctl(action, args...)
@@ -406,7 +402,7 @@ func (test *TestCtx) StopAgent(name string) {
 	agent, found := test.agents[name]
 	if !found {
 		// bug inside a test
-		test.t.Logf("ERROR: cannot stop unknown microservice %s", name)
+		test.t.Logf("ERROR: cannot stop unknown agent %s", name)
 	}
 	if err := agent.Stop(); err != nil {
 		test.t.Logf("ERROR: stopping agent %s failed: %v", name, err)
@@ -417,8 +413,8 @@ func (test *TestCtx) StopAgent(name string) {
 	delete(test.agents, name)
 }
 
-// AlreadyRunningMicroservice retrieves already running microservice by its name.
-func (test *TestCtx) AlreadyRunningMicroservice(msName string) *Microservice {
+// GetRunningMicroservice retrieves already running microservice by its name.
+func (test *TestCtx) GetRunningMicroservice(msName string) *Microservice {
 	ms, found := test.microservices[msName]
 	if !found {
 		// bug inside a test
@@ -427,21 +423,12 @@ func (test *TestCtx) AlreadyRunningMicroservice(msName string) *Microservice {
 	return ms
 }
 
-func (test *TestCtx) AlreadyRunningAgent(agentName string) *Agent {
-	agent, found := test.agents[agentName]
-	if !found {
-		// bug inside a test
-		test.t.Fatalf("cannot get unknown agent '%s'", agentName)
-	}
-	return agent
-}
-
 // PingFromMs pings <dstAddress> from the microservice <msName>
 // Deprecated: use ctx.AlreadyRunningMicroservice(msName).Ping(dstAddress, opts...) instead (or
 // ms := ctx.StartMicroservice; ms.Ping(dstAddress, opts...))
 func (test *TestCtx) PingFromMs(msName, dstAddress string, opts ...PingOptModifier) error {
 	test.t.Helper()
-	return test.AlreadyRunningMicroservice(msName).Ping(dstAddress, opts...)
+	return test.GetRunningMicroservice(msName).Ping(dstAddress, opts...)
 }
 
 // PingFromMsClb can be used to ping repeatedly inside the assertions "Eventually"
@@ -449,11 +436,11 @@ func (test *TestCtx) PingFromMs(msName, dstAddress string, opts ...PingOptModifi
 // Deprecated: use ctx.AlreadyRunningMicroservice(msName).PingAsCallback(dstAddress, opts...) instead (or
 // ms := ctx.StartMicroservice; ms.PingAsCallback(dstAddress, opts...))
 func (test *TestCtx) PingFromMsClb(msName, dstAddress string, opts ...PingOptModifier) func() error {
-	return test.AlreadyRunningMicroservice(msName).PingAsCallback(dstAddress, opts...)
+	test.t.Helper()
+	return test.GetRunningMicroservice(msName).PingAsCallback(dstAddress, opts...)
 }
 
 // PingFromVPP pings <dstAddress> from inside the VPP.
-// Deprecated: use ctx.Agent.PingFromVPP(destAddress) instead
 func (test *TestCtx) PingFromVPP(destAddress string) error {
 	test.t.Helper()
 	return test.Agent.PingFromVPP(destAddress)
@@ -461,7 +448,6 @@ func (test *TestCtx) PingFromVPP(destAddress string) error {
 
 // PingFromVPPClb can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-// Deprecated: use ctx.Agent.PingFromVPPAsCallback(destAddress) instead
 func (test *TestCtx) PingFromVPPClb(destAddress string) func() error {
 	test.t.Helper()
 	return test.Agent.PingFromVPPAsCallback(destAddress)
@@ -558,39 +544,33 @@ func (test *TestCtx) TestConnection(
 }
 
 // NumValues returns number of values found under the given model
-// Deprecated: use ctx.Agent.NumValues(...) instead
 func (test *TestCtx) NumValues(value proto.Message, view kvs.View) int {
 	test.t.Helper()
 	return test.Agent.NumValues(value, view)
 }
 
 // GetValue retrieves value(s) as seen by the given view
-// Deprecated: use ctx.Agent.GetValue(...) instead
 func (test *TestCtx) GetValue(value proto.Message, view kvs.View) proto.Message {
 	test.t.Helper()
 	return test.Agent.GetValue(value, view)
 }
 
 // GetValueMetadata retrieves metadata associated with the given value.
-// Deprecated: use ctx.Agent.GetValueMetadata(...) instead
 func (test *TestCtx) GetValueMetadata(value proto.Message, view kvs.View) (metadata interface{}) {
 	test.t.Helper()
 	return test.Agent.GetValueMetadata(value, view)
 }
 
-// Deprecated: use ctx.Agent.GetValueState(...) instead
 func (test *TestCtx) GetValueState(value proto.Message) kvscheduler.ValueState {
 	test.t.Helper()
 	return test.Agent.GetValueState(value)
 }
 
-// Deprecated: use ctx.Agent.GetValueStateByKey(...) instead
 func (test *TestCtx) GetValueStateByKey(key string) kvscheduler.ValueState {
 	test.t.Helper()
 	return test.Agent.GetValueStateByKey(key)
 }
 
-// Deprecated: use ctx.Agent.GetDerivedValueState(...) instead
 func (test *TestCtx) GetDerivedValueState(baseValue proto.Message, derivedKey string) kvscheduler.ValueState {
 	test.t.Helper()
 	return test.Agent.GetDerivedValueState(baseValue, derivedKey)
@@ -598,7 +578,6 @@ func (test *TestCtx) GetDerivedValueState(baseValue proto.Message, derivedKey st
 
 // GetValueStateClb can be used to repeatedly check value state inside the assertions
 // "Eventually" and "Consistently" from Omega.
-// Deprecated: use ctx.Agent.GetValueStateClb(...) instead
 func (test *TestCtx) GetValueStateClb(value proto.Message) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
 		return test.GetValueState(value)
@@ -607,7 +586,6 @@ func (test *TestCtx) GetValueStateClb(value proto.Message) func() kvscheduler.Va
 
 // GetDerivedValueStateClb can be used to repeatedly check derived value state inside
 // the assertions "Eventually" and "Consistently" from Omega.
-// Deprecated: use ctx.Agent.GetDerivedValueStateClb(...) instead
 func (test *TestCtx) GetDerivedValueStateClb(baseValue proto.Message, derivedKey string) func() kvscheduler.ValueState {
 	return func() kvscheduler.ValueState {
 		return test.GetDerivedValueState(baseValue, derivedKey)
