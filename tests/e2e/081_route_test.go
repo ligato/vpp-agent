@@ -146,8 +146,8 @@ func TestIPv4Routes(t *testing.T) {
 	ctx.Expect(ctx.GetValueState(subnet1LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Expect(ctx.GetValueState(subnet2LinuxRoute)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 
-	ctx.Expect(ctx.AlreadyRunningMicroservice(msName1).Ping("20.0.0.2")).To(Succeed())
-	ctx.Expect(ctx.AlreadyRunningMicroservice(msName2).Ping("10.0.0.2")).To(Succeed())
+	ctx.Expect(ctx.GetRunningMicroservice(msName1).Ping("20.0.0.2")).To(Succeed())
+	ctx.Expect(ctx.GetRunningMicroservice(msName2).Ping("10.0.0.2")).To(Succeed())
 
 	// keep the current number of routes before the update
 	numLinuxRoutes := ctx.NumValues(&linux_l3.Route{}, kvs.SBView)
@@ -158,8 +158,8 @@ func TestIPv4Routes(t *testing.T) {
 	).Send(context.Background())
 	ctx.Expect(err).ToNot(HaveOccurred())
 
-	ctx.Expect(ctx.AlreadyRunningMicroservice(msName1).Ping("20.0.0.2")).NotTo(Succeed())
-	ctx.Expect(ctx.AlreadyRunningMicroservice(msName2).Ping("10.0.0.2")).NotTo(Succeed())
+	ctx.Expect(ctx.GetRunningMicroservice(msName1).Ping("20.0.0.2")).NotTo(Succeed())
+	ctx.Expect(ctx.GetRunningMicroservice(msName2).Ping("10.0.0.2")).NotTo(Succeed())
 
 	// route count should be unchanged
 	ctx.Expect(ctx.NumValues(&linux_l3.Route{}, kvs.SBView)).To(Equal(numLinuxRoutes))

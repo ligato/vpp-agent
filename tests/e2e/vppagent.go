@@ -187,6 +187,10 @@ func (agent *Agent) LinuxInterfaceHandler() linuxcalls.NetlinkAPI {
 	return ifHandler
 }
 
+func (agent *Agent) Client() ctl.APIClient {
+	return agent.client
+}
+
 // GenericClient provides generic client for communication with default VPP-Agent test component
 func (agent *Agent) GenericClient() client.GenericClient {
 	c, err := agent.client.GenericClient()
