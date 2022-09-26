@@ -361,7 +361,6 @@ func (test *TestCtx) StartMicroservice(name string, optMods ...MicroserviceOptMo
 }
 
 // StopMicroservice stops microservice with given name
-// Deprecated: use ms := ctx.StartAgent(name, opts...); agent.Stop()
 func (test *TestCtx) StopMicroservice(name string) {
 	test.t.Helper()
 
@@ -395,7 +394,6 @@ func (test *TestCtx) StartAgent(name string, optMods ...AgentOptModifier) *Agent
 }
 
 // StopAgent stops VPP-Agent with given name
-// Deprecated: use agent := ctx.StartAgent(name, opts...); agent.Stop()
 func (test *TestCtx) StopAgent(name string) {
 	test.t.Helper()
 
