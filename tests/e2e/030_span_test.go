@@ -105,8 +105,7 @@ func TestSpan(t *testing.T) {
 		Direction:     vpp_interfaces.Span_RX,
 	}
 
-	ms := ctx.StartMicroservice(msName)
-
+	ctx.StartMicroservice(msName)
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(dstTap, dstLinuxTap, spanRx).Send(context.Background())
 	ctx.Expect(err).ToNot(HaveOccurred(), "Sending change request failed with err")
@@ -127,7 +126,7 @@ func TestSpan(t *testing.T) {
 	ctx.Expect(ctx.GetValueState(spanRx)).To(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPAN is not in a `CONFIGURED` state, but both interfaces are ready")
 
-	ctx.Expect(ms.Stop()).To(Succeed())
+	ctx.StopMicroservice(msName)
 	ctx.Eventually(ctx.GetValueStateClb(dstTap)).Should(Equal(kvscheduler.ValueState_PENDING),
 		"Destination TAP must be in a `PENDING` state, after its microservice stops")
 

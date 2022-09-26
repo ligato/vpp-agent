@@ -37,10 +37,10 @@ func TestStartStopMicroservice(t *testing.T) {
 	const msName = "microservice1"
 	key := ns.MicroserviceKey(MsNamePrefix + msName)
 
-	ms := ctx.StartMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	ctx.Eventually(ctx.Agent.GetValueStateByKeyClb(key)).Should(Equal(kvscheduler.ValueState_OBTAINED))
 
-	ms.Stop()
+	ctx.StopMicroservice(msName)
 	ctx.Eventually(ctx.Agent.GetValueStateByKeyClb(key)).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }
 
@@ -51,9 +51,9 @@ func TestStartStopAgent(t *testing.T) {
 	const agentName = "agent1"
 	key := ns.MicroserviceKey(agentName)
 
-	agent := ctx.StartAgent(agentName)
+	ctx.StartAgent(agentName)
 	ctx.Eventually(ctx.Agent.GetValueStateByKeyClb(key)).Should(Equal(kvscheduler.ValueState_OBTAINED))
 
-	agent.Stop()
+	ctx.StopAgent(agentName)
 	ctx.Eventually(ctx.Agent.GetValueStateByKeyClb(key)).Should(Equal(kvscheduler.ValueState_NONEXISTENT))
 }

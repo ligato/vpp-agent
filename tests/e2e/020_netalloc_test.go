@@ -135,7 +135,7 @@ func TestIPWithNeighGW(t *testing.T) {
 		GwAddr:            "alloc:" + networkName + "/GW",
 	}
 
-	ms := ctx.StartMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
@@ -174,8 +174,8 @@ func TestIPWithNeighGW(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.Expect(ms.Stop()).To(Succeed())
-	ms = ctx.StartMicroservice(msName)
+	ctx.StopMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
@@ -336,7 +336,7 @@ func TestIPWithNonLocalGW(t *testing.T) {
 		DstNetwork:        "alloc:" + networkName + "/" + linuxTapName + "/GW",
 	}
 
-	ms := ctx.StartMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppLoopAddr, vppTapAddr, linuxTapAddr,
@@ -374,8 +374,8 @@ func TestIPWithNonLocalGW(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.Expect(ms.Stop()).To(Succeed())
-	ms = ctx.StartMicroservice(msName)
+	ctx.StopMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
@@ -532,7 +532,7 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 		NextHopAddr:       "alloc:" + network1Name + "/GW",
 	}
 
-	ms := ctx.StartMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	req := ctx.GenericClient().ChangeRequest()
 	err := req.Update(
 		vppTapAddr, linuxTapAddr, linuxLoopNet1Addr, linuxLoopNet2Addr,
@@ -572,8 +572,8 @@ func TestVPPRoutesWithNetalloc(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// restart microservice
-	ctx.Expect(ms.Stop()).To(Succeed())
-	ms = ctx.StartMicroservice(msName)
+	ctx.StopMicroservice(msName)
+	ctx.StartMicroservice(msName)
 	checkItemsAreConfigured(true, true)
 
 	// check connection with ping (few packets will get lost before tables are refreshed)
