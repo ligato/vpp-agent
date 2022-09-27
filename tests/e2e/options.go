@@ -27,13 +27,11 @@ import (
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
-const vppAgentDefaultImg = "ligato/vpp-agent:latest"
-
 // SetupOpt is options data holder for customizing setup of tests
 type SetupOpt struct {
-	*AgentOpt
-	*EtcdOpt
-	*DNSOpt
+	AgentOptMods   []AgentOptModifier
+	EtcdOptMods    []EtcdOptModifier
+	DNSOptMods     []DNSOptModifier
 	SetupAgent     bool
 	SetupEtcd      bool
 	SetupDNSServer bool
@@ -43,14 +41,14 @@ type SetupOpt struct {
 
 // AgentOpt is options data holder for customizing setup of agent
 type AgentOpt struct {
-	Runtime               ComponentRuntime
-	RuntimeStartOptions   RuntimeStartOptionsFunc
-	Name                  string
-	Image                 string
-	Env                   []string
-	UseEtcd               bool
-	NoManualInitialResync bool
-	ContainerOptsHook     func(*docker.CreateContainerOptions)
+	Runtime             ComponentRuntime
+	RuntimeStartOptions RuntimeStartOptionsFunc
+	Name                string
+	Image               string
+	Env                 []string
+	UseEtcd             bool
+	InitialResync       bool
+	ContainerOptsHook   func(*docker.CreateContainerOptions)
 }
 
 // MicroserviceOpt is options data holder for customizing setup of microservice
@@ -98,7 +96,7 @@ type SetupOptModifier func(*SetupOpt)
 type AgentOptModifier func(*AgentOpt)
 
 // MicroserviceOptModifier is function customizing Microservice setup options
-type MicroserviceOptModifier func(opt *MicroserviceOpt)
+type MicroserviceOptModifier func(*MicroserviceOpt)
 
 // EtcdOptModifier is function customizing ETCD setup options
 type EtcdOptModifier func(*EtcdOpt)
@@ -107,14 +105,14 @@ type EtcdOptModifier func(*EtcdOpt)
 type DNSOptModifier func(*DNSOpt)
 
 // PingOptModifier is modifiers of pinging options
-type PingOptModifier func(opts *PingOpt)
+type PingOptModifier func(*PingOpt)
 
 // DefaultSetupOpt creates default values for SetupOpt
 func DefaultSetupOpt(testCtx *TestCtx) *SetupOpt {
 	opt := &SetupOpt{
-		AgentOpt:       DefaultAgentOpt(testCtx, ""),
-		EtcdOpt:        DefaultEtcdOpt(testCtx),
-		DNSOpt:         DefaultDNSOpt(testCtx),
+		AgentOptMods:   nil,
+		EtcdOptMods:    nil,
+		DNSOptMods:     nil,
 		SetupAgent:     true,
 		SetupEtcd:      false,
 		SetupDNSServer: false,
@@ -141,10 +139,9 @@ func DefaultEtcdOpt(ctx *TestCtx) *EtcdOpt {
 func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
 	return &DNSOpt{
 		Runtime: &ContainerRuntime{
-			ctx:            testCtx,
-			logIdentity:    "DNS server",
-			stopTimeout:    dnsStopTimeout,
-			stopCtxCleanup: testCtx.dnsServerStopCleanup,
+			ctx:         testCtx,
+			logIdentity: "DNS server",
+			stopTimeout: dnsStopTimeout,
 		},
 		RuntimeStartOptions: DNSServerStartOptionsForContainerRuntime,
 		DomainNameSuffix:    "", // no DNS entries => no common domain name suffix
@@ -153,7 +150,7 @@ func DefaultDNSOpt(testCtx *TestCtx) *DNSOpt {
 }
 
 // DefaultMicroserviceiOpt creates default values for MicroserviceOpt
-func DefaultMicroserviceiOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
+func DefaultMicroserviceOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
 	return &MicroserviceOpt{
 		Runtime: &ContainerRuntime{
 			ctx:         testCtx,
@@ -167,7 +164,7 @@ func DefaultMicroserviceiOpt(testCtx *TestCtx, msName string) *MicroserviceOpt {
 
 // DefaultAgentOpt creates default values for AgentOpt
 func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
-	agentImg := vppAgentDefaultImg
+	agentImg := agentImage
 	if img := os.Getenv("VPP_AGENT"); img != "" {
 		agentImg = img
 	}
@@ -183,18 +180,19 @@ func DefaultAgentOpt(testCtx *TestCtx, agentName string) *AgentOpt {
 		Runtime: &ContainerRuntime{
 			ctx:         testCtx,
 			logIdentity: "Agent " + agentName,
-			stopTimeout: defaultStopContainerTimeoutSec,
+			stopTimeout: agentStopTimeout,
 		},
-		RuntimeStartOptions:   AgentStartOptionsForContainerRuntime,
-		Name:                  agentName,
-		Image:                 agentImg,
-		UseEtcd:               false,
-		NoManualInitialResync: false,
+		RuntimeStartOptions: AgentStartOptionsForContainerRuntime,
+		Name:                agentName,
+		Image:               agentImg,
+		UseEtcd:             false,
+		InitialResync:       true,
 		Env: []string{
 			"INITIAL_LOGLVL=" + logging.DefaultLogger.GetLevel().String(),
 			"ETCD_CONFIG=" + etcdConfig,
 			"GRPC_CONFIG=" + grpcConfig,
 			"DEBUG=" + os.Getenv("DEBUG"),
+			"MICROSERVICE_LABEL=" + agentName,
 		},
 	}
 	return opt
@@ -218,20 +216,17 @@ func WithoutVPPAgent() SetupOptModifier {
 // WithCustomVPPAgent is test setup option using alternative vpp-agent image (customized original vpp-agent)
 func WithCustomVPPAgent() SetupOptModifier {
 	return func(o *SetupOpt) {
-		o.AgentOpt.Image = "vppagent.test.ligato.io:custom"
+		o.AgentOptMods = append(o.AgentOptMods, func(ao *AgentOpt) {
+			ao.Image = "vppagent.test.ligato.io:custom"
+		})
 	}
 }
 
 // WithEtcd is test setup option enabling etcd setup
-func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
+func WithEtcd(etcdOptMods ...EtcdOptModifier) SetupOptModifier {
 	return func(o *SetupOpt) {
 		o.SetupEtcd = true
-		if o.EtcdOpt == nil {
-			o.EtcdOpt = DefaultEtcdOpt(o.ctx)
-		}
-		for _, etcdOptModifier := range etcdOpts {
-			etcdOptModifier(o.EtcdOpt)
-		}
+		o.EtcdOptMods = append(o.EtcdOptMods, etcdOptMods...)
 	}
 }
 
@@ -239,19 +234,13 @@ func WithEtcd(etcdOpts ...EtcdOptModifier) SetupOptModifier {
 func WithDNSServer(dnsOpts ...DNSOptModifier) SetupOptModifier {
 	return func(o *SetupOpt) {
 		o.SetupDNSServer = true
-		if o.DNSOpt == nil {
-			o.DNSOpt = DefaultDNSOpt(o.ctx)
-		}
-		for _, dnsOptModifier := range dnsOpts {
-			dnsOptModifier(o.DNSOpt)
-		}
 	}
 }
 
 // WithoutManualInitialAgentResync is test setup option disabling manual agent resync just after agent setup
 func WithoutManualInitialAgentResync() AgentOptModifier {
 	return func(o *AgentOpt) {
-		o.NoManualInitialResync = true
+		o.InitialResync = false
 	}
 }
 
@@ -358,24 +347,6 @@ func PingWithAllowedLoss(maxLoss int) PingOptModifier {
 func PingWithSourceInterface(iface string) PingOptModifier {
 	return func(opts *PingOpt) {
 		opts.SourceIface = iface
-	}
-}
-
-func extractEtcdOptions(opt *SetupOpt) EtcdOptModifier {
-	return func(etcdOpt *EtcdOpt) {
-		copyOptions(etcdOpt, opt.EtcdOpt)
-	}
-}
-
-func extractDNSOptions(opt *SetupOpt) DNSOptModifier {
-	return func(dnsOpt *DNSOpt) {
-		copyOptions(dnsOpt, opt.DNSOpt)
-	}
-}
-
-func extractAgentOptions(opt *SetupOpt) AgentOptModifier {
-	return func(agentOpt *AgentOpt) {
-		copyOptions(agentOpt, opt.AgentOpt)
 	}
 }
 

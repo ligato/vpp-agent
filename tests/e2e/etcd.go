@@ -33,11 +33,11 @@ type Etcd struct {
 }
 
 // NewEtcd creates and starts new ETCD container
-func NewEtcd(ctx *TestCtx, options ...EtcdOptModifier) (*Etcd, error) {
+func NewEtcd(ctx *TestCtx, optMods ...EtcdOptModifier) (*Etcd, error) {
 	// compute options
 	opts := DefaultEtcdOpt(ctx)
-	for _, optionModifier := range options {
-		optionModifier(opts)
+	for _, mod := range optMods {
+		mod(opts)
 	}
 
 	// create struct for ETCD server

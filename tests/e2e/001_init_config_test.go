@@ -51,7 +51,8 @@ initial-configuration-file-path: %v
 	initFileRegistryConfig = fmt.Sprintf(initFileRegistryConfig, initialConfigFileName)
 
 	// create VPP-Agent
-	SetupVPPAgent(ctx,
+	ctx.StartAgent(
+		mainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
@@ -89,7 +90,8 @@ endpoints:
 	etcdConfig = fmt.Sprintf(etcdConfig, etcdIPAddress)
 
 	// create VPP-Agent
-	SetupVPPAgent(ctx,
+	ctx.StartAgent(
+		mainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig)),
 		WithoutManualInitialAgentResync(),
 	)
@@ -187,7 +189,8 @@ endpoints:
 	etcdConfig = fmt.Sprintf(etcdConfig, etcdIPAddress)
 
 	// create VPP-Agent
-	SetupVPPAgent(ctx,
+	ctx.StartAgent(
+		mainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig),
 			WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),

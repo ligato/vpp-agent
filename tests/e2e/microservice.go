@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	msDefaultImage = "busybox:1.31"
-	msStopTimeout  = 1 // seconds
-	MsLabelKey     = "e2e.test.ms"
-	MsNamePrefix   = "e2e-test-ms-"
+	msImage       = "busybox:1.31"
+	msLabelKey    = "e2e.test.ms"
+	MsNamePrefix  = "e2e-test-ms-"
+	msStopTimeout = 1 // seconds
 )
 
 // Microservice represents running microservice
@@ -28,12 +28,17 @@ type Microservice struct {
 	nsCalls nslinuxcalls.NetworkNamespaceAPI
 }
 
-func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.NetworkNamespaceAPI,
-	options ...MicroserviceOptModifier) (*Microservice, error) {
+// NewMicroservice creates and starts new microservice container
+func NewMicroservice(
+	ctx *TestCtx,
+	msName string,
+	nsCalls nslinuxcalls.NetworkNamespaceAPI,
+	optMods ...MicroserviceOptModifier,
+) (*Microservice, error) {
 	// compute options
-	opts := DefaultMicroserviceiOpt(ctx, msName)
-	for _, optionModifier := range options {
-		optionModifier(opts)
+	opts := DefaultMicroserviceOpt(ctx, msName)
+	for _, mod := range optMods {
+		mod(opts)
 	}
 
 	// create struct for ETCD server
@@ -43,6 +48,7 @@ func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.Networ
 		name:             msName,
 		nsCalls:          nsCalls,
 	}
+
 	// Note: if runtime doesn't implement Pinger/Diger interface and test use it, then compilation
 	// will be ok but runtime will throw "panic: runtime error: invalid memory address or nil pointer
 	// dereference" when referencing Ping/Dig function
@@ -65,6 +71,17 @@ func createMicroservice(ctx *TestCtx, msName string, nsCalls nslinuxcalls.Networ
 	return ms, nil
 }
 
+func (ms *Microservice) Stop(options ...interface{}) error {
+	if err := ms.ComponentRuntime.Stop(options); err != nil {
+		// not additionally cleaning up after attempting to stop test topology component because
+		// it would lock access to further inspection of this component (i.e. why it won't stop)
+		return err
+	}
+	// cleanup
+	delete(ms.ctx.microservices, ms.name)
+	return nil
+}
+
 // MicroserviceStartOptionsForContainerRuntime translates MicroserviceOpt to options for ComponentRuntime.Start(option)
 // method implemented by ContainerRuntime
 func MicroserviceStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (interface{}, error) {
@@ -78,9 +95,9 @@ func MicroserviceStartOptionsForContainerRuntime(ctx *TestCtx, options interface
 		Context: ctx.ctx,
 		Name:    msLabel,
 		Config: &docker.Config{
-			Image: msDefaultImage,
+			Image: msImage,
 			Labels: map[string]string{
-				MsLabelKey: opts.Name,
+				msLabelKey: opts.Name,
 			},
 			//Entrypoint:
 			Env: []string{"MICROSERVICE_LABEL=" + msLabel},
@@ -108,7 +125,7 @@ func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
 		All: true,
 		Filters: map[string][]string{
-			"label": {MsLabelKey},
+			"label": {msLabelKey},
 		},
 	})
 	if err != nil {
@@ -122,7 +139,7 @@ func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 		if err != nil {
 			t.Fatalf("failed to remove existing microservices: %v", err)
 		} else {
-			t.Logf("removed existing microservice: %s", container.Labels[MsLabelKey])
+			t.Logf("removed existing microservice: %s", container.Labels[msLabelKey])
 		}
 	}
 }

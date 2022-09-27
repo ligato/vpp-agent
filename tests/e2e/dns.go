@@ -34,11 +34,11 @@ type DNSServer struct {
 }
 
 // NewDNSServer creates and starts new DNS server container
-func NewDNSServer(ctx *TestCtx, options ...DNSOptModifier) (*DNSServer, error) {
+func NewDNSServer(ctx *TestCtx, optMods ...DNSOptModifier) (*DNSServer, error) {
 	// compute options
 	opts := DefaultDNSOpt(ctx)
-	for _, optionModifier := range options {
-		optionModifier(opts)
+	for _, mod := range optMods {
+		mod(opts)
 	}
 
 	// create struct for DNS server
@@ -58,6 +58,17 @@ func NewDNSServer(ctx *TestCtx, options ...DNSOptModifier) (*DNSServer, error) {
 	}
 
 	return dnsServer, nil
+}
+
+func (dns *DNSServer) Stop(options ...interface{}) error {
+	if err := dns.ComponentRuntime.Stop(options); err != nil {
+		// not additionally cleaning up after attempting to stop test topology component because
+		// it would lock access to further inspection of this component (i.e. why it won't stop)
+		return err
+	}
+	// cleanup
+	dns.ctx.DNSServer = nil
+	return nil
 }
 
 // DNSServerStartOptionsForContainerRuntime translates DNSOpt to options for ComponentRuntime.Start(option)
