@@ -717,7 +717,7 @@ func (test *TestCtx) GetValue(value proto.Message, view kvs.View) proto.Message 
 	kvDump := test.getKVDump(value, view)
 	for _, kv := range kvDump {
 		if kv.Key == key {
-			return kv.Value
+			return kv.Value.Message
 		}
 	}
 	return nil
@@ -728,7 +728,7 @@ func (test *TestCtx) NumValues(value proto.Message, view kvs.View) int {
 	return len(test.getKVDump(value, view))
 }
 
-func (test *TestCtx) getKVDump(value proto.Message, view kvs.View) []kvs.KVWithMetadata {
+func (test *TestCtx) getKVDump(value proto.Message, view kvs.View) []kvs.RecordedKVWithMetadata {
 	model, err := models.GetModelFor(value)
 	if err != nil {
 		test.t.Fatalf("Failed to get model for value %v: %v", value, err)

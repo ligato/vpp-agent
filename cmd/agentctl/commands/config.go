@@ -36,7 +36,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
-	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
@@ -583,24 +582,12 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 		}
 	}
 
-	// get remote config models from generic client
-	gc, err := cli.Client().GenericClient()
+	// register remote models into the default registry
+	_, err = cli.Client().ModelList(ctx, types.ModelListOptions{
+		Class: "config",
+	})
 	if err != nil {
 		return err
-	}
-	knownModels, err := gc.KnownModels("config")
-	if err != nil {
-		return fmt.Errorf("getting registered models: %w", err)
-	}
-
-	// register the remote config models into the global default registry
-	for _, km := range knownModels {
-		kmSpec := models.ToSpec(km.GetSpec())
-		if _, err = models.DefaultRegistry.GetModel(kmSpec.ModelName()); err != nil {
-			if _, err = models.DefaultRegistry.Register(km, kmSpec); err != nil {
-				return fmt.Errorf("registering model failed: %w", err)
-			}
-		}
 	}
 
 	txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
