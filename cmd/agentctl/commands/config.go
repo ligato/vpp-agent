@@ -72,7 +72,10 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
-	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Output only config items that have the given labels")
+	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Output only config items that have given labels. "+
+		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"If value of label is empty, equals sign can be omitted. "+
+		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
 	return cmd
 }
 
@@ -138,7 +141,10 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	// flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t",
 		5*time.Minute, "Timeout for sending updated data")
-	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Labels associated with updated config items")
+	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Labels associated with updated config items. "+
+		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"If value of label is empty, equals sign can be omitted. "+
+		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
 	return cmd
 }
 
