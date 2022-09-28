@@ -412,12 +412,15 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx.Eventually(agent1.GetValueStateClb(vpp1Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent2.GetValueStateClb(ms1Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent2.GetValueStateClb(ms2Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	// Pings from correct vlan should succeed
+	// Pings from VPP should automatically go through correct vlan
 	ctx.Expect(agent1.PingFromVPP(ms1TapIP)).To(Succeed())
 	ctx.Expect(agent1.PingFromVPP(ms2TapIP)).To(Succeed())
+	// Pings from correct vlan should succeed
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.10")).To(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.20")).To(Succeed())
 	// Pings from incorrect vlan should fail
-	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.20")).NotTo(Succeed())
-	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.10")).NotTo(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.10")).NotTo(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.20")).NotTo(Succeed())
 }
 
 // connect VPP with a microservice via TAP tunnel interface
