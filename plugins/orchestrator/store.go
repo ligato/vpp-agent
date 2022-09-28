@@ -38,7 +38,7 @@ type KLStore interface {
 	ResetLabels(key string)
 }
 
-type KStore interface {
+type Store interface {
 	KLStore
 	KVStore
 }

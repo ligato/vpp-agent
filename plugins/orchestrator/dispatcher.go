@@ -68,7 +68,7 @@ type dispatcher struct {
 	log logging.Logger
 	kvs kvs.KVScheduler
 	mu  sync.Mutex
-	db  KStore
+	db  Store
 }
 
 // ListData retrieves actual data.
