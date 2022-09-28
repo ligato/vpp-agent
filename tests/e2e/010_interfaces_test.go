@@ -150,6 +150,43 @@ func TestInterfaceConnTap(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
+//
+// +---------------------------------------------------+
+// | VPP                                               |
+// |                                                   |
+// |     +---------------+       +---------------+     |
+// |     |192.168.1.10/24|       |192.168.2.20/24|     |
+// |     +-------+-------+       +-------+-------+     |
+// |             | (SUBIF)               | (SUBIF)     |
+// |     +-------+-----------------------+-------+     |
+// |     |                                       |     |
+// |     +-------------------+-------------------+     |
+// +-------------------------|-------------------------+
+//                           | (MEMIF)
+// +-------------------------|-------------------------+
+// |     +-------------------+-------------------+     |
+// |     |                                       |     |
+// |     +-------+-----------------------+-------+     |
+// |             | (SUBIF)               | (SUBIF)     |
+// |     +-------+-------+       +-------+-------+     |
+// |     |192.168.1.10/24|       |192.168.2.20/24|     |
+// |     +-------+-------+       +-------+-------+     |
+// |             |                       |             |
+// | VPP         | (BD)                  | (BD)        |
+// |             |                       |             |
+// |     +-------+-------+       +-------+-------+     |
+// |     |192.168.1.11/24|       |192.168.2.22/24|     |
+// |     +-------+-------+       +-------+-------+     |
+// +-------------|-----------------------|-------------+
+//               | (TAP)                 | (TAP)
+// +-------------|----------+ +----------|-------------+
+// |     +-------+-------+  | |  +-------+-------+     |
+// |     |192.168.1.11/24|  | |  |192.168.2.22/24|     |
+// |     +-------+-------+  | |  +-------+-------+     |
+// |                        | |                        |
+// | LINUX                  | |                  LINUX |
+// +------------------------+ +------------------------+
+//
 func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx := Setup(t, WithoutVPPAgent())
 	defer ctx.Teardown()
@@ -167,8 +204,8 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 		vpp2Tap2Name   = "vpp2-to-ms2"
 		ms1TapName     = "ms1-to-vpp2"
 		ms2TapName     = "ms2-to-vpp2"
-		ms1TapIP       = "192.168.1.1"
-		ms2TapIP       = "192.168.2.2"
+		ms1TapIP       = "192.168.1.11"
+		ms2TapIP       = "192.168.2.22"
 		bd1Name        = "bd1"
 		bd2Name        = "bd2"
 		ms1Name        = "ms1"
@@ -333,7 +370,6 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 			},
 		},
 	}
-
 	bd2 := &vpp_l2.BridgeDomain{
 		Name:    bd2Name,
 		Flood:   true,
@@ -376,10 +412,12 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx.Eventually(agent1.GetValueStateClb(vpp1Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent2.GetValueStateClb(ms1Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent2.GetValueStateClb(ms2Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	// Pings from correct vlan should succeed
 	ctx.Expect(agent1.PingFromVPP(ms1TapIP)).To(Succeed())
 	ctx.Expect(agent1.PingFromVPP(ms2TapIP)).To(Succeed())
-	@next
-	// TODO: add wrong sources for the vpp ping command from agent1 (ping from wrong subif to wrong vlan should fail)
+	// Pings from incorrect vlan should fail
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.20")).NotTo(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.10")).NotTo(Succeed())
 }
 
 // connect VPP with a microservice via TAP tunnel interface
