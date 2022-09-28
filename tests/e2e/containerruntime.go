@@ -26,18 +26,17 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/go-errors/errors"
 	"github.com/segmentio/textio"
-	"github.com/sirupsen/logrus"
+	"go.ligato.io/cn-infra/v2/logging"
 )
 
-const execTimeout = 10 * time.Second
+const containerExecTimeout = 10 * time.Second
 
 // ContainerRuntime represents docker container environments for one component of test topology
 type ContainerRuntime struct {
-	ctx            *TestCtx
-	container      *docker.Container
-	logIdentity    string
-	stopTimeout    uint
-	stopCtxCleanup func()
+	ctx         *TestCtx
+	container   *docker.Container
+	logIdentity string
+	stopTimeout uint
 }
 
 // ContainerStartOptions are options for ComponentRuntime.Start(option) method implemented by ContainerRuntime
@@ -64,7 +63,7 @@ func (c *ContainerRuntime) Start(options interface{}) error {
 	if err != nil {
 		return errors.Errorf("can't create %s container due to: %v", c.logIdentity, err)
 	}
-	log := logrus.WithField("name", c.logIdentity)
+	log := logging.DefaultLogger.WithField("name", c.logIdentity)
 	log.Debugf("starting container: %+v", *opts)
 	if err := c.startContainer(); err != nil {
 		return errors.Errorf("can't start %s container due to: %v", c.logIdentity, err)
@@ -87,26 +86,15 @@ func (c *ContainerRuntime) Start(options interface{}) error {
 func (c *ContainerRuntime) Stop(options ...interface{}) error {
 	if err := c.stopContainer(); err != nil {
 		if errors.Is(err, &docker.NoSuchContainer{}) {
-			if c.stopCtxCleanup != nil {
-				c.stopCtxCleanup()
-			}
 			// container no longer exists -> nothing to do about container (state is the same
 			// as after successful termination)
 			return nil
 		}
-		// not additionally cleaning ctx for stopping test topology component because
-		// it would lock access to further inspection of this component (i.e. why it won't stop)
 		return err
 	}
 	if err := c.removeContainer(); err != nil {
-		// not additionally cleaning ctx for stopping test topology component because
-		// it would lock access to further inspection of this component (i.e. why it won't stop)
 		return err
 	}
-	if c.stopCtxCleanup != nil {
-		c.stopCtxCleanup()
-	}
-
 	return nil
 }
 
@@ -127,7 +115,7 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(c.ctx.ctx, execTimeout)
+	ctx, cancel := context.WithTimeout(c.ctx.ctx, containerExecTimeout)
 	defer cancel()
 
 	var stdoutBuf, stderrBuf bytes.Buffer
@@ -272,7 +260,7 @@ func (c *ContainerRuntime) attachLoggingToContainer(logOutput io.Writer) error {
 		return errors.Errorf("failed to attach logging to %s container: %v", c.logIdentity, err)
 	}
 
-	log := logrus.WithField("name", c.logIdentity)
+	log := logging.DefaultLogger.WithField("name", c.logIdentity)
 	log = log.WithField("container", c.container.Name)
 	log = log.WithField("cid", stringid.TruncateID(c.container.ID))
 

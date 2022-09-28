@@ -27,7 +27,7 @@ func TestInfoVersionHandler(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	version, err := ctx.agentClient.AgentVersion(context.Background())
+	version, err := ctx.Agent.Client().AgentVersion(context.Background())
 	ctx.Expect(err).ToNot(HaveOccurred())
 	ctx.Expect(version.App).ToNot(BeEmpty())
 	ctx.Expect(version.Version).ToNot(BeEmpty())
@@ -45,7 +45,7 @@ func TestJsonschema(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	res, err := ctx.agentClient.HTTPClient().Get("http://" + ctx.agentClient.AgentHost() + ":9191/info/configuration/jsonschema")
+	res, err := ctx.Agent.Client().HTTPClient().Get("http://" + ctx.Agent.Client().AgentHost() + ":9191/info/configuration/jsonschema")
 	if err != nil {
 		t.Fatal(err)
 	}
