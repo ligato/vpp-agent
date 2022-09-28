@@ -65,6 +65,23 @@ func TestAgentCtlCommands(t *testing.T) {
 		}()
 	}
 
+	// Parsing these labels should result in an error.
+	wrongUpdateLabels := []string{"\"=onlyvalue\"", "\"duplicatekey=foo\",\"duplicatekey=bar\"", "\"\""}
+	for _, wul := range wrongUpdateLabels {
+		file, err := createFileWithContent(nextDummyIf())
+		ctx.Expect(err).To(BeNil(), "Failed to create file required by one of the tests")
+		stdout, _, err = ctx.Agent.ExecCmd("agentctl", "config", "update", file, "--labels="+wul)
+		ctx.Expect(err).To(HaveOccurred())
+		// ctx.Expect(stderr).To(BeEmpty()) TODO: uncomment this once the warning log has been cleaned up
+		ctx.Expect(stdout).ToNot(ContainSubstring("OK"))
+
+		// cleanup the file
+		defer func() {
+			err = os.Remove(file)
+			ctx.Expect(err).ToNot(HaveOccurred())
+		}()
+	}
+
 	type KeyVal struct {
 		Key   string
 		Value interface{}

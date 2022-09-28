@@ -102,8 +102,14 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
 
+	// fill labels map
+	labels, err := parseLabels(opts.Labels)
+	if err != nil {
+		return fmt.Errorf("parsing labels failed: %w", err)
+	}
+
 	// retrieve data into config
-	err = c.GetFilteredConfig(client.Filter{Labels: parseLabels(opts.Labels)}, config)
+	err = c.GetFilteredConfig(client.Filter{Labels: labels}, config)
 	if err != nil {
 		return fmt.Errorf("can't retrieve configuration due to: %w", err)
 	}
@@ -208,8 +214,14 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 			"from one big configuration proto message due to: %v", err)
 	}
 
+	// fill labels map
+	labels, err := parseLabels(opts.Labels)
+	if err != nil {
+		return fmt.Errorf("parsing labels failed: %w", err)
+	}
+
 	// update/resync configuration
-	_, err = c.UpdateItems(ctx, createUpdateItems(configMessages, parseLabels(opts.Labels)), opts.Replace)
+	_, err = c.UpdateItems(ctx, createUpdateItems(configMessages, labels), opts.Replace)
 	if err != nil {
 		return fmt.Errorf("update failed: %w", err)
 	}
@@ -800,9 +812,9 @@ func txnErrors(txn *kvs.RecordedTxn) Errors {
 
 // parseLabels parses labels obtained from command line flags
 // This function does not allow duplicate or empty ("") keys
-func parseLabels(rawLabels []string) map[string]string {
+func parseLabels(rawLabels []string) (map[string]string, error) {
 	if len(rawLabels) == 0 {
-		return nil
+		return nil, nil
 	}
 	labels := make(map[string]string)
 	var lkey, lval string
@@ -813,11 +825,15 @@ func parseLabels(rawLabels []string) map[string]string {
 		} else {
 			lkey, lval = rawLabel[:i], rawLabel[i+1:]
 		}
-		if lkey != "" {
-			labels[lkey] = lval
+		if lkey == "" {
+			return nil, fmt.Errorf("key of label %s is empty", rawLabel)
 		}
+		if _, ok := labels[lkey]; ok {
+			return nil, fmt.Errorf("label key %s is duplicated", lkey)
+		}
+		labels[lkey] = lval
 	}
-	return labels
+	return labels, nil
 }
 
 func createUpdateItems(msgs []proto.Message, labels map[string]string) []client.UpdateItem {
