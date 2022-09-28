@@ -74,6 +74,7 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Output only config items that have given labels. "+
 		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"Empty keys and duplicated keys are not allowed. "+
 		"If value of label is empty, equals sign can be omitted. "+
 		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
 	return cmd
@@ -149,6 +150,7 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 		5*time.Minute, "Timeout for sending updated data")
 	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Labels associated with updated config items. "+
 		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"Empty keys and duplicated keys are not allowed. "+
 		"If value of label is empty, equals sign can be omitted. "+
 		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
 	return cmd
