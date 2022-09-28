@@ -187,6 +187,12 @@ func TestInterfaceConnTap(t *testing.T) {
 // | LINUX                  | |                  LINUX |
 // +------------------------+ +------------------------+
 //
+// This test tests the primarily the following pings:
+// from: 192.168.1.10 (left subif in top vpp) to: 192.168.1.11 (left linux microservice) - should pass (same vlan)
+// from: 192.168.2.20 (right subif in top vpp) to: 192.168.2.22 (right linux microservice) - should pass (same vlan)
+// from: 192.168.1.10 (left subif in top vpp) to: 192.168.2.22 (right linux microservice) - should fail (different vlans)
+// from: 192.168.2.20 (right subif in top vpp) to: 192.168.1.11 (left linux microservice) - should fail (different vlans)
+
 func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx := Setup(t, WithoutVPPAgent())
 	defer ctx.Teardown()
@@ -418,9 +424,13 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	// Pings from correct vlan should succeed
 	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.10")).To(Succeed())
 	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.20")).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vpp1Subif1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vpp1Subif2IP)).To(Succeed())
 	// Pings from incorrect vlan should fail
-	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.10")).NotTo(Succeed())
-	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.20")).NotTo(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.20")).NotTo(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.10")).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vpp1Subif2IP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vpp1Subif1IP)).NotTo(Succeed())
 }
 
 // connect VPP with a microservice via TAP tunnel interface
