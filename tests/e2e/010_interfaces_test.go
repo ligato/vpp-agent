@@ -192,7 +192,7 @@ func TestInterfaceConnTap(t *testing.T) {
 // from: 192.168.2.20 (right subif in top vpp) to: 192.168.2.22 (right linux microservice) - should pass (same vlan)
 // from: 192.168.1.10 (left subif in top vpp) to: 192.168.2.22 (right linux microservice) - should fail (different vlans)
 // from: 192.168.2.20 (right subif in top vpp) to: 192.168.1.11 (left linux microservice) - should fail (different vlans)
-
+//
 func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx := Setup(t, WithoutVPPAgent())
 	defer ctx.Teardown()
@@ -224,6 +224,7 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 		memifSockname  = "memif.sock"
 	)
 
+	// needed for creation of memif socket
 	if err := os.MkdirAll(shareDir+memifFilepath, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
@@ -416,8 +417,15 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx.Expect(err).ToNot(HaveOccurred())
 
 	ctx.Eventually(agent1.GetValueStateClb(vpp1Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(agent1.GetValueStateClb(vpp1Subif1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Eventually(agent1.GetValueStateClb(vpp1Subif2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Subif1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Subif2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent2.GetValueStateClb(ms1Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent2.GetValueStateClb(ms2Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Tap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Tap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	// Pings from VPP should automatically go through correct vlan
 	ctx.Expect(agent1.PingFromVPP(ms1TapIP)).To(Succeed())
 	ctx.Expect(agent1.PingFromVPP(ms2TapIP)).To(Succeed())
