@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -415,6 +416,9 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 		bd2,
 	).Send(context.Background())
 	ctx.Expect(err).ToNot(HaveOccurred())
+
+	// FIXME: this timeout is needed for the test to pass with VPP version 21.01 (21.06 and 22.02 work fine)
+	time.Sleep(5 * time.Second)
 
 	ctx.Eventually(agent1.GetValueStateClb(vpp1Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 	ctx.Eventually(agent1.GetValueStateClb(vpp1Subif1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
