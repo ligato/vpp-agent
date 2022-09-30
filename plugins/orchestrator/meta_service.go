@@ -181,7 +181,6 @@ func (s *genericService) GetConfig(ctx context.Context, req *generic.GetConfigRe
 	}
 	for key, data := range s.dispatch.ListData() {
 		labels := s.dispatch.ListLabels(key)
-		fmt.Println(labels)
 		if !ContainsAllLabels(req.Labels, labels) {
 			continue
 		}
