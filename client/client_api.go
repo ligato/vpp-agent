@@ -28,6 +28,27 @@ import (
 type ModelInfo = models.ModelInfo
 
 type StateItem = generic.StateItem
+type ConfigItem = generic.ConfigItem
+
+type UpdateItem struct {
+	Message proto.Message
+	Labels  map[string]string
+}
+
+type UpdateResult struct {
+	Key    string
+	Status *generic.ItemStatus
+}
+
+// If (Ids|Labels) is nil that means no filtering for (Ids|Labels)
+// But if both are not nil then an error is returned
+// (because of ambiguity in what should the result be filtered by).
+// If for a given label key the corresponding value is "" then items are
+// only matched using the key.
+type Filter struct {
+	Ids    []*generic.Item_ID
+	Labels map[string]string
+}
 
 // ConfigClient ...
 // Deprecated: use GenericClient instead
@@ -47,6 +68,16 @@ type GenericClient interface {
 	// GetConfig retrieves current config into dsts.
 	// TODO: return as list of config items
 	GetConfig(dsts ...interface{}) error
+
+	// GetFilteredConfig retrieves current config into dsts according to the provided filter.
+	GetFilteredConfig(filter Filter, dsts ...interface{}) error
+
+	// GetItems returns list of all current ConfigItems.
+	GetItems(ctx context.Context) ([]*ConfigItem, error)
+
+	UpdateItems(ctx context.Context, items []UpdateItem, resync bool) ([]*UpdateResult, error)
+
+	DeleteItems(ctx context.Context, items []UpdateItem) ([]*UpdateResult, error)
 
 	// DumpState dumps actual running state.
 	DumpState() ([]*StateItem, error)

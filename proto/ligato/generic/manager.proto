@@ -46,6 +46,14 @@ message UpdateItem {
     // For a delete operation set fields item.Data to nil.
     Item item = 1;
     // The labels can be used to define user-defined labels for item.
+    // Label is string key-value pair associated with configuration item.
+    // Label key format guidelines: label key should be a lower-case alphanumeric
+    // string which may contain periods and hyphens (but it should not contain
+    // consecutive periods/hyphens and it should not start with period/hyphen).
+    // Labels for configuration items should be prefixed with the reverse DNS
+    // notation of a domain they originate from (with domain owner's permission)
+    // for example: com.example.foo-bar-label.
+    // The io.ligato.* and ligato.* prefixes are reserved by vpp-agent for internal use.
     map<string, string> labels = 2;
 }
 
@@ -65,6 +73,7 @@ message UpdateResult {
 
 message GetConfigRequest {
     repeated Item.ID ids = 1;
+    map<string, string> labels = 2;
 }
 message GetConfigResponse {
     repeated ConfigItem items = 1;

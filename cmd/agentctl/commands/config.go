@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
@@ -71,11 +72,17 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
+	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Output only config items that have given labels. "+
+		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"Empty keys and duplicated keys are not allowed. "+
+		"If value of label is empty, equals sign can be omitted. "+
+		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
 	return cmd
 }
 
 type ConfigGetOptions struct {
 	Format string
+	Labels []string
 }
 
 func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
@@ -96,9 +103,16 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
 	}
 
+	// fill labels map
+	labels, err := parseLabels(opts.Labels)
+	if err != nil {
+		return fmt.Errorf("parsing labels failed: %w", err)
+	}
+
 	// retrieve data into config
-	if err := c.GetConfig(config); err != nil {
-		return fmt.Errorf("can't retrieve configuration due to: %v", err)
+	err = c.GetFilteredConfig(client.Filter{Labels: labels}, config)
+	if err != nil {
+		return fmt.Errorf("can't retrieve configuration due to: %w", err)
 	}
 
 	// handle data output
@@ -109,7 +123,6 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	if err := formatAsTemplate(cli.Out(), format, config); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -135,6 +148,11 @@ func newConfigUpdateCommand(cli agentcli.Cli) *cobra.Command {
 	// flags.BoolVarP(&opts.Verbose, "verbose", "v", false, "Show verbose output")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t",
 		5*time.Minute, "Timeout for sending updated data")
+	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Labels associated with updated config items. "+
+		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"Empty keys and duplicated keys are not allowed. "+
+		"If value of label is empty, equals sign can be omitted. "+
+		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
 	return cmd
 }
 
@@ -144,6 +162,7 @@ type ConfigUpdateOptions struct {
 	// WaitDone bool
 	// Verbose  bool
 	Timeout time.Duration
+	Labels  []string
 }
 
 func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) error {
@@ -155,7 +174,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		return fmt.Errorf("missing file argument")
 	}
 	file := args[0]
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("reading file %s: %w", file, err)
 	}
@@ -197,17 +216,16 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 			"from one big configuration proto message due to: %v", err)
 	}
 
+	// fill labels map
+	labels, err := parseLabels(opts.Labels)
+	if err != nil {
+		return fmt.Errorf("parsing labels failed: %w", err)
+	}
+
 	// update/resync configuration
-	if opts.Replace {
-		if err := c.ResyncConfig(configMessages...); err != nil {
-			return fmt.Errorf("resync failed: %v", err)
-		}
-	} else {
-		req := c.ChangeRequest()
-		req.Update(configMessages...)
-		if err := req.Send(ctx); err != nil {
-			return fmt.Errorf("send failed: %v", err)
-		}
+	_, err = c.UpdateItems(ctx, createUpdateItems(configMessages, labels), opts.Replace)
+	if err != nil {
+		return fmt.Errorf("update failed: %w", err)
 	}
 
 	// handle configuration update result and command output
@@ -261,7 +279,7 @@ func runConfigDelete(cli agentcli.Cli, opts ConfigDeleteOptions, args []string) 
 		return fmt.Errorf("missing file argument")
 	}
 	file := args[0]
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("reading file %s: %w", file, err)
 	}
@@ -792,4 +810,38 @@ func txnErrors(txn *kvs.RecordedTxn) Errors {
 		}
 	}
 	return errs
+}
+
+// parseLabels parses labels obtained from command line flags
+// This function does not allow duplicate or empty ("") keys
+func parseLabels(rawLabels []string) (map[string]string, error) {
+	if len(rawLabels) == 0 {
+		return nil, nil
+	}
+	labels := make(map[string]string)
+	var lkey, lval string
+	for _, rawLabel := range rawLabels {
+		i := strings.IndexByte(rawLabel, '=')
+		if i == -1 {
+			lkey, lval = rawLabel, ""
+		} else {
+			lkey, lval = rawLabel[:i], rawLabel[i+1:]
+		}
+		if lkey == "" {
+			return nil, fmt.Errorf("key of label %s is empty", rawLabel)
+		}
+		if _, ok := labels[lkey]; ok {
+			return nil, fmt.Errorf("label key %s is duplicated", lkey)
+		}
+		labels[lkey] = lval
+	}
+	return labels, nil
+}
+
+func createUpdateItems(msgs []proto.Message, labels map[string]string) []client.UpdateItem {
+	var result []client.UpdateItem
+	for _, msg := range msgs {
+		result = append(result, client.UpdateItem{Message: msg, Labels: labels})
+	}
+	return result
 }

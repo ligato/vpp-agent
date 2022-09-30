@@ -152,10 +152,10 @@ func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
 	return err
 }
 
-func (c *grpcClient) GetConfig(dsts ...interface{}) error {
+func (c *grpcClient) GetFilteredConfig(filter client.Filter, dsts ...interface{}) error {
 	ctx := context.Background()
 
-	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
+	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{Ids: filter.Ids, Labels: filter.Labels})
 	if err != nil {
 		return err
 	}
@@ -189,6 +189,74 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 	}
 
 	return nil
+}
+
+func (c *grpcClient) GetConfig(dsts ...interface{}) error {
+	return c.GetFilteredConfig(client.Filter{}, dsts)
+}
+
+func (c *grpcClient) GetItems(ctx context.Context) ([]*client.ConfigItem, error) {
+	resp, err := c.manager.GetConfig(ctx, &generic.GetConfigRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetItems(), err
+}
+
+func (c *grpcClient) UpdateItems(ctx context.Context, items []client.UpdateItem, resync bool) ([]*client.UpdateResult, error) {
+	req := &generic.SetConfigRequest{
+		OverwriteAll: resync,
+	}
+	for _, ui := range items {
+		var item *generic.Item
+		item, err := models.MarshalItemUsingModelRegistry(ui.Message, c.modelRegistry)
+		if err != nil {
+			return nil, err
+		}
+		req.Updates = append(req.Updates, &generic.UpdateItem{
+			Item:   item,
+			Labels: ui.Labels,
+		})
+	}
+	res, err := c.manager.SetConfig(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	var updateResults []*client.UpdateResult
+	for _, r := range res.Results {
+		updateResults = append(updateResults, &client.UpdateResult{
+			Key:    r.Key,
+			Status: r.Status,
+		})
+	}
+	return updateResults, nil
+}
+
+func (c *grpcClient) DeleteItems(ctx context.Context, items []client.UpdateItem) ([]*client.UpdateResult, error) {
+	req := &generic.SetConfigRequest{}
+	for _, ui := range items {
+		var item *generic.Item
+		item, err := models.MarshalItemUsingModelRegistry(ui.Message, c.modelRegistry)
+		if err != nil {
+			return nil, err
+		}
+		item.Data = nil // delete
+		req.Updates = append(req.Updates, &generic.UpdateItem{
+			Item: item,
+		})
+	}
+	res, err := c.manager.SetConfig(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	var updateResults []*client.UpdateResult
+	for _, r := range res.Results {
+		updateResults = append(updateResults, &client.UpdateResult{
+			Key:    r.Key,
+			Status: r.Status,
+		})
+	}
+	return updateResults, nil
 }
 
 func (c *grpcClient) DumpState() ([]*client.StateItem, error) {

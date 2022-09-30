@@ -16,6 +16,8 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
@@ -78,8 +80,22 @@ func (c *client) ResyncConfig(items ...proto.Message) error {
 	return txn.Commit(ctx)
 }
 
-func (c *client) GetConfig(dsts ...interface{}) error {
+func (c *client) GetFilteredConfig(filter Filter, dsts ...interface{}) error {
+	if filter.Ids != nil && filter.Labels != nil {
+		return fmt.Errorf("both fields of the filter are not nil!")
+	}
 	protos := c.dispatcher.ListData()
+	for key, data := range protos {
+		item, err := models.MarshalItem(data)
+		if err != nil {
+			return err
+		}
+		labels := c.dispatcher.ListLabels(key)
+		if !orchestrator.ContainsAllLabels(filter.Labels, labels) ||
+			!orchestrator.ContainsItemID(filter.Ids, item.Id) {
+			delete(protos, key)
+		}
+	}
 	protoDsts := extractProtoMessages(dsts)
 	if len(dsts) == len(protoDsts) { // all dsts are proto messages
 		// TODO the clearIgnoreLayerCount function argument should be a option of generic.Client
@@ -90,6 +106,124 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 		util.PlaceProtos(protos, dsts...)
 	}
 	return nil
+}
+
+func (c *client) GetConfig(dsts ...interface{}) error {
+	return c.GetFilteredConfig(Filter{}, dsts)
+}
+
+func (c *client) GetItems(ctx context.Context) ([]*ConfigItem, error) {
+	var configItems []*ConfigItem
+	for key, data := range c.dispatcher.ListData() {
+		labels := c.dispatcher.ListLabels(key)
+		item, err := models.MarshalItem(data)
+		if err != nil {
+			return nil, err
+		}
+		var itemStatus *generic.ItemStatus
+		status, err := c.dispatcher.GetStatus(key)
+		if err != nil {
+			logrus.Warnf("GetStatus failed: %v", err)
+		} else {
+			var msg string
+			if details := status.GetDetails(); len(details) > 0 {
+				msg = strings.Join(status.GetDetails(), ", ")
+			} else {
+				msg = status.GetError()
+			}
+			itemStatus = &generic.ItemStatus{
+				Status:  status.GetState().String(),
+				Message: msg,
+			}
+		}
+		configItems = append(configItems, &ConfigItem{
+			Item:   item,
+			Status: itemStatus,
+			Labels: labels,
+		})
+	}
+	return configItems, nil
+}
+
+func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync bool) ([]*UpdateResult, error) {
+	txn := c.txnFactory.NewTxn(resync)
+	for _, ui := range items {
+		key, err := models.GetKey(ui.Message)
+		if err != nil {
+			return nil, err
+		}
+		txn.Put(key, ui.Message)
+		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
+		if !withDataSrc {
+			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
+		}
+		ctx = contextdecorator.LabelsContext(ctx, ui.Labels)
+	}
+	if err := txn.Commit(ctx); err != nil {
+		return nil, err
+	}
+	var updateResults []*UpdateResult
+	r, _ := contextdecorator.PushDataResultFromContext(ctx)
+	resWrapper, ok := r.(orchestrator.ResultWrapper)
+	if !ok {
+		return nil, fmt.Errorf("cannot retrieve update results!")
+	}
+	for _, res := range resWrapper.Results {
+		var msg string
+		if details := res.Status.GetDetails(); len(details) > 0 {
+			msg = strings.Join(res.Status.GetDetails(), ", ")
+		} else {
+			msg = res.Status.GetError()
+		}
+		updateResults = append(updateResults, &UpdateResult{
+			Key: res.Key,
+			Status: &generic.ItemStatus{
+				Status:  res.Status.State.String(),
+				Message: msg,
+			},
+		})
+	}
+	return updateResults, nil
+}
+
+func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) ([]*UpdateResult, error) {
+	txn := c.txnFactory.NewTxn(false)
+	for _, ui := range items {
+		key, err := models.GetKey(ui.Message)
+		if err != nil {
+			return nil, err
+		}
+		txn.Delete(key)
+		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
+		if !withDataSrc {
+			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
+		}
+	}
+	if err := txn.Commit(ctx); err != nil {
+		return nil, err
+	}
+	var updateResults []*UpdateResult
+	r, _ := contextdecorator.PushDataResultFromContext(ctx)
+	resWrapper, ok := r.(orchestrator.ResultWrapper)
+	if !ok {
+		return nil, fmt.Errorf("cannot retrieve update results!")
+	}
+	for _, res := range resWrapper.Results {
+		var msg string
+		if details := res.Status.GetDetails(); len(details) > 0 {
+			msg = strings.Join(res.Status.GetDetails(), ", ")
+		} else {
+			msg = res.Status.GetError()
+		}
+		updateResults = append(updateResults, &UpdateResult{
+			Key: res.Key,
+			Status: &generic.ItemStatus{
+				Status:  res.Status.State.String(),
+				Message: msg,
+			},
+		})
+	}
+	return updateResults, nil
 }
 
 func (c *client) DumpState() ([]*generic.StateItem, error) {

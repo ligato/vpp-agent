@@ -29,14 +29,30 @@ type KVStore interface {
 	Reset(dataSrc string)
 }
 
-// memStore is KVStore implementation that stores data in memory.
+// KLStore describes an interface for key-label store used by dispatcher.
+type KLStore interface {
+	ListLabels(key string) Labels
+	AddLabel(key, lkey, lval string)
+	HasLabel(key, lkey string) bool
+	DeleteLabel(key, lkey string)
+	ResetLabels(key string)
+}
+
+type Store interface {
+	KLStore
+	KVStore
+}
+
+// memStore is KStore implementation that stores data in memory.
 type memStore struct {
-	db map[string]KVPairs
+	db  map[string]KVPairs
+	ldb map[string]Labels
 }
 
 func newMemStore() *memStore {
 	return &memStore{
-		db: make(map[string]KVPairs),
+		db:  make(map[string]KVPairs),
+		ldb: make(map[string]Labels),
 	}
 }
 
@@ -81,4 +97,32 @@ func (s *memStore) Delete(dataSrc, key string) {
 // Reset clears all key-value data.
 func (s *memStore) Reset(dataSrc string) {
 	delete(s.db, dataSrc)
+}
+
+func (s *memStore) ListLabels(key string) Labels {
+	labels := make(Labels, len(s.ldb[key]))
+	for lkey, lval := range s.ldb[key] {
+		labels[lkey] = lval
+	}
+	return labels
+}
+
+func (s *memStore) AddLabel(key, lkey, lval string) {
+	if _, ok := s.ldb[key]; !ok {
+		s.ldb[key] = make(Labels)
+	}
+	s.ldb[key][lkey] = lval
+}
+
+func (s *memStore) HasLabel(key, lkey string) bool {
+	_, ok := s.ldb[key][lkey]
+	return ok
+}
+
+func (s *memStore) DeleteLabel(key, lkey string) {
+	delete(s.ldb[key], lkey)
+}
+
+func (s *memStore) ResetLabels(key string) {
+	delete(s.ldb, key)
 }

@@ -83,6 +83,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 
 	var ops = make(map[string]generic.UpdateResult_Operation)
 	var kvPairs []KeyVal
+	var keyLabels = make(map[string]Labels)
 
 	for _, update := range req.Updates {
 		item := update.Item
@@ -92,9 +93,8 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		var (
 			key string
 			val proto.Message
+			err error
 		)
-
-		var err error
 		if item.Data != nil {
 			val, err = models.UnmarshalItem(item)
 			if err != nil {
@@ -119,6 +119,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 			Key: key,
 			Val: val,
 		})
+		keyLabels[key] = update.GetLabels()
 	}
 
 	md, hasMeta := metadata.FromIncomingContext(ctx)
@@ -131,7 +132,7 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 	ctx = kvs.WithRetryDefault(ctx)
-	results, err := s.dispatch.PushData(ctx, kvPairs)
+	results, err := s.dispatch.PushData(ctx, kvPairs, keyLabels)
 	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
@@ -172,37 +173,49 @@ func (s *genericService) SetConfig(ctx context.Context, req *generic.SetConfigRe
 	return &generic.SetConfigResponse{Results: updateResults}, nil
 }
 
-func (s *genericService) GetConfig(context.Context, *generic.GetConfigRequest) (*generic.GetConfigResponse, error) {
-	var items []*generic.ConfigItem
+func (s *genericService) GetConfig(ctx context.Context, req *generic.GetConfigRequest) (*generic.GetConfigResponse, error) {
+	var configItems []*generic.ConfigItem
 
+	if req.Ids != nil && req.Labels != nil {
+		return nil, status.Error(codes.InvalidArgument, "both fields of the request are not nil!")
+	}
 	for key, data := range s.dispatch.ListData() {
+		labels := s.dispatch.ListLabels(key)
+		fmt.Println(labels)
+		if !ContainsAllLabels(req.Labels, labels) {
+			continue
+		}
 		item, err := models.MarshalItem(data)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
+		if !ContainsItemID(req.Ids, item.Id) {
+			continue
+		}
 		var itemStatus *generic.ItemStatus
-		st, err := s.dispatch.GetStatus(key)
+		status, err := s.dispatch.GetStatus(key)
 		if err != nil {
 			s.log.Warnf("GetStatus failed: %v", err)
 		} else {
 			var msg string
-			if details := st.GetDetails(); len(details) > 0 {
-				msg = strings.Join(st.GetDetails(), ", ")
+			if details := status.GetDetails(); len(details) > 0 {
+				msg = strings.Join(status.GetDetails(), ", ")
 			} else {
-				msg = st.GetError()
+				msg = status.GetError()
 			}
 			itemStatus = &generic.ItemStatus{
-				Status:  st.GetState().String(),
+				Status:  status.GetState().String(),
 				Message: msg,
 			}
 		}
-		items = append(items, &generic.ConfigItem{
+		configItems = append(configItems, &generic.ConfigItem{
 			Item:   item,
 			Status: itemStatus,
+			Labels: labels,
 		})
 	}
 
-	return &generic.GetConfigResponse{Items: items}, nil
+	return &generic.GetConfigResponse{Items: configItems}, nil
 }
 
 func (s *genericService) DumpState(context.Context, *generic.DumpStateRequest) (*generic.DumpStateResponse, error) {

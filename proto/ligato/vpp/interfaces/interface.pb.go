@@ -1750,8 +1750,8 @@ func (x *IPSecLink) GetEnableUdpEncap() bool {
 
 // VmxNet3Link defines configuration for interface type: VMXNET3_INTERFACE
 // PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
-// name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
-// 's' is slot (max 1f) and 'f is function' (max 7). All values are base 16
+// name is in format `vmxnet3-<d>/<b>/<s>/<f>`, where `d` stands for domain (max ffff), `b` is bus (max ff),
+// `s` is slot (max 1f) and `f` is function (max 7). All values are base 16
 type VmxNet3Link struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2216,7 +2216,7 @@ func (x *WireguardLink) GetSrcAddr() string {
 	return ""
 }
 
-// https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.md
+// https://github.com/FDio/vpp/blob/master/src/plugins/rdma/rdma_doc.rst
 type RDMALink struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

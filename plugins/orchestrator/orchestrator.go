@@ -184,10 +184,21 @@ func (p *Plugin) watchEvents() {
 
 			var err error
 			var kvPairs []KeyVal
+			var keyLabels map[string]Labels
+
+			ctx := e.GetContext()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			labels, ok := contextdecorator.LabelsFromContext(ctx)
+			if !ok {
+				labels = Labels{}
+			}
 
 			for _, x := range e.GetChanges() {
+				key := x.GetKey()
 				kv := KeyVal{
-					Key: x.GetKey(),
+					Key: key,
 				}
 				if x.GetChangeType() != datasync.Delete {
 					kv.Val, err = UnmarshalLazyValue(kv.Key, x)
@@ -197,6 +208,7 @@ func (p *Plugin) watchEvents() {
 					}
 				}
 				kvPairs = append(kvPairs, kv)
+				keyLabels[key] = labels
 			}
 
 			if len(kvPairs) == 0 {
@@ -207,17 +219,15 @@ func (p *Plugin) watchEvents() {
 
 			p.log.Debugf("Change with %d items", len(kvPairs))
 
-			ctx := e.GetContext()
-			if ctx == nil {
-				ctx = context.Background()
-			}
 			_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
 			if !withDataSrc {
 				ctx = contextdecorator.DataSrcContext(ctx, "datasync")
 			}
 			ctx = kvs.WithRetryDefault(ctx)
-
-			_, err = p.PushData(ctx, kvPairs)
+			res, err := p.PushData(ctx, kvPairs, keyLabels)
+			if err == nil {
+				ctx = contextdecorator.PushDataResultContext(ctx, ResultWrapper{Results: res})
+			}
 			e.Done(err)
 
 		case e := <-p.resyncChan:
@@ -264,7 +274,10 @@ func (p *Plugin) watchEvents() {
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 
-			_, err := p.PushData(ctx, kvPairs)
+			res, err := p.PushData(ctx, kvPairs, nil)
+			if err == nil {
+				ctx = contextdecorator.PushDataResultContext(ctx, ResultWrapper{Results: res})
+			}
 			e.Done(err)
 
 		case <-p.quit:
@@ -338,3 +351,34 @@ func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, err
 	}
 	return instance, nil
 }
+
+func ContainsAllLabels(want map[string]string, have Labels) bool {
+	for wk, wv := range want {
+		if hv, ok := have[wk]; !ok || wv != "" && wv != hv {
+			return false
+		}
+	}
+	return true
+}
+
+func ContainsItemID(want []*generic.Item_ID, have *generic.Item_ID) bool {
+	if len(want) == 0 {
+		return true
+	}
+	for _, w := range want {
+		if w.Model == have.Model && w.Name == have.Name {
+			return true
+		}
+	}
+	return false
+}
+
+// TODO: This is hack to avoid import cycle between orchestrator and contextdecorator package.
+// Figure out a way to pass result into local client without using wrapper type that implements
+// a dummy interface defined inside contextdecorator package.
+type ResultWrapper struct {
+	Results []Result
+}
+
+// implement the dummy interface (see comment above ResultWrapper struct definition)
+func (r ResultWrapper) IsPushDataResult() {}
