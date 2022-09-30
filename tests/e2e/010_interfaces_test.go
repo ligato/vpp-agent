@@ -195,7 +195,7 @@ func TestInterfaceConnTap(t *testing.T) {
 // from: 192.168.2.20 (right subif in top vpp) to: 192.168.1.11 (left linux microservice) - should fail (different vlans)
 //
 func TestMemifSubinterfaceVlanConn(t *testing.T) {
-	ctx := Setup(t, WithoutVPPAgent())
+	ctx := Setup(t)
 	defer ctx.Teardown()
 
 	const (
@@ -217,7 +217,6 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 		bd2Name        = "bd2"
 		ms1Name        = "ms1"
 		ms2Name        = "ms2"
-		agent1Name     = "agent1"
 		agent2Name     = "agent2"
 		netMask        = "/24"
 		msTapHostname  = "tap"
@@ -395,7 +394,7 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 
 	ctx.StartMicroservice(ms1Name)
 	ctx.StartMicroservice(ms2Name)
-	agent1 := ctx.StartAgent(agent1Name)
+	agent1 := ctx.Agent
 	agent2 := ctx.StartAgent(agent2Name)
 
 	err := agent1.GenericClient().ChangeRequest().Update(
@@ -417,19 +416,22 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	).Send(context.Background())
 	ctx.Expect(err).ToNot(HaveOccurred())
 
-	// FIXME: this timeout is needed for the test to pass with VPP version 21.01 (21.06 and 22.02 work fine)
-	time.Sleep(5 * time.Second)
+	if ctx.VppRelease() <= "21.01" {
+		time.Sleep(5 * time.Second)
+	}
 
+	// Check VPP1 value states
 	ctx.Eventually(agent1.GetValueStateClb(vpp1Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Eventually(agent1.GetValueStateClb(vpp1Subif1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Eventually(agent1.GetValueStateClb(vpp1Subif2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Expect(agent2.GetValueState(vpp2Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Expect(agent2.GetValueState(vpp2Subif1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Expect(agent2.GetValueState(vpp2Subif2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Eventually(agent2.GetValueStateClb(ms1Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Eventually(agent2.GetValueStateClb(ms2Tap)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Expect(agent2.GetValueState(vpp2Tap1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-	ctx.Expect(agent2.GetValueState(vpp2Tap2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent1.GetValueState(vpp1Subif1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent1.GetValueState(vpp1Subif2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	// Check VPP2 value states
+	ctx.Eventually(agent2.GetValueStateClb(vpp2Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Subif1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Subif2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(ms1Tap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(ms2Tap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Tap1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Tap2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 	// Pings from VPP should automatically go through correct vlan
 	ctx.Expect(agent1.PingFromVPP(ms1TapIP)).To(Succeed())
 	ctx.Expect(agent1.PingFromVPP(ms2TapIP)).To(Succeed())
