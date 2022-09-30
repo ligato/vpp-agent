@@ -77,12 +77,15 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 		"Empty keys and duplicated keys are not allowed. "+
 		"If value of label is empty, equals sign can be omitted. "+
 		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
+	flags.BoolVar(&opts.All, "all", false, "Output all config items regardless of labels associated with them")
+	cmd.MarkFlagsMutuallyExclusive("labels", "all")
 	return cmd
 }
 
 type ConfigGetOptions struct {
 	Format string
 	Labels []string
+	All    bool
 }
 
 func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
@@ -107,6 +110,9 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	labels, err := parseLabels(opts.Labels)
 	if err != nil {
 		return fmt.Errorf("parsing labels failed: %w", err)
+	}
+	if len(opts.Labels) == 0 && !opts.All {
+		labels["io.ligato.from-client"] = "agentctl"
 	}
 
 	// retrieve data into config
@@ -220,6 +226,9 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	labels, err := parseLabels(opts.Labels)
 	if err != nil {
 		return fmt.Errorf("parsing labels failed: %w", err)
+	}
+	if len(opts.Labels) == 0 {
+		labels["io.ligato.from-client"] = "agentctl"
 	}
 
 	// update/resync configuration
@@ -815,10 +824,10 @@ func txnErrors(txn *kvs.RecordedTxn) Errors {
 // parseLabels parses labels obtained from command line flags
 // This function does not allow duplicate or empty ("") keys
 func parseLabels(rawLabels []string) (map[string]string, error) {
-	if len(rawLabels) == 0 {
-		return nil, nil
-	}
 	labels := make(map[string]string)
+	if len(rawLabels) == 0 {
+		return labels, nil
+	}
 	var lkey, lval string
 	for _, rawLabel := range rawLabels {
 		i := strings.IndexByte(rawLabel, '=')
