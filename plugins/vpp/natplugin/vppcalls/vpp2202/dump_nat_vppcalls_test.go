@@ -77,7 +77,7 @@ func TestNat44EdGlobalConfigDump(t *testing.T) {
 	ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})
 
 	// output interfaces
-	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceDetails{
 		SwIfIndex: 3,
 		Flags:     nat_types.NAT_IS_INSIDE,
 	})
@@ -152,7 +152,7 @@ func TestNat44EdInterfacesDump(t *testing.T) {
 	ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})
 
 	// output interfaces
-	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceDetails{
 		SwIfIndex: 3,
 		Flags:     nat_types.NAT_IS_INSIDE | nat_types.NAT_IS_OUTSIDE,
 	})

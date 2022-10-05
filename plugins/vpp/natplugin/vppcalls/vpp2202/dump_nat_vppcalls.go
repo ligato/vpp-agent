@@ -253,34 +253,34 @@ func (h *NatVppHandler) nat44EdInterfacesDump() (natIfs []*nat.Nat44Interface, e
 	}
 
 	// dump interfaces with output feature enabled
-	req2 := &vpp_nat_ed.Nat44InterfaceOutputFeatureDump{}
-	reqContext = h.callsChannel.SendMultiRequest(req2)
-	for {
-		msg := &vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{}
-		stop, err := reqContext.ReceiveReply(msg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
-		}
-		if stop {
-			break
-		}
-		ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
-		if !found {
-			h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-			continue
-		}
-		flags := getNat44Flags(msg.Flags)
-		natIf := &nat.Nat44Interface{
-			Name:          ifName,
-			NatInside:     flags.isInside,
-			NatOutside:    flags.isOutside,
-			OutputFeature: true,
-		}
-		if !natIf.NatInside && !natIf.NatOutside {
-			natIf.NatOutside = true
-		}
-		natIfs = append(natIfs, natIf)
-	}
+	// req2 := &vpp_nat_ed.Nat44InterfaceOutputFeatureDump{}
+	// reqContext = h.callsChannel.SendMultiRequest(req2)
+	// for {
+	// 	msg := &vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{}
+	// 	stop, err := reqContext.ReceiveReply(msg)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
+	// 	}
+	// 	if stop {
+	// 		break
+	// 	}
+	// 	ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+	// 	if !found {
+	// 		h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+	// 		continue
+	// 	}
+	// 	flags := getNat44Flags(msg.Flags)
+	// 	natIf := &nat.Nat44Interface{
+	// 		Name:          ifName,
+	// 		NatInside:     flags.isInside,
+	// 		NatOutside:    flags.isOutside,
+	// 		OutputFeature: true,
+	// 	}
+	// 	if !natIf.NatInside && !natIf.NatOutside {
+	// 		natIf.NatOutside = true
+	// 	}
+	// 	natIfs = append(natIfs, natIf)
+	// }
 	return
 }
 
@@ -993,34 +993,34 @@ func (h *NatVppHandler) nat44EdInterfaceDump() (interfaces []*nat.Nat44Global_In
 	}
 
 	/* dump Output interfaces next */
-	req2 := &vpp_nat_ed.Nat44InterfaceOutputFeatureDump{}
-	reqContext = h.callsChannel.SendMultiRequest(req2)
+	// req2 := &vpp_nat_ed.Nat44InterfaceOutputFeatureDump{}
+	// reqContext = h.callsChannel.SendMultiRequest(req2)
 
-	for {
-		msg := &vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{}
-		stop, err := reqContext.ReceiveReply(msg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
-		}
-		if stop {
-			break
-		}
+	// for {
+	// 	msg := &vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{}
+	// 	stop, err := reqContext.ReceiveReply(msg)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
+	// 	}
+	// 	if stop {
+	// 		break
+	// 	}
 
-		// Find interface name
-		ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
-		if !found {
-			h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-			continue
-		}
+	// 	// Find interface name
+	// 	ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+	// 	if !found {
+	// 		h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+	// 		continue
+	// 	}
 
-		flags := getNat44Flags(msg.Flags)
+	// 	flags := getNat44Flags(msg.Flags)
 
-		interfaces = append(interfaces, &nat.Nat44Global_Interface{
-			Name:          ifName,
-			IsInside:      flags.isInside,
-			OutputFeature: true,
-		})
-	}
+	// 	interfaces = append(interfaces, &nat.Nat44Global_Interface{
+	// 		Name:          ifName,
+	// 		IsInside:      flags.isInside,
+	// 		OutputFeature: true,
+	// 	})
+	// }
 
 	return interfaces, nil
 }
