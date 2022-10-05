@@ -86,7 +86,7 @@ func TestVppAddSP(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: true,
-		Entry: vpp_ipsec.IpsecSpdEntry{
+		Entry: ipsec_types.IpsecSpdEntry{
 			SpdID:              10,
 			SaID:               5,
 			Priority:           10,
@@ -117,7 +117,7 @@ func TestVppDelSP(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: false,
-		Entry: vpp_ipsec.IpsecSpdEntry{
+		Entry: ipsec_types.IpsecSpdEntry{
 			SpdID:              10,
 			SaID:               2,
 			Priority:           5,

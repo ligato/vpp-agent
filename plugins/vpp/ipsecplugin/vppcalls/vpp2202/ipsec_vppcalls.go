@@ -119,7 +119,7 @@ func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
 func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) error {
 	req := &vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: isAdd,
-		Entry: vpp_ipsec.IpsecSpdEntry{
+		Entry: ipsec_types.IpsecSpdEntry{
 			SpdID:           sp.SpdIndex,
 			Priority:        sp.Priority,
 			IsOutbound:      sp.IsOutbound,
@@ -128,7 +128,7 @@ func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) e
 			RemotePortStop:  uint16(sp.RemotePortStop),
 			LocalPortStart:  uint16(sp.LocalPortStart),
 			LocalPortStop:   uint16(sp.LocalPortStop),
-			Policy:          vpp_ipsec.IpsecSpdAction(sp.Action),
+			Policy:          ipsec_types.IpsecSpdAction(sp.Action),
 			SaID:            sp.SaIndex,
 		},
 	}
