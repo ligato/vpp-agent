@@ -20,6 +20,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "interface_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x7f2ba79a
+)
+
 // Direction defines enum 'direction'.
 type Direction uint8
 

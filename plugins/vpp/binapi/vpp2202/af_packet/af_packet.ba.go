@@ -3,11 +3,14 @@
 // Package af_packet contains generated bindings for API file af_packet.api.
 //
 // Contents:
-//  10 messages
+//   2 enums
+//  12 messages
 //
 package af_packet
 
 import (
+	"strconv"
+
 	api "go.fd.io/govpp/api"
 	codec "go.fd.io/govpp/codec"
 	ethernet_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ethernet_types"
@@ -23,8 +26,81 @@ const _ = api.GoVppAPIPackageIsVersion2
 const (
 	APIFile    = "af_packet"
 	APIVersion = "2.0.0"
-	VersionCrc = 0x589bd50e
+	VersionCrc = 0x5b12de21
 )
+
+// AfPacketFlags defines enum 'af_packet_flags'.
+type AfPacketFlags uint32
+
+const (
+	AF_PACKET_API_FLAG_QDISC_BYPASS AfPacketFlags = 1
+	AF_PACKET_API_FLAG_CKSUM_GSO    AfPacketFlags = 2
+)
+
+var (
+	AfPacketFlags_name = map[uint32]string{
+		1: "AF_PACKET_API_FLAG_QDISC_BYPASS",
+		2: "AF_PACKET_API_FLAG_CKSUM_GSO",
+	}
+	AfPacketFlags_value = map[string]uint32{
+		"AF_PACKET_API_FLAG_QDISC_BYPASS": 1,
+		"AF_PACKET_API_FLAG_CKSUM_GSO":    2,
+	}
+)
+
+func (x AfPacketFlags) String() string {
+	s, ok := AfPacketFlags_name[uint32(x)]
+	if ok {
+		return s
+	}
+	str := func(n uint32) string {
+		s, ok := AfPacketFlags_name[uint32(n)]
+		if ok {
+			return s
+		}
+		return "AfPacketFlags(" + strconv.Itoa(int(n)) + ")"
+	}
+	for i := uint32(0); i <= 32; i++ {
+		val := uint32(x)
+		if val&(1<<i) != 0 {
+			if s != "" {
+				s += "|"
+			}
+			s += str(1 << i)
+		}
+	}
+	if s == "" {
+		return str(uint32(x))
+	}
+	return s
+}
+
+// AfPacketMode defines enum 'af_packet_mode'.
+type AfPacketMode uint32
+
+const (
+	AF_PACKET_API_MODE_ETHERNET AfPacketMode = 1
+	AF_PACKET_API_MODE_IP       AfPacketMode = 2
+)
+
+var (
+	AfPacketMode_name = map[uint32]string{
+		1: "AF_PACKET_API_MODE_ETHERNET",
+		2: "AF_PACKET_API_MODE_IP",
+	}
+	AfPacketMode_value = map[string]uint32{
+		"AF_PACKET_API_MODE_ETHERNET": 1,
+		"AF_PACKET_API_MODE_IP":       2,
+	}
+)
+
+func (x AfPacketMode) String() string {
+	s, ok := AfPacketMode_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return "AfPacketMode(" + strconv.Itoa(int(x)) + ")"
+}
 
 // AfPacketCreate defines message 'af_packet_create'.
 type AfPacketCreate struct {
@@ -200,6 +276,116 @@ func (m *AfPacketCreateV2Reply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *AfPacketCreateV2Reply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
+	return nil
+}
+
+// AfPacketCreateV3 defines message 'af_packet_create_v3'.
+type AfPacketCreateV3 struct {
+	Mode             AfPacketMode              `binapi:"af_packet_mode,name=mode" json:"mode,omitempty"`
+	HwAddr           ethernet_types.MacAddress `binapi:"mac_address,name=hw_addr" json:"hw_addr,omitempty"`
+	UseRandomHwAddr  bool                      `binapi:"bool,name=use_random_hw_addr" json:"use_random_hw_addr,omitempty"`
+	HostIfName       string                    `binapi:"string[64],name=host_if_name" json:"host_if_name,omitempty"`
+	RxFrameSize      uint32                    `binapi:"u32,name=rx_frame_size" json:"rx_frame_size,omitempty"`
+	TxFrameSize      uint32                    `binapi:"u32,name=tx_frame_size" json:"tx_frame_size,omitempty"`
+	RxFramesPerBlock uint32                    `binapi:"u32,name=rx_frames_per_block" json:"rx_frames_per_block,omitempty"`
+	TxFramesPerBlock uint32                    `binapi:"u32,name=tx_frames_per_block" json:"tx_frames_per_block,omitempty"`
+	Flags            AfPacketFlags             `binapi:"af_packet_flags,name=flags" json:"flags,omitempty"`
+	NumRxQueues      uint16                    `binapi:"u16,name=num_rx_queues,default=1" json:"num_rx_queues,omitempty"`
+	NumTxQueues      uint16                    `binapi:"u16,name=num_tx_queues,default=1" json:"num_tx_queues,omitempty"`
+}
+
+func (m *AfPacketCreateV3) Reset()               { *m = AfPacketCreateV3{} }
+func (*AfPacketCreateV3) GetMessageName() string { return "af_packet_create_v3" }
+func (*AfPacketCreateV3) GetCrcString() string   { return "b3a809d4" }
+func (*AfPacketCreateV3) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *AfPacketCreateV3) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4     // m.Mode
+	size += 1 * 6 // m.HwAddr
+	size += 1     // m.UseRandomHwAddr
+	size += 64    // m.HostIfName
+	size += 4     // m.RxFrameSize
+	size += 4     // m.TxFrameSize
+	size += 4     // m.RxFramesPerBlock
+	size += 4     // m.TxFramesPerBlock
+	size += 4     // m.Flags
+	size += 2     // m.NumRxQueues
+	size += 2     // m.NumTxQueues
+	return size
+}
+func (m *AfPacketCreateV3) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(uint32(m.Mode))
+	buf.EncodeBytes(m.HwAddr[:], 6)
+	buf.EncodeBool(m.UseRandomHwAddr)
+	buf.EncodeString(m.HostIfName, 64)
+	buf.EncodeUint32(m.RxFrameSize)
+	buf.EncodeUint32(m.TxFrameSize)
+	buf.EncodeUint32(m.RxFramesPerBlock)
+	buf.EncodeUint32(m.TxFramesPerBlock)
+	buf.EncodeUint32(uint32(m.Flags))
+	buf.EncodeUint16(m.NumRxQueues)
+	buf.EncodeUint16(m.NumTxQueues)
+	return buf.Bytes(), nil
+}
+func (m *AfPacketCreateV3) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Mode = AfPacketMode(buf.DecodeUint32())
+	copy(m.HwAddr[:], buf.DecodeBytes(6))
+	m.UseRandomHwAddr = buf.DecodeBool()
+	m.HostIfName = buf.DecodeString(64)
+	m.RxFrameSize = buf.DecodeUint32()
+	m.TxFrameSize = buf.DecodeUint32()
+	m.RxFramesPerBlock = buf.DecodeUint32()
+	m.TxFramesPerBlock = buf.DecodeUint32()
+	m.Flags = AfPacketFlags(buf.DecodeUint32())
+	m.NumRxQueues = buf.DecodeUint16()
+	m.NumTxQueues = buf.DecodeUint16()
+	return nil
+}
+
+// AfPacketCreateV3Reply defines message 'af_packet_create_v3_reply'.
+type AfPacketCreateV3Reply struct {
+	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
+	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
+}
+
+func (m *AfPacketCreateV3Reply) Reset()               { *m = AfPacketCreateV3Reply{} }
+func (*AfPacketCreateV3Reply) GetMessageName() string { return "af_packet_create_v3_reply" }
+func (*AfPacketCreateV3Reply) GetCrcString() string   { return "5383d31f" }
+func (*AfPacketCreateV3Reply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *AfPacketCreateV3Reply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	size += 4 // m.SwIfIndex
+	return size
+}
+func (m *AfPacketCreateV3Reply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	buf.EncodeUint32(uint32(m.SwIfIndex))
+	return buf.Bytes(), nil
+}
+func (m *AfPacketCreateV3Reply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
@@ -414,6 +600,8 @@ func file_af_packet_binapi_init() {
 	api.RegisterMessage((*AfPacketCreateReply)(nil), "af_packet_create_reply_5383d31f")
 	api.RegisterMessage((*AfPacketCreateV2)(nil), "af_packet_create_v2_4aff0436")
 	api.RegisterMessage((*AfPacketCreateV2Reply)(nil), "af_packet_create_v2_reply_5383d31f")
+	api.RegisterMessage((*AfPacketCreateV3)(nil), "af_packet_create_v3_b3a809d4")
+	api.RegisterMessage((*AfPacketCreateV3Reply)(nil), "af_packet_create_v3_reply_5383d31f")
 	api.RegisterMessage((*AfPacketDelete)(nil), "af_packet_delete_863fa648")
 	api.RegisterMessage((*AfPacketDeleteReply)(nil), "af_packet_delete_reply_e8d4e804")
 	api.RegisterMessage((*AfPacketDetails)(nil), "af_packet_details_58c7c042")
@@ -429,6 +617,8 @@ func AllMessages() []api.Message {
 		(*AfPacketCreateReply)(nil),
 		(*AfPacketCreateV2)(nil),
 		(*AfPacketCreateV2Reply)(nil),
+		(*AfPacketCreateV3)(nil),
+		(*AfPacketCreateV3Reply)(nil),
 		(*AfPacketDelete)(nil),
 		(*AfPacketDeleteReply)(nil),
 		(*AfPacketDetails)(nil),

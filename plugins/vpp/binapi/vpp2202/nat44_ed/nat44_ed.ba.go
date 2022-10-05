@@ -5,7 +5,7 @@
 // Contents:
 //   1 enum
 //   1 struct
-// 104 messages
+//  90 messages
 //
 package nat44_ed
 
@@ -27,8 +27,8 @@ const _ = api.GoVppAPIPackageIsVersion2
 
 const (
 	APIFile    = "nat44_ed"
-	APIVersion = "5.4.0"
-	VersionCrc = 0x5697d0ef
+	APIVersion = "5.5.0"
+	VersionCrc = 0x92c7e7a5
 )
 
 // Nat44ConfigFlags defines enum 'nat44_config_flags'.
@@ -580,7 +580,6 @@ func (m *Nat44AddDelStaticMappingReply) Unmarshal(b []byte) error {
 }
 
 // Nat44AddDelStaticMappingV2 defines message 'nat44_add_del_static_mapping_v2'.
-// InProgress: the message form may change in the future versions
 type Nat44AddDelStaticMappingV2 struct {
 	IsAdd             bool                           `binapi:"bool,name=is_add" json:"is_add,omitempty"`
 	MatchPool         bool                           `binapi:"bool,name=match_pool" json:"match_pool,omitempty"`
@@ -658,7 +657,6 @@ func (m *Nat44AddDelStaticMappingV2) Unmarshal(b []byte) error {
 }
 
 // Nat44AddDelStaticMappingV2Reply defines message 'nat44_add_del_static_mapping_v2_reply'.
-// InProgress: the message form may change in the future versions
 type Nat44AddDelStaticMappingV2Reply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -852,6 +850,7 @@ func (m *Nat44DelSessionReply) Unmarshal(b []byte) error {
 }
 
 // Nat44DelUser defines message 'nat44_del_user'.
+// Deprecated: the message will be removed in the future versions
 type Nat44DelUser struct {
 	IPAddress ip_types.IP4Address `binapi:"ip4_address,name=ip_address" json:"ip_address,omitempty"`
 	FibIndex  uint32              `binapi:"u32,name=fib_index" json:"fib_index,omitempty"`
@@ -889,6 +888,7 @@ func (m *Nat44DelUser) Unmarshal(b []byte) error {
 }
 
 // Nat44DelUserReply defines message 'nat44_del_user_reply'.
+// Deprecated: the message will be removed in the future versions
 type Nat44DelUserReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -990,6 +990,150 @@ func (m *Nat44EdAddDelOutputInterfaceReply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *Nat44EdAddDelOutputInterfaceReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	return nil
+}
+
+// Nat44EdAddDelVrfRoute defines message 'nat44_ed_add_del_vrf_route'.
+type Nat44EdAddDelVrfRoute struct {
+	TableVrfID uint32 `binapi:"u32,name=table_vrf_id" json:"table_vrf_id,omitempty"`
+	VrfID      uint32 `binapi:"u32,name=vrf_id" json:"vrf_id,omitempty"`
+	IsAdd      bool   `binapi:"bool,name=is_add" json:"is_add,omitempty"`
+}
+
+func (m *Nat44EdAddDelVrfRoute) Reset()               { *m = Nat44EdAddDelVrfRoute{} }
+func (*Nat44EdAddDelVrfRoute) GetMessageName() string { return "nat44_ed_add_del_vrf_route" }
+func (*Nat44EdAddDelVrfRoute) GetCrcString() string   { return "59187407" }
+func (*Nat44EdAddDelVrfRoute) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *Nat44EdAddDelVrfRoute) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.TableVrfID
+	size += 4 // m.VrfID
+	size += 1 // m.IsAdd
+	return size
+}
+func (m *Nat44EdAddDelVrfRoute) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.TableVrfID)
+	buf.EncodeUint32(m.VrfID)
+	buf.EncodeBool(m.IsAdd)
+	return buf.Bytes(), nil
+}
+func (m *Nat44EdAddDelVrfRoute) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.TableVrfID = buf.DecodeUint32()
+	m.VrfID = buf.DecodeUint32()
+	m.IsAdd = buf.DecodeBool()
+	return nil
+}
+
+// Nat44EdAddDelVrfRouteReply defines message 'nat44_ed_add_del_vrf_route_reply'.
+type Nat44EdAddDelVrfRouteReply struct {
+	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+}
+
+func (m *Nat44EdAddDelVrfRouteReply) Reset()               { *m = Nat44EdAddDelVrfRouteReply{} }
+func (*Nat44EdAddDelVrfRouteReply) GetMessageName() string { return "nat44_ed_add_del_vrf_route_reply" }
+func (*Nat44EdAddDelVrfRouteReply) GetCrcString() string   { return "e8d4e804" }
+func (*Nat44EdAddDelVrfRouteReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *Nat44EdAddDelVrfRouteReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	return size
+}
+func (m *Nat44EdAddDelVrfRouteReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	return buf.Bytes(), nil
+}
+func (m *Nat44EdAddDelVrfRouteReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	return nil
+}
+
+// Nat44EdAddDelVrfTable defines message 'nat44_ed_add_del_vrf_table'.
+type Nat44EdAddDelVrfTable struct {
+	TableVrfID uint32 `binapi:"u32,name=table_vrf_id" json:"table_vrf_id,omitempty"`
+	IsAdd      bool   `binapi:"bool,name=is_add" json:"is_add,omitempty"`
+}
+
+func (m *Nat44EdAddDelVrfTable) Reset()               { *m = Nat44EdAddDelVrfTable{} }
+func (*Nat44EdAddDelVrfTable) GetMessageName() string { return "nat44_ed_add_del_vrf_table" }
+func (*Nat44EdAddDelVrfTable) GetCrcString() string   { return "08330904" }
+func (*Nat44EdAddDelVrfTable) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *Nat44EdAddDelVrfTable) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.TableVrfID
+	size += 1 // m.IsAdd
+	return size
+}
+func (m *Nat44EdAddDelVrfTable) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.TableVrfID)
+	buf.EncodeBool(m.IsAdd)
+	return buf.Bytes(), nil
+}
+func (m *Nat44EdAddDelVrfTable) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.TableVrfID = buf.DecodeUint32()
+	m.IsAdd = buf.DecodeBool()
+	return nil
+}
+
+// Nat44EdAddDelVrfTableReply defines message 'nat44_ed_add_del_vrf_table_reply'.
+type Nat44EdAddDelVrfTableReply struct {
+	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+}
+
+func (m *Nat44EdAddDelVrfTableReply) Reset()               { *m = Nat44EdAddDelVrfTableReply{} }
+func (*Nat44EdAddDelVrfTableReply) GetMessageName() string { return "nat44_ed_add_del_vrf_table_reply" }
+func (*Nat44EdAddDelVrfTableReply) GetCrcString() string   { return "e8d4e804" }
+func (*Nat44EdAddDelVrfTableReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *Nat44EdAddDelVrfTableReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	return size
+}
+func (m *Nat44EdAddDelVrfTableReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	return buf.Bytes(), nil
+}
+func (m *Nat44EdAddDelVrfTableReply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	return nil
@@ -1103,7 +1247,6 @@ func (m *Nat44EdOutputInterfaceGetReply) Unmarshal(b []byte) error {
 }
 
 // Nat44EdPluginEnableDisable defines message 'nat44_ed_plugin_enable_disable'.
-// InProgress: the message form may change in the future versions
 type Nat44EdPluginEnableDisable struct {
 	InsideVrf     uint32           `binapi:"u32,name=inside_vrf" json:"inside_vrf,omitempty"`
 	OutsideVrf    uint32           `binapi:"u32,name=outside_vrf" json:"outside_vrf,omitempty"`
@@ -1157,7 +1300,6 @@ func (m *Nat44EdPluginEnableDisable) Unmarshal(b []byte) error {
 }
 
 // Nat44EdPluginEnableDisableReply defines message 'nat44_ed_plugin_enable_disable_reply'.
-// InProgress: the message form may change in the future versions
 type Nat44EdPluginEnableDisableReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -1193,7 +1335,6 @@ func (m *Nat44EdPluginEnableDisableReply) Unmarshal(b []byte) error {
 }
 
 // Nat44EdSetFqOptions defines message 'nat44_ed_set_fq_options'.
-// InProgress: the message form may change in the future versions
 type Nat44EdSetFqOptions struct {
 	FrameQueueNelts uint32 `binapi:"u32,name=frame_queue_nelts" json:"frame_queue_nelts,omitempty"`
 }
@@ -1227,7 +1368,6 @@ func (m *Nat44EdSetFqOptions) Unmarshal(b []byte) error {
 }
 
 // Nat44EdSetFqOptionsReply defines message 'nat44_ed_set_fq_options_reply'.
-// InProgress: the message form may change in the future versions
 type Nat44EdSetFqOptionsReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -1261,7 +1401,6 @@ func (m *Nat44EdSetFqOptionsReply) Unmarshal(b []byte) error {
 }
 
 // Nat44EdShowFqOptions defines message 'nat44_ed_show_fq_options'.
-// InProgress: the message form may change in the future versions
 type Nat44EdShowFqOptions struct{}
 
 func (m *Nat44EdShowFqOptions) Reset()               { *m = Nat44EdShowFqOptions{} }
@@ -1289,7 +1428,6 @@ func (m *Nat44EdShowFqOptions) Unmarshal(b []byte) error {
 }
 
 // Nat44EdShowFqOptionsReply defines message 'nat44_ed_show_fq_options_reply'.
-// InProgress: the message form may change in the future versions
 type Nat44EdShowFqOptionsReply struct {
 	Retval          int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
 	FrameQueueNelts uint32 `binapi:"u32,name=frame_queue_nelts" json:"frame_queue_nelts,omitempty"`
@@ -1323,6 +1461,83 @@ func (m *Nat44EdShowFqOptionsReply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	m.FrameQueueNelts = buf.DecodeUint32()
+	return nil
+}
+
+// Nat44EdVrfTablesDetails defines message 'nat44_ed_vrf_tables_details'.
+type Nat44EdVrfTablesDetails struct {
+	TableVrfID uint32   `binapi:"u32,name=table_vrf_id" json:"table_vrf_id,omitempty"`
+	NVrfIds    uint32   `binapi:"u32,name=n_vrf_ids" json:"-"`
+	VrfIds     []uint32 `binapi:"u32[n_vrf_ids],name=vrf_ids" json:"vrf_ids,omitempty"`
+}
+
+func (m *Nat44EdVrfTablesDetails) Reset()               { *m = Nat44EdVrfTablesDetails{} }
+func (*Nat44EdVrfTablesDetails) GetMessageName() string { return "nat44_ed_vrf_tables_details" }
+func (*Nat44EdVrfTablesDetails) GetCrcString() string   { return "7b264e4f" }
+func (*Nat44EdVrfTablesDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *Nat44EdVrfTablesDetails) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4                 // m.TableVrfID
+	size += 4                 // m.NVrfIds
+	size += 4 * len(m.VrfIds) // m.VrfIds
+	return size
+}
+func (m *Nat44EdVrfTablesDetails) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.TableVrfID)
+	buf.EncodeUint32(uint32(len(m.VrfIds)))
+	for i := 0; i < len(m.VrfIds); i++ {
+		var x uint32
+		if i < len(m.VrfIds) {
+			x = uint32(m.VrfIds[i])
+		}
+		buf.EncodeUint32(x)
+	}
+	return buf.Bytes(), nil
+}
+func (m *Nat44EdVrfTablesDetails) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.TableVrfID = buf.DecodeUint32()
+	m.NVrfIds = buf.DecodeUint32()
+	m.VrfIds = make([]uint32, m.NVrfIds)
+	for i := 0; i < len(m.VrfIds); i++ {
+		m.VrfIds[i] = buf.DecodeUint32()
+	}
+	return nil
+}
+
+// Nat44EdVrfTablesDump defines message 'nat44_ed_vrf_tables_dump'.
+type Nat44EdVrfTablesDump struct{}
+
+func (m *Nat44EdVrfTablesDump) Reset()               { *m = Nat44EdVrfTablesDump{} }
+func (*Nat44EdVrfTablesDump) GetMessageName() string { return "nat44_ed_vrf_tables_dump" }
+func (*Nat44EdVrfTablesDump) GetCrcString() string   { return "51077d14" }
+func (*Nat44EdVrfTablesDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *Nat44EdVrfTablesDump) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	return size
+}
+func (m *Nat44EdVrfTablesDump) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	return buf.Bytes(), nil
+}
+func (m *Nat44EdVrfTablesDump) Unmarshal(b []byte) error {
 	return nil
 }
 
@@ -1395,70 +1610,6 @@ func (m *Nat44ForwardingEnableDisableReply) Marshal(b []byte) ([]byte, error) {
 func (m *Nat44ForwardingEnableDisableReply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
-	return nil
-}
-
-// Nat44ForwardingIsEnabled defines message 'nat44_forwarding_is_enabled'.
-// Deprecated: the message will be removed in the future versions
-type Nat44ForwardingIsEnabled struct{}
-
-func (m *Nat44ForwardingIsEnabled) Reset()               { *m = Nat44ForwardingIsEnabled{} }
-func (*Nat44ForwardingIsEnabled) GetMessageName() string { return "nat44_forwarding_is_enabled" }
-func (*Nat44ForwardingIsEnabled) GetCrcString() string   { return "51077d14" }
-func (*Nat44ForwardingIsEnabled) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *Nat44ForwardingIsEnabled) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *Nat44ForwardingIsEnabled) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *Nat44ForwardingIsEnabled) Unmarshal(b []byte) error {
-	return nil
-}
-
-// Nat44ForwardingIsEnabledReply defines message 'nat44_forwarding_is_enabled_reply'.
-// Deprecated: the message will be removed in the future versions
-type Nat44ForwardingIsEnabledReply struct {
-	Enabled bool `binapi:"bool,name=enabled" json:"enabled,omitempty"`
-}
-
-func (m *Nat44ForwardingIsEnabledReply) Reset() { *m = Nat44ForwardingIsEnabledReply{} }
-func (*Nat44ForwardingIsEnabledReply) GetMessageName() string {
-	return "nat44_forwarding_is_enabled_reply"
-}
-func (*Nat44ForwardingIsEnabledReply) GetCrcString() string { return "46924a06" }
-func (*Nat44ForwardingIsEnabledReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *Nat44ForwardingIsEnabledReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 1 // m.Enabled
-	return size
-}
-func (m *Nat44ForwardingIsEnabledReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeBool(m.Enabled)
-	return buf.Bytes(), nil
-}
-func (m *Nat44ForwardingIsEnabledReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Enabled = buf.DecodeBool()
 	return nil
 }
 
@@ -1622,88 +1773,6 @@ func (m *Nat44InterfaceAddDelFeatureReply) Unmarshal(b []byte) error {
 	return nil
 }
 
-// Nat44InterfaceAddDelOutputFeature defines message 'nat44_interface_add_del_output_feature'.
-// Deprecated: the message will be removed in the future versions
-type Nat44InterfaceAddDelOutputFeature struct {
-	IsAdd     bool                           `binapi:"bool,name=is_add" json:"is_add,omitempty"`
-	Flags     nat_types.NatConfigFlags       `binapi:"nat_config_flags,name=flags" json:"flags,omitempty"`
-	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
-}
-
-func (m *Nat44InterfaceAddDelOutputFeature) Reset() { *m = Nat44InterfaceAddDelOutputFeature{} }
-func (*Nat44InterfaceAddDelOutputFeature) GetMessageName() string {
-	return "nat44_interface_add_del_output_feature"
-}
-func (*Nat44InterfaceAddDelOutputFeature) GetCrcString() string { return "f3699b83" }
-func (*Nat44InterfaceAddDelOutputFeature) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *Nat44InterfaceAddDelOutputFeature) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 1 // m.IsAdd
-	size += 1 // m.Flags
-	size += 4 // m.SwIfIndex
-	return size
-}
-func (m *Nat44InterfaceAddDelOutputFeature) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeBool(m.IsAdd)
-	buf.EncodeUint8(uint8(m.Flags))
-	buf.EncodeUint32(uint32(m.SwIfIndex))
-	return buf.Bytes(), nil
-}
-func (m *Nat44InterfaceAddDelOutputFeature) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.IsAdd = buf.DecodeBool()
-	m.Flags = nat_types.NatConfigFlags(buf.DecodeUint8())
-	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
-	return nil
-}
-
-// Nat44InterfaceAddDelOutputFeatureReply defines message 'nat44_interface_add_del_output_feature_reply'.
-// Deprecated: the message will be removed in the future versions
-type Nat44InterfaceAddDelOutputFeatureReply struct {
-	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
-}
-
-func (m *Nat44InterfaceAddDelOutputFeatureReply) Reset() {
-	*m = Nat44InterfaceAddDelOutputFeatureReply{}
-}
-func (*Nat44InterfaceAddDelOutputFeatureReply) GetMessageName() string {
-	return "nat44_interface_add_del_output_feature_reply"
-}
-func (*Nat44InterfaceAddDelOutputFeatureReply) GetCrcString() string { return "e8d4e804" }
-func (*Nat44InterfaceAddDelOutputFeatureReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *Nat44InterfaceAddDelOutputFeatureReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	return size
-}
-func (m *Nat44InterfaceAddDelOutputFeatureReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	return buf.Bytes(), nil
-}
-func (m *Nat44InterfaceAddDelOutputFeatureReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	return nil
-}
-
 // Nat44InterfaceAddrDetails defines message 'nat44_interface_addr_details'.
 type Nat44InterfaceAddrDetails struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1829,76 +1898,6 @@ func (m *Nat44InterfaceDump) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *Nat44InterfaceDump) Unmarshal(b []byte) error {
-	return nil
-}
-
-// Nat44InterfaceOutputFeatureDetails defines message 'nat44_interface_output_feature_details'.
-// Deprecated: the message will be removed in the future versions
-type Nat44InterfaceOutputFeatureDetails struct {
-	Flags     nat_types.NatConfigFlags       `binapi:"nat_config_flags,name=flags" json:"flags,omitempty"`
-	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
-}
-
-func (m *Nat44InterfaceOutputFeatureDetails) Reset() { *m = Nat44InterfaceOutputFeatureDetails{} }
-func (*Nat44InterfaceOutputFeatureDetails) GetMessageName() string {
-	return "nat44_interface_output_feature_details"
-}
-func (*Nat44InterfaceOutputFeatureDetails) GetCrcString() string { return "5d286289" }
-func (*Nat44InterfaceOutputFeatureDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *Nat44InterfaceOutputFeatureDetails) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 1 // m.Flags
-	size += 4 // m.SwIfIndex
-	return size
-}
-func (m *Nat44InterfaceOutputFeatureDetails) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeUint8(uint8(m.Flags))
-	buf.EncodeUint32(uint32(m.SwIfIndex))
-	return buf.Bytes(), nil
-}
-func (m *Nat44InterfaceOutputFeatureDetails) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Flags = nat_types.NatConfigFlags(buf.DecodeUint8())
-	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
-	return nil
-}
-
-// Nat44InterfaceOutputFeatureDump defines message 'nat44_interface_output_feature_dump'.
-// Deprecated: the message will be removed in the future versions
-type Nat44InterfaceOutputFeatureDump struct{}
-
-func (m *Nat44InterfaceOutputFeatureDump) Reset() { *m = Nat44InterfaceOutputFeatureDump{} }
-func (*Nat44InterfaceOutputFeatureDump) GetMessageName() string {
-	return "nat44_interface_output_feature_dump"
-}
-func (*Nat44InterfaceOutputFeatureDump) GetCrcString() string { return "51077d14" }
-func (*Nat44InterfaceOutputFeatureDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *Nat44InterfaceOutputFeatureDump) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *Nat44InterfaceOutputFeatureDump) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *Nat44InterfaceOutputFeatureDump) Unmarshal(b []byte) error {
 	return nil
 }
 
@@ -2110,170 +2109,6 @@ func (m *Nat44LbStaticMappingDump) Unmarshal(b []byte) error {
 	return nil
 }
 
-// Nat44PluginEnableDisable defines message 'nat44_plugin_enable_disable'.
-// Deprecated: the message will be removed in the future versions
-type Nat44PluginEnableDisable struct {
-	InsideVrf     uint32           `binapi:"u32,name=inside_vrf" json:"inside_vrf,omitempty"`
-	OutsideVrf    uint32           `binapi:"u32,name=outside_vrf" json:"outside_vrf,omitempty"`
-	Users         uint32           `binapi:"u32,name=users" json:"users,omitempty"`
-	UserMemory    uint32           `binapi:"u32,name=user_memory" json:"user_memory,omitempty"`
-	Sessions      uint32           `binapi:"u32,name=sessions" json:"sessions,omitempty"`
-	SessionMemory uint32           `binapi:"u32,name=session_memory" json:"session_memory,omitempty"`
-	UserSessions  uint32           `binapi:"u32,name=user_sessions" json:"user_sessions,omitempty"`
-	Enable        bool             `binapi:"bool,name=enable" json:"enable,omitempty"`
-	Flags         Nat44ConfigFlags `binapi:"nat44_config_flags,name=flags" json:"flags,omitempty"`
-}
-
-func (m *Nat44PluginEnableDisable) Reset()               { *m = Nat44PluginEnableDisable{} }
-func (*Nat44PluginEnableDisable) GetMessageName() string { return "nat44_plugin_enable_disable" }
-func (*Nat44PluginEnableDisable) GetCrcString() string   { return "dea0d501" }
-func (*Nat44PluginEnableDisable) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *Nat44PluginEnableDisable) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.InsideVrf
-	size += 4 // m.OutsideVrf
-	size += 4 // m.Users
-	size += 4 // m.UserMemory
-	size += 4 // m.Sessions
-	size += 4 // m.SessionMemory
-	size += 4 // m.UserSessions
-	size += 1 // m.Enable
-	size += 1 // m.Flags
-	return size
-}
-func (m *Nat44PluginEnableDisable) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeUint32(m.InsideVrf)
-	buf.EncodeUint32(m.OutsideVrf)
-	buf.EncodeUint32(m.Users)
-	buf.EncodeUint32(m.UserMemory)
-	buf.EncodeUint32(m.Sessions)
-	buf.EncodeUint32(m.SessionMemory)
-	buf.EncodeUint32(m.UserSessions)
-	buf.EncodeBool(m.Enable)
-	buf.EncodeUint8(uint8(m.Flags))
-	return buf.Bytes(), nil
-}
-func (m *Nat44PluginEnableDisable) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.InsideVrf = buf.DecodeUint32()
-	m.OutsideVrf = buf.DecodeUint32()
-	m.Users = buf.DecodeUint32()
-	m.UserMemory = buf.DecodeUint32()
-	m.Sessions = buf.DecodeUint32()
-	m.SessionMemory = buf.DecodeUint32()
-	m.UserSessions = buf.DecodeUint32()
-	m.Enable = buf.DecodeBool()
-	m.Flags = Nat44ConfigFlags(buf.DecodeUint8())
-	return nil
-}
-
-// Nat44PluginEnableDisableReply defines message 'nat44_plugin_enable_disable_reply'.
-// Deprecated: the message will be removed in the future versions
-type Nat44PluginEnableDisableReply struct {
-	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
-}
-
-func (m *Nat44PluginEnableDisableReply) Reset() { *m = Nat44PluginEnableDisableReply{} }
-func (*Nat44PluginEnableDisableReply) GetMessageName() string {
-	return "nat44_plugin_enable_disable_reply"
-}
-func (*Nat44PluginEnableDisableReply) GetCrcString() string { return "e8d4e804" }
-func (*Nat44PluginEnableDisableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *Nat44PluginEnableDisableReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	return size
-}
-func (m *Nat44PluginEnableDisableReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	return buf.Bytes(), nil
-}
-func (m *Nat44PluginEnableDisableReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	return nil
-}
-
-// Nat44SessionCleanup defines message 'nat44_session_cleanup'.
-// Deprecated: the message will be removed in the future versions
-type Nat44SessionCleanup struct{}
-
-func (m *Nat44SessionCleanup) Reset()               { *m = Nat44SessionCleanup{} }
-func (*Nat44SessionCleanup) GetMessageName() string { return "nat44_session_cleanup" }
-func (*Nat44SessionCleanup) GetCrcString() string   { return "51077d14" }
-func (*Nat44SessionCleanup) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *Nat44SessionCleanup) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *Nat44SessionCleanup) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *Nat44SessionCleanup) Unmarshal(b []byte) error {
-	return nil
-}
-
-// Nat44SessionCleanupReply defines message 'nat44_session_cleanup_reply'.
-// Deprecated: the message will be removed in the future versions
-type Nat44SessionCleanupReply struct {
-	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
-}
-
-func (m *Nat44SessionCleanupReply) Reset()               { *m = Nat44SessionCleanupReply{} }
-func (*Nat44SessionCleanupReply) GetMessageName() string { return "nat44_session_cleanup_reply" }
-func (*Nat44SessionCleanupReply) GetCrcString() string   { return "e8d4e804" }
-func (*Nat44SessionCleanupReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *Nat44SessionCleanupReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	return size
-}
-func (m *Nat44SessionCleanupReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	return buf.Bytes(), nil
-}
-func (m *Nat44SessionCleanupReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	return nil
-}
-
 // Nat44SetSessionLimit defines message 'nat44_set_session_limit'.
 type Nat44SetSessionLimit struct {
 	SessionLimit uint32 `binapi:"u32,name=session_limit" json:"session_limit,omitempty"`
@@ -2345,7 +2180,6 @@ func (m *Nat44SetSessionLimitReply) Unmarshal(b []byte) error {
 }
 
 // Nat44ShowRunningConfig defines message 'nat44_show_running_config'.
-// InProgress: the message form may change in the future versions
 type Nat44ShowRunningConfig struct{}
 
 func (m *Nat44ShowRunningConfig) Reset()               { *m = Nat44ShowRunningConfig{} }
@@ -2373,7 +2207,6 @@ func (m *Nat44ShowRunningConfig) Unmarshal(b []byte) error {
 }
 
 // Nat44ShowRunningConfigReply defines message 'nat44_show_running_config_reply'.
-// InProgress: the message form may change in the future versions
 type Nat44ShowRunningConfigReply struct {
 	Retval              int32                 `binapi:"i32,name=retval" json:"retval,omitempty"`
 	InsideVrf           uint32                `binapi:"u32,name=inside_vrf" json:"inside_vrf,omitempty"`
@@ -2746,7 +2579,6 @@ func (m *Nat44UserSessionDump) Unmarshal(b []byte) error {
 }
 
 // Nat44UserSessionV2Details defines message 'nat44_user_session_v2_details'.
-// InProgress: the message form may change in the future versions
 type Nat44UserSessionV2Details struct {
 	OutsideIPAddress  ip_types.IP4Address      `binapi:"ip4_address,name=outside_ip_address" json:"outside_ip_address,omitempty"`
 	OutsidePort       uint16                   `binapi:"u16,name=outside_port" json:"outside_port,omitempty"`
@@ -2832,7 +2664,6 @@ func (m *Nat44UserSessionV2Details) Unmarshal(b []byte) error {
 }
 
 // Nat44UserSessionV2Dump defines message 'nat44_user_session_v2_dump'.
-// InProgress: the message form may change in the future versions
 type Nat44UserSessionV2Dump struct {
 	IPAddress ip_types.IP4Address `binapi:"ip4_address,name=ip_address" json:"ip_address,omitempty"`
 	VrfID     uint32              `binapi:"u32,name=vrf_id" json:"vrf_id,omitempty"`
@@ -2869,77 +2700,8 @@ func (m *Nat44UserSessionV2Dump) Unmarshal(b []byte) error {
 	return nil
 }
 
-// NatControlPing defines message 'nat_control_ping'.
-// Deprecated: the message will be removed in the future versions
-type NatControlPing struct{}
-
-func (m *NatControlPing) Reset()               { *m = NatControlPing{} }
-func (*NatControlPing) GetMessageName() string { return "nat_control_ping" }
-func (*NatControlPing) GetCrcString() string   { return "51077d14" }
-func (*NatControlPing) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *NatControlPing) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *NatControlPing) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *NatControlPing) Unmarshal(b []byte) error {
-	return nil
-}
-
-// NatControlPingReply defines message 'nat_control_ping_reply'.
-// Deprecated: the message will be removed in the future versions
-type NatControlPingReply struct {
-	Retval      int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
-	ClientIndex uint32 `binapi:"u32,name=client_index" json:"client_index,omitempty"`
-	VpePID      uint32 `binapi:"u32,name=vpe_pid" json:"vpe_pid,omitempty"`
-}
-
-func (m *NatControlPingReply) Reset()               { *m = NatControlPingReply{} }
-func (*NatControlPingReply) GetMessageName() string { return "nat_control_ping_reply" }
-func (*NatControlPingReply) GetCrcString() string   { return "f6b0b8ca" }
-func (*NatControlPingReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *NatControlPingReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	size += 4 // m.ClientIndex
-	size += 4 // m.VpePID
-	return size
-}
-func (m *NatControlPingReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	buf.EncodeUint32(m.ClientIndex)
-	buf.EncodeUint32(m.VpePID)
-	return buf.Bytes(), nil
-}
-func (m *NatControlPingReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	m.ClientIndex = buf.DecodeUint32()
-	m.VpePID = buf.DecodeUint32()
-	return nil
-}
-
 // NatGetAddrAndPortAllocAlg defines message 'nat_get_addr_and_port_alloc_alg'.
+// Deprecated: the message will be removed in the future versions
 type NatGetAddrAndPortAllocAlg struct{}
 
 func (m *NatGetAddrAndPortAllocAlg) Reset()               { *m = NatGetAddrAndPortAllocAlg{} }
@@ -2967,6 +2729,7 @@ func (m *NatGetAddrAndPortAllocAlg) Unmarshal(b []byte) error {
 }
 
 // NatGetAddrAndPortAllocAlgReply defines message 'nat_get_addr_and_port_alloc_alg_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatGetAddrAndPortAllocAlgReply struct {
 	Retval     int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
 	Alg        uint8  `binapi:"u8,name=alg" json:"alg,omitempty"`
@@ -3093,85 +2856,8 @@ func (m *NatGetMssClampingReply) Unmarshal(b []byte) error {
 	return nil
 }
 
-// NatGetTimeouts defines message 'nat_get_timeouts'.
-// Deprecated: the message will be removed in the future versions
-type NatGetTimeouts struct{}
-
-func (m *NatGetTimeouts) Reset()               { *m = NatGetTimeouts{} }
-func (*NatGetTimeouts) GetMessageName() string { return "nat_get_timeouts" }
-func (*NatGetTimeouts) GetCrcString() string   { return "51077d14" }
-func (*NatGetTimeouts) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *NatGetTimeouts) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *NatGetTimeouts) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *NatGetTimeouts) Unmarshal(b []byte) error {
-	return nil
-}
-
-// NatGetTimeoutsReply defines message 'nat_get_timeouts_reply'.
-// Deprecated: the message will be removed in the future versions
-type NatGetTimeoutsReply struct {
-	Retval         int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
-	UDP            uint32 `binapi:"u32,name=udp" json:"udp,omitempty"`
-	TCPEstablished uint32 `binapi:"u32,name=tcp_established" json:"tcp_established,omitempty"`
-	TCPTransitory  uint32 `binapi:"u32,name=tcp_transitory" json:"tcp_transitory,omitempty"`
-	ICMP           uint32 `binapi:"u32,name=icmp" json:"icmp,omitempty"`
-}
-
-func (m *NatGetTimeoutsReply) Reset()               { *m = NatGetTimeoutsReply{} }
-func (*NatGetTimeoutsReply) GetMessageName() string { return "nat_get_timeouts_reply" }
-func (*NatGetTimeoutsReply) GetCrcString() string   { return "3c4df4e1" }
-func (*NatGetTimeoutsReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *NatGetTimeoutsReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	size += 4 // m.UDP
-	size += 4 // m.TCPEstablished
-	size += 4 // m.TCPTransitory
-	size += 4 // m.ICMP
-	return size
-}
-func (m *NatGetTimeoutsReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	buf.EncodeUint32(m.UDP)
-	buf.EncodeUint32(m.TCPEstablished)
-	buf.EncodeUint32(m.TCPTransitory)
-	buf.EncodeUint32(m.ICMP)
-	return buf.Bytes(), nil
-}
-func (m *NatGetTimeoutsReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	m.UDP = buf.DecodeUint32()
-	m.TCPEstablished = buf.DecodeUint32()
-	m.TCPTransitory = buf.DecodeUint32()
-	m.ICMP = buf.DecodeUint32()
-	return nil
-}
-
 // NatHaFlush defines message 'nat_ha_flush'.
+// Deprecated: the message will be removed in the future versions
 type NatHaFlush struct{}
 
 func (m *NatHaFlush) Reset()               { *m = NatHaFlush{} }
@@ -3199,6 +2885,7 @@ func (m *NatHaFlush) Unmarshal(b []byte) error {
 }
 
 // NatHaFlushReply defines message 'nat_ha_flush_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatHaFlushReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -3232,6 +2919,7 @@ func (m *NatHaFlushReply) Unmarshal(b []byte) error {
 }
 
 // NatHaGetFailover defines message 'nat_ha_get_failover'.
+// Deprecated: the message will be removed in the future versions
 type NatHaGetFailover struct{}
 
 func (m *NatHaGetFailover) Reset()               { *m = NatHaGetFailover{} }
@@ -3259,6 +2947,7 @@ func (m *NatHaGetFailover) Unmarshal(b []byte) error {
 }
 
 // NatHaGetFailoverReply defines message 'nat_ha_get_failover_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatHaGetFailoverReply struct {
 	Retval                 int32               `binapi:"i32,name=retval" json:"retval,omitempty"`
 	IPAddress              ip_types.IP4Address `binapi:"ip4_address,name=ip_address" json:"ip_address,omitempty"`
@@ -3304,6 +2993,7 @@ func (m *NatHaGetFailoverReply) Unmarshal(b []byte) error {
 }
 
 // NatHaGetListener defines message 'nat_ha_get_listener'.
+// Deprecated: the message will be removed in the future versions
 type NatHaGetListener struct{}
 
 func (m *NatHaGetListener) Reset()               { *m = NatHaGetListener{} }
@@ -3331,6 +3021,7 @@ func (m *NatHaGetListener) Unmarshal(b []byte) error {
 }
 
 // NatHaGetListenerReply defines message 'nat_ha_get_listener_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatHaGetListenerReply struct {
 	Retval    int32               `binapi:"i32,name=retval" json:"retval,omitempty"`
 	IPAddress ip_types.IP4Address `binapi:"ip4_address,name=ip_address" json:"ip_address,omitempty"`
@@ -3376,6 +3067,7 @@ func (m *NatHaGetListenerReply) Unmarshal(b []byte) error {
 }
 
 // NatHaResync defines message 'nat_ha_resync'.
+// Deprecated: the message will be removed in the future versions
 type NatHaResync struct {
 	WantResyncEvent uint8  `binapi:"u8,name=want_resync_event" json:"want_resync_event,omitempty"`
 	PID             uint32 `binapi:"u32,name=pid" json:"pid,omitempty"`
@@ -3413,6 +3105,7 @@ func (m *NatHaResync) Unmarshal(b []byte) error {
 }
 
 // NatHaResyncCompletedEvent defines message 'nat_ha_resync_completed_event'.
+// Deprecated: the message will be removed in the future versions
 type NatHaResyncCompletedEvent struct {
 	PID         uint32 `binapi:"u32,name=pid" json:"pid,omitempty"`
 	MissedCount uint32 `binapi:"u32,name=missed_count" json:"missed_count,omitempty"`
@@ -3450,6 +3143,7 @@ func (m *NatHaResyncCompletedEvent) Unmarshal(b []byte) error {
 }
 
 // NatHaResyncReply defines message 'nat_ha_resync_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatHaResyncReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -3483,6 +3177,7 @@ func (m *NatHaResyncReply) Unmarshal(b []byte) error {
 }
 
 // NatHaSetFailover defines message 'nat_ha_set_failover'.
+// Deprecated: the message will be removed in the future versions
 type NatHaSetFailover struct {
 	IPAddress              ip_types.IP4Address `binapi:"ip4_address,name=ip_address" json:"ip_address,omitempty"`
 	Port                   uint16              `binapi:"u16,name=port" json:"port,omitempty"`
@@ -3524,6 +3219,7 @@ func (m *NatHaSetFailover) Unmarshal(b []byte) error {
 }
 
 // NatHaSetFailoverReply defines message 'nat_ha_set_failover_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatHaSetFailoverReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -3557,6 +3253,7 @@ func (m *NatHaSetFailoverReply) Unmarshal(b []byte) error {
 }
 
 // NatHaSetListener defines message 'nat_ha_set_listener'.
+// Deprecated: the message will be removed in the future versions
 type NatHaSetListener struct {
 	IPAddress ip_types.IP4Address `binapi:"ip4_address,name=ip_address" json:"ip_address,omitempty"`
 	Port      uint16              `binapi:"u16,name=port" json:"port,omitempty"`
@@ -3598,6 +3295,7 @@ func (m *NatHaSetListener) Unmarshal(b []byte) error {
 }
 
 // NatHaSetListenerReply defines message 'nat_ha_set_listener_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatHaSetListenerReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -3707,6 +3405,7 @@ func (m *NatIpfixEnableDisableReply) Unmarshal(b []byte) error {
 }
 
 // NatSetAddrAndPortAllocAlg defines message 'nat_set_addr_and_port_alloc_alg'.
+// Deprecated: the message will be removed in the future versions
 type NatSetAddrAndPortAllocAlg struct {
 	Alg        uint8  `binapi:"u8,name=alg" json:"alg,omitempty"`
 	PsidOffset uint8  `binapi:"u8,name=psid_offset" json:"psid_offset,omitempty"`
@@ -3760,6 +3459,7 @@ func (m *NatSetAddrAndPortAllocAlg) Unmarshal(b []byte) error {
 }
 
 // NatSetAddrAndPortAllocAlgReply defines message 'nat_set_addr_and_port_alloc_alg_reply'.
+// Deprecated: the message will be removed in the future versions
 type NatSetAddrAndPortAllocAlgReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
 }
@@ -3789,74 +3489,6 @@ func (m *NatSetAddrAndPortAllocAlgReply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *NatSetAddrAndPortAllocAlgReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	return nil
-}
-
-// NatSetLogLevel defines message 'nat_set_log_level'.
-// Deprecated: the message will be removed in the future versions
-type NatSetLogLevel struct {
-	LogLevel nat_types.NatLogLevel `binapi:"nat_log_level,name=log_level" json:"log_level,omitempty"`
-}
-
-func (m *NatSetLogLevel) Reset()               { *m = NatSetLogLevel{} }
-func (*NatSetLogLevel) GetMessageName() string { return "nat_set_log_level" }
-func (*NatSetLogLevel) GetCrcString() string   { return "70076bfe" }
-func (*NatSetLogLevel) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *NatSetLogLevel) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 1 // m.LogLevel
-	return size
-}
-func (m *NatSetLogLevel) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeUint8(uint8(m.LogLevel))
-	return buf.Bytes(), nil
-}
-func (m *NatSetLogLevel) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.LogLevel = nat_types.NatLogLevel(buf.DecodeUint8())
-	return nil
-}
-
-// NatSetLogLevelReply defines message 'nat_set_log_level_reply'.
-// Deprecated: the message will be removed in the future versions
-type NatSetLogLevelReply struct {
-	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
-}
-
-func (m *NatSetLogLevelReply) Reset()               { *m = NatSetLogLevelReply{} }
-func (*NatSetLogLevelReply) GetMessageName() string { return "nat_set_log_level_reply" }
-func (*NatSetLogLevelReply) GetCrcString() string   { return "e8d4e804" }
-func (*NatSetLogLevelReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *NatSetLogLevelReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	return size
-}
-func (m *NatSetLogLevelReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	return buf.Bytes(), nil
-}
-func (m *NatSetLogLevelReply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	return nil
@@ -4078,274 +3710,6 @@ func (m *NatSetWorkersReply) Unmarshal(b []byte) error {
 	return nil
 }
 
-// NatShowConfig defines message 'nat_show_config'.
-// Deprecated: the message will be removed in the future versions
-type NatShowConfig struct{}
-
-func (m *NatShowConfig) Reset()               { *m = NatShowConfig{} }
-func (*NatShowConfig) GetMessageName() string { return "nat_show_config" }
-func (*NatShowConfig) GetCrcString() string   { return "51077d14" }
-func (*NatShowConfig) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *NatShowConfig) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *NatShowConfig) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *NatShowConfig) Unmarshal(b []byte) error {
-	return nil
-}
-
-// NatShowConfig2 defines message 'nat_show_config_2'.
-// Deprecated: the message will be removed in the future versions
-type NatShowConfig2 struct{}
-
-func (m *NatShowConfig2) Reset()               { *m = NatShowConfig2{} }
-func (*NatShowConfig2) GetMessageName() string { return "nat_show_config_2" }
-func (*NatShowConfig2) GetCrcString() string   { return "51077d14" }
-func (*NatShowConfig2) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *NatShowConfig2) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	return size
-}
-func (m *NatShowConfig2) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	return buf.Bytes(), nil
-}
-func (m *NatShowConfig2) Unmarshal(b []byte) error {
-	return nil
-}
-
-// NatShowConfig2Reply defines message 'nat_show_config_2_reply'.
-// Deprecated: the message will be removed in the future versions
-type NatShowConfig2Reply struct {
-	Retval                          int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
-	StaticMappingOnly               bool   `binapi:"bool,name=static_mapping_only" json:"static_mapping_only,omitempty"`
-	StaticMappingConnectionTracking bool   `binapi:"bool,name=static_mapping_connection_tracking" json:"static_mapping_connection_tracking,omitempty"`
-	Deterministic                   bool   `binapi:"bool,name=deterministic" json:"deterministic,omitempty"`
-	EndpointDependent               bool   `binapi:"bool,name=endpoint_dependent" json:"endpoint_dependent,omitempty"`
-	Out2inDpo                       bool   `binapi:"bool,name=out2in_dpo" json:"out2in_dpo,omitempty"`
-	DsliteCe                        bool   `binapi:"bool,name=dslite_ce" json:"dslite_ce,omitempty"`
-	TranslationBuckets              uint32 `binapi:"u32,name=translation_buckets" json:"translation_buckets,omitempty"`
-	TranslationMemorySize           uint64 `binapi:"u64,name=translation_memory_size" json:"translation_memory_size,omitempty"`
-	UserBuckets                     uint32 `binapi:"u32,name=user_buckets" json:"user_buckets,omitempty"`
-	UserMemorySize                  uint64 `binapi:"u64,name=user_memory_size" json:"user_memory_size,omitempty"`
-	MaxTranslationsPerUser          uint32 `binapi:"u32,name=max_translations_per_user" json:"max_translations_per_user,omitempty"`
-	OutsideVrfID                    uint32 `binapi:"u32,name=outside_vrf_id" json:"outside_vrf_id,omitempty"`
-	InsideVrfID                     uint32 `binapi:"u32,name=inside_vrf_id" json:"inside_vrf_id,omitempty"`
-	Nat64BibBuckets                 uint32 `binapi:"u32,name=nat64_bib_buckets" json:"nat64_bib_buckets,omitempty"`
-	Nat64BibMemorySize              uint64 `binapi:"u64,name=nat64_bib_memory_size" json:"nat64_bib_memory_size,omitempty"`
-	Nat64StBuckets                  uint32 `binapi:"u32,name=nat64_st_buckets" json:"nat64_st_buckets,omitempty"`
-	Nat64StMemorySize               uint64 `binapi:"u64,name=nat64_st_memory_size" json:"nat64_st_memory_size,omitempty"`
-	MaxTranslationsPerThread        uint32 `binapi:"u32,name=max_translations_per_thread" json:"max_translations_per_thread,omitempty"`
-	MaxUsersPerThread               uint32 `binapi:"u32,name=max_users_per_thread" json:"max_users_per_thread,omitempty"`
-}
-
-func (m *NatShowConfig2Reply) Reset()               { *m = NatShowConfig2Reply{} }
-func (*NatShowConfig2Reply) GetMessageName() string { return "nat_show_config_2_reply" }
-func (*NatShowConfig2Reply) GetCrcString() string   { return "0404a5b4" }
-func (*NatShowConfig2Reply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *NatShowConfig2Reply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	size += 1 // m.StaticMappingOnly
-	size += 1 // m.StaticMappingConnectionTracking
-	size += 1 // m.Deterministic
-	size += 1 // m.EndpointDependent
-	size += 1 // m.Out2inDpo
-	size += 1 // m.DsliteCe
-	size += 4 // m.TranslationBuckets
-	size += 8 // m.TranslationMemorySize
-	size += 4 // m.UserBuckets
-	size += 8 // m.UserMemorySize
-	size += 4 // m.MaxTranslationsPerUser
-	size += 4 // m.OutsideVrfID
-	size += 4 // m.InsideVrfID
-	size += 4 // m.Nat64BibBuckets
-	size += 8 // m.Nat64BibMemorySize
-	size += 4 // m.Nat64StBuckets
-	size += 8 // m.Nat64StMemorySize
-	size += 4 // m.MaxTranslationsPerThread
-	size += 4 // m.MaxUsersPerThread
-	return size
-}
-func (m *NatShowConfig2Reply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	buf.EncodeBool(m.StaticMappingOnly)
-	buf.EncodeBool(m.StaticMappingConnectionTracking)
-	buf.EncodeBool(m.Deterministic)
-	buf.EncodeBool(m.EndpointDependent)
-	buf.EncodeBool(m.Out2inDpo)
-	buf.EncodeBool(m.DsliteCe)
-	buf.EncodeUint32(m.TranslationBuckets)
-	buf.EncodeUint64(m.TranslationMemorySize)
-	buf.EncodeUint32(m.UserBuckets)
-	buf.EncodeUint64(m.UserMemorySize)
-	buf.EncodeUint32(m.MaxTranslationsPerUser)
-	buf.EncodeUint32(m.OutsideVrfID)
-	buf.EncodeUint32(m.InsideVrfID)
-	buf.EncodeUint32(m.Nat64BibBuckets)
-	buf.EncodeUint64(m.Nat64BibMemorySize)
-	buf.EncodeUint32(m.Nat64StBuckets)
-	buf.EncodeUint64(m.Nat64StMemorySize)
-	buf.EncodeUint32(m.MaxTranslationsPerThread)
-	buf.EncodeUint32(m.MaxUsersPerThread)
-	return buf.Bytes(), nil
-}
-func (m *NatShowConfig2Reply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	m.StaticMappingOnly = buf.DecodeBool()
-	m.StaticMappingConnectionTracking = buf.DecodeBool()
-	m.Deterministic = buf.DecodeBool()
-	m.EndpointDependent = buf.DecodeBool()
-	m.Out2inDpo = buf.DecodeBool()
-	m.DsliteCe = buf.DecodeBool()
-	m.TranslationBuckets = buf.DecodeUint32()
-	m.TranslationMemorySize = buf.DecodeUint64()
-	m.UserBuckets = buf.DecodeUint32()
-	m.UserMemorySize = buf.DecodeUint64()
-	m.MaxTranslationsPerUser = buf.DecodeUint32()
-	m.OutsideVrfID = buf.DecodeUint32()
-	m.InsideVrfID = buf.DecodeUint32()
-	m.Nat64BibBuckets = buf.DecodeUint32()
-	m.Nat64BibMemorySize = buf.DecodeUint64()
-	m.Nat64StBuckets = buf.DecodeUint32()
-	m.Nat64StMemorySize = buf.DecodeUint64()
-	m.MaxTranslationsPerThread = buf.DecodeUint32()
-	m.MaxUsersPerThread = buf.DecodeUint32()
-	return nil
-}
-
-// NatShowConfigReply defines message 'nat_show_config_reply'.
-// Deprecated: the message will be removed in the future versions
-type NatShowConfigReply struct {
-	Retval                          int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
-	StaticMappingOnly               bool   `binapi:"bool,name=static_mapping_only" json:"static_mapping_only,omitempty"`
-	StaticMappingConnectionTracking bool   `binapi:"bool,name=static_mapping_connection_tracking" json:"static_mapping_connection_tracking,omitempty"`
-	Deterministic                   bool   `binapi:"bool,name=deterministic" json:"deterministic,omitempty"`
-	EndpointDependent               bool   `binapi:"bool,name=endpoint_dependent" json:"endpoint_dependent,omitempty"`
-	Out2inDpo                       bool   `binapi:"bool,name=out2in_dpo" json:"out2in_dpo,omitempty"`
-	DsliteCe                        bool   `binapi:"bool,name=dslite_ce" json:"dslite_ce,omitempty"`
-	TranslationBuckets              uint32 `binapi:"u32,name=translation_buckets" json:"translation_buckets,omitempty"`
-	TranslationMemorySize           uint32 `binapi:"u32,name=translation_memory_size" json:"translation_memory_size,omitempty"`
-	UserBuckets                     uint32 `binapi:"u32,name=user_buckets" json:"user_buckets,omitempty"`
-	UserMemorySize                  uint64 `binapi:"u64,name=user_memory_size" json:"user_memory_size,omitempty"`
-	MaxTranslationsPerUser          uint32 `binapi:"u32,name=max_translations_per_user" json:"max_translations_per_user,omitempty"`
-	OutsideVrfID                    uint32 `binapi:"u32,name=outside_vrf_id" json:"outside_vrf_id,omitempty"`
-	InsideVrfID                     uint32 `binapi:"u32,name=inside_vrf_id" json:"inside_vrf_id,omitempty"`
-	Nat64BibBuckets                 uint32 `binapi:"u32,name=nat64_bib_buckets" json:"nat64_bib_buckets,omitempty"`
-	Nat64BibMemorySize              uint64 `binapi:"u64,name=nat64_bib_memory_size" json:"nat64_bib_memory_size,omitempty"`
-	Nat64StBuckets                  uint32 `binapi:"u32,name=nat64_st_buckets" json:"nat64_st_buckets,omitempty"`
-	Nat64StMemorySize               uint64 `binapi:"u64,name=nat64_st_memory_size" json:"nat64_st_memory_size,omitempty"`
-}
-
-func (m *NatShowConfigReply) Reset()               { *m = NatShowConfigReply{} }
-func (*NatShowConfigReply) GetMessageName() string { return "nat_show_config_reply" }
-func (*NatShowConfigReply) GetCrcString() string   { return "7903ef06" }
-func (*NatShowConfigReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *NatShowConfigReply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	size += 1 // m.StaticMappingOnly
-	size += 1 // m.StaticMappingConnectionTracking
-	size += 1 // m.Deterministic
-	size += 1 // m.EndpointDependent
-	size += 1 // m.Out2inDpo
-	size += 1 // m.DsliteCe
-	size += 4 // m.TranslationBuckets
-	size += 4 // m.TranslationMemorySize
-	size += 4 // m.UserBuckets
-	size += 8 // m.UserMemorySize
-	size += 4 // m.MaxTranslationsPerUser
-	size += 4 // m.OutsideVrfID
-	size += 4 // m.InsideVrfID
-	size += 4 // m.Nat64BibBuckets
-	size += 8 // m.Nat64BibMemorySize
-	size += 4 // m.Nat64StBuckets
-	size += 8 // m.Nat64StMemorySize
-	return size
-}
-func (m *NatShowConfigReply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	buf.EncodeBool(m.StaticMappingOnly)
-	buf.EncodeBool(m.StaticMappingConnectionTracking)
-	buf.EncodeBool(m.Deterministic)
-	buf.EncodeBool(m.EndpointDependent)
-	buf.EncodeBool(m.Out2inDpo)
-	buf.EncodeBool(m.DsliteCe)
-	buf.EncodeUint32(m.TranslationBuckets)
-	buf.EncodeUint32(m.TranslationMemorySize)
-	buf.EncodeUint32(m.UserBuckets)
-	buf.EncodeUint64(m.UserMemorySize)
-	buf.EncodeUint32(m.MaxTranslationsPerUser)
-	buf.EncodeUint32(m.OutsideVrfID)
-	buf.EncodeUint32(m.InsideVrfID)
-	buf.EncodeUint32(m.Nat64BibBuckets)
-	buf.EncodeUint64(m.Nat64BibMemorySize)
-	buf.EncodeUint32(m.Nat64StBuckets)
-	buf.EncodeUint64(m.Nat64StMemorySize)
-	return buf.Bytes(), nil
-}
-func (m *NatShowConfigReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	m.StaticMappingOnly = buf.DecodeBool()
-	m.StaticMappingConnectionTracking = buf.DecodeBool()
-	m.Deterministic = buf.DecodeBool()
-	m.EndpointDependent = buf.DecodeBool()
-	m.Out2inDpo = buf.DecodeBool()
-	m.DsliteCe = buf.DecodeBool()
-	m.TranslationBuckets = buf.DecodeUint32()
-	m.TranslationMemorySize = buf.DecodeUint32()
-	m.UserBuckets = buf.DecodeUint32()
-	m.UserMemorySize = buf.DecodeUint64()
-	m.MaxTranslationsPerUser = buf.DecodeUint32()
-	m.OutsideVrfID = buf.DecodeUint32()
-	m.InsideVrfID = buf.DecodeUint32()
-	m.Nat64BibBuckets = buf.DecodeUint32()
-	m.Nat64BibMemorySize = buf.DecodeUint64()
-	m.Nat64StBuckets = buf.DecodeUint32()
-	m.Nat64StMemorySize = buf.DecodeUint64()
-	return nil
-}
-
 // NatWorkerDetails defines message 'nat_worker_details'.
 type NatWorkerDetails struct {
 	WorkerIndex uint32 `binapi:"u32,name=worker_index" json:"worker_index,omitempty"`
@@ -4436,6 +3800,10 @@ func file_nat44_ed_binapi_init() {
 	api.RegisterMessage((*Nat44DelUserReply)(nil), "nat44_del_user_reply_e8d4e804")
 	api.RegisterMessage((*Nat44EdAddDelOutputInterface)(nil), "nat44_ed_add_del_output_interface_47d6e753")
 	api.RegisterMessage((*Nat44EdAddDelOutputInterfaceReply)(nil), "nat44_ed_add_del_output_interface_reply_e8d4e804")
+	api.RegisterMessage((*Nat44EdAddDelVrfRoute)(nil), "nat44_ed_add_del_vrf_route_59187407")
+	api.RegisterMessage((*Nat44EdAddDelVrfRouteReply)(nil), "nat44_ed_add_del_vrf_route_reply_e8d4e804")
+	api.RegisterMessage((*Nat44EdAddDelVrfTable)(nil), "nat44_ed_add_del_vrf_table_08330904")
+	api.RegisterMessage((*Nat44EdAddDelVrfTableReply)(nil), "nat44_ed_add_del_vrf_table_reply_e8d4e804")
 	api.RegisterMessage((*Nat44EdOutputInterfaceDetails)(nil), "nat44_ed_output_interface_details_0b45011c")
 	api.RegisterMessage((*Nat44EdOutputInterfaceGet)(nil), "nat44_ed_output_interface_get_f75ba505")
 	api.RegisterMessage((*Nat44EdOutputInterfaceGetReply)(nil), "nat44_ed_output_interface_get_reply_53b48f5d")
@@ -4445,30 +3813,22 @@ func file_nat44_ed_binapi_init() {
 	api.RegisterMessage((*Nat44EdSetFqOptionsReply)(nil), "nat44_ed_set_fq_options_reply_e8d4e804")
 	api.RegisterMessage((*Nat44EdShowFqOptions)(nil), "nat44_ed_show_fq_options_51077d14")
 	api.RegisterMessage((*Nat44EdShowFqOptionsReply)(nil), "nat44_ed_show_fq_options_reply_7213b545")
+	api.RegisterMessage((*Nat44EdVrfTablesDetails)(nil), "nat44_ed_vrf_tables_details_7b264e4f")
+	api.RegisterMessage((*Nat44EdVrfTablesDump)(nil), "nat44_ed_vrf_tables_dump_51077d14")
 	api.RegisterMessage((*Nat44ForwardingEnableDisable)(nil), "nat44_forwarding_enable_disable_b3e225d2")
 	api.RegisterMessage((*Nat44ForwardingEnableDisableReply)(nil), "nat44_forwarding_enable_disable_reply_e8d4e804")
-	api.RegisterMessage((*Nat44ForwardingIsEnabled)(nil), "nat44_forwarding_is_enabled_51077d14")
-	api.RegisterMessage((*Nat44ForwardingIsEnabledReply)(nil), "nat44_forwarding_is_enabled_reply_46924a06")
 	api.RegisterMessage((*Nat44IdentityMappingDetails)(nil), "nat44_identity_mapping_details_2a52a030")
 	api.RegisterMessage((*Nat44IdentityMappingDump)(nil), "nat44_identity_mapping_dump_51077d14")
 	api.RegisterMessage((*Nat44InterfaceAddDelFeature)(nil), "nat44_interface_add_del_feature_f3699b83")
 	api.RegisterMessage((*Nat44InterfaceAddDelFeatureReply)(nil), "nat44_interface_add_del_feature_reply_e8d4e804")
-	api.RegisterMessage((*Nat44InterfaceAddDelOutputFeature)(nil), "nat44_interface_add_del_output_feature_f3699b83")
-	api.RegisterMessage((*Nat44InterfaceAddDelOutputFeatureReply)(nil), "nat44_interface_add_del_output_feature_reply_e8d4e804")
 	api.RegisterMessage((*Nat44InterfaceAddrDetails)(nil), "nat44_interface_addr_details_e4aca9ca")
 	api.RegisterMessage((*Nat44InterfaceAddrDump)(nil), "nat44_interface_addr_dump_51077d14")
 	api.RegisterMessage((*Nat44InterfaceDetails)(nil), "nat44_interface_details_5d286289")
 	api.RegisterMessage((*Nat44InterfaceDump)(nil), "nat44_interface_dump_51077d14")
-	api.RegisterMessage((*Nat44InterfaceOutputFeatureDetails)(nil), "nat44_interface_output_feature_details_5d286289")
-	api.RegisterMessage((*Nat44InterfaceOutputFeatureDump)(nil), "nat44_interface_output_feature_dump_51077d14")
 	api.RegisterMessage((*Nat44LbStaticMappingAddDelLocal)(nil), "nat44_lb_static_mapping_add_del_local_7ca47547")
 	api.RegisterMessage((*Nat44LbStaticMappingAddDelLocalReply)(nil), "nat44_lb_static_mapping_add_del_local_reply_e8d4e804")
 	api.RegisterMessage((*Nat44LbStaticMappingDetails)(nil), "nat44_lb_static_mapping_details_ed5ce876")
 	api.RegisterMessage((*Nat44LbStaticMappingDump)(nil), "nat44_lb_static_mapping_dump_51077d14")
-	api.RegisterMessage((*Nat44PluginEnableDisable)(nil), "nat44_plugin_enable_disable_dea0d501")
-	api.RegisterMessage((*Nat44PluginEnableDisableReply)(nil), "nat44_plugin_enable_disable_reply_e8d4e804")
-	api.RegisterMessage((*Nat44SessionCleanup)(nil), "nat44_session_cleanup_51077d14")
-	api.RegisterMessage((*Nat44SessionCleanupReply)(nil), "nat44_session_cleanup_reply_e8d4e804")
 	api.RegisterMessage((*Nat44SetSessionLimit)(nil), "nat44_set_session_limit_8899bbb1")
 	api.RegisterMessage((*Nat44SetSessionLimitReply)(nil), "nat44_set_session_limit_reply_e8d4e804")
 	api.RegisterMessage((*Nat44ShowRunningConfig)(nil), "nat44_show_running_config_51077d14")
@@ -4481,14 +3841,10 @@ func file_nat44_ed_binapi_init() {
 	api.RegisterMessage((*Nat44UserSessionDump)(nil), "nat44_user_session_dump_e1899c98")
 	api.RegisterMessage((*Nat44UserSessionV2Details)(nil), "nat44_user_session_v2_details_fd42b729")
 	api.RegisterMessage((*Nat44UserSessionV2Dump)(nil), "nat44_user_session_v2_dump_e1899c98")
-	api.RegisterMessage((*NatControlPing)(nil), "nat_control_ping_51077d14")
-	api.RegisterMessage((*NatControlPingReply)(nil), "nat_control_ping_reply_f6b0b8ca")
 	api.RegisterMessage((*NatGetAddrAndPortAllocAlg)(nil), "nat_get_addr_and_port_alloc_alg_51077d14")
 	api.RegisterMessage((*NatGetAddrAndPortAllocAlgReply)(nil), "nat_get_addr_and_port_alloc_alg_reply_3607a7d0")
 	api.RegisterMessage((*NatGetMssClamping)(nil), "nat_get_mss_clamping_51077d14")
 	api.RegisterMessage((*NatGetMssClampingReply)(nil), "nat_get_mss_clamping_reply_1c0b2a78")
-	api.RegisterMessage((*NatGetTimeouts)(nil), "nat_get_timeouts_51077d14")
-	api.RegisterMessage((*NatGetTimeoutsReply)(nil), "nat_get_timeouts_reply_3c4df4e1")
 	api.RegisterMessage((*NatHaFlush)(nil), "nat_ha_flush_51077d14")
 	api.RegisterMessage((*NatHaFlushReply)(nil), "nat_ha_flush_reply_e8d4e804")
 	api.RegisterMessage((*NatHaGetFailover)(nil), "nat_ha_get_failover_51077d14")
@@ -4506,18 +3862,12 @@ func file_nat44_ed_binapi_init() {
 	api.RegisterMessage((*NatIpfixEnableDisableReply)(nil), "nat_ipfix_enable_disable_reply_e8d4e804")
 	api.RegisterMessage((*NatSetAddrAndPortAllocAlg)(nil), "nat_set_addr_and_port_alloc_alg_deeb746f")
 	api.RegisterMessage((*NatSetAddrAndPortAllocAlgReply)(nil), "nat_set_addr_and_port_alloc_alg_reply_e8d4e804")
-	api.RegisterMessage((*NatSetLogLevel)(nil), "nat_set_log_level_70076bfe")
-	api.RegisterMessage((*NatSetLogLevelReply)(nil), "nat_set_log_level_reply_e8d4e804")
 	api.RegisterMessage((*NatSetMssClamping)(nil), "nat_set_mss_clamping_25e90abb")
 	api.RegisterMessage((*NatSetMssClampingReply)(nil), "nat_set_mss_clamping_reply_e8d4e804")
 	api.RegisterMessage((*NatSetTimeouts)(nil), "nat_set_timeouts_d4746b16")
 	api.RegisterMessage((*NatSetTimeoutsReply)(nil), "nat_set_timeouts_reply_e8d4e804")
 	api.RegisterMessage((*NatSetWorkers)(nil), "nat_set_workers_da926638")
 	api.RegisterMessage((*NatSetWorkersReply)(nil), "nat_set_workers_reply_e8d4e804")
-	api.RegisterMessage((*NatShowConfig)(nil), "nat_show_config_51077d14")
-	api.RegisterMessage((*NatShowConfig2)(nil), "nat_show_config_2_51077d14")
-	api.RegisterMessage((*NatShowConfig2Reply)(nil), "nat_show_config_2_reply_0404a5b4")
-	api.RegisterMessage((*NatShowConfigReply)(nil), "nat_show_config_reply_7903ef06")
 	api.RegisterMessage((*NatWorkerDetails)(nil), "nat_worker_details_84bf06fc")
 	api.RegisterMessage((*NatWorkerDump)(nil), "nat_worker_dump_51077d14")
 }
@@ -4545,6 +3895,10 @@ func AllMessages() []api.Message {
 		(*Nat44DelUserReply)(nil),
 		(*Nat44EdAddDelOutputInterface)(nil),
 		(*Nat44EdAddDelOutputInterfaceReply)(nil),
+		(*Nat44EdAddDelVrfRoute)(nil),
+		(*Nat44EdAddDelVrfRouteReply)(nil),
+		(*Nat44EdAddDelVrfTable)(nil),
+		(*Nat44EdAddDelVrfTableReply)(nil),
 		(*Nat44EdOutputInterfaceDetails)(nil),
 		(*Nat44EdOutputInterfaceGet)(nil),
 		(*Nat44EdOutputInterfaceGetReply)(nil),
@@ -4554,30 +3908,22 @@ func AllMessages() []api.Message {
 		(*Nat44EdSetFqOptionsReply)(nil),
 		(*Nat44EdShowFqOptions)(nil),
 		(*Nat44EdShowFqOptionsReply)(nil),
+		(*Nat44EdVrfTablesDetails)(nil),
+		(*Nat44EdVrfTablesDump)(nil),
 		(*Nat44ForwardingEnableDisable)(nil),
 		(*Nat44ForwardingEnableDisableReply)(nil),
-		(*Nat44ForwardingIsEnabled)(nil),
-		(*Nat44ForwardingIsEnabledReply)(nil),
 		(*Nat44IdentityMappingDetails)(nil),
 		(*Nat44IdentityMappingDump)(nil),
 		(*Nat44InterfaceAddDelFeature)(nil),
 		(*Nat44InterfaceAddDelFeatureReply)(nil),
-		(*Nat44InterfaceAddDelOutputFeature)(nil),
-		(*Nat44InterfaceAddDelOutputFeatureReply)(nil),
 		(*Nat44InterfaceAddrDetails)(nil),
 		(*Nat44InterfaceAddrDump)(nil),
 		(*Nat44InterfaceDetails)(nil),
 		(*Nat44InterfaceDump)(nil),
-		(*Nat44InterfaceOutputFeatureDetails)(nil),
-		(*Nat44InterfaceOutputFeatureDump)(nil),
 		(*Nat44LbStaticMappingAddDelLocal)(nil),
 		(*Nat44LbStaticMappingAddDelLocalReply)(nil),
 		(*Nat44LbStaticMappingDetails)(nil),
 		(*Nat44LbStaticMappingDump)(nil),
-		(*Nat44PluginEnableDisable)(nil),
-		(*Nat44PluginEnableDisableReply)(nil),
-		(*Nat44SessionCleanup)(nil),
-		(*Nat44SessionCleanupReply)(nil),
 		(*Nat44SetSessionLimit)(nil),
 		(*Nat44SetSessionLimitReply)(nil),
 		(*Nat44ShowRunningConfig)(nil),
@@ -4590,14 +3936,10 @@ func AllMessages() []api.Message {
 		(*Nat44UserSessionDump)(nil),
 		(*Nat44UserSessionV2Details)(nil),
 		(*Nat44UserSessionV2Dump)(nil),
-		(*NatControlPing)(nil),
-		(*NatControlPingReply)(nil),
 		(*NatGetAddrAndPortAllocAlg)(nil),
 		(*NatGetAddrAndPortAllocAlgReply)(nil),
 		(*NatGetMssClamping)(nil),
 		(*NatGetMssClampingReply)(nil),
-		(*NatGetTimeouts)(nil),
-		(*NatGetTimeoutsReply)(nil),
 		(*NatHaFlush)(nil),
 		(*NatHaFlushReply)(nil),
 		(*NatHaGetFailover)(nil),
@@ -4615,18 +3957,12 @@ func AllMessages() []api.Message {
 		(*NatIpfixEnableDisableReply)(nil),
 		(*NatSetAddrAndPortAllocAlg)(nil),
 		(*NatSetAddrAndPortAllocAlgReply)(nil),
-		(*NatSetLogLevel)(nil),
-		(*NatSetLogLevelReply)(nil),
 		(*NatSetMssClamping)(nil),
 		(*NatSetMssClampingReply)(nil),
 		(*NatSetTimeouts)(nil),
 		(*NatSetTimeoutsReply)(nil),
 		(*NatSetWorkers)(nil),
 		(*NatSetWorkersReply)(nil),
-		(*NatShowConfig)(nil),
-		(*NatShowConfig2)(nil),
-		(*NatShowConfig2Reply)(nil),
-		(*NatShowConfigReply)(nil),
 		(*NatWorkerDetails)(nil),
 		(*NatWorkerDump)(nil),
 	}

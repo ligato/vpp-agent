@@ -28,28 +28,28 @@ const _ = api.GoVppAPIPackageIsVersion2
 const (
 	APIFile    = "dhcp"
 	APIVersion = "3.0.1"
-	VersionCrc = 0x3cf8291a
+	VersionCrc = 0xaee239f2
 )
 
 // DHCPClientState defines enum 'dhcp_client_state'.
 type DHCPClientState uint32
 
 const (
-	DHCP_CLIENT_STATE_API_DISCOVER DHCPClientState = 1
-	DHCP_CLIENT_STATE_API_REQUEST  DHCPClientState = 2
-	DHCP_CLIENT_STATE_API_BOUND    DHCPClientState = 3
+	DHCP_CLIENT_STATE_API_DISCOVER DHCPClientState = 0
+	DHCP_CLIENT_STATE_API_REQUEST  DHCPClientState = 1
+	DHCP_CLIENT_STATE_API_BOUND    DHCPClientState = 2
 )
 
 var (
 	DHCPClientState_name = map[uint32]string{
-		1: "DHCP_CLIENT_STATE_API_DISCOVER",
-		2: "DHCP_CLIENT_STATE_API_REQUEST",
-		3: "DHCP_CLIENT_STATE_API_BOUND",
+		0: "DHCP_CLIENT_STATE_API_DISCOVER",
+		1: "DHCP_CLIENT_STATE_API_REQUEST",
+		2: "DHCP_CLIENT_STATE_API_BOUND",
 	}
 	DHCPClientState_value = map[string]uint32{
-		"DHCP_CLIENT_STATE_API_DISCOVER": 1,
-		"DHCP_CLIENT_STATE_API_REQUEST":  2,
-		"DHCP_CLIENT_STATE_API_BOUND":    3,
+		"DHCP_CLIENT_STATE_API_DISCOVER": 0,
+		"DHCP_CLIENT_STATE_API_REQUEST":  1,
+		"DHCP_CLIENT_STATE_API_BOUND":    2,
 	}
 )
 
@@ -898,7 +898,7 @@ type DHCPClientDetails struct {
 
 func (m *DHCPClientDetails) Reset()               { *m = DHCPClientDetails{} }
 func (*DHCPClientDetails) GetMessageName() string { return "dhcp_client_details" }
-func (*DHCPClientDetails) GetCrcString() string   { return "3c5cd28a" }
+func (*DHCPClientDetails) GetCrcString() string   { return "8897b2d8" }
 func (*DHCPClientDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
@@ -1033,7 +1033,7 @@ type DHCPComplEvent struct {
 
 func (m *DHCPComplEvent) Reset()               { *m = DHCPComplEvent{} }
 func (*DHCPComplEvent) GetMessageName() string { return "dhcp_compl_event" }
-func (*DHCPComplEvent) GetCrcString() string   { return "554a44e5" }
+func (*DHCPComplEvent) GetCrcString() string   { return "e18124b7" }
 func (*DHCPComplEvent) GetMessageType() api.MessageType {
 	return api.EventMessage
 }
@@ -1703,9 +1703,9 @@ func file_dhcp_binapi_init() {
 	api.RegisterMessage((*DHCP6SendClientMessageReply)(nil), "dhcp6_send_client_message_reply_e8d4e804")
 	api.RegisterMessage((*DHCPClientConfig)(nil), "dhcp_client_config_1af013ea")
 	api.RegisterMessage((*DHCPClientConfigReply)(nil), "dhcp_client_config_reply_e8d4e804")
-	api.RegisterMessage((*DHCPClientDetails)(nil), "dhcp_client_details_3c5cd28a")
+	api.RegisterMessage((*DHCPClientDetails)(nil), "dhcp_client_details_8897b2d8")
 	api.RegisterMessage((*DHCPClientDump)(nil), "dhcp_client_dump_51077d14")
-	api.RegisterMessage((*DHCPComplEvent)(nil), "dhcp_compl_event_554a44e5")
+	api.RegisterMessage((*DHCPComplEvent)(nil), "dhcp_compl_event_e18124b7")
 	api.RegisterMessage((*DHCPPluginControlPing)(nil), "dhcp_plugin_control_ping_51077d14")
 	api.RegisterMessage((*DHCPPluginControlPingReply)(nil), "dhcp_plugin_control_ping_reply_f6b0b8ca")
 	api.RegisterMessage((*DHCPPluginGetVersion)(nil), "dhcp_plugin_get_version_51077d14")

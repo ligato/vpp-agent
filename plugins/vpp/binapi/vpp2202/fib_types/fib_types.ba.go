@@ -21,6 +21,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "fib_types"
+	APIVersion = "2.0.1"
+	VersionCrc = 0x21fd785b
+)
+
 // FibPathFlags defines enum 'fib_path_flags'.
 type FibPathFlags uint32
 

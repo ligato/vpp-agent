@@ -26,6 +26,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "ip_types"
+	APIVersion = "3.0.0"
+	VersionCrc = 0xfee023ed
+)
+
 // AddressFamily defines enum 'address_family'.
 type AddressFamily uint8
 

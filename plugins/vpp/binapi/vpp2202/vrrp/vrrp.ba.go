@@ -5,7 +5,7 @@
 // Contents:
 //   2 enums
 //   5 structs
-//  17 messages
+//  21 messages
 //
 package vrrp
 
@@ -27,8 +27,8 @@ const _ = api.GoVppAPIPackageIsVersion2
 
 const (
 	APIFile    = "vrrp"
-	APIVersion = "1.0.1"
-	VersionCrc = 0x6a3c71cd
+	APIVersion = "1.1.1"
+	VersionCrc = 0x674aea12
 )
 
 // VrrpVrFlags defines enum 'vrrp_vr_flags'.
@@ -262,6 +262,72 @@ func (m *VrrpVrAddDelReply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *VrrpVrAddDelReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	return nil
+}
+
+// VrrpVrDel defines message 'vrrp_vr_del'.
+type VrrpVrDel struct {
+	VrrpIndex uint32 `binapi:"u32,name=vrrp_index" json:"vrrp_index,omitempty"`
+}
+
+func (m *VrrpVrDel) Reset()               { *m = VrrpVrDel{} }
+func (*VrrpVrDel) GetMessageName() string { return "vrrp_vr_del" }
+func (*VrrpVrDel) GetCrcString() string   { return "6029baa1" }
+func (*VrrpVrDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *VrrpVrDel) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.VrrpIndex
+	return size
+}
+func (m *VrrpVrDel) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.VrrpIndex)
+	return buf.Bytes(), nil
+}
+func (m *VrrpVrDel) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.VrrpIndex = buf.DecodeUint32()
+	return nil
+}
+
+// VrrpVrDelReply defines message 'vrrp_vr_del_reply'.
+type VrrpVrDelReply struct {
+	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+}
+
+func (m *VrrpVrDelReply) Reset()               { *m = VrrpVrDelReply{} }
+func (*VrrpVrDelReply) GetMessageName() string { return "vrrp_vr_del_reply" }
+func (*VrrpVrDelReply) GetCrcString() string   { return "e8d4e804" }
+func (*VrrpVrDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *VrrpVrDelReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	return size
+}
+func (m *VrrpVrDelReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	return buf.Bytes(), nil
+}
+func (m *VrrpVrDelReply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	return nil
@@ -951,6 +1017,123 @@ func (m *VrrpVrTrackIfDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// VrrpVrUpdate defines message 'vrrp_vr_update'.
+type VrrpVrUpdate struct {
+	VrrpIndex uint32                         `binapi:"u32,name=vrrp_index" json:"vrrp_index,omitempty"`
+	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
+	VrID      uint8                          `binapi:"u8,name=vr_id" json:"vr_id,omitempty"`
+	Priority  uint8                          `binapi:"u8,name=priority" json:"priority,omitempty"`
+	Interval  uint16                         `binapi:"u16,name=interval" json:"interval,omitempty"`
+	Flags     VrrpVrFlags                    `binapi:"vrrp_vr_flags,name=flags" json:"flags,omitempty"`
+	NAddrs    uint8                          `binapi:"u8,name=n_addrs" json:"-"`
+	Addrs     []ip_types.Address             `binapi:"address[n_addrs],name=addrs" json:"addrs,omitempty"`
+}
+
+func (m *VrrpVrUpdate) Reset()               { *m = VrrpVrUpdate{} }
+func (*VrrpVrUpdate) GetMessageName() string { return "vrrp_vr_update" }
+func (*VrrpVrUpdate) GetCrcString() string   { return "0b51e2f4" }
+func (*VrrpVrUpdate) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *VrrpVrUpdate) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.VrrpIndex
+	size += 4 // m.SwIfIndex
+	size += 1 // m.VrID
+	size += 1 // m.Priority
+	size += 2 // m.Interval
+	size += 4 // m.Flags
+	size += 1 // m.NAddrs
+	for j1 := 0; j1 < len(m.Addrs); j1++ {
+		var s1 ip_types.Address
+		_ = s1
+		if j1 < len(m.Addrs) {
+			s1 = m.Addrs[j1]
+		}
+		size += 1      // s1.Af
+		size += 1 * 16 // s1.Un
+	}
+	return size
+}
+func (m *VrrpVrUpdate) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.VrrpIndex)
+	buf.EncodeUint32(uint32(m.SwIfIndex))
+	buf.EncodeUint8(m.VrID)
+	buf.EncodeUint8(m.Priority)
+	buf.EncodeUint16(m.Interval)
+	buf.EncodeUint32(uint32(m.Flags))
+	buf.EncodeUint8(uint8(len(m.Addrs)))
+	for j0 := 0; j0 < len(m.Addrs); j0++ {
+		var v0 ip_types.Address // Addrs
+		if j0 < len(m.Addrs) {
+			v0 = m.Addrs[j0]
+		}
+		buf.EncodeUint8(uint8(v0.Af))
+		buf.EncodeBytes(v0.Un.XXX_UnionData[:], 16)
+	}
+	return buf.Bytes(), nil
+}
+func (m *VrrpVrUpdate) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.VrrpIndex = buf.DecodeUint32()
+	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
+	m.VrID = buf.DecodeUint8()
+	m.Priority = buf.DecodeUint8()
+	m.Interval = buf.DecodeUint16()
+	m.Flags = VrrpVrFlags(buf.DecodeUint32())
+	m.NAddrs = buf.DecodeUint8()
+	m.Addrs = make([]ip_types.Address, m.NAddrs)
+	for j0 := 0; j0 < len(m.Addrs); j0++ {
+		m.Addrs[j0].Af = ip_types.AddressFamily(buf.DecodeUint8())
+		copy(m.Addrs[j0].Un.XXX_UnionData[:], buf.DecodeBytes(16))
+	}
+	return nil
+}
+
+// VrrpVrUpdateReply defines message 'vrrp_vr_update_reply'.
+type VrrpVrUpdateReply struct {
+	Retval    int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
+	VrrpIndex uint32 `binapi:"u32,name=vrrp_index" json:"vrrp_index,omitempty"`
+}
+
+func (m *VrrpVrUpdateReply) Reset()               { *m = VrrpVrUpdateReply{} }
+func (*VrrpVrUpdateReply) GetMessageName() string { return "vrrp_vr_update_reply" }
+func (*VrrpVrUpdateReply) GetCrcString() string   { return "5317d608" }
+func (*VrrpVrUpdateReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *VrrpVrUpdateReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	size += 4 // m.VrrpIndex
+	return size
+}
+func (m *VrrpVrUpdateReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	buf.EncodeUint32(m.VrrpIndex)
+	return buf.Bytes(), nil
+}
+func (m *VrrpVrUpdateReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	m.VrrpIndex = buf.DecodeUint32()
+	return nil
+}
+
 // WantVrrpVrEvents defines message 'want_vrrp_vr_events'.
 type WantVrrpVrEvents struct {
 	EnableDisable bool   `binapi:"bool,name=enable_disable" json:"enable_disable,omitempty"`
@@ -1025,6 +1208,8 @@ func init() { file_vrrp_binapi_init() }
 func file_vrrp_binapi_init() {
 	api.RegisterMessage((*VrrpVrAddDel)(nil), "vrrp_vr_add_del_c5cf15aa")
 	api.RegisterMessage((*VrrpVrAddDelReply)(nil), "vrrp_vr_add_del_reply_e8d4e804")
+	api.RegisterMessage((*VrrpVrDel)(nil), "vrrp_vr_del_6029baa1")
+	api.RegisterMessage((*VrrpVrDelReply)(nil), "vrrp_vr_del_reply_e8d4e804")
 	api.RegisterMessage((*VrrpVrDetails)(nil), "vrrp_vr_details_46edcebd")
 	api.RegisterMessage((*VrrpVrDump)(nil), "vrrp_vr_dump_f9e6675e")
 	api.RegisterMessage((*VrrpVrEvent)(nil), "vrrp_vr_event_c1fea6a5")
@@ -1038,6 +1223,8 @@ func file_vrrp_binapi_init() {
 	api.RegisterMessage((*VrrpVrTrackIfAddDelReply)(nil), "vrrp_vr_track_if_add_del_reply_e8d4e804")
 	api.RegisterMessage((*VrrpVrTrackIfDetails)(nil), "vrrp_vr_track_if_details_73c36f81")
 	api.RegisterMessage((*VrrpVrTrackIfDump)(nil), "vrrp_vr_track_if_dump_a34dfc6d")
+	api.RegisterMessage((*VrrpVrUpdate)(nil), "vrrp_vr_update_0b51e2f4")
+	api.RegisterMessage((*VrrpVrUpdateReply)(nil), "vrrp_vr_update_reply_5317d608")
 	api.RegisterMessage((*WantVrrpVrEvents)(nil), "want_vrrp_vr_events_c5e2af94")
 	api.RegisterMessage((*WantVrrpVrEventsReply)(nil), "want_vrrp_vr_events_reply_e8d4e804")
 }
@@ -1047,6 +1234,8 @@ func AllMessages() []api.Message {
 	return []api.Message{
 		(*VrrpVrAddDel)(nil),
 		(*VrrpVrAddDelReply)(nil),
+		(*VrrpVrDel)(nil),
+		(*VrrpVrDelReply)(nil),
 		(*VrrpVrDetails)(nil),
 		(*VrrpVrDump)(nil),
 		(*VrrpVrEvent)(nil),
@@ -1060,6 +1249,8 @@ func AllMessages() []api.Message {
 		(*VrrpVrTrackIfAddDelReply)(nil),
 		(*VrrpVrTrackIfDetails)(nil),
 		(*VrrpVrTrackIfDump)(nil),
+		(*VrrpVrUpdate)(nil),
+		(*VrrpVrUpdateReply)(nil),
 		(*WantVrrpVrEvents)(nil),
 		(*WantVrrpVrEventsReply)(nil),
 	}

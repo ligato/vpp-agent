@@ -22,6 +22,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "mfib_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0xd2b57aaf
+)
+
 // MfibEntryFlags defines enum 'mfib_entry_flags'.
 type MfibEntryFlags uint32
 

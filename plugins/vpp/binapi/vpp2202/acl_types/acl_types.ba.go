@@ -22,6 +22,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "acl_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x878da4fa
+)
+
 // ACLAction defines enum 'acl_action'.
 type ACLAction uint8
 

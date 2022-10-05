@@ -22,6 +22,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "tunnel_types"
+	APIVersion = "1.0.1"
+	VersionCrc = 0x882f6758
+)
+
 // TunnelEncapDecapFlags defines enum 'tunnel_encap_decap_flags'.
 type TunnelEncapDecapFlags uint8
 

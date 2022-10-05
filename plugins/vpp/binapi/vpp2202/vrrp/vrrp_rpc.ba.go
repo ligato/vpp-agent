@@ -14,12 +14,14 @@ import (
 // RPCService defines RPC service vrrp.
 type RPCService interface {
 	VrrpVrAddDel(ctx context.Context, in *VrrpVrAddDel) (*VrrpVrAddDelReply, error)
+	VrrpVrDel(ctx context.Context, in *VrrpVrDel) (*VrrpVrDelReply, error)
 	VrrpVrDump(ctx context.Context, in *VrrpVrDump) (RPCService_VrrpVrDumpClient, error)
 	VrrpVrPeerDump(ctx context.Context, in *VrrpVrPeerDump) (RPCService_VrrpVrPeerDumpClient, error)
 	VrrpVrSetPeers(ctx context.Context, in *VrrpVrSetPeers) (*VrrpVrSetPeersReply, error)
 	VrrpVrStartStop(ctx context.Context, in *VrrpVrStartStop) (*VrrpVrStartStopReply, error)
 	VrrpVrTrackIfAddDel(ctx context.Context, in *VrrpVrTrackIfAddDel) (*VrrpVrTrackIfAddDelReply, error)
 	VrrpVrTrackIfDump(ctx context.Context, in *VrrpVrTrackIfDump) (RPCService_VrrpVrTrackIfDumpClient, error)
+	VrrpVrUpdate(ctx context.Context, in *VrrpVrUpdate) (*VrrpVrUpdateReply, error)
 	WantVrrpVrEvents(ctx context.Context, in *WantVrrpVrEvents) (*WantVrrpVrEventsReply, error)
 }
 
@@ -33,6 +35,15 @@ func NewServiceClient(conn api.Connection) RPCService {
 
 func (c *serviceClient) VrrpVrAddDel(ctx context.Context, in *VrrpVrAddDel) (*VrrpVrAddDelReply, error) {
 	out := new(VrrpVrAddDelReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, api.RetvalToVPPApiError(out.Retval)
+}
+
+func (c *serviceClient) VrrpVrDel(ctx context.Context, in *VrrpVrDel) (*VrrpVrDelReply, error) {
+	out := new(VrrpVrDelReply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err
@@ -194,6 +205,15 @@ func (c *serviceClient_VrrpVrTrackIfDumpClient) Recv() (*VrrpVrTrackIfDetails, e
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
 	}
+}
+
+func (c *serviceClient) VrrpVrUpdate(ctx context.Context, in *VrrpVrUpdate) (*VrrpVrUpdateReply, error) {
+	out := new(VrrpVrUpdateReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WantVrrpVrEvents(ctx context.Context, in *WantVrrpVrEvents) (*WantVrrpVrEventsReply, error) {

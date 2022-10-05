@@ -3,8 +3,8 @@
 // Package flowprobe contains generated bindings for API file flowprobe.api.
 //
 // Contents:
-//   2 enums
-//   4 messages
+//   4 enums
+//  12 messages
 //
 package flowprobe
 
@@ -24,9 +24,39 @@ const _ = api.GoVppAPIPackageIsVersion2
 
 const (
 	APIFile    = "flowprobe"
-	APIVersion = "1.0.0"
-	VersionCrc = 0x8da9f1c
+	APIVersion = "2.1.0"
+	VersionCrc = 0x72c9c142
 )
+
+// FlowprobeDirection defines enum 'flowprobe_direction'.
+type FlowprobeDirection uint8
+
+const (
+	FLOWPROBE_DIRECTION_RX   FlowprobeDirection = 0
+	FLOWPROBE_DIRECTION_TX   FlowprobeDirection = 1
+	FLOWPROBE_DIRECTION_BOTH FlowprobeDirection = 2
+)
+
+var (
+	FlowprobeDirection_name = map[uint8]string{
+		0: "FLOWPROBE_DIRECTION_RX",
+		1: "FLOWPROBE_DIRECTION_TX",
+		2: "FLOWPROBE_DIRECTION_BOTH",
+	}
+	FlowprobeDirection_value = map[string]uint8{
+		"FLOWPROBE_DIRECTION_RX":   0,
+		"FLOWPROBE_DIRECTION_TX":   1,
+		"FLOWPROBE_DIRECTION_BOTH": 2,
+	}
+)
+
+func (x FlowprobeDirection) String() string {
+	s, ok := FlowprobeDirection_name[uint8(x)]
+	if ok {
+		return s
+	}
+	return "FlowprobeDirection(" + strconv.Itoa(int(x)) + ")"
+}
 
 // FlowprobeRecordFlags defines enum 'flowprobe_record_flags'.
 type FlowprobeRecordFlags uint8
@@ -77,6 +107,36 @@ func (x FlowprobeRecordFlags) String() string {
 	return s
 }
 
+// FlowprobeWhich defines enum 'flowprobe_which'.
+type FlowprobeWhich uint8
+
+const (
+	FLOWPROBE_WHICH_IP4 FlowprobeWhich = 0
+	FLOWPROBE_WHICH_IP6 FlowprobeWhich = 1
+	FLOWPROBE_WHICH_L2  FlowprobeWhich = 2
+)
+
+var (
+	FlowprobeWhich_name = map[uint8]string{
+		0: "FLOWPROBE_WHICH_IP4",
+		1: "FLOWPROBE_WHICH_IP6",
+		2: "FLOWPROBE_WHICH_L2",
+	}
+	FlowprobeWhich_value = map[string]uint8{
+		"FLOWPROBE_WHICH_IP4": 0,
+		"FLOWPROBE_WHICH_IP6": 1,
+		"FLOWPROBE_WHICH_L2":  2,
+	}
+)
+
+func (x FlowprobeWhich) String() string {
+	s, ok := FlowprobeWhich_name[uint8(x)]
+	if ok {
+		return s
+	}
+	return "FlowprobeWhich(" + strconv.Itoa(int(x)) + ")"
+}
+
 // FlowprobeWhichFlags defines enum 'flowprobe_which_flags'.
 type FlowprobeWhichFlags uint8
 
@@ -124,6 +184,238 @@ func (x FlowprobeWhichFlags) String() string {
 		return str(uint8(x))
 	}
 	return s
+}
+
+// FlowprobeGetParams defines message 'flowprobe_get_params'.
+// InProgress: the message form may change in the future versions
+type FlowprobeGetParams struct{}
+
+func (m *FlowprobeGetParams) Reset()               { *m = FlowprobeGetParams{} }
+func (*FlowprobeGetParams) GetMessageName() string { return "flowprobe_get_params" }
+func (*FlowprobeGetParams) GetCrcString() string   { return "51077d14" }
+func (*FlowprobeGetParams) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *FlowprobeGetParams) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	return size
+}
+func (m *FlowprobeGetParams) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeGetParams) Unmarshal(b []byte) error {
+	return nil
+}
+
+// FlowprobeGetParamsReply defines message 'flowprobe_get_params_reply'.
+// InProgress: the message form may change in the future versions
+type FlowprobeGetParamsReply struct {
+	Retval       int32                `binapi:"i32,name=retval" json:"retval,omitempty"`
+	RecordFlags  FlowprobeRecordFlags `binapi:"flowprobe_record_flags,name=record_flags" json:"record_flags,omitempty"`
+	ActiveTimer  uint32               `binapi:"u32,name=active_timer" json:"active_timer,omitempty"`
+	PassiveTimer uint32               `binapi:"u32,name=passive_timer" json:"passive_timer,omitempty"`
+}
+
+func (m *FlowprobeGetParamsReply) Reset()               { *m = FlowprobeGetParamsReply{} }
+func (*FlowprobeGetParamsReply) GetMessageName() string { return "flowprobe_get_params_reply" }
+func (*FlowprobeGetParamsReply) GetCrcString() string   { return "f350d621" }
+func (*FlowprobeGetParamsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *FlowprobeGetParamsReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	size += 1 // m.RecordFlags
+	size += 4 // m.ActiveTimer
+	size += 4 // m.PassiveTimer
+	return size
+}
+func (m *FlowprobeGetParamsReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	buf.EncodeUint8(uint8(m.RecordFlags))
+	buf.EncodeUint32(m.ActiveTimer)
+	buf.EncodeUint32(m.PassiveTimer)
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeGetParamsReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	m.RecordFlags = FlowprobeRecordFlags(buf.DecodeUint8())
+	m.ActiveTimer = buf.DecodeUint32()
+	m.PassiveTimer = buf.DecodeUint32()
+	return nil
+}
+
+// FlowprobeInterfaceAddDel defines message 'flowprobe_interface_add_del'.
+// InProgress: the message form may change in the future versions
+type FlowprobeInterfaceAddDel struct {
+	IsAdd     bool                           `binapi:"bool,name=is_add" json:"is_add,omitempty"`
+	Which     FlowprobeWhich                 `binapi:"flowprobe_which,name=which" json:"which,omitempty"`
+	Direction FlowprobeDirection             `binapi:"flowprobe_direction,name=direction" json:"direction,omitempty"`
+	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
+}
+
+func (m *FlowprobeInterfaceAddDel) Reset()               { *m = FlowprobeInterfaceAddDel{} }
+func (*FlowprobeInterfaceAddDel) GetMessageName() string { return "flowprobe_interface_add_del" }
+func (*FlowprobeInterfaceAddDel) GetCrcString() string   { return "3420739c" }
+func (*FlowprobeInterfaceAddDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *FlowprobeInterfaceAddDel) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 1 // m.IsAdd
+	size += 1 // m.Which
+	size += 1 // m.Direction
+	size += 4 // m.SwIfIndex
+	return size
+}
+func (m *FlowprobeInterfaceAddDel) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeBool(m.IsAdd)
+	buf.EncodeUint8(uint8(m.Which))
+	buf.EncodeUint8(uint8(m.Direction))
+	buf.EncodeUint32(uint32(m.SwIfIndex))
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeInterfaceAddDel) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.IsAdd = buf.DecodeBool()
+	m.Which = FlowprobeWhich(buf.DecodeUint8())
+	m.Direction = FlowprobeDirection(buf.DecodeUint8())
+	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
+	return nil
+}
+
+// FlowprobeInterfaceAddDelReply defines message 'flowprobe_interface_add_del_reply'.
+// InProgress: the message form may change in the future versions
+type FlowprobeInterfaceAddDelReply struct {
+	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+}
+
+func (m *FlowprobeInterfaceAddDelReply) Reset() { *m = FlowprobeInterfaceAddDelReply{} }
+func (*FlowprobeInterfaceAddDelReply) GetMessageName() string {
+	return "flowprobe_interface_add_del_reply"
+}
+func (*FlowprobeInterfaceAddDelReply) GetCrcString() string { return "e8d4e804" }
+func (*FlowprobeInterfaceAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *FlowprobeInterfaceAddDelReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	return size
+}
+func (m *FlowprobeInterfaceAddDelReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeInterfaceAddDelReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	return nil
+}
+
+// FlowprobeInterfaceDetails defines message 'flowprobe_interface_details'.
+// InProgress: the message form may change in the future versions
+type FlowprobeInterfaceDetails struct {
+	Which     FlowprobeWhich                 `binapi:"flowprobe_which,name=which" json:"which,omitempty"`
+	Direction FlowprobeDirection             `binapi:"flowprobe_direction,name=direction" json:"direction,omitempty"`
+	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
+}
+
+func (m *FlowprobeInterfaceDetails) Reset()               { *m = FlowprobeInterfaceDetails{} }
+func (*FlowprobeInterfaceDetails) GetMessageName() string { return "flowprobe_interface_details" }
+func (*FlowprobeInterfaceDetails) GetCrcString() string   { return "427d77e0" }
+func (*FlowprobeInterfaceDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *FlowprobeInterfaceDetails) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 1 // m.Which
+	size += 1 // m.Direction
+	size += 4 // m.SwIfIndex
+	return size
+}
+func (m *FlowprobeInterfaceDetails) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint8(uint8(m.Which))
+	buf.EncodeUint8(uint8(m.Direction))
+	buf.EncodeUint32(uint32(m.SwIfIndex))
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeInterfaceDetails) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Which = FlowprobeWhich(buf.DecodeUint8())
+	m.Direction = FlowprobeDirection(buf.DecodeUint8())
+	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
+	return nil
+}
+
+// FlowprobeInterfaceDump defines message 'flowprobe_interface_dump'.
+// InProgress: the message form may change in the future versions
+type FlowprobeInterfaceDump struct {
+	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index,default=4294967295" json:"sw_if_index,omitempty"`
+}
+
+func (m *FlowprobeInterfaceDump) Reset()               { *m = FlowprobeInterfaceDump{} }
+func (*FlowprobeInterfaceDump) GetMessageName() string { return "flowprobe_interface_dump" }
+func (*FlowprobeInterfaceDump) GetCrcString() string   { return "f9e6675e" }
+func (*FlowprobeInterfaceDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *FlowprobeInterfaceDump) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.SwIfIndex
+	return size
+}
+func (m *FlowprobeInterfaceDump) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(uint32(m.SwIfIndex))
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeInterfaceDump) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.SwIfIndex = interface_types.InterfaceIndex(buf.DecodeUint32())
+	return nil
 }
 
 // FlowprobeParams defines message 'flowprobe_params'.
@@ -195,6 +487,82 @@ func (m *FlowprobeParamsReply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *FlowprobeParamsReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	return nil
+}
+
+// FlowprobeSetParams defines message 'flowprobe_set_params'.
+// InProgress: the message form may change in the future versions
+type FlowprobeSetParams struct {
+	RecordFlags  FlowprobeRecordFlags `binapi:"flowprobe_record_flags,name=record_flags" json:"record_flags,omitempty"`
+	ActiveTimer  uint32               `binapi:"u32,name=active_timer,default=4294967295" json:"active_timer,omitempty"`
+	PassiveTimer uint32               `binapi:"u32,name=passive_timer,default=4294967295" json:"passive_timer,omitempty"`
+}
+
+func (m *FlowprobeSetParams) Reset()               { *m = FlowprobeSetParams{} }
+func (*FlowprobeSetParams) GetMessageName() string { return "flowprobe_set_params" }
+func (*FlowprobeSetParams) GetCrcString() string   { return "baa46c09" }
+func (*FlowprobeSetParams) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *FlowprobeSetParams) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 1 // m.RecordFlags
+	size += 4 // m.ActiveTimer
+	size += 4 // m.PassiveTimer
+	return size
+}
+func (m *FlowprobeSetParams) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeUint8(uint8(m.RecordFlags))
+	buf.EncodeUint32(m.ActiveTimer)
+	buf.EncodeUint32(m.PassiveTimer)
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeSetParams) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.RecordFlags = FlowprobeRecordFlags(buf.DecodeUint8())
+	m.ActiveTimer = buf.DecodeUint32()
+	m.PassiveTimer = buf.DecodeUint32()
+	return nil
+}
+
+// FlowprobeSetParamsReply defines message 'flowprobe_set_params_reply'.
+// InProgress: the message form may change in the future versions
+type FlowprobeSetParamsReply struct {
+	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+}
+
+func (m *FlowprobeSetParamsReply) Reset()               { *m = FlowprobeSetParamsReply{} }
+func (*FlowprobeSetParamsReply) GetMessageName() string { return "flowprobe_set_params_reply" }
+func (*FlowprobeSetParamsReply) GetCrcString() string   { return "e8d4e804" }
+func (*FlowprobeSetParamsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *FlowprobeSetParamsReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	return size
+}
+func (m *FlowprobeSetParamsReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	return buf.Bytes(), nil
+}
+func (m *FlowprobeSetParamsReply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	return nil
@@ -278,8 +646,16 @@ func (m *FlowprobeTxInterfaceAddDelReply) Unmarshal(b []byte) error {
 
 func init() { file_flowprobe_binapi_init() }
 func file_flowprobe_binapi_init() {
+	api.RegisterMessage((*FlowprobeGetParams)(nil), "flowprobe_get_params_51077d14")
+	api.RegisterMessage((*FlowprobeGetParamsReply)(nil), "flowprobe_get_params_reply_f350d621")
+	api.RegisterMessage((*FlowprobeInterfaceAddDel)(nil), "flowprobe_interface_add_del_3420739c")
+	api.RegisterMessage((*FlowprobeInterfaceAddDelReply)(nil), "flowprobe_interface_add_del_reply_e8d4e804")
+	api.RegisterMessage((*FlowprobeInterfaceDetails)(nil), "flowprobe_interface_details_427d77e0")
+	api.RegisterMessage((*FlowprobeInterfaceDump)(nil), "flowprobe_interface_dump_f9e6675e")
 	api.RegisterMessage((*FlowprobeParams)(nil), "flowprobe_params_baa46c09")
 	api.RegisterMessage((*FlowprobeParamsReply)(nil), "flowprobe_params_reply_e8d4e804")
+	api.RegisterMessage((*FlowprobeSetParams)(nil), "flowprobe_set_params_baa46c09")
+	api.RegisterMessage((*FlowprobeSetParamsReply)(nil), "flowprobe_set_params_reply_e8d4e804")
 	api.RegisterMessage((*FlowprobeTxInterfaceAddDel)(nil), "flowprobe_tx_interface_add_del_b782c976")
 	api.RegisterMessage((*FlowprobeTxInterfaceAddDelReply)(nil), "flowprobe_tx_interface_add_del_reply_e8d4e804")
 }
@@ -287,8 +663,16 @@ func file_flowprobe_binapi_init() {
 // Messages returns list of all messages in this module.
 func AllMessages() []api.Message {
 	return []api.Message{
+		(*FlowprobeGetParams)(nil),
+		(*FlowprobeGetParamsReply)(nil),
+		(*FlowprobeInterfaceAddDel)(nil),
+		(*FlowprobeInterfaceAddDelReply)(nil),
+		(*FlowprobeInterfaceDetails)(nil),
+		(*FlowprobeInterfaceDump)(nil),
 		(*FlowprobeParams)(nil),
 		(*FlowprobeParamsReply)(nil),
+		(*FlowprobeSetParams)(nil),
+		(*FlowprobeSetParamsReply)(nil),
 		(*FlowprobeTxInterfaceAddDel)(nil),
 		(*FlowprobeTxInterfaceAddDelReply)(nil),
 	}

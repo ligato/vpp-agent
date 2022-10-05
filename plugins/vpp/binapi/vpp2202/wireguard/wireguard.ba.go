@@ -26,8 +26,8 @@ const _ = api.GoVppAPIPackageIsVersion2
 
 const (
 	APIFile    = "wireguard"
-	APIVersion = "0.1.0"
-	VersionCrc = 0xb58de7e
+	APIVersion = "0.3.0"
+	VersionCrc = 0x5d8f9252
 )
 
 // WireguardPeerFlags defines enum 'wireguard_peer_flags'.
@@ -88,6 +88,7 @@ type WireguardInterface struct {
 
 // WireguardPeer defines type 'wireguard_peer'.
 type WireguardPeer struct {
+	PeerIndex           uint32                         `binapi:"u32,name=peer_index" json:"peer_index,omitempty"`
 	PublicKey           []byte                         `binapi:"u8[32],name=public_key" json:"public_key,omitempty"`
 	Port                uint16                         `binapi:"u16,name=port" json:"port,omitempty"`
 	PersistentKeepalive uint16                         `binapi:"u16,name=persistent_keepalive" json:"persistent_keepalive,omitempty"`
@@ -184,7 +185,7 @@ func (m *WantWireguardPeerEventsReply) Unmarshal(b []byte) error {
 // WgSetAsyncMode defines message 'wg_set_async_mode'.
 // InProgress: the message form may change in the future versions
 type WgSetAsyncMode struct {
-	AsyncEnable bool `binapi:"bool,name=async_enable" json:"async_enable,omitempty"`
+	AsyncEnable bool `binapi:"bool,name=async_enable,default=false" json:"async_enable,omitempty"`
 }
 
 func (m *WgSetAsyncMode) Reset()               { *m = WgSetAsyncMode{} }
@@ -517,7 +518,7 @@ type WireguardPeerAdd struct {
 
 func (m *WireguardPeerAdd) Reset()               { *m = WireguardPeerAdd{} }
 func (*WireguardPeerAdd) GetMessageName() string { return "wireguard_peer_add" }
-func (*WireguardPeerAdd) GetCrcString() string   { return "aedf8d59" }
+func (*WireguardPeerAdd) GetCrcString() string   { return "9b8aad61" }
 func (*WireguardPeerAdd) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
@@ -526,6 +527,7 @@ func (m *WireguardPeerAdd) Size() (size int) {
 	if m == nil {
 		return 0
 	}
+	size += 4      // m.Peer.PeerIndex
 	size += 1 * 32 // m.Peer.PublicKey
 	size += 2      // m.Peer.Port
 	size += 2      // m.Peer.PersistentKeepalive
@@ -552,6 +554,7 @@ func (m *WireguardPeerAdd) Marshal(b []byte) ([]byte, error) {
 		b = make([]byte, m.Size())
 	}
 	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.Peer.PeerIndex)
 	buf.EncodeBytes(m.Peer.PublicKey, 32)
 	buf.EncodeUint16(m.Peer.Port)
 	buf.EncodeUint16(m.Peer.PersistentKeepalive)
@@ -574,6 +577,7 @@ func (m *WireguardPeerAdd) Marshal(b []byte) ([]byte, error) {
 }
 func (m *WireguardPeerAdd) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
+	m.Peer.PeerIndex = buf.DecodeUint32()
 	m.Peer.PublicKey = make([]byte, 32)
 	copy(m.Peer.PublicKey, buf.DecodeBytes(len(m.Peer.PublicKey)))
 	m.Peer.Port = buf.DecodeUint16()
@@ -749,7 +753,7 @@ type WireguardPeersDetails struct {
 
 func (m *WireguardPeersDetails) Reset()               { *m = WireguardPeersDetails{} }
 func (*WireguardPeersDetails) GetMessageName() string { return "wireguard_peers_details" }
-func (*WireguardPeersDetails) GetCrcString() string   { return "29269d0e" }
+func (*WireguardPeersDetails) GetCrcString() string   { return "6a9f6bc3" }
 func (*WireguardPeersDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
@@ -758,6 +762,7 @@ func (m *WireguardPeersDetails) Size() (size int) {
 	if m == nil {
 		return 0
 	}
+	size += 4      // m.Peer.PeerIndex
 	size += 1 * 32 // m.Peer.PublicKey
 	size += 2      // m.Peer.Port
 	size += 2      // m.Peer.PersistentKeepalive
@@ -784,6 +789,7 @@ func (m *WireguardPeersDetails) Marshal(b []byte) ([]byte, error) {
 		b = make([]byte, m.Size())
 	}
 	buf := codec.NewBuffer(b)
+	buf.EncodeUint32(m.Peer.PeerIndex)
 	buf.EncodeBytes(m.Peer.PublicKey, 32)
 	buf.EncodeUint16(m.Peer.Port)
 	buf.EncodeUint16(m.Peer.PersistentKeepalive)
@@ -806,6 +812,7 @@ func (m *WireguardPeersDetails) Marshal(b []byte) ([]byte, error) {
 }
 func (m *WireguardPeersDetails) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
+	m.Peer.PeerIndex = buf.DecodeUint32()
 	m.Peer.PublicKey = make([]byte, 32)
 	copy(m.Peer.PublicKey, buf.DecodeBytes(len(m.Peer.PublicKey)))
 	m.Peer.Port = buf.DecodeUint16()
@@ -871,12 +878,12 @@ func file_wireguard_binapi_init() {
 	api.RegisterMessage((*WireguardInterfaceDeleteReply)(nil), "wireguard_interface_delete_reply_e8d4e804")
 	api.RegisterMessage((*WireguardInterfaceDetails)(nil), "wireguard_interface_details_0dd4865d")
 	api.RegisterMessage((*WireguardInterfaceDump)(nil), "wireguard_interface_dump_2c954158")
-	api.RegisterMessage((*WireguardPeerAdd)(nil), "wireguard_peer_add_aedf8d59")
+	api.RegisterMessage((*WireguardPeerAdd)(nil), "wireguard_peer_add_9b8aad61")
 	api.RegisterMessage((*WireguardPeerAddReply)(nil), "wireguard_peer_add_reply_084a0cd3")
 	api.RegisterMessage((*WireguardPeerEvent)(nil), "wireguard_peer_event_4e1b5d67")
 	api.RegisterMessage((*WireguardPeerRemove)(nil), "wireguard_peer_remove_3b74607a")
 	api.RegisterMessage((*WireguardPeerRemoveReply)(nil), "wireguard_peer_remove_reply_e8d4e804")
-	api.RegisterMessage((*WireguardPeersDetails)(nil), "wireguard_peers_details_29269d0e")
+	api.RegisterMessage((*WireguardPeersDetails)(nil), "wireguard_peers_details_6a9f6bc3")
 	api.RegisterMessage((*WireguardPeersDump)(nil), "wireguard_peers_dump_3b74607a")
 }
 

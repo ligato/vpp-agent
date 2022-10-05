@@ -31,6 +31,7 @@ type RPCService interface {
 	IpsecSpdAddDel(ctx context.Context, in *IpsecSpdAddDel) (*IpsecSpdAddDelReply, error)
 	IpsecSpdDump(ctx context.Context, in *IpsecSpdDump) (RPCService_IpsecSpdDumpClient, error)
 	IpsecSpdEntryAddDel(ctx context.Context, in *IpsecSpdEntryAddDel) (*IpsecSpdEntryAddDelReply, error)
+	IpsecSpdEntryAddDelV2(ctx context.Context, in *IpsecSpdEntryAddDelV2) (*IpsecSpdEntryAddDelV2Reply, error)
 	IpsecSpdInterfaceDump(ctx context.Context, in *IpsecSpdInterfaceDump) (RPCService_IpsecSpdInterfaceDumpClient, error)
 	IpsecSpdsDump(ctx context.Context, in *IpsecSpdsDump) (RPCService_IpsecSpdsDumpClient, error)
 	IpsecTunnelProtectDel(ctx context.Context, in *IpsecTunnelProtectDel) (*IpsecTunnelProtectDelReply, error)
@@ -405,6 +406,15 @@ func (c *serviceClient_IpsecSpdDumpClient) Recv() (*IpsecSpdDetails, error) {
 
 func (c *serviceClient) IpsecSpdEntryAddDel(ctx context.Context, in *IpsecSpdEntryAddDel) (*IpsecSpdEntryAddDelReply, error) {
 	out := new(IpsecSpdEntryAddDelReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, api.RetvalToVPPApiError(out.Retval)
+}
+
+func (c *serviceClient) IpsecSpdEntryAddDelV2(ctx context.Context, in *IpsecSpdEntryAddDelV2) (*IpsecSpdEntryAddDelV2Reply, error) {
+	out := new(IpsecSpdEntryAddDelV2Reply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err

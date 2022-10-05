@@ -14,6 +14,7 @@ type RPCService interface {
 	ControlPing(ctx context.Context, in *ControlPing) (*ControlPingReply, error)
 	GetFirstMsgID(ctx context.Context, in *GetFirstMsgID) (*GetFirstMsgIDReply, error)
 	MemclntCreate(ctx context.Context, in *MemclntCreate) (*MemclntCreateReply, error)
+	MemclntCreateV2(ctx context.Context, in *MemclntCreateV2) (*MemclntCreateV2Reply, error)
 	MemclntDelete(ctx context.Context, in *MemclntDelete) (*MemclntDeleteReply, error)
 	MemclntKeepalive(ctx context.Context, in *MemclntKeepalive) (*MemclntKeepaliveReply, error)
 	MemclntReadTimeout(ctx context.Context, in *MemclntReadTimeout) error
@@ -63,6 +64,15 @@ func (c *serviceClient) GetFirstMsgID(ctx context.Context, in *GetFirstMsgID) (*
 
 func (c *serviceClient) MemclntCreate(ctx context.Context, in *MemclntCreate) (*MemclntCreateReply, error) {
 	out := new(MemclntCreateReply)
+	err := c.conn.Invoke(ctx, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) MemclntCreateV2(ctx context.Context, in *MemclntCreateV2) (*MemclntCreateV2Reply, error) {
+	out := new(MemclntCreateV2Reply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err

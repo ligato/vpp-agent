@@ -19,6 +19,12 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "sr_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x7955bd50
+)
+
 // SrBehavior defines enum 'sr_behavior'.
 type SrBehavior uint8
 

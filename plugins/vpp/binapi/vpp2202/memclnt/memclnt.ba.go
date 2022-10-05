@@ -4,7 +4,7 @@
 //
 // Contents:
 //   2 structs
-//  24 messages
+//  26 messages
 //
 package memclnt
 
@@ -22,7 +22,7 @@ const _ = api.GoVppAPIPackageIsVersion2
 const (
 	APIFile    = "memclnt"
 	APIVersion = "2.1.0"
-	VersionCrc = 0x230bb938
+	VersionCrc = 0x21d36234
 )
 
 // MessageTableEntry defines type 'message_table_entry'.
@@ -361,6 +361,109 @@ func (m *MemclntCreateReply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *MemclntCreateReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Response = buf.DecodeInt32()
+	m.Handle = buf.DecodeUint64()
+	m.Index = buf.DecodeUint32()
+	m.MessageTable = buf.DecodeUint64()
+	return nil
+}
+
+// MemclntCreateV2 defines message 'memclnt_create_v2'.
+type MemclntCreateV2 struct {
+	CtxQuota    int32    `binapi:"i32,name=ctx_quota" json:"ctx_quota,omitempty"`
+	InputQueue  uint64   `binapi:"u64,name=input_queue" json:"input_queue,omitempty"`
+	Name        string   `binapi:"string[64],name=name" json:"name,omitempty"`
+	APIVersions []uint32 `binapi:"u32[8],name=api_versions" json:"api_versions,omitempty"`
+	Keepalive   bool     `binapi:"bool,name=keepalive,default=true" json:"keepalive,omitempty"`
+}
+
+func (m *MemclntCreateV2) Reset()               { *m = MemclntCreateV2{} }
+func (*MemclntCreateV2) GetMessageName() string { return "memclnt_create_v2" }
+func (*MemclntCreateV2) GetCrcString() string   { return "c4bd4882" }
+func (*MemclntCreateV2) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *MemclntCreateV2) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4     // m.CtxQuota
+	size += 8     // m.InputQueue
+	size += 64    // m.Name
+	size += 4 * 8 // m.APIVersions
+	size += 1     // m.Keepalive
+	return size
+}
+func (m *MemclntCreateV2) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.CtxQuota)
+	buf.EncodeUint64(m.InputQueue)
+	buf.EncodeString(m.Name, 64)
+	for i := 0; i < 8; i++ {
+		var x uint32
+		if i < len(m.APIVersions) {
+			x = uint32(m.APIVersions[i])
+		}
+		buf.EncodeUint32(x)
+	}
+	buf.EncodeBool(m.Keepalive)
+	return buf.Bytes(), nil
+}
+func (m *MemclntCreateV2) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.CtxQuota = buf.DecodeInt32()
+	m.InputQueue = buf.DecodeUint64()
+	m.Name = buf.DecodeString(64)
+	m.APIVersions = make([]uint32, 8)
+	for i := 0; i < len(m.APIVersions); i++ {
+		m.APIVersions[i] = buf.DecodeUint32()
+	}
+	m.Keepalive = buf.DecodeBool()
+	return nil
+}
+
+// MemclntCreateV2Reply defines message 'memclnt_create_v2_reply'.
+type MemclntCreateV2Reply struct {
+	Response     int32  `binapi:"i32,name=response" json:"response,omitempty"`
+	Handle       uint64 `binapi:"u64,name=handle" json:"handle,omitempty"`
+	Index        uint32 `binapi:"u32,name=index" json:"index,omitempty"`
+	MessageTable uint64 `binapi:"u64,name=message_table" json:"message_table,omitempty"`
+}
+
+func (m *MemclntCreateV2Reply) Reset()               { *m = MemclntCreateV2Reply{} }
+func (*MemclntCreateV2Reply) GetMessageName() string { return "memclnt_create_v2_reply" }
+func (*MemclntCreateV2Reply) GetCrcString() string   { return "42ec4560" }
+func (*MemclntCreateV2Reply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *MemclntCreateV2Reply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Response
+	size += 8 // m.Handle
+	size += 4 // m.Index
+	size += 8 // m.MessageTable
+	return size
+}
+func (m *MemclntCreateV2Reply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Response)
+	buf.EncodeUint64(m.Handle)
+	buf.EncodeUint32(m.Index)
+	buf.EncodeUint64(m.MessageTable)
+	return buf.Bytes(), nil
+}
+func (m *MemclntCreateV2Reply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Response = buf.DecodeInt32()
 	m.Handle = buf.DecodeUint64()
@@ -990,6 +1093,8 @@ func file_memclnt_binapi_init() {
 	api.RegisterMessage((*GetFirstMsgIDReply)(nil), "get_first_msg_id_reply_7d337472")
 	api.RegisterMessage((*MemclntCreate)(nil), "memclnt_create_9c5e1c2f")
 	api.RegisterMessage((*MemclntCreateReply)(nil), "memclnt_create_reply_42ec4560")
+	api.RegisterMessage((*MemclntCreateV2)(nil), "memclnt_create_v2_c4bd4882")
+	api.RegisterMessage((*MemclntCreateV2Reply)(nil), "memclnt_create_v2_reply_42ec4560")
 	api.RegisterMessage((*MemclntDelete)(nil), "memclnt_delete_7e1c04e3")
 	api.RegisterMessage((*MemclntDeleteReply)(nil), "memclnt_delete_reply_3d3b6312")
 	api.RegisterMessage((*MemclntKeepalive)(nil), "memclnt_keepalive_51077d14")
@@ -1019,6 +1124,8 @@ func AllMessages() []api.Message {
 		(*GetFirstMsgIDReply)(nil),
 		(*MemclntCreate)(nil),
 		(*MemclntCreateReply)(nil),
+		(*MemclntCreateV2)(nil),
+		(*MemclntCreateV2Reply)(nil),
 		(*MemclntDelete)(nil),
 		(*MemclntDeleteReply)(nil),
 		(*MemclntKeepalive)(nil),

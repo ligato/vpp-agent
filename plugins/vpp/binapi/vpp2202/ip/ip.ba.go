@@ -5,7 +5,7 @@
 // Contents:
 //   2 enums
 //   7 structs
-//  87 messages
+//  91 messages
 //
 package ip
 
@@ -30,7 +30,7 @@ const _ = api.GoVppAPIPackageIsVersion2
 const (
 	APIFile    = "ip"
 	APIVersion = "3.2.0"
-	VersionCrc = 0x557b5866
+	VersionCrc = 0x41299705
 )
 
 // IPReassType defines enum 'ip_reass_type'.
@@ -786,6 +786,146 @@ func (m *IPDump) Marshal(b []byte) ([]byte, error) {
 func (m *IPDump) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.IsIPv6 = buf.DecodeBool()
+	return nil
+}
+
+// IPLocalReassEnableDisable defines message 'ip_local_reass_enable_disable'.
+type IPLocalReassEnableDisable struct {
+	EnableIP4 bool `binapi:"bool,name=enable_ip4" json:"enable_ip4,omitempty"`
+	EnableIP6 bool `binapi:"bool,name=enable_ip6" json:"enable_ip6,omitempty"`
+}
+
+func (m *IPLocalReassEnableDisable) Reset()               { *m = IPLocalReassEnableDisable{} }
+func (*IPLocalReassEnableDisable) GetMessageName() string { return "ip_local_reass_enable_disable" }
+func (*IPLocalReassEnableDisable) GetCrcString() string   { return "34e2ccc4" }
+func (*IPLocalReassEnableDisable) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *IPLocalReassEnableDisable) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 1 // m.EnableIP4
+	size += 1 // m.EnableIP6
+	return size
+}
+func (m *IPLocalReassEnableDisable) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeBool(m.EnableIP4)
+	buf.EncodeBool(m.EnableIP6)
+	return buf.Bytes(), nil
+}
+func (m *IPLocalReassEnableDisable) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.EnableIP4 = buf.DecodeBool()
+	m.EnableIP6 = buf.DecodeBool()
+	return nil
+}
+
+// IPLocalReassEnableDisableReply defines message 'ip_local_reass_enable_disable_reply'.
+type IPLocalReassEnableDisableReply struct {
+	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+}
+
+func (m *IPLocalReassEnableDisableReply) Reset() { *m = IPLocalReassEnableDisableReply{} }
+func (*IPLocalReassEnableDisableReply) GetMessageName() string {
+	return "ip_local_reass_enable_disable_reply"
+}
+func (*IPLocalReassEnableDisableReply) GetCrcString() string { return "e8d4e804" }
+func (*IPLocalReassEnableDisableReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *IPLocalReassEnableDisableReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	return size
+}
+func (m *IPLocalReassEnableDisableReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	return buf.Bytes(), nil
+}
+func (m *IPLocalReassEnableDisableReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	return nil
+}
+
+// IPLocalReassGet defines message 'ip_local_reass_get'.
+type IPLocalReassGet struct{}
+
+func (m *IPLocalReassGet) Reset()               { *m = IPLocalReassGet{} }
+func (*IPLocalReassGet) GetMessageName() string { return "ip_local_reass_get" }
+func (*IPLocalReassGet) GetCrcString() string   { return "51077d14" }
+func (*IPLocalReassGet) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+func (m *IPLocalReassGet) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	return size
+}
+func (m *IPLocalReassGet) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	return buf.Bytes(), nil
+}
+func (m *IPLocalReassGet) Unmarshal(b []byte) error {
+	return nil
+}
+
+// IPLocalReassGetReply defines message 'ip_local_reass_get_reply'.
+type IPLocalReassGetReply struct {
+	Retval       int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
+	IP4IsEnabled bool  `binapi:"bool,name=ip4_is_enabled" json:"ip4_is_enabled,omitempty"`
+	IP6IsEnabled bool  `binapi:"bool,name=ip6_is_enabled" json:"ip6_is_enabled,omitempty"`
+}
+
+func (m *IPLocalReassGetReply) Reset()               { *m = IPLocalReassGetReply{} }
+func (*IPLocalReassGetReply) GetMessageName() string { return "ip_local_reass_get_reply" }
+func (*IPLocalReassGetReply) GetCrcString() string   { return "3e93a702" }
+func (*IPLocalReassGetReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+func (m *IPLocalReassGetReply) Size() (size int) {
+	if m == nil {
+		return 0
+	}
+	size += 4 // m.Retval
+	size += 1 // m.IP4IsEnabled
+	size += 1 // m.IP6IsEnabled
+	return size
+}
+func (m *IPLocalReassGetReply) Marshal(b []byte) ([]byte, error) {
+	if b == nil {
+		b = make([]byte, m.Size())
+	}
+	buf := codec.NewBuffer(b)
+	buf.EncodeInt32(m.Retval)
+	buf.EncodeBool(m.IP4IsEnabled)
+	buf.EncodeBool(m.IP6IsEnabled)
+	return buf.Bytes(), nil
+}
+func (m *IPLocalReassGetReply) Unmarshal(b []byte) error {
+	buf := codec.NewBuffer(b)
+	m.Retval = buf.DecodeInt32()
+	m.IP4IsEnabled = buf.DecodeBool()
+	m.IP6IsEnabled = buf.DecodeBool()
 	return nil
 }
 
@@ -4456,6 +4596,10 @@ func file_ip_binapi_init() {
 	api.RegisterMessage((*IPContainerProxyDump)(nil), "ip_container_proxy_dump_51077d14")
 	api.RegisterMessage((*IPDetails)(nil), "ip_details_eb152d07")
 	api.RegisterMessage((*IPDump)(nil), "ip_dump_98d231ca")
+	api.RegisterMessage((*IPLocalReassEnableDisable)(nil), "ip_local_reass_enable_disable_34e2ccc4")
+	api.RegisterMessage((*IPLocalReassEnableDisableReply)(nil), "ip_local_reass_enable_disable_reply_e8d4e804")
+	api.RegisterMessage((*IPLocalReassGet)(nil), "ip_local_reass_get_51077d14")
+	api.RegisterMessage((*IPLocalReassGetReply)(nil), "ip_local_reass_get_reply_3e93a702")
 	api.RegisterMessage((*IPMrouteAddDel)(nil), "ip_mroute_add_del_0dd7e790")
 	api.RegisterMessage((*IPMrouteAddDelReply)(nil), "ip_mroute_add_del_reply_1992deab")
 	api.RegisterMessage((*IPMrouteDetails)(nil), "ip_mroute_details_c5cb23fc")
@@ -4548,6 +4692,10 @@ func AllMessages() []api.Message {
 		(*IPContainerProxyDump)(nil),
 		(*IPDetails)(nil),
 		(*IPDump)(nil),
+		(*IPLocalReassEnableDisable)(nil),
+		(*IPLocalReassEnableDisableReply)(nil),
+		(*IPLocalReassGet)(nil),
+		(*IPLocalReassGetReply)(nil),
 		(*IPMrouteAddDel)(nil),
 		(*IPMrouteAddDelReply)(nil),
 		(*IPMrouteDetails)(nil),

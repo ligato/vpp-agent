@@ -3,8 +3,8 @@
 // Package ipsec_types contains generated bindings for API file ipsec_types.api.
 //
 // Contents:
-//   4 enums
-//   4 structs
+//   5 enums
+//   6 structs
 //
 package ipsec_types
 
@@ -23,22 +23,29 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
+const (
+	APIFile    = "ipsec_types"
+	APIVersion = "3.0.1"
+	VersionCrc = 0x7892423b
+)
+
 // IpsecCryptoAlg defines enum 'ipsec_crypto_alg'.
 type IpsecCryptoAlg uint32
 
 const (
-	IPSEC_API_CRYPTO_ALG_NONE        IpsecCryptoAlg = 0
-	IPSEC_API_CRYPTO_ALG_AES_CBC_128 IpsecCryptoAlg = 1
-	IPSEC_API_CRYPTO_ALG_AES_CBC_192 IpsecCryptoAlg = 2
-	IPSEC_API_CRYPTO_ALG_AES_CBC_256 IpsecCryptoAlg = 3
-	IPSEC_API_CRYPTO_ALG_AES_CTR_128 IpsecCryptoAlg = 4
-	IPSEC_API_CRYPTO_ALG_AES_CTR_192 IpsecCryptoAlg = 5
-	IPSEC_API_CRYPTO_ALG_AES_CTR_256 IpsecCryptoAlg = 6
-	IPSEC_API_CRYPTO_ALG_AES_GCM_128 IpsecCryptoAlg = 7
-	IPSEC_API_CRYPTO_ALG_AES_GCM_192 IpsecCryptoAlg = 8
-	IPSEC_API_CRYPTO_ALG_AES_GCM_256 IpsecCryptoAlg = 9
-	IPSEC_API_CRYPTO_ALG_DES_CBC     IpsecCryptoAlg = 10
-	IPSEC_API_CRYPTO_ALG_3DES_CBC    IpsecCryptoAlg = 11
+	IPSEC_API_CRYPTO_ALG_NONE              IpsecCryptoAlg = 0
+	IPSEC_API_CRYPTO_ALG_AES_CBC_128       IpsecCryptoAlg = 1
+	IPSEC_API_CRYPTO_ALG_AES_CBC_192       IpsecCryptoAlg = 2
+	IPSEC_API_CRYPTO_ALG_AES_CBC_256       IpsecCryptoAlg = 3
+	IPSEC_API_CRYPTO_ALG_AES_CTR_128       IpsecCryptoAlg = 4
+	IPSEC_API_CRYPTO_ALG_AES_CTR_192       IpsecCryptoAlg = 5
+	IPSEC_API_CRYPTO_ALG_AES_CTR_256       IpsecCryptoAlg = 6
+	IPSEC_API_CRYPTO_ALG_AES_GCM_128       IpsecCryptoAlg = 7
+	IPSEC_API_CRYPTO_ALG_AES_GCM_192       IpsecCryptoAlg = 8
+	IPSEC_API_CRYPTO_ALG_AES_GCM_256       IpsecCryptoAlg = 9
+	IPSEC_API_CRYPTO_ALG_DES_CBC           IpsecCryptoAlg = 10
+	IPSEC_API_CRYPTO_ALG_3DES_CBC          IpsecCryptoAlg = 11
+	IPSEC_API_CRYPTO_ALG_CHACHA20_POLY1305 IpsecCryptoAlg = 12
 )
 
 var (
@@ -55,20 +62,22 @@ var (
 		9:  "IPSEC_API_CRYPTO_ALG_AES_GCM_256",
 		10: "IPSEC_API_CRYPTO_ALG_DES_CBC",
 		11: "IPSEC_API_CRYPTO_ALG_3DES_CBC",
+		12: "IPSEC_API_CRYPTO_ALG_CHACHA20_POLY1305",
 	}
 	IpsecCryptoAlg_value = map[string]uint32{
-		"IPSEC_API_CRYPTO_ALG_NONE":        0,
-		"IPSEC_API_CRYPTO_ALG_AES_CBC_128": 1,
-		"IPSEC_API_CRYPTO_ALG_AES_CBC_192": 2,
-		"IPSEC_API_CRYPTO_ALG_AES_CBC_256": 3,
-		"IPSEC_API_CRYPTO_ALG_AES_CTR_128": 4,
-		"IPSEC_API_CRYPTO_ALG_AES_CTR_192": 5,
-		"IPSEC_API_CRYPTO_ALG_AES_CTR_256": 6,
-		"IPSEC_API_CRYPTO_ALG_AES_GCM_128": 7,
-		"IPSEC_API_CRYPTO_ALG_AES_GCM_192": 8,
-		"IPSEC_API_CRYPTO_ALG_AES_GCM_256": 9,
-		"IPSEC_API_CRYPTO_ALG_DES_CBC":     10,
-		"IPSEC_API_CRYPTO_ALG_3DES_CBC":    11,
+		"IPSEC_API_CRYPTO_ALG_NONE":              0,
+		"IPSEC_API_CRYPTO_ALG_AES_CBC_128":       1,
+		"IPSEC_API_CRYPTO_ALG_AES_CBC_192":       2,
+		"IPSEC_API_CRYPTO_ALG_AES_CBC_256":       3,
+		"IPSEC_API_CRYPTO_ALG_AES_CTR_128":       4,
+		"IPSEC_API_CRYPTO_ALG_AES_CTR_192":       5,
+		"IPSEC_API_CRYPTO_ALG_AES_CTR_256":       6,
+		"IPSEC_API_CRYPTO_ALG_AES_GCM_128":       7,
+		"IPSEC_API_CRYPTO_ALG_AES_GCM_192":       8,
+		"IPSEC_API_CRYPTO_ALG_AES_GCM_256":       9,
+		"IPSEC_API_CRYPTO_ALG_DES_CBC":           10,
+		"IPSEC_API_CRYPTO_ALG_3DES_CBC":          11,
+		"IPSEC_API_CRYPTO_ALG_CHACHA20_POLY1305": 12,
 	}
 )
 
@@ -213,6 +222,39 @@ func (x IpsecSadFlags) String() string {
 	return s
 }
 
+// IpsecSpdAction defines enum 'ipsec_spd_action'.
+type IpsecSpdAction uint32
+
+const (
+	IPSEC_API_SPD_ACTION_BYPASS  IpsecSpdAction = 0
+	IPSEC_API_SPD_ACTION_DISCARD IpsecSpdAction = 1
+	IPSEC_API_SPD_ACTION_RESOLVE IpsecSpdAction = 2
+	IPSEC_API_SPD_ACTION_PROTECT IpsecSpdAction = 3
+)
+
+var (
+	IpsecSpdAction_name = map[uint32]string{
+		0: "IPSEC_API_SPD_ACTION_BYPASS",
+		1: "IPSEC_API_SPD_ACTION_DISCARD",
+		2: "IPSEC_API_SPD_ACTION_RESOLVE",
+		3: "IPSEC_API_SPD_ACTION_PROTECT",
+	}
+	IpsecSpdAction_value = map[string]uint32{
+		"IPSEC_API_SPD_ACTION_BYPASS":  0,
+		"IPSEC_API_SPD_ACTION_DISCARD": 1,
+		"IPSEC_API_SPD_ACTION_RESOLVE": 2,
+		"IPSEC_API_SPD_ACTION_PROTECT": 3,
+	}
+)
+
+func (x IpsecSpdAction) String() string {
+	s, ok := IpsecSpdAction_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return "IpsecSpdAction(" + strconv.Itoa(int(x)) + ")"
+}
+
 // IpsecSadEntry defines type 'ipsec_sad_entry'.
 type IpsecSadEntry struct {
 	SadID              uint32           `binapi:"u32,name=sad_id" json:"sad_id,omitempty"`
@@ -265,6 +307,42 @@ type IpsecSadEntryV3 struct {
 	Salt               uint32              `binapi:"u32,name=salt" json:"salt,omitempty"`
 	UDPSrcPort         uint16              `binapi:"u16,name=udp_src_port,default=4500" json:"udp_src_port,omitempty"`
 	UDPDstPort         uint16              `binapi:"u16,name=udp_dst_port,default=4500" json:"udp_dst_port,omitempty"`
+}
+
+// IpsecSpdEntry defines type 'ipsec_spd_entry'.
+type IpsecSpdEntry struct {
+	SpdID              uint32           `binapi:"u32,name=spd_id" json:"spd_id,omitempty"`
+	Priority           int32            `binapi:"i32,name=priority" json:"priority,omitempty"`
+	IsOutbound         bool             `binapi:"bool,name=is_outbound" json:"is_outbound,omitempty"`
+	SaID               uint32           `binapi:"u32,name=sa_id" json:"sa_id,omitempty"`
+	Policy             IpsecSpdAction   `binapi:"ipsec_spd_action,name=policy" json:"policy,omitempty"`
+	Protocol           uint8            `binapi:"u8,name=protocol" json:"protocol,omitempty"`
+	RemoteAddressStart ip_types.Address `binapi:"address,name=remote_address_start" json:"remote_address_start,omitempty"`
+	RemoteAddressStop  ip_types.Address `binapi:"address,name=remote_address_stop" json:"remote_address_stop,omitempty"`
+	LocalAddressStart  ip_types.Address `binapi:"address,name=local_address_start" json:"local_address_start,omitempty"`
+	LocalAddressStop   ip_types.Address `binapi:"address,name=local_address_stop" json:"local_address_stop,omitempty"`
+	RemotePortStart    uint16           `binapi:"u16,name=remote_port_start" json:"remote_port_start,omitempty"`
+	RemotePortStop     uint16           `binapi:"u16,name=remote_port_stop" json:"remote_port_stop,omitempty"`
+	LocalPortStart     uint16           `binapi:"u16,name=local_port_start" json:"local_port_start,omitempty"`
+	LocalPortStop      uint16           `binapi:"u16,name=local_port_stop" json:"local_port_stop,omitempty"`
+}
+
+// IpsecSpdEntryV2 defines type 'ipsec_spd_entry_v2'.
+type IpsecSpdEntryV2 struct {
+	SpdID              uint32           `binapi:"u32,name=spd_id" json:"spd_id,omitempty"`
+	Priority           int32            `binapi:"i32,name=priority" json:"priority,omitempty"`
+	IsOutbound         bool             `binapi:"bool,name=is_outbound" json:"is_outbound,omitempty"`
+	SaID               uint32           `binapi:"u32,name=sa_id" json:"sa_id,omitempty"`
+	Policy             IpsecSpdAction   `binapi:"ipsec_spd_action,name=policy" json:"policy,omitempty"`
+	Protocol           uint8            `binapi:"u8,name=protocol" json:"protocol,omitempty"`
+	RemoteAddressStart ip_types.Address `binapi:"address,name=remote_address_start" json:"remote_address_start,omitempty"`
+	RemoteAddressStop  ip_types.Address `binapi:"address,name=remote_address_stop" json:"remote_address_stop,omitempty"`
+	LocalAddressStart  ip_types.Address `binapi:"address,name=local_address_start" json:"local_address_start,omitempty"`
+	LocalAddressStop   ip_types.Address `binapi:"address,name=local_address_stop" json:"local_address_stop,omitempty"`
+	RemotePortStart    uint16           `binapi:"u16,name=remote_port_start" json:"remote_port_start,omitempty"`
+	RemotePortStop     uint16           `binapi:"u16,name=remote_port_stop" json:"remote_port_stop,omitempty"`
+	LocalPortStart     uint16           `binapi:"u16,name=local_port_start" json:"local_port_start,omitempty"`
+	LocalPortStop      uint16           `binapi:"u16,name=local_port_stop" json:"local_port_stop,omitempty"`
 }
 
 // Key defines type 'key'.
