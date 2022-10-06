@@ -117,9 +117,9 @@ func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
 }
 
 func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) error {
-	req := &vpp_ipsec.IpsecSpdEntryAddDel{
+	req := &vpp_ipsec.IpsecSpdEntryAddDelV2{
 		IsAdd: isAdd,
-		Entry: ipsec_types.IpsecSpdEntry{
+		Entry: ipsec_types.IpsecSpdEntryV2{
 			SpdID:           sp.SpdIndex,
 			Priority:        sp.Priority,
 			IsOutbound:      sp.IsOutbound,
@@ -157,6 +157,8 @@ func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) e
 		return err
 	}
 
+	// FIXME: bug in VPP?
+	// reply := &vpp_ipsec.IpsecSpdEntryAddDelV2Reply{}
 	reply := &vpp_ipsec.IpsecSpdEntryAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

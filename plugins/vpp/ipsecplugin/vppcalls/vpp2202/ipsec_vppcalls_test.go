@@ -74,6 +74,8 @@ func TestVppAddSP(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
+	// FIXME: bug in VPP?
+	// ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelV2Reply{})
 	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.AddSP(&ipsec.SecurityPolicy{
@@ -84,9 +86,9 @@ func TestVppAddSP(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDelV2{
 		IsAdd: true,
-		Entry: ipsec_types.IpsecSpdEntry{
+		Entry: ipsec_types.IpsecSpdEntryV2{
 			SpdID:              10,
 			SaID:               5,
 			Priority:           10,
@@ -105,6 +107,8 @@ func TestVppDelSP(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
+	// FIXME: bug in VPP?
+	// ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelV2Reply{})
 	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.DeleteSP(&ipsec.SecurityPolicy{
@@ -115,9 +119,9 @@ func TestVppDelSP(t *testing.T) {
 	})
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDel{
+	Expect(ctx.MockChannel.Msg).To(BeEquivalentTo(&vpp_ipsec.IpsecSpdEntryAddDelV2{
 		IsAdd: false,
-		Entry: ipsec_types.IpsecSpdEntry{
+		Entry: ipsec_types.IpsecSpdEntryV2{
 			SpdID:              10,
 			SaID:               2,
 			Priority:           5,
