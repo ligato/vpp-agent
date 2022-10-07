@@ -23,7 +23,8 @@ import (
 
 // DumpWgPeers implements wg handler.
 func (h *WgVppHandler) DumpWgPeers() (peerList []*wg.Peer, err error) {
-	req := &vpp_wg.WireguardPeersDump{}
+	// index of ^uint32(0) dumps all peers
+	req := &vpp_wg.WireguardPeersDump{PeerIndex: ^uint32(0)}
 	requestCtx := h.callsChannel.SendMultiRequest(req)
 
 	var vppPeerList []*vpp_wg.WireguardPeersDetails
