@@ -65,7 +65,7 @@ func TestVppAddPeer(t *testing.T) {
 	Expect(vppMsg.Peer.TableID).To(BeEquivalentTo(0))
 	Expect(vppMsg.Peer.Endpoint.Un.GetIP4()).To(BeEquivalentTo(ip_types.IP4Address{10, 10, 2, 1}))
 	Expect(vppMsg.Peer.Flags).To(BeEquivalentTo(0))
-	Expect(vppMsg.Peer.AllowedIps).To(BeEquivalentTo([]ip_types.Prefix{ip_types.Prefix{
+	Expect(vppMsg.Peer.AllowedIps).To(BeEquivalentTo([]ip_types.Prefix{{
 		Address: ip_types.Address{
 			Af: ip_types.ADDRESS_IP4,
 			Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 10, 0, 0}),

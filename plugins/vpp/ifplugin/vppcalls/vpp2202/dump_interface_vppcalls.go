@@ -972,7 +972,7 @@ func guessInterfaceType(ifDevType, ifName string) ifs.Interface_Type {
 	case strings.HasPrefix(ifName, "ipip"):
 		return ifs.Interface_IPIP_TUNNEL
 
-	case strings.HasPrefix(ifName, "wireguard"):
+	case strings.HasPrefix(ifName, "wg"):
 		return ifs.Interface_WIREGUARD_TUNNEL
 
 	default:

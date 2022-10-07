@@ -64,7 +64,7 @@ func (h *InterfaceVppHandler) AddWireguardTunnel(ifName string, wireguardLink *i
 	reply := &wireguard.WireguardInterfaceCreateReply{}
 	// send request and obtain reply
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return ^uint32(0), err
+		return invalidIdx, err
 	}
 	retSwIfIndex := uint32(reply.SwIfIndex)
 	return retSwIfIndex, h.SetInterfaceTag(ifName, retSwIfIndex)
@@ -82,7 +82,6 @@ func (h *InterfaceVppHandler) DeleteWireguardTunnel(ifName string, ifIdx uint32)
 	// prepare reply
 	reply := &wireguard.WireguardInterfaceDeleteReply{}
 	// send request and obtain reply
-
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -95,13 +94,17 @@ func (h *InterfaceVppHandler) dumpWireguardDetails(ifc map[uint32]*vppcalls.Inte
 		return nil
 	}
 
-	reqCtx := h.callsChannel.SendMultiRequest(&wireguard.WireguardInterfaceDump{})
+	// index of ^uint32(0) dumps all interfaces
+	req := &wireguard.WireguardInterfaceDump{
+		SwIfIndex: interface_types.InterfaceIndex(^uint32(0)),
+	}
+	reqCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
 		wgDetails := &wireguard.WireguardInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(wgDetails)
 		if stop {
-			break // Break from the loop.
+			break // break from the loop
 		}
 		if err != nil {
 			return fmt.Errorf("failed to dump wireguard interface details: %v", err)
