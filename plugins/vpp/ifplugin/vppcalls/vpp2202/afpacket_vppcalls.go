@@ -20,7 +20,7 @@ import (
 
 // AddAfPacketInterface implements AfPacket handler.
 func (h *InterfaceVppHandler) AddAfPacketInterface(ifName, hwAddr, targetHostIfName string) (swIndex uint32, err error) {
-	req := &vpp_afpacket.AfPacketCreate{
+	req := &vpp_afpacket.AfPacketCreateV2{
 		HostIfName: targetHostIfName,
 	}
 	if hwAddr == "" {
@@ -32,7 +32,7 @@ func (h *InterfaceVppHandler) AddAfPacketInterface(ifName, hwAddr, targetHostIfN
 		}
 		req.HwAddr = mac
 	}
-	reply := &vpp_afpacket.AfPacketCreateReply{}
+	reply := &vpp_afpacket.AfPacketCreateV2Reply{}
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
