@@ -104,10 +104,7 @@ func TestWireguard(t *testing.T) {
 			shouldFail: false,
 		},
 		{
-			// FIXME !!!
-			skipFor: "22.02",
-			skip:    "broken in VPP 22.02, peer dump does not return 2 peers",
-			name:    "Create Wireguard tunnel with 2 itfs and 2 peers",
+			name: "Create Wireguard tunnel with 2 itfs and 2 peers",
 			wgInt: &interfaces.WireguardLink{
 				PrivateKey: "gIjXzrQfIFf80d0O8Hd2KhcfkKLRncc+8C70OjotIW8=",
 				Port:       12342,
