@@ -328,9 +328,8 @@ func (h *NatVppHandler) handleNat44EdInterfaceOutputFeature(iface string, isInsi
 		return errors.New("failed to get interface metadata")
 	}
 
-	req := &vpp_nat_ed.Nat44InterfaceAddDelFeature{
+	req := &vpp_nat_ed.Nat44EdAddDelOutputInterface{
 		SwIfIndex: interface_types.InterfaceIndex(ifaceMeta.SwIfIndex),
-		Flags:     setNat44EdFlags(&nat44EdFlags{isInside: isInside}),
 		IsAdd:     isAdd,
 	}
 	reply := &vpp_nat_ed.Nat44EdAddDelOutputInterfaceReply{}
@@ -349,12 +348,11 @@ func (h *NatVppHandler) handleNat44EiInterfaceOutputFeature(iface string, isInsi
 		return errors.New("failed to get interface metadata")
 	}
 
-	req := &vpp_nat_ei.Nat44EiInterfaceAddDelFeature{
+	req := &vpp_nat_ei.Nat44EiAddDelOutputInterface{
 		SwIfIndex: interface_types.InterfaceIndex(ifaceMeta.SwIfIndex),
-		Flags:     setNat44EiFlags(&nat44EiFlags{eiIfInside: isInside}),
 		IsAdd:     isAdd,
 	}
-	reply := &vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{}
+	reply := &vpp_nat_ei.Nat44EiAddDelOutputInterfaceReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

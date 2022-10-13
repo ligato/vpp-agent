@@ -132,7 +132,6 @@ func TestSourceNAT(t *testing.T) {
 	}
 	natInterface := &vpp_nat.Nat44Interface{
 		Name:          vppTap1Name,
-		NatOutside:    true,
 		OutputFeature: true,
 	}
 	natPool := &vpp_nat.Nat44AddressPool{

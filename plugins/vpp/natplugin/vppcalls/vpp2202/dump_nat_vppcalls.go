@@ -223,9 +223,10 @@ func (h *NatVppHandler) nat44EiInterfacesDump() (natIfs []*nat.Nat44Interface, e
 	return
 }
 
-func (h *NatVppHandler) nat44EdInterfacesDump() (natIfs []*nat.Nat44Interface, err error) {
+func (h *NatVppHandler) nat44EdInterfacesDump() ([]*nat.Nat44Interface, error) {
+	var natIfs []*nat.Nat44Interface
 
-	// dump NAT interfaces without output feature enabled
+	// dump non-output NAT interfaces
 	req1 := &vpp_nat_ed.Nat44InterfaceDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req1)
 	for {
@@ -252,36 +253,48 @@ func (h *NatVppHandler) nat44EdInterfacesDump() (natIfs []*nat.Nat44Interface, e
 		natIfs = append(natIfs, natIf)
 	}
 
-	// dump interfaces with output feature enabled
-	// req2 := &vpp_nat_ed.Nat44InterfaceOutputFeatureDump{}
-	// reqContext = h.callsChannel.SendMultiRequest(req2)
-	// for {
-	// 	msg := &vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{}
-	// 	stop, err := reqContext.ReceiveReply(msg)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
-	// 	}
-	// 	if stop {
-	// 		break
-	// 	}
-	// 	ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
-	// 	if !found {
-	// 		h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-	// 		continue
-	// 	}
-	// 	flags := getNat44Flags(msg.Flags)
-	// 	natIf := &nat.Nat44Interface{
-	// 		Name:          ifName,
-	// 		NatInside:     flags.isInside,
-	// 		NatOutside:    flags.isOutside,
-	// 		OutputFeature: true,
-	// 	}
-	// 	if !natIf.NatInside && !natIf.NatOutside {
-	// 		natIf.NatOutside = true
-	// 	}
-	// 	natIfs = append(natIfs, natIf)
-	// }
-	return
+	// dump output NAT interfaces
+	var cursor uint32
+	for {
+		if cursor == ^uint32(0) {
+			return natIfs, nil
+		}
+		err := h.callsStream.SendMsg(&vpp_nat_ed.Nat44EdOutputInterfaceGet{Cursor: cursor})
+		if err != nil {
+			return nil, err
+		}
+	Inner:
+		for {
+			msg, err := h.callsStream.RecvMsg()
+			if err != nil {
+				return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
+			}
+			switch msg := msg.(type) {
+			case *vpp_nat_ed.Nat44EdOutputInterfaceDetails:
+				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+				if !found {
+					h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+					continue Inner
+				}
+				natIfs = append(natIfs, &nat.Nat44Interface{
+					Name:          ifName,
+					OutputFeature: true,
+				})
+			case *vpp_nat_ed.Nat44EdOutputInterfaceGetReply:
+				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
+				// reply often returns cursor value of 0 repeatedly even though it should return
+				// ^uint32(0). So if the reply contains cursor that is the same as cursor
+				// from previous reply, return.
+				if msg.Cursor == cursor {
+					return natIfs, nil
+				}
+				cursor = msg.Cursor
+				break Inner
+			default:
+				return nil, fmt.Errorf("received unexpected message %v during NAT44 interface output feature dump", msg)
+			}
+		}
+	}
 }
 
 // Nat44InterfacesDump dumps NAT44 config of all NAT44-enabled interfaces.
@@ -954,9 +967,10 @@ func (h *NatVppHandler) nat44EiInterfaceDump() (interfaces []*nat.Nat44Global_In
 	return interfaces, nil
 }
 
-func (h *NatVppHandler) nat44EdInterfaceDump() (interfaces []*nat.Nat44Global_Interface, err error) {
+func (h *NatVppHandler) nat44EdInterfaceDump() ([]*nat.Nat44Global_Interface, error) {
+	var natIfs []*nat.Nat44Global_Interface
 
-	/* dump non-Output interfaces first */
+	// dump non-output NAT interfaces
 	req1 := &vpp_nat_ed.Nat44InterfaceDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req1)
 
@@ -980,54 +994,65 @@ func (h *NatVppHandler) nat44EdInterfaceDump() (interfaces []*nat.Nat44Global_In
 		flags := getNat44Flags(msg.Flags)
 
 		if flags.isInside {
-			interfaces = append(interfaces, &nat.Nat44Global_Interface{
+			natIfs = append(natIfs, &nat.Nat44Global_Interface{
 				Name:     ifName,
 				IsInside: true,
 			})
 		} else {
-			interfaces = append(interfaces, &nat.Nat44Global_Interface{
+			natIfs = append(natIfs, &nat.Nat44Global_Interface{
 				Name:     ifName,
 				IsInside: false,
 			})
 		}
 	}
 
-	/* dump Output interfaces next */
-	// req2 := &vpp_nat_ed.Nat44InterfaceOutputFeatureDump{}
-	// reqContext = h.callsChannel.SendMultiRequest(req2)
-
-	// for {
-	// 	msg := &vpp_nat_ed.Nat44InterfaceOutputFeatureDetails{}
-	// 	stop, err := reqContext.ReceiveReply(msg)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
-	// 	}
-	// 	if stop {
-	// 		break
-	// 	}
-
-	// 	// Find interface name
-	// 	ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
-	// 	if !found {
-	// 		h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-	// 		continue
-	// 	}
-
-	// 	flags := getNat44Flags(msg.Flags)
-
-	// 	interfaces = append(interfaces, &nat.Nat44Global_Interface{
-	// 		Name:          ifName,
-	// 		IsInside:      flags.isInside,
-	// 		OutputFeature: true,
-	// 	})
-	// }
-
-	return interfaces, nil
+	// dump output NAT interfaces
+	var cursor uint32
+	for {
+		if cursor == ^uint32(0) {
+			return natIfs, nil
+		}
+		err := h.callsStream.SendMsg(&vpp_nat_ed.Nat44EdOutputInterfaceGet{Cursor: cursor})
+		if err != nil {
+			return nil, err
+		}
+	Inner:
+		for {
+			msg, err := h.callsStream.RecvMsg()
+			if err != nil {
+				return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
+			}
+			switch msg := msg.(type) {
+			case *vpp_nat_ed.Nat44EdOutputInterfaceDetails:
+				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+				if !found {
+					h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+					continue Inner
+				}
+				natIfs = append(natIfs, &nat.Nat44Global_Interface{
+					Name:          ifName,
+					OutputFeature: true,
+				})
+			case *vpp_nat_ed.Nat44EdOutputInterfaceGetReply:
+				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
+				// reply often returns cursor value of 0 repeatedly even though it should return
+				// ^uint32(0). So if the reply contains cursor that is the same as cursor
+				// from previous reply, return.
+				if msg.Cursor == cursor {
+					return natIfs, nil
+				}
+				cursor = msg.Cursor
+				break Inner
+			default:
+				return nil, fmt.Errorf("received unexpected message %v during NAT44 interface output feature dump", msg)
+			}
+		}
+	}
 }
 
 // nat44InterfaceDump dumps NAT44 interface features.
 // Deprecated. Functionality moved to Nat44Nat44InterfacesDump. Kept for backward compatibility.
-func (h *NatVppHandler) nat44InterfaceDump() (interfaces []*nat.Nat44Global_Interface, err error) {
+func (h *NatVppHandler) nat44InterfaceDump() ([]*nat.Nat44Global_Interface, error) {
 	if h.ed {
 		return h.nat44EdInterfaceDump()
 	} else {
