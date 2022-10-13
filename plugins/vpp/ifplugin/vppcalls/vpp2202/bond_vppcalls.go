@@ -21,7 +21,7 @@ import (
 )
 
 func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLink *ifs.BondLink) (uint32, error) {
-	req := &vpp_bond.BondCreate{
+	req := &vpp_bond.BondCreate2{
 		ID:   bondLink.Id,
 		Mode: getBondMode(bondLink.Mode),
 		Lb:   getLoadBalance(bondLink.Lb),
@@ -35,7 +35,7 @@ func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLi
 		req.MacAddress = parsedMac
 	}
 
-	reply := &vpp_bond.BondCreateReply{}
+	reply := &vpp_bond.BondCreate2Reply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
@@ -55,6 +55,32 @@ func (h *InterfaceVppHandler) DeleteBondInterface(ifName string, ifIdx uint32) e
 	return h.RemoveInterfaceTag(ifName, ifIdx)
 }
 
+func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error {
+	req := &vpp_bond.BondAddMember{
+		SwIfIndex:     interface_types.InterfaceIndex(ifIdx),
+		BondSwIfIndex: interface_types.InterfaceIndex(bondIfIdx),
+		IsPassive:     isPassive,
+		IsLongTimeout: isLongTimeout,
+	}
+	reply := &vpp_bond.BondAddMemberReply{}
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *InterfaceVppHandler) DetachInterfaceFromBond(ifIdx uint32) error {
+	req := &vpp_bond.BondDetachMember{
+		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
+	}
+	reply := &vpp_bond.BondDetachMemberReply{}
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	return nil
+}
+
 func getBondMode(mode ifs.BondLink_Mode) vpp_bond.BondMode {
 	switch mode {
 	case ifs.BondLink_ROUND_ROBIN:
@@ -71,32 +97,6 @@ func getBondMode(mode ifs.BondLink_Mode) vpp_bond.BondMode {
 		// UNKNOWN
 		return 0
 	}
-}
-
-func (h *InterfaceVppHandler) AttachInterfaceToBond(ifIdx, bondIfIdx uint32, isPassive, isLongTimeout bool) error {
-	req := &vpp_bond.BondEnslave{
-		SwIfIndex:     interface_types.InterfaceIndex(ifIdx),
-		BondSwIfIndex: interface_types.InterfaceIndex(bondIfIdx),
-		IsPassive:     isPassive,
-		IsLongTimeout: isLongTimeout,
-	}
-	reply := &vpp_bond.BondEnslaveReply{}
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *InterfaceVppHandler) DetachInterfaceFromBond(ifIdx uint32) error {
-	req := &vpp_bond.BondDetachSlave{
-		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
-	}
-	reply := &vpp_bond.BondDetachSlaveReply{}
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-	return nil
 }
 
 func getLoadBalance(lb ifs.BondLink_LoadBalance) vpp_bond.BondLbAlgo {

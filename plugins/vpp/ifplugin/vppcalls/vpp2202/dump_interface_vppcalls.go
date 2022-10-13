@@ -758,9 +758,9 @@ func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaDetails) error {
 // dumpBondDetails dumps bond interface details from VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
 	bondIndexes := make([]uint32, 0)
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwInterfaceBondDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwBondInterfaceDump{})
 	for {
-		bondDetails := &vpp_bond.SwInterfaceBondDetails{}
+		bondDetails := &vpp_bond.SwBondInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(bondDetails)
 		if err != nil {
 			return fmt.Errorf("failed to dump bond interface details: %v", err)
@@ -783,31 +783,31 @@ func (h *InterfaceVppHandler) dumpBondDetails(interfaces map[uint32]*vppcalls.In
 		bondIndexes = append(bondIndexes, uint32(bondDetails.SwIfIndex))
 	}
 
-	// get slave interfaces for bonds
+	// get member interfaces for bonds
 	for _, bondIdx := range bondIndexes {
-		var bondSlaves []*ifs.BondLink_BondedInterface
-		reqSlCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwInterfaceSlaveDump{
+		var bondMembers []*ifs.BondLink_BondedInterface
+		reqSlCtx := h.callsChannel.SendMultiRequest(&vpp_bond.SwMemberInterfaceDump{
 			SwIfIndex: interface_types.InterfaceIndex(bondIdx),
 		})
 		for {
-			slaveDetails := &vpp_bond.SwInterfaceSlaveDetails{}
-			stop, err := reqSlCtx.ReceiveReply(slaveDetails)
+			memberDetails := &vpp_bond.SwMemberInterfaceDetails{}
+			stop, err := reqSlCtx.ReceiveReply(memberDetails)
 			if err != nil {
-				return fmt.Errorf("failed to dump bond slave details: %v", err)
+				return fmt.Errorf("failed to dump bond member details: %v", err)
 			}
 			if stop {
 				break
 			}
-			slaveIf, ifIdxExists := interfaces[uint32(slaveDetails.SwIfIndex)]
+			memberIf, ifIdxExists := interfaces[uint32(memberDetails.SwIfIndex)]
 			if !ifIdxExists {
 				continue
 			}
-			bondSlaves = append(bondSlaves, &ifs.BondLink_BondedInterface{
-				Name:          slaveIf.Interface.Name,
-				IsPassive:     slaveDetails.IsPassive,
-				IsLongTimeout: slaveDetails.IsLongTimeout,
+			bondMembers = append(bondMembers, &ifs.BondLink_BondedInterface{
+				Name:          memberIf.Interface.Name,
+				IsPassive:     memberDetails.IsPassive,
+				IsLongTimeout: memberDetails.IsLongTimeout,
 			})
-			interfaces[bondIdx].Interface.GetBond().BondedInterfaces = bondSlaves
+			interfaces[bondIdx].Interface.GetBond().BondedInterfaces = bondMembers
 		}
 	}
 
