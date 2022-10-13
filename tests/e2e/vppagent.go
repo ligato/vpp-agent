@@ -265,16 +265,16 @@ func (agent *Agent) ExecVppctl(action string, args ...string) (string, error) {
 
 // PingFromVPPAsCallback can be used to ping repeatedly inside the assertions "Eventually"
 // and "Consistently" from Omega.
-func (agent *Agent) PingFromVPPAsCallback(destAddress string) func() error {
+func (agent *Agent) PingFromVPPAsCallback(destAddress string, args ...string) func() error {
 	return func() error {
-		return agent.PingFromVPP(destAddress)
+		return agent.PingFromVPP(destAddress, args...)
 	}
 }
 
 // PingFromVPP pings <dstAddress> from inside the VPP.
-func (agent *Agent) PingFromVPP(destAddress string) error {
+func (agent *Agent) PingFromVPP(destAddress string, args ...string) error {
 	// run ping on VPP using vppctl
-	stdout, err := agent.ExecVppctl("ping", destAddress)
+	stdout, err := agent.ExecVppctl("ping", append([]string{destAddress}, args...)...)
 	if err != nil {
 		return err
 	}
