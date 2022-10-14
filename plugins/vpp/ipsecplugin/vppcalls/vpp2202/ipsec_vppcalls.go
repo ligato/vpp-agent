@@ -24,6 +24,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ipsec_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/tunnel_types"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
@@ -238,9 +239,9 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		udpDstPort = uint16(sa.TunnelDstPort)
 	}
 
-	req := &vpp_ipsec.IpsecSadEntryAddDel{
+	req := &vpp_ipsec.IpsecSadEntryAddDelV3{
 		IsAdd: isAdd,
-		Entry: ipsec_types.IpsecSadEntry{
+		Entry: ipsec_types.IpsecSadEntryV3{
 			SadID:           sa.Index,
 			Spi:             sa.Spi,
 			Protocol:        protocolToIpsecProto(sa.Protocol),
@@ -255,14 +256,16 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 				Data:   integKey,
 				Length: uint8(len(integKey)),
 			},
-			TunnelSrc:  tunnelSrc,
-			TunnelDst:  tunnelDst,
+			Tunnel: tunnel_types.Tunnel{
+				Src: tunnelSrc,
+				Dst: tunnelDst,
+			},
 			Flags:      flags,
 			UDPSrcPort: udpSrcPort,
 			UDPDstPort: udpDstPort,
 		},
 	}
-	reply := &vpp_ipsec.IpsecSadEntryAddDelReply{}
+	reply := &vpp_ipsec.IpsecSadEntryAddDelV3Reply{}
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

@@ -43,7 +43,7 @@ type IPSecSaMeta struct {
 	IfIdx          uint32
 	CryptoKeyLen   uint8
 	IntegKeyLen    uint8
-	Salt           uint32
+	Salt           uint32 // not used for VPP >= 22.10
 	SeqOutbound    uint64
 	LastSeqInbound uint64
 	ReplayWindow   uint64

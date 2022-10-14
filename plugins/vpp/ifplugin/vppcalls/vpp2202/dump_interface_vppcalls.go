@@ -650,14 +650,14 @@ func (h *InterfaceVppHandler) dumpVxLanGpeDetails(interfaces map[uint32]*vppcall
 // dumpIPSecTunnelDetails dumps IPSec tunnel interfaces from the VPP and fills them into the provided interface map.
 func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppcalls.InterfaceDetails) error {
 	// tunnel interfaces are a part of security association dump
-	var tunnels []*vpp_ipsec.IpsecSaDetails
-	req := &vpp_ipsec.IpsecSaDump{
+	var tunnels []*vpp_ipsec.IpsecSaV3Details
+	req := &vpp_ipsec.IpsecSaV3Dump{
 		SaID: ^uint32(0),
 	}
 	requestCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		saDetails := &vpp_ipsec.IpsecSaDetails{}
+		saDetails := &vpp_ipsec.IpsecSaV3Details{}
 		stop, err := requestCtx.ReceiveReply(saDetails)
 		if stop {
 			break
@@ -673,7 +673,7 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 
 	// every tunnel interface is returned in two API calls. To reconstruct the correct proto-modelled data,
 	// first appearance is cached, and when the second part arrives, data are completed and stored.
-	tunnelParts := make(map[uint32]*vpp_ipsec.IpsecSaDetails)
+	tunnelParts := make(map[uint32]*vpp_ipsec.IpsecSaV3Details)
 
 	for _, tunnel := range tunnels {
 		// first appearance is stored in the map, the second one is used in configuration.
@@ -693,13 +693,13 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 		}
 
 		var localIP, remoteIP net.IP
-		if tunnel.Entry.TunnelDst.Af == ip_types.ADDRESS_IP6 {
-			localSrc := local.Entry.TunnelSrc.Un.GetIP6()
-			remoteSrc := remote.Entry.TunnelSrc.Un.GetIP6()
+		if tunnel.Entry.Tunnel.Dst.Af == ip_types.ADDRESS_IP6 {
+			localSrc := local.Entry.Tunnel.Src.Un.GetIP6()
+			remoteSrc := remote.Entry.Tunnel.Src.Un.GetIP6()
 			localIP, remoteIP = net.IP(localSrc[:]), net.IP(remoteSrc[:])
 		} else {
-			localSrc := local.Entry.TunnelSrc.Un.GetIP4()
-			remoteSrc := remote.Entry.TunnelSrc.Un.GetIP4()
+			localSrc := local.Entry.Tunnel.Src.Un.GetIP4()
+			remoteSrc := remote.Entry.Tunnel.Src.Un.GetIP4()
 			localIP, remoteIP = net.IP(localSrc[:]), net.IP(remoteSrc[:])
 		}
 
@@ -731,7 +731,7 @@ func (h *InterfaceVppHandler) dumpIPSecTunnelDetails(interfaces map[uint32]*vppc
 	return nil
 }
 
-func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaDetails) error {
+func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaV3Details) error {
 	if local.SwIfIndex != remote.SwIfIndex {
 		return fmt.Errorf("swIfIndex data mismatch (local: %v, remote: %v)",
 			local.SwIfIndex, remote.SwIfIndex)
@@ -743,8 +743,8 @@ func verifyIPSecTunnelDetails(local, remote *vpp_ipsec.IpsecSaDetails) error {
 			localIsTunnel, remoteIsTunnel)
 	}
 
-	localSrc, localDst := local.Entry.TunnelSrc.Un.XXX_UnionData, local.Entry.TunnelDst.Un.XXX_UnionData
-	remoteSrc, remoteDst := remote.Entry.TunnelSrc.Un.XXX_UnionData, remote.Entry.TunnelDst.Un.XXX_UnionData
+	localSrc, localDst := local.Entry.Tunnel.Src.Un.XXX_UnionData, local.Entry.Tunnel.Dst.Un.XXX_UnionData
+	remoteSrc, remoteDst := remote.Entry.Tunnel.Src.Un.XXX_UnionData, remote.Entry.Tunnel.Dst.Un.XXX_UnionData
 	if (local.Entry.Flags&ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) != (remote.Entry.Flags&ipsec_types.IPSEC_API_SAD_FLAG_IS_TUNNEL_V6) ||
 		!bytes.Equal(localSrc[:], remoteDst[:]) ||
 		!bytes.Equal(localDst[:], remoteSrc[:]) {
