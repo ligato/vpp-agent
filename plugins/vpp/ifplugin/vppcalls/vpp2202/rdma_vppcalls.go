@@ -18,13 +18,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"go.fd.io/govpp/api"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/interface_types"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/rdma"
+	vpp_rdma "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/rdma"
 )
 
 // AddRdmaInterface adds new interface with RDMA driver.
@@ -33,7 +32,7 @@ func (h *InterfaceVppHandler) AddRdmaInterface(ctx context.Context, ifName strin
 		return 0, errors.WithMessage(vpp.ErrPluginDisabled, "rdma")
 	}
 
-	req := &rdma.RdmaCreate{
+	req := &vpp_rdma.RdmaCreateV3{
 		HostIf:  rdmaLink.GetHostIfName(),
 		Name:    ifName,
 		RxqNum:  uint16(rdmaLink.GetRxqNum()),
@@ -42,10 +41,8 @@ func (h *InterfaceVppHandler) AddRdmaInterface(ctx context.Context, ifName strin
 		Mode:    rdmaMode(rdmaLink.GetMode()),
 	}
 
-	reply, err := h.rdma.RdmaCreate(ctx, req)
-	if err != nil {
-		return 0, err
-	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
+	reply := &vpp_rdma.RdmaCreateV3Reply{}
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	swIdx = uint32(reply.SwIfIndex)
@@ -59,25 +56,25 @@ func (h *InterfaceVppHandler) DeleteRdmaInterface(ctx context.Context, ifName st
 		return errors.WithMessage(vpp.ErrPluginDisabled, "rdma")
 	}
 
-	req := &rdma.RdmaDelete{
+	req := &vpp_rdma.RdmaDelete{
 		SwIfIndex: interface_types.InterfaceIndex(ifIdx),
 	}
-	if reply, err := h.rdma.RdmaDelete(ctx, req); err != nil {
-		return err
-	} else if err = api.RetvalToVPPApiError(reply.Retval); err != nil {
+
+	reply := &vpp_rdma.RdmaDeleteReply{}
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 
 	return h.RemoveInterfaceTag(ifName, ifIdx)
 }
 
-func rdmaMode(mode interfaces.RDMALink_Mode) rdma.RdmaMode {
+func rdmaMode(mode interfaces.RDMALink_Mode) vpp_rdma.RdmaMode {
 	switch mode {
 	case interfaces.RDMALink_DV:
-		return rdma.RDMA_API_MODE_DV
+		return vpp_rdma.RDMA_API_MODE_DV
 	case interfaces.RDMALink_IBV:
-		return rdma.RDMA_API_MODE_IBV
+		return vpp_rdma.RDMA_API_MODE_IBV
 	default:
-		return rdma.RDMA_API_MODE_AUTO
+		return vpp_rdma.RDMA_API_MODE_AUTO
 	}
 }
