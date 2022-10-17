@@ -105,11 +105,10 @@ func TestAgentCtlCommands(t *testing.T) {
 			expectNotEmptyStdout: true,
 		},
 		{
-			name:              "Test `config get`",
-			cmd:               "config get",
-			expectInStdout:    "type: DUMMY",
-			expectReStdout:    "name: dummyif(3)",
-			expectNotReStdout: "name: dummyif(0|1|2|4)",
+			name:           "Test `config get`",
+			cmd:            "config get",
+			expectInStdout: "type: DUMMY",
+			expectReStdout: "name: dummyif(0|1|2|3|4)",
 		},
 		{
 			name:              "Test `config get`",
@@ -117,12 +116,6 @@ func TestAgentCtlCommands(t *testing.T) {
 			expectInStdout:    "type: DUMMY",
 			expectReStdout:    "name: dummyif(3)",
 			expectNotReStdout: "name: dummyif(0|1|2|4)",
-		},
-		{
-			name:           "Test `config get`",
-			cmd:            "config get --all",
-			expectInStdout: "type: DUMMY",
-			expectReStdout: "name: dummyif(0|1|2|3|4)",
 		},
 		{
 			name:              "Test `config get` with full label",

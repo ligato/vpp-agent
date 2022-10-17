@@ -77,15 +77,12 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 		"Empty keys and duplicated keys are not allowed. "+
 		"If value of label is empty, equals sign can be omitted. "+
 		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
-	flags.BoolVar(&opts.All, "all", false, "Output all config items regardless of labels associated with them")
-	cmd.MarkFlagsMutuallyExclusive("labels", "all")
 	return cmd
 }
 
 type ConfigGetOptions struct {
 	Format string
 	Labels []string
-	All    bool
 }
 
 func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
@@ -110,9 +107,6 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	labels, err := parseLabels(opts.Labels)
 	if err != nil {
 		return fmt.Errorf("parsing labels failed: %w", err)
-	}
-	if len(opts.Labels) == 0 && !opts.All {
-		labels["io.ligato.from-client"] = "agentctl"
 	}
 
 	// retrieve data into config
