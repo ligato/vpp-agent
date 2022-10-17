@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"go.fd.io/govpp/binapi/ip_types"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ip"
 	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ip"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
 	vpp2202 "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2202"
@@ -136,7 +138,7 @@ func TestVrfFlowHashSettings(t *testing.T) {
 	ctx, vtHandler := vrfTableTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_ip.SetIPFlowHashReply{})
+	ctx.MockVpp.MockReply(&vpp_ip.SetIPFlowHashV2Reply{})
 	err := vtHandler.SetVrfFlowHashSettings(5, true,
 		&l3.VrfTable_FlowHashSettings{
 			UseSrcIp:   true,
@@ -145,17 +147,12 @@ func TestVrfFlowHashSettings(t *testing.T) {
 		})
 	Expect(err).To(Succeed())
 
-	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.SetIPFlowHash)
+	vppMsg, ok := ctx.MockChannel.Msg.(*vpp_ip.SetIPFlowHashV2)
 	Expect(ok).To(BeTrue())
-	Expect(vppMsg.VrfID).To(BeEquivalentTo(5))
-	Expect(vppMsg.IsIPv6).To(BeTrue())
-	Expect(vppMsg.Src).To(BeTrue())
-	Expect(vppMsg.Dst).To(BeFalse())
-	Expect(vppMsg.Sport).To(BeTrue())
-	Expect(vppMsg.Dport).To(BeFalse())
-	Expect(vppMsg.Proto).To(BeFalse())
-	Expect(vppMsg.Symmetric).To(BeTrue())
-	Expect(vppMsg.Reverse).To(BeFalse())
+	Expect(vppMsg.TableID).To(BeEquivalentTo(5))
+	Expect(vppMsg.Af).To(BeEquivalentTo(ip_types.ADDRESS_IP6))
+	Expect(vppMsg.FlowHashConfig).To(BeEquivalentTo(
+		ip.IP_API_FLOW_HASH_SRC_IP + ip.IP_API_FLOW_HASH_SRC_PORT + ip.IP_API_FLOW_HASH_SYMETRIC))
 }
 
 func vrfTableTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.VrfTableVppAPI) {
