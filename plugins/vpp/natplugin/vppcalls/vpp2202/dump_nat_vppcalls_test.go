@@ -210,11 +210,14 @@ func TestNat44EiInterfacesDump(t *testing.T) {
 	ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})
 
 	// output interfaces
-	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceOutputFeatureDetails{
-		SwIfIndex: 3,
-		Flags:     vpp_nat_ei.NAT44_EI_IF_INSIDE | vpp_nat_ei.NAT44_EI_IF_OUTSIDE,
-	})
-	ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})
+	ctx.MockVpp.MockReply(
+		&vpp_nat_ei.Nat44EiOutputInterfaceDetails{
+			SwIfIndex: 3,
+		},
+		&vpp_nat_ei.Nat44EiOutputInterfaceGetReply{
+			Retval: 0,
+			Cursor: ^uint32(0),
+		})
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -236,8 +239,8 @@ func TestNat44EiInterfacesDump(t *testing.T) {
 	Expect(interfaces[1].OutputFeature).To(BeFalse())
 
 	Expect(interfaces[2].Name).To(Equal("if2"))
-	Expect(interfaces[2].NatInside).To(BeTrue())
-	Expect(interfaces[2].NatOutside).To(BeTrue())
+	Expect(interfaces[2].NatInside).To(BeFalse())
+	Expect(interfaces[2].NatOutside).To(BeFalse())
 	Expect(interfaces[2].OutputFeature).To(BeTrue())
 }
 
