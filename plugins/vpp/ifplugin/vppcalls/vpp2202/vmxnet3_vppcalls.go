@@ -100,11 +100,9 @@ func (h *InterfaceVppHandler) dumpVmxNet3Details(interfaces map[uint32]*vppcalls
 		return nil
 	}
 
-	// index of ^interface_types.InterfaceIndex(0) dumps all VmxNet3 details
-	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vmxnet3.SwVmxnet3InterfaceDump{
-		SwIfIndex: ^interface_types.InterfaceIndex(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vpp_vmxnet3.Vmxnet3Dump{})
 	for {
-		vmxnet3Details := &vpp_vmxnet3.SwVmxnet3InterfaceDetails{}
+		vmxnet3Details := &vpp_vmxnet3.Vmxnet3Details{}
 		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
 		if stop {
 			break // Break from the loop.

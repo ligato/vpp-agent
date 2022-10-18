@@ -29,7 +29,7 @@ func TestAddAfPacketInterface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateV2Reply{})
+	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "", "host1")
@@ -39,9 +39,9 @@ func TestAddAfPacketInterface(t *testing.T) {
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
 	for i, msg := range ctx.MockChannel.Msgs {
 		if i == 0 {
-			vppMsg, ok := msg.(*vpp_afpacket.AfPacketCreateV2)
+			vppMsg, ok := msg.(*vpp_afpacket.AfPacketCreate)
 			Expect(ok).To(BeTrue())
-			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreateV2{
+			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreate{
 				HostIfName:      "host1",
 				HwAddr:          ethernet_types.MacAddress{},
 				UseRandomHwAddr: true,
@@ -65,7 +65,7 @@ func TestAddAfPacketInterfaceRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateV2Reply{
+	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{
 		Retval: 1,
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
@@ -101,7 +101,7 @@ func TestDeleteAfPacketInterfaceError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateV2Reply{})
+	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{})
 
 	err := ifHandler.DeleteAfPacketInterface("if1", 0, "host1")
 
@@ -126,7 +126,7 @@ func TestAddAfPacketInterfaceMac(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateV2Reply{})
+	ctx.MockVpp.MockReply(&vpp_afpacket.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "a2:01:01:01:01:01", "host1")
@@ -140,9 +140,9 @@ func TestAddAfPacketInterfaceMac(t *testing.T) {
 
 	for i, msg := range ctx.MockChannel.Msgs {
 		if i == 0 {
-			vppMsg, ok := msg.(*vpp_afpacket.AfPacketCreateV2)
+			vppMsg, ok := msg.(*vpp_afpacket.AfPacketCreate)
 			Expect(ok).To(BeTrue())
-			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreateV2{
+			Expect(vppMsg).To(Equal(&vpp_afpacket.AfPacketCreate{
 				HostIfName:      "host1",
 				HwAddr:          mac,
 				UseRandomHwAddr: false,

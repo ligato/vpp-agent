@@ -418,6 +418,98 @@ func TestDisableNat44EiInterfaceAsOutside(t *testing.T) {
 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
 }
 
+func TestEnableNat44EdInterfaceOutputAsInside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelOutputFeatureReply{})
+	err = natHandler.EnableNat44Interface("if0", true, true)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelOutputFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeTrue())
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
+}
+
+func TestEnableNat44EiInterfaceOutputAsInside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
+	err = natHandler.EnableNat44Interface("if0", true, true)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeTrue())
+	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat_ei.NAT44_EI_IF_INSIDE))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
+}
+
+func TestEnableNat44EdInterfaceOutputAsOutside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelOutputFeatureReply{})
+	err = natHandler.EnableNat44Interface("if1", false, true)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelOutputFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeTrue())
+	Expect(msg.Flags).To(BeEquivalentTo(0))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
+}
+
+func TestEnableNat44EiInterfaceOutputAsOutside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
+	err = natHandler.EnableNat44Interface("if1", false, true)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeTrue())
+	Expect(msg.Flags).To(BeEquivalentTo(0))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
+}
+
 func TestEnableNat44EdInterfaceOutputError(t *testing.T) {
 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -462,7 +554,7 @@ func TestEnableNat44EdInterfaceOutputRetval(t *testing.T) {
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelFeatureReply{
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelOutputFeatureReply{
 		Retval: 1,
 	})
 	err = natHandler.EnableNat44Interface("if1", false, true)
@@ -480,7 +572,7 @@ func TestEnableNat44EiInterfaceOutputRetval(t *testing.T) {
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiAddDelOutputInterfaceReply{
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelOutputFeatureReply{
 		Retval: 1,
 	})
 	err = natHandler.EnableNat44Interface("if1", false, true)
@@ -488,192 +580,97 @@ func TestEnableNat44EiInterfaceOutputRetval(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-// FIXME: The following commented out tests seem to no longer make sense in
-// VPP >= 22.10. If that is indeed the case (verify it), then delete them, else
-// adapt them to the new VPP.
-// func TestEnableNat44EdInterfaceOutputAsInside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
+func TestDisableNat44EdInterfaceOutputAsInside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
-// 	Expect(err).ShouldNot(HaveOccurred())
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelFeatureReply{})
-// 	err = natHandler.EnableNat44Interface("if0", true, true)
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelOutputFeatureReply{})
+	err = natHandler.DisableNat44Interface("if0", true, true)
 
-// 	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeTrue())
-// 	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
-// }
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelOutputFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeFalse())
+	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
+}
 
-// func TestEnableNat44EiInterfaceOutputAsInside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
+func TestDisableNat44EiInterfaceOutputAsInside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
-// 	Expect(err).ShouldNot(HaveOccurred())
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
-// 	err = natHandler.EnableNat44Interface("if0", true, true)
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
+	err = natHandler.DisableNat44Interface("if0", true, true)
 
-// 	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeTrue())
-// 	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat_ei.NAT44_EI_IF_INSIDE))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
-// }
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeFalse())
+	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat_ei.NAT44_EI_IF_INSIDE))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
+}
 
-// func TestEnableNat44EdInterfaceOutputAsOutside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
+func TestDisableNat44EdInterfaceOutputAsOutside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
-// 	Expect(err).ShouldNot(HaveOccurred())
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelFeatureReply{})
-// 	err = natHandler.EnableNat44Interface("if1", false, true)
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelOutputFeatureReply{})
+	err = natHandler.DisableNat44Interface("if1", false, true)
 
-// 	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeTrue())
-// 	Expect(msg.Flags).To(BeEquivalentTo(0))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
-// }
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelOutputFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeFalse())
+	Expect(msg.Flags).To(BeEquivalentTo(0))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
+}
 
-// func TestEnableNat44EiInterfaceOutputAsOutside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
+func TestDisableNat44EiInterfaceOutputAsOutside(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
-// 	Expect(err).ShouldNot(HaveOccurred())
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
-// 	err = natHandler.EnableNat44Interface("if1", false, true)
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
+	err = natHandler.DisableNat44Interface("if1", false, true)
 
-// 	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeTrue())
-// 	Expect(msg.Flags).To(BeEquivalentTo(0))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
-// }
-
-// func TestDisableNat44EdInterfaceOutputAsInside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelFeatureReply{})
-// 	err = natHandler.DisableNat44Interface("if0", true, true)
-
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeFalse())
-// 	Expect(msg.Flags).To(BeEquivalentTo(nat_types.NAT_IS_INSIDE))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
-// }
-
-// func TestDisableNat44EiInterfaceOutputAsInside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
-// 	err = natHandler.DisableNat44Interface("if0", true, true)
-
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeFalse())
-// 	Expect(msg.Flags).To(BeEquivalentTo(vpp_nat_ei.NAT44_EI_IF_INSIDE))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(1))
-// }
-
-// func TestDisableNat44EdInterfaceOutputAsOutside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44InterfaceAddDelFeatureReply{})
-// 	err = natHandler.DisableNat44Interface("if1", false, true)
-
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44InterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeFalse())
-// 	Expect(msg.Flags).To(BeEquivalentTo(0))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
-// }
-
-// func TestDisableNat44EiInterfaceOutputAsOutside(t *testing.T) {
-// 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
-// 	defer ctx.TeardownTestCtx()
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiPluginEnableDisableReply{})
-// 	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: false})
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
-
-// 	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelFeatureReply{})
-// 	err = natHandler.DisableNat44Interface("if1", false, true)
-
-// 	Expect(err).ShouldNot(HaveOccurred())
-
-// 	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
-// 	Expect(ok).To(BeTrue())
-// 	Expect(msg).ToNot(BeNil())
-// 	Expect(msg.IsAdd).To(BeFalse())
-// 	Expect(msg.Flags).To(BeEquivalentTo(0))
-// 	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
-// }
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ei.Nat44EiInterfaceAddDelFeature)
+	Expect(ok).To(BeTrue())
+	Expect(msg).ToNot(BeNil())
+	Expect(msg.IsAdd).To(BeFalse())
+	Expect(msg.Flags).To(BeEquivalentTo(0))
+	Expect(msg.SwIfIndex).To(BeEquivalentTo(2))
+}
 
 func TestAddNat44EdAddressPool(t *testing.T) {
 	ctx, natHandler, _, _ := natTestSetup(t)
@@ -1106,7 +1103,7 @@ func TestAddNat44EiStaticMappingError(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Incorrect reply object
-	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiAddDelOutputInterfaceReply{})
+	ctx.MockVpp.MockReply(&vpp_nat_ei.Nat44EiInterfaceAddDelOutputFeatureReply{})
 	err = natHandler.AddNat44StaticMapping(&nat.DNat44_StaticMapping{}, "")
 
 	Expect(err).Should(HaveOccurred())

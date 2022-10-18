@@ -47,13 +47,13 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 		}
 
 		var tunnelSrcAddr, tunnelDstAddr net.IP
-		if saData.Entry.Tunnel.Dst.Af == ip_types.ADDRESS_IP6 {
-			src := saData.Entry.Tunnel.Src.Un.GetIP6()
-			dst := saData.Entry.Tunnel.Dst.Un.GetIP6()
+		if saData.Entry.TunnelDst.Af == ip_types.ADDRESS_IP6 {
+			src := saData.Entry.TunnelSrc.Un.GetIP6()
+			dst := saData.Entry.TunnelDst.Un.GetIP6()
 			tunnelSrcAddr, tunnelDstAddr = net.IP(src[:]), net.IP(dst[:])
 		} else {
-			src := saData.Entry.Tunnel.Src.Un.GetIP4()
-			dst := saData.Entry.Tunnel.Dst.Un.GetIP4()
+			src := saData.Entry.TunnelSrc.Un.GetIP4()
+			dst := saData.Entry.TunnelDst.Un.GetIP4()
 			tunnelSrcAddr, tunnelDstAddr = net.IP(src[:]), net.IP(dst[:])
 		}
 
@@ -81,6 +81,7 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*vppcalls.
 		meta := &vppcalls.IPSecSaMeta{
 			SaID:           saData.Entry.SadID,
 			IfIdx:          uint32(saData.SwIfIndex),
+			Salt:           saData.Salt,
 			SeqOutbound:    saData.SeqOutbound,
 			LastSeqInbound: saData.LastSeqInbound,
 			ReplayWindow:   saData.ReplayWindow,
@@ -112,7 +113,7 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*ipsec.SecurityPolicyDatabas
 		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
 	}
 
-	for spdIdx := range spdIndexes {
+	for spdIdx, _ := range spdIndexes {
 		spd := &ipsec.SecurityPolicyDatabase{
 			Index: spdIdx,
 		}
@@ -141,7 +142,7 @@ func (h *IPSecVppHandler) DumpIPSecSP() (spList []*ipsec.SecurityPolicy, err err
 	if err != nil {
 		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
 	}
-	for spdIdx := range spdIndexes {
+	for spdIdx, _ := range spdIndexes {
 		req := &vpp_ipsec.IpsecSpdDump{
 			SpdID: spdIdx,
 			SaID:  ^uint32(0),
@@ -281,14 +282,14 @@ func (h *IPSecVppHandler) dumpSpdIndexes() (map[uint32]uint32, error) {
 }
 
 // Get all security association (used also for tunnel interfaces) in binary api format
-func (h *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*vpp_ipsec.IpsecSaV3Details, err error) {
-	req := &vpp_ipsec.IpsecSaV3Dump{
+func (h *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*vpp_ipsec.IpsecSaDetails, err error) {
+	req := &vpp_ipsec.IpsecSaDump{
 		SaID: saID,
 	}
 	requestCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
-		saDetails := &vpp_ipsec.IpsecSaV3Details{}
+		saDetails := &vpp_ipsec.IpsecSaDetails{}
 		stop, err := requestCtx.ReceiveReply(saDetails)
 		if stop {
 			break

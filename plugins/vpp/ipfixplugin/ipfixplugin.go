@@ -32,6 +32,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2202"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ipfixplugin/vppcalls/vpp2210"
 )
 
 // IPFIXPlugin is a plugin that manages IPFIX configuration in VPP.

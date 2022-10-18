@@ -24,7 +24,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ip_types"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ipsec"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/ipsec_types"
-	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/tunnel_types"
 	ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 )
 
@@ -118,9 +117,9 @@ func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
 }
 
 func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) error {
-	req := &vpp_ipsec.IpsecSpdEntryAddDelV2{
+	req := &vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: isAdd,
-		Entry: ipsec_types.IpsecSpdEntryV2{
+		Entry: vpp_ipsec.IpsecSpdEntry{
 			SpdID:           sp.SpdIndex,
 			Priority:        sp.Priority,
 			IsOutbound:      sp.IsOutbound,
@@ -129,7 +128,7 @@ func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) e
 			RemotePortStop:  uint16(sp.RemotePortStop),
 			LocalPortStart:  uint16(sp.LocalPortStart),
 			LocalPortStop:   uint16(sp.LocalPortStop),
-			Policy:          ipsec_types.IpsecSpdAction(sp.Action),
+			Policy:          vpp_ipsec.IpsecSpdAction(sp.Action),
 			SaID:            sp.SaIndex,
 		},
 	}
@@ -158,8 +157,6 @@ func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) e
 		return err
 	}
 
-	// FIXME: bug in VPP?
-	// reply := &vpp_ipsec.IpsecSpdEntryAddDelV2Reply{}
 	reply := &vpp_ipsec.IpsecSpdEntryAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -239,9 +236,9 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 		udpDstPort = uint16(sa.TunnelDstPort)
 	}
 
-	req := &vpp_ipsec.IpsecSadEntryAddDelV3{
+	req := &vpp_ipsec.IpsecSadEntryAddDel{
 		IsAdd: isAdd,
-		Entry: ipsec_types.IpsecSadEntryV3{
+		Entry: ipsec_types.IpsecSadEntry{
 			SadID:           sa.Index,
 			Spi:             sa.Spi,
 			Protocol:        protocolToIpsecProto(sa.Protocol),
@@ -256,16 +253,14 @@ func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bo
 				Data:   integKey,
 				Length: uint8(len(integKey)),
 			},
-			Tunnel: tunnel_types.Tunnel{
-				Src: tunnelSrc,
-				Dst: tunnelDst,
-			},
+			TunnelSrc:  tunnelSrc,
+			TunnelDst:  tunnelDst,
 			Flags:      flags,
 			UDPSrcPort: udpSrcPort,
 			UDPDstPort: udpDstPort,
 		},
 	}
-	reply := &vpp_ipsec.IpsecSadEntryAddDelV3Reply{}
+	reply := &vpp_ipsec.IpsecSadEntryAddDelReply{}
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err

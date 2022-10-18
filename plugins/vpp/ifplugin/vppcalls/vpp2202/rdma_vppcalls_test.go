@@ -29,7 +29,7 @@ func TestAddRdmaInterface(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&vpp_rdma.RdmaCreateV3Reply{
+	ctx.MockVpp.MockReply(&vpp_rdma.RdmaCreateReply{
 		SwIfIndex: 2,
 	})
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
@@ -49,7 +49,7 @@ func TestAddRdmaInterface(t *testing.T) {
 	Expect(index).To(Equal(uint32(2)))
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
-		vppMsg, ok := msg.(*vpp_rdma.RdmaCreateV3)
+		vppMsg, ok := msg.(*vpp_rdma.RdmaCreate)
 		if ok {
 			Expect(vppMsg.HostIf).To(BeEquivalentTo("ens4"))
 			Expect(vppMsg.Name).To(BeEquivalentTo("rdma1"))
