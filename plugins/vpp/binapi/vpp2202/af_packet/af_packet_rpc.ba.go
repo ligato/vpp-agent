@@ -15,7 +15,6 @@ import (
 type RPCService interface {
 	AfPacketCreate(ctx context.Context, in *AfPacketCreate) (*AfPacketCreateReply, error)
 	AfPacketCreateV2(ctx context.Context, in *AfPacketCreateV2) (*AfPacketCreateV2Reply, error)
-	AfPacketCreateV3(ctx context.Context, in *AfPacketCreateV3) (*AfPacketCreateV3Reply, error)
 	AfPacketDelete(ctx context.Context, in *AfPacketDelete) (*AfPacketDeleteReply, error)
 	AfPacketDump(ctx context.Context, in *AfPacketDump) (RPCService_AfPacketDumpClient, error)
 	AfPacketSetL4CksumOffload(ctx context.Context, in *AfPacketSetL4CksumOffload) (*AfPacketSetL4CksumOffloadReply, error)
@@ -40,15 +39,6 @@ func (c *serviceClient) AfPacketCreate(ctx context.Context, in *AfPacketCreate) 
 
 func (c *serviceClient) AfPacketCreateV2(ctx context.Context, in *AfPacketCreateV2) (*AfPacketCreateV2Reply, error) {
 	out := new(AfPacketCreateV2Reply)
-	err := c.conn.Invoke(ctx, in, out)
-	if err != nil {
-		return nil, err
-	}
-	return out, api.RetvalToVPPApiError(out.Retval)
-}
-
-func (c *serviceClient) AfPacketCreateV3(ctx context.Context, in *AfPacketCreateV3) (*AfPacketCreateV3Reply, error) {
-	out := new(AfPacketCreateV3Reply)
 	err := c.conn.Invoke(ctx, in, out)
 	if err != nil {
 		return nil, err

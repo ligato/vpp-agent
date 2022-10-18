@@ -19,12 +19,6 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
-const (
-	APIFile    = "ethernet_types"
-	APIVersion = "1.0.0"
-	VersionCrc = 0xf24103d6
-)
-
 // MacAddress defines alias 'mac_address'.
 type MacAddress [6]uint8
 

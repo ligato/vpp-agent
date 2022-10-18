@@ -3,12 +3,15 @@
 // Package ipsec contains generated bindings for API file ipsec.api.
 //
 // Contents:
-//   2 structs
-//  48 messages
+//   1 enum
+//   3 structs
+//  46 messages
 //
 package ipsec
 
 import (
+	"strconv"
+
 	api "go.fd.io/govpp/api"
 	codec "go.fd.io/govpp/codec"
 	interface_types "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2202/interface_types"
@@ -26,14 +29,65 @@ const _ = api.GoVppAPIPackageIsVersion2
 const (
 	APIFile    = "ipsec"
 	APIVersion = "5.0.2"
-	VersionCrc = 0xd8d93805
+	VersionCrc = 0x6b08e91e
 )
+
+// IpsecSpdAction defines enum 'ipsec_spd_action'.
+type IpsecSpdAction uint32
+
+const (
+	IPSEC_API_SPD_ACTION_BYPASS  IpsecSpdAction = 0
+	IPSEC_API_SPD_ACTION_DISCARD IpsecSpdAction = 1
+	IPSEC_API_SPD_ACTION_RESOLVE IpsecSpdAction = 2
+	IPSEC_API_SPD_ACTION_PROTECT IpsecSpdAction = 3
+)
+
+var (
+	IpsecSpdAction_name = map[uint32]string{
+		0: "IPSEC_API_SPD_ACTION_BYPASS",
+		1: "IPSEC_API_SPD_ACTION_DISCARD",
+		2: "IPSEC_API_SPD_ACTION_RESOLVE",
+		3: "IPSEC_API_SPD_ACTION_PROTECT",
+	}
+	IpsecSpdAction_value = map[string]uint32{
+		"IPSEC_API_SPD_ACTION_BYPASS":  0,
+		"IPSEC_API_SPD_ACTION_DISCARD": 1,
+		"IPSEC_API_SPD_ACTION_RESOLVE": 2,
+		"IPSEC_API_SPD_ACTION_PROTECT": 3,
+	}
+)
+
+func (x IpsecSpdAction) String() string {
+	s, ok := IpsecSpdAction_name[uint32(x)]
+	if ok {
+		return s
+	}
+	return "IpsecSpdAction(" + strconv.Itoa(int(x)) + ")"
+}
 
 // IpsecItf defines type 'ipsec_itf'.
 type IpsecItf struct {
 	UserInstance uint32                         `binapi:"u32,name=user_instance,default=4294967295" json:"user_instance,omitempty"`
 	Mode         tunnel_types.TunnelMode        `binapi:"tunnel_mode,name=mode" json:"mode,omitempty"`
 	SwIfIndex    interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
+}
+
+// IpsecSpdEntry defines type 'ipsec_spd_entry'.
+type IpsecSpdEntry struct {
+	SpdID              uint32           `binapi:"u32,name=spd_id" json:"spd_id,omitempty"`
+	Priority           int32            `binapi:"i32,name=priority" json:"priority,omitempty"`
+	IsOutbound         bool             `binapi:"bool,name=is_outbound" json:"is_outbound,omitempty"`
+	SaID               uint32           `binapi:"u32,name=sa_id" json:"sa_id,omitempty"`
+	Policy             IpsecSpdAction   `binapi:"ipsec_spd_action,name=policy" json:"policy,omitempty"`
+	Protocol           uint8            `binapi:"u8,name=protocol" json:"protocol,omitempty"`
+	RemoteAddressStart ip_types.Address `binapi:"address,name=remote_address_start" json:"remote_address_start,omitempty"`
+	RemoteAddressStop  ip_types.Address `binapi:"address,name=remote_address_stop" json:"remote_address_stop,omitempty"`
+	LocalAddressStart  ip_types.Address `binapi:"address,name=local_address_start" json:"local_address_start,omitempty"`
+	LocalAddressStop   ip_types.Address `binapi:"address,name=local_address_stop" json:"local_address_stop,omitempty"`
+	RemotePortStart    uint16           `binapi:"u16,name=remote_port_start" json:"remote_port_start,omitempty"`
+	RemotePortStop     uint16           `binapi:"u16,name=remote_port_stop" json:"remote_port_stop,omitempty"`
+	LocalPortStart     uint16           `binapi:"u16,name=local_port_start" json:"local_port_start,omitempty"`
+	LocalPortStop      uint16           `binapi:"u16,name=local_port_stop" json:"local_port_stop,omitempty"`
 }
 
 // IpsecTunnelProtect defines type 'ipsec_tunnel_protect'.
@@ -1689,7 +1743,7 @@ func (m *IpsecSpdAddDelReply) Unmarshal(b []byte) error {
 
 // IpsecSpdDetails defines message 'ipsec_spd_details'.
 type IpsecSpdDetails struct {
-	Entry ipsec_types.IpsecSpdEntry `binapi:"ipsec_spd_entry,name=entry" json:"entry,omitempty"`
+	Entry IpsecSpdEntry `binapi:"ipsec_spd_entry,name=entry" json:"entry,omitempty"`
 }
 
 func (m *IpsecSpdDetails) Reset()               { *m = IpsecSpdDetails{} }
@@ -1754,7 +1808,7 @@ func (m *IpsecSpdDetails) Unmarshal(b []byte) error {
 	m.Entry.Priority = buf.DecodeInt32()
 	m.Entry.IsOutbound = buf.DecodeBool()
 	m.Entry.SaID = buf.DecodeUint32()
-	m.Entry.Policy = ipsec_types.IpsecSpdAction(buf.DecodeUint32())
+	m.Entry.Policy = IpsecSpdAction(buf.DecodeUint32())
 	m.Entry.Protocol = buf.DecodeUint8()
 	m.Entry.RemoteAddressStart.Af = ip_types.AddressFamily(buf.DecodeUint8())
 	copy(m.Entry.RemoteAddressStart.Un.XXX_UnionData[:], buf.DecodeBytes(16))
@@ -1809,10 +1863,9 @@ func (m *IpsecSpdDump) Unmarshal(b []byte) error {
 }
 
 // IpsecSpdEntryAddDel defines message 'ipsec_spd_entry_add_del'.
-// Deprecated: the message will be removed in the future versions
 type IpsecSpdEntryAddDel struct {
-	IsAdd bool                      `binapi:"bool,name=is_add" json:"is_add,omitempty"`
-	Entry ipsec_types.IpsecSpdEntry `binapi:"ipsec_spd_entry,name=entry" json:"entry,omitempty"`
+	IsAdd bool          `binapi:"bool,name=is_add" json:"is_add,omitempty"`
+	Entry IpsecSpdEntry `binapi:"ipsec_spd_entry,name=entry" json:"entry,omitempty"`
 }
 
 func (m *IpsecSpdEntryAddDel) Reset()               { *m = IpsecSpdEntryAddDel{} }
@@ -1880,7 +1933,7 @@ func (m *IpsecSpdEntryAddDel) Unmarshal(b []byte) error {
 	m.Entry.Priority = buf.DecodeInt32()
 	m.Entry.IsOutbound = buf.DecodeBool()
 	m.Entry.SaID = buf.DecodeUint32()
-	m.Entry.Policy = ipsec_types.IpsecSpdAction(buf.DecodeUint32())
+	m.Entry.Policy = IpsecSpdAction(buf.DecodeUint32())
 	m.Entry.Protocol = buf.DecodeUint8()
 	m.Entry.RemoteAddressStart.Af = ip_types.AddressFamily(buf.DecodeUint8())
 	copy(m.Entry.RemoteAddressStart.Un.XXX_UnionData[:], buf.DecodeBytes(16))
@@ -1928,131 +1981,6 @@ func (m *IpsecSpdEntryAddDelReply) Marshal(b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 func (m *IpsecSpdEntryAddDelReply) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.Retval = buf.DecodeInt32()
-	m.StatIndex = buf.DecodeUint32()
-	return nil
-}
-
-// IpsecSpdEntryAddDelV2 defines message 'ipsec_spd_entry_add_del_v2'.
-type IpsecSpdEntryAddDelV2 struct {
-	IsAdd bool                        `binapi:"bool,name=is_add" json:"is_add,omitempty"`
-	Entry ipsec_types.IpsecSpdEntryV2 `binapi:"ipsec_spd_entry_v2,name=entry" json:"entry,omitempty"`
-}
-
-func (m *IpsecSpdEntryAddDelV2) Reset()               { *m = IpsecSpdEntryAddDelV2{} }
-func (*IpsecSpdEntryAddDelV2) GetMessageName() string { return "ipsec_spd_entry_add_del_v2" }
-func (*IpsecSpdEntryAddDelV2) GetCrcString() string   { return "7bfe69fc" }
-func (*IpsecSpdEntryAddDelV2) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-func (m *IpsecSpdEntryAddDelV2) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 1      // m.IsAdd
-	size += 4      // m.Entry.SpdID
-	size += 4      // m.Entry.Priority
-	size += 1      // m.Entry.IsOutbound
-	size += 4      // m.Entry.SaID
-	size += 4      // m.Entry.Policy
-	size += 1      // m.Entry.Protocol
-	size += 1      // m.Entry.RemoteAddressStart.Af
-	size += 1 * 16 // m.Entry.RemoteAddressStart.Un
-	size += 1      // m.Entry.RemoteAddressStop.Af
-	size += 1 * 16 // m.Entry.RemoteAddressStop.Un
-	size += 1      // m.Entry.LocalAddressStart.Af
-	size += 1 * 16 // m.Entry.LocalAddressStart.Un
-	size += 1      // m.Entry.LocalAddressStop.Af
-	size += 1 * 16 // m.Entry.LocalAddressStop.Un
-	size += 2      // m.Entry.RemotePortStart
-	size += 2      // m.Entry.RemotePortStop
-	size += 2      // m.Entry.LocalPortStart
-	size += 2      // m.Entry.LocalPortStop
-	return size
-}
-func (m *IpsecSpdEntryAddDelV2) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeBool(m.IsAdd)
-	buf.EncodeUint32(m.Entry.SpdID)
-	buf.EncodeInt32(m.Entry.Priority)
-	buf.EncodeBool(m.Entry.IsOutbound)
-	buf.EncodeUint32(m.Entry.SaID)
-	buf.EncodeUint32(uint32(m.Entry.Policy))
-	buf.EncodeUint8(m.Entry.Protocol)
-	buf.EncodeUint8(uint8(m.Entry.RemoteAddressStart.Af))
-	buf.EncodeBytes(m.Entry.RemoteAddressStart.Un.XXX_UnionData[:], 16)
-	buf.EncodeUint8(uint8(m.Entry.RemoteAddressStop.Af))
-	buf.EncodeBytes(m.Entry.RemoteAddressStop.Un.XXX_UnionData[:], 16)
-	buf.EncodeUint8(uint8(m.Entry.LocalAddressStart.Af))
-	buf.EncodeBytes(m.Entry.LocalAddressStart.Un.XXX_UnionData[:], 16)
-	buf.EncodeUint8(uint8(m.Entry.LocalAddressStop.Af))
-	buf.EncodeBytes(m.Entry.LocalAddressStop.Un.XXX_UnionData[:], 16)
-	buf.EncodeUint16(m.Entry.RemotePortStart)
-	buf.EncodeUint16(m.Entry.RemotePortStop)
-	buf.EncodeUint16(m.Entry.LocalPortStart)
-	buf.EncodeUint16(m.Entry.LocalPortStop)
-	return buf.Bytes(), nil
-}
-func (m *IpsecSpdEntryAddDelV2) Unmarshal(b []byte) error {
-	buf := codec.NewBuffer(b)
-	m.IsAdd = buf.DecodeBool()
-	m.Entry.SpdID = buf.DecodeUint32()
-	m.Entry.Priority = buf.DecodeInt32()
-	m.Entry.IsOutbound = buf.DecodeBool()
-	m.Entry.SaID = buf.DecodeUint32()
-	m.Entry.Policy = ipsec_types.IpsecSpdAction(buf.DecodeUint32())
-	m.Entry.Protocol = buf.DecodeUint8()
-	m.Entry.RemoteAddressStart.Af = ip_types.AddressFamily(buf.DecodeUint8())
-	copy(m.Entry.RemoteAddressStart.Un.XXX_UnionData[:], buf.DecodeBytes(16))
-	m.Entry.RemoteAddressStop.Af = ip_types.AddressFamily(buf.DecodeUint8())
-	copy(m.Entry.RemoteAddressStop.Un.XXX_UnionData[:], buf.DecodeBytes(16))
-	m.Entry.LocalAddressStart.Af = ip_types.AddressFamily(buf.DecodeUint8())
-	copy(m.Entry.LocalAddressStart.Un.XXX_UnionData[:], buf.DecodeBytes(16))
-	m.Entry.LocalAddressStop.Af = ip_types.AddressFamily(buf.DecodeUint8())
-	copy(m.Entry.LocalAddressStop.Un.XXX_UnionData[:], buf.DecodeBytes(16))
-	m.Entry.RemotePortStart = buf.DecodeUint16()
-	m.Entry.RemotePortStop = buf.DecodeUint16()
-	m.Entry.LocalPortStart = buf.DecodeUint16()
-	m.Entry.LocalPortStop = buf.DecodeUint16()
-	return nil
-}
-
-// IpsecSpdEntryAddDelV2Reply defines message 'ipsec_spd_entry_add_del_v2_reply'.
-type IpsecSpdEntryAddDelV2Reply struct {
-	Retval    int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
-	StatIndex uint32 `binapi:"u32,name=stat_index" json:"stat_index,omitempty"`
-}
-
-func (m *IpsecSpdEntryAddDelV2Reply) Reset()               { *m = IpsecSpdEntryAddDelV2Reply{} }
-func (*IpsecSpdEntryAddDelV2Reply) GetMessageName() string { return "ipsec_spd_entry_add_del_v2_reply" }
-func (*IpsecSpdEntryAddDelV2Reply) GetCrcString() string   { return "9ffac24b" }
-func (*IpsecSpdEntryAddDelV2Reply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-func (m *IpsecSpdEntryAddDelV2Reply) Size() (size int) {
-	if m == nil {
-		return 0
-	}
-	size += 4 // m.Retval
-	size += 4 // m.StatIndex
-	return size
-}
-func (m *IpsecSpdEntryAddDelV2Reply) Marshal(b []byte) ([]byte, error) {
-	if b == nil {
-		b = make([]byte, m.Size())
-	}
-	buf := codec.NewBuffer(b)
-	buf.EncodeInt32(m.Retval)
-	buf.EncodeUint32(m.StatIndex)
-	return buf.Bytes(), nil
-}
-func (m *IpsecSpdEntryAddDelV2Reply) Unmarshal(b []byte) error {
 	buf := codec.NewBuffer(b)
 	m.Retval = buf.DecodeInt32()
 	m.StatIndex = buf.DecodeUint32()
@@ -2490,8 +2418,6 @@ func file_ipsec_binapi_init() {
 	api.RegisterMessage((*IpsecSpdDump)(nil), "ipsec_spd_dump_afefbf7d")
 	api.RegisterMessage((*IpsecSpdEntryAddDel)(nil), "ipsec_spd_entry_add_del_338b7411")
 	api.RegisterMessage((*IpsecSpdEntryAddDelReply)(nil), "ipsec_spd_entry_add_del_reply_9ffac24b")
-	api.RegisterMessage((*IpsecSpdEntryAddDelV2)(nil), "ipsec_spd_entry_add_del_v2_7bfe69fc")
-	api.RegisterMessage((*IpsecSpdEntryAddDelV2Reply)(nil), "ipsec_spd_entry_add_del_v2_reply_9ffac24b")
 	api.RegisterMessage((*IpsecSpdInterfaceDetails)(nil), "ipsec_spd_interface_details_7a0bcf3e")
 	api.RegisterMessage((*IpsecSpdInterfaceDump)(nil), "ipsec_spd_interface_dump_8971de19")
 	api.RegisterMessage((*IpsecSpdsDetails)(nil), "ipsec_spds_details_a04bb254")
@@ -2543,8 +2469,6 @@ func AllMessages() []api.Message {
 		(*IpsecSpdDump)(nil),
 		(*IpsecSpdEntryAddDel)(nil),
 		(*IpsecSpdEntryAddDelReply)(nil),
-		(*IpsecSpdEntryAddDelV2)(nil),
-		(*IpsecSpdEntryAddDelV2Reply)(nil),
 		(*IpsecSpdInterfaceDetails)(nil),
 		(*IpsecSpdInterfaceDump)(nil),
 		(*IpsecSpdsDetails)(nil),

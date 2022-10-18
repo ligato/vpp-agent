@@ -22,12 +22,6 @@ import (
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
 
-const (
-	APIFile    = "vpe_types"
-	APIVersion = "1.0.0"
-	VersionCrc = 0x5f754a1c
-)
-
 // LogLevel defines enum 'log_level'.
 type LogLevel uint32
 

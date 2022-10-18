@@ -20,8 +20,6 @@ type RPCService interface {
 	IPContainerProxyAddDel(ctx context.Context, in *IPContainerProxyAddDel) (*IPContainerProxyAddDelReply, error)
 	IPContainerProxyDump(ctx context.Context, in *IPContainerProxyDump) (RPCService_IPContainerProxyDumpClient, error)
 	IPDump(ctx context.Context, in *IPDump) (RPCService_IPDumpClient, error)
-	IPLocalReassEnableDisable(ctx context.Context, in *IPLocalReassEnableDisable) (*IPLocalReassEnableDisableReply, error)
-	IPLocalReassGet(ctx context.Context, in *IPLocalReassGet) (*IPLocalReassGetReply, error)
 	IPMrouteAddDel(ctx context.Context, in *IPMrouteAddDel) (*IPMrouteAddDelReply, error)
 	IPMrouteDump(ctx context.Context, in *IPMrouteDump) (RPCService_IPMrouteDumpClient, error)
 	IPMtableDump(ctx context.Context, in *IPMtableDump) (RPCService_IPMtableDumpClient, error)
@@ -231,24 +229,6 @@ func (c *serviceClient_IPDumpClient) Recv() (*IPDetails, error) {
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
 	}
-}
-
-func (c *serviceClient) IPLocalReassEnableDisable(ctx context.Context, in *IPLocalReassEnableDisable) (*IPLocalReassEnableDisableReply, error) {
-	out := new(IPLocalReassEnableDisableReply)
-	err := c.conn.Invoke(ctx, in, out)
-	if err != nil {
-		return nil, err
-	}
-	return out, api.RetvalToVPPApiError(out.Retval)
-}
-
-func (c *serviceClient) IPLocalReassGet(ctx context.Context, in *IPLocalReassGet) (*IPLocalReassGetReply, error) {
-	out := new(IPLocalReassGetReply)
-	err := c.conn.Invoke(ctx, in, out)
-	if err != nil {
-		return nil, err
-	}
-	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPMrouteAddDel(ctx context.Context, in *IPMrouteAddDel) (*IPMrouteAddDelReply, error) {
