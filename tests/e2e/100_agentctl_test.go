@@ -125,6 +125,19 @@ func TestAgentCtlCommands(t *testing.T) {
 			expectNotReStdout: "name: dummyif(2|3|4)",
 		},
 		{
+			name:              "Test `config get` with full excluded label",
+			cmd:               "config get --labels=\"!if=dummy\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(2|3|4)",
+			expectNotReStdout: "name: dummyif(0|1)",
+		},
+		{
+			name:              "Test `config get` with the same excluded and included label",
+			cmd:               "config get --labels=\"!if\",\"if\"",
+			expectInStdout:    "linuxConfig: {}",
+			expectNotReStdout: "name: dummyif(0|1|2|3|4)",
+		},
+		{
 			name:              "Test `config get` with label key",
 			cmd:               "config get --labels=\"if\"",
 			expectInStdout:    "type: DUMMY",
@@ -137,6 +150,27 @@ func TestAgentCtlCommands(t *testing.T) {
 			expectInStdout:    "type: DUMMY",
 			expectReStdout:    "name: dummyif(0|1|2)",
 			expectNotReStdout: "name: dummyif(3|4)",
+		},
+		{
+			name:              "Test `config get` with excluded label key",
+			cmd:               "config get --labels=\"!if\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(4|5)",
+			expectNotReStdout: "name: dummyif(0|1|2)",
+		},
+		{
+			name:              "Test `config get` with excluded label key",
+			cmd:               "config get --labels=\"!if=\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(4|5)",
+			expectNotReStdout: "name: dummyif(0|1|2)",
+		},
+		{
+			name:              "Test `config get` with included and excluded full labels",
+			cmd:               "config get --labels=\"!if=dummy\" --labels=\"source=test\"",
+			expectInStdout:    "type: DUMMY",
+			expectReStdout:    "name: dummyif(2)",
+			expectNotReStdout: "name: dummyif(0|1|3|4)",
 		},
 		{
 			name:              "Test `config get` with multiple full labels",

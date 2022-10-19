@@ -74,9 +74,10 @@ func newConfigGetCommand(cli agentcli.Cli) *cobra.Command {
 	flags.StringVarP(&opts.Format, "format", "f", "", "Format output")
 	flags.StringSliceVar(&opts.Labels, "labels", []string{}, "Output only config items that have given labels. "+
 		"Format of labels is: \"<string>=<string>\" key-value pairs separated by comma. "+
+		"If the key is prefixed with \"!\" the config items that contain that label are excluded from the result. "+
 		"Empty keys and duplicated keys are not allowed. "+
 		"If value of label is empty, equals sign can be omitted. "+
-		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\"")
+		"For example: --labels=\"foo=bar\",\"baz=\",\"qux\", \"!quux=corge\", \"!grault\"")
 	return cmd
 }
 
@@ -830,7 +831,7 @@ func parseLabels(rawLabels []string) (map[string]string, error) {
 		} else {
 			lkey, lval = rawLabel[:i], rawLabel[i+1:]
 		}
-		if lkey == "" {
+		if lkey == "" || lkey == "!" {
 			return nil, fmt.Errorf("key of label %s is empty", rawLabel)
 		}
 		if _, ok := labels[lkey]; ok {
