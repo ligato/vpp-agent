@@ -456,7 +456,7 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 
 // Calls VPP binary API to add/remove NAT44 static mapping
 func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
-	var ifIdx interface_types.InterfaceIndex // NOTE: This is a workaround, because NoInterface crashes VPP 22.02
+	var ifIdx interface_types.InterfaceIndex // NOTE: This is a workaround, because NoInterface crashes VPP 22.10
 	var exIPAddr ip_types.IP4Address
 
 	// check tag length limit

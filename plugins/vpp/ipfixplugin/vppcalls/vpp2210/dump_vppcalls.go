@@ -27,9 +27,8 @@ import (
 // defined as it is to keep consistensy between different vppcalls packages.
 //
 // Caution: VPP does not support IPv6 addresses for IPFIX configuration (tested
-// with VPP 22.02), but this may change in future versions. Be careful porting
+// with VPP 22.10), but this may change in future versions. Be careful porting
 // this method to another version of VPP.
-//
 func (h *IpfixVppHandler) DumpExporters() ([]*ipfix.IPFIX, error) {
 	var ipfixes []*ipfix.IPFIX
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ipfix.IpfixExporterDump{})
