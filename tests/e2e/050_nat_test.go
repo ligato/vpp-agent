@@ -134,6 +134,12 @@ func TestSourceNAT(t *testing.T) {
 		Name:          vppTap1Name,
 		OutputFeature: true,
 	}
+	// Looks like VPP versions > 22.02 changed the output feature
+	// (or in newer versions output interface) API so that OutputFeature
+	// and Inside/Outside flags are mutually exclusive
+	if ctx.VppRelease() <= "22.02" {
+		natInterface.NatOutside = true
+	}
 	natPool := &vpp_nat.Nat44AddressPool{
 		FirstIp: sNatAddr1,
 		LastIp:  sNatAddr3,
