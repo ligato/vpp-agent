@@ -109,7 +109,7 @@ func (c *client) GetFilteredConfig(filter Filter, dsts ...interface{}) error {
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
-	return c.GetFilteredConfig(Filter{}, dsts)
+	return c.GetFilteredConfig(Filter{}, dsts...)
 }
 
 func (c *client) GetItems(ctx context.Context) ([]*ConfigItem, error) {

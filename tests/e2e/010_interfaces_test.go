@@ -16,7 +16,9 @@ package e2e
 
 import (
 	"context"
+	"os"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -24,6 +26,7 @@ import (
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 // connect VPP with a microservice via TAP interface
@@ -146,6 +149,302 @@ func TestInterfaceConnTap(t *testing.T) {
 	ctx.Eventually(ctx.PingFromVPPClb(linuxTapIP)).Should(Succeed())
 	ctx.Expect(ctx.PingFromMs(msName, vppTapIP)).To(Succeed())
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
+}
+
+//
+// +---------------------------------------------------+
+// | VPP                                               |
+// |                                                   |
+// |     +---------------+       +---------------+     |
+// |     |192.168.1.10/24|       |192.168.2.20/24|     |
+// |     +-------+-------+       +-------+-------+     |
+// |             | (SUBIF)               | (SUBIF)     |
+// |     +-------+-----------------------+-------+     |
+// |     |                                       |     |
+// |     +-------------------+-------------------+     |
+// +-------------------------|-------------------------+
+//                           | (MEMIF)
+// +-------------------------|-------------------------+
+// |     +-------------------+-------------------+     |
+// |     |                                       |     |
+// |     +-------+-----------------------+-------+     |
+// |             | (SUBIF)               | (SUBIF)     |
+// |     +-------+-------+       +-------+-------+     |
+// |     |192.168.1.10/24|       |192.168.2.20/24|     |
+// |     +-------+-------+       +-------+-------+     |
+// |             |                       |             |
+// | VPP         | (BD)                  | (BD)        |
+// |             |                       |             |
+// |     +-------+-------+       +-------+-------+     |
+// |     |192.168.1.11/24|       |192.168.2.22/24|     |
+// |     +-------+-------+       +-------+-------+     |
+// +-------------|-----------------------|-------------+
+//               | (TAP)                 | (TAP)
+// +-------------|----------+ +----------|-------------+
+// |     +-------+-------+  | |  +-------+-------+     |
+// |     |192.168.1.11/24|  | |  |192.168.2.22/24|     |
+// |     +-------+-------+  | |  +-------+-------+     |
+// |                        | |                        |
+// | LINUX                  | |                  LINUX |
+// +------------------------+ +------------------------+
+//
+// This test tests the primarily the following pings:
+// from: 192.168.1.10 (left subif in top vpp) to: 192.168.1.11 (left linux microservice) - should pass (same vlan)
+// from: 192.168.2.20 (right subif in top vpp) to: 192.168.2.22 (right linux microservice) - should pass (same vlan)
+// from: 192.168.1.10 (left subif in top vpp) to: 192.168.2.22 (right linux microservice) - should fail (different vlans)
+// from: 192.168.2.20 (right subif in top vpp) to: 192.168.1.11 (left linux microservice) - should fail (different vlans)
+//
+func TestMemifSubinterfaceVlanConn(t *testing.T) {
+	ctx := Setup(t)
+	defer ctx.Teardown()
+
+	const (
+		vpp1MemifName  = "vpp1-to-vpp2"
+		vpp2MemifName  = "vpp2-to-vpp1"
+		vpp1Subif1Name = "vpp1Subif1"
+		vpp1Subif2Name = "vpp1Subif2"
+		vpp1Subif1IP   = "192.168.1.10"
+		vpp1Subif2IP   = "192.168.2.20"
+		vpp2Subif1Name = "vpp2Subif1"
+		vpp2Subif2Name = "vpp2Subif2"
+		vpp2Tap1Name   = "vpp2-to-ms1"
+		vpp2Tap2Name   = "vpp2-to-ms2"
+		ms1TapName     = "ms1-to-vpp2"
+		ms2TapName     = "ms2-to-vpp2"
+		ms1TapIP       = "192.168.1.11"
+		ms2TapIP       = "192.168.2.22"
+		bd1Name        = "bd1"
+		bd2Name        = "bd2"
+		ms1Name        = "ms1"
+		ms2Name        = "ms2"
+		agent2Name     = "agent2"
+		netMask        = "/24"
+		msTapHostname  = "tap"
+		memifFilepath  = "/test-memif-subif-vlan-conn/memif/"
+		memifSockname  = "memif.sock"
+	)
+
+	// needed for creation of memif socket
+	if err := os.MkdirAll(shareDir+memifFilepath, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	// agent1 configuration
+	vpp1Memif := &vpp_interfaces.Interface{
+		Name:    vpp1MemifName,
+		Type:    vpp_interfaces.Interface_MEMIF,
+		Enabled: true,
+		Link: &vpp_interfaces.Interface_Memif{
+			Memif: &vpp_interfaces.MemifLink{
+				Master:         true,
+				Id:             1,
+				SocketFilename: shareDir + memifFilepath + memifSockname,
+			},
+		},
+	}
+	vpp1Subif1 := &vpp_interfaces.Interface{
+		Name:        vpp1Subif1Name,
+		Type:        vpp_interfaces.Interface_SUB_INTERFACE,
+		Enabled:     true,
+		IpAddresses: []string{vpp1Subif1IP + netMask},
+		Link: &vpp_interfaces.Interface_Sub{
+			Sub: &vpp_interfaces.SubInterface{
+				ParentName:  vpp1MemifName,
+				SubId:       10,
+				TagRwOption: vpp_interfaces.SubInterface_POP1,
+			},
+		},
+	}
+	vpp1Subif2 := &vpp_interfaces.Interface{
+		Name:        vpp1Subif2Name,
+		Type:        vpp_interfaces.Interface_SUB_INTERFACE,
+		Enabled:     true,
+		IpAddresses: []string{vpp1Subif2IP + netMask},
+		Link: &vpp_interfaces.Interface_Sub{
+			Sub: &vpp_interfaces.SubInterface{
+				ParentName:  vpp1MemifName,
+				SubId:       20,
+				TagRwOption: vpp_interfaces.SubInterface_POP1,
+			},
+		},
+	}
+
+	// agent2 configuration
+	vpp2Memif := &vpp_interfaces.Interface{
+		Name:    vpp2MemifName,
+		Type:    vpp_interfaces.Interface_MEMIF,
+		Enabled: true,
+		Link: &vpp_interfaces.Interface_Memif{
+			Memif: &vpp_interfaces.MemifLink{
+				Master:         false,
+				Id:             1,
+				SocketFilename: shareDir + memifFilepath + memifSockname,
+			},
+		},
+	}
+	vpp2Subif1 := &vpp_interfaces.Interface{
+		Name:    vpp2Subif1Name,
+		Type:    vpp_interfaces.Interface_SUB_INTERFACE,
+		Enabled: true,
+		Link: &vpp_interfaces.Interface_Sub{
+			Sub: &vpp_interfaces.SubInterface{
+				ParentName:  vpp2MemifName,
+				SubId:       10,
+				TagRwOption: vpp_interfaces.SubInterface_POP1,
+			},
+		},
+	}
+	vpp2Subif2 := &vpp_interfaces.Interface{
+		Name:    vpp2Subif2Name,
+		Type:    vpp_interfaces.Interface_SUB_INTERFACE,
+		Enabled: true,
+		Link: &vpp_interfaces.Interface_Sub{
+			Sub: &vpp_interfaces.SubInterface{
+				ParentName:  vpp2MemifName,
+				SubId:       20,
+				TagRwOption: vpp_interfaces.SubInterface_POP1,
+			},
+		},
+	}
+
+	vpp2Tap1 := &vpp_interfaces.Interface{
+		Name:    vpp2Tap1Name,
+		Type:    vpp_interfaces.Interface_TAP,
+		Enabled: true,
+		Link: &vpp_interfaces.Interface_Tap{
+			Tap: &vpp_interfaces.TapLink{
+				Version:        2,
+				ToMicroservice: MsNamePrefix + ms1Name,
+			},
+		},
+	}
+	vpp2Tap2 := &vpp_interfaces.Interface{
+		Name:    vpp2Tap2Name,
+		Type:    vpp_interfaces.Interface_TAP,
+		Enabled: true,
+		Link: &vpp_interfaces.Interface_Tap{
+			Tap: &vpp_interfaces.TapLink{
+				Version:        2,
+				ToMicroservice: MsNamePrefix + ms2Name,
+			},
+		},
+	}
+
+	ms1Tap := &linux_interfaces.Interface{
+		Name:        ms1TapName,
+		Type:        linux_interfaces.Interface_TAP_TO_VPP,
+		Enabled:     true,
+		IpAddresses: []string{ms1TapIP + netMask},
+		HostIfName:  msTapHostname,
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
+				VppTapIfName: vpp2Tap1Name,
+			},
+		},
+		Namespace: &linux_namespace.NetNamespace{
+			Type:      linux_namespace.NetNamespace_MICROSERVICE,
+			Reference: MsNamePrefix + ms1Name,
+		},
+	}
+	ms2Tap := &linux_interfaces.Interface{
+		Name:        ms2TapName,
+		Type:        linux_interfaces.Interface_TAP_TO_VPP,
+		Enabled:     true,
+		IpAddresses: []string{ms2TapIP + netMask},
+		HostIfName:  msTapHostname,
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
+				VppTapIfName: vpp2Tap2Name,
+			},
+		},
+		Namespace: &linux_namespace.NetNamespace{
+			Type:      linux_namespace.NetNamespace_MICROSERVICE,
+			Reference: MsNamePrefix + ms2Name,
+		},
+	}
+
+	bd1 := &vpp_l2.BridgeDomain{
+		Name:    bd1Name,
+		Flood:   true,
+		Forward: true,
+		Learn:   true,
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
+			{
+				Name: vpp2Subif1Name,
+			},
+			{
+				Name: vpp2Tap1Name,
+			},
+		},
+	}
+	bd2 := &vpp_l2.BridgeDomain{
+		Name:    bd2Name,
+		Flood:   true,
+		Forward: true,
+		Learn:   true,
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
+			{
+				Name: vpp2Subif2Name,
+			},
+			{
+				Name: vpp2Tap2Name,
+			},
+		},
+	}
+
+	ctx.StartMicroservice(ms1Name)
+	ctx.StartMicroservice(ms2Name)
+	agent1 := ctx.Agent
+	agent2 := ctx.StartAgent(agent2Name)
+
+	err := agent1.GenericClient().ChangeRequest().Update(
+		vpp1Memif,
+		vpp1Subif1,
+		vpp1Subif2,
+	).Send(context.Background())
+	ctx.Expect(err).ToNot(HaveOccurred())
+	err = agent2.GenericClient().ChangeRequest().Update(
+		vpp2Memif,
+		vpp2Subif1,
+		vpp2Subif2,
+		vpp2Tap1,
+		vpp2Tap2,
+		ms1Tap,
+		ms2Tap,
+		bd1,
+		bd2,
+	).Send(context.Background())
+	ctx.Expect(err).ToNot(HaveOccurred())
+
+	if ctx.VppRelease() <= "21.01" {
+		time.Sleep(5 * time.Second)
+	}
+
+	// Check VPP1 value states
+	ctx.Eventually(agent1.GetValueStateClb(vpp1Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent1.GetValueState(vpp1Subif1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent1.GetValueState(vpp1Subif2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	// Check VPP2 value states
+	ctx.Eventually(agent2.GetValueStateClb(vpp2Memif)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Subif1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Subif2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(ms1Tap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(ms2Tap)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Tap1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	ctx.Expect(agent2.GetValueState(vpp2Tap2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
+	// Pings from VPP should automatically go through correct vlan
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP)).To(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP)).To(Succeed())
+	// Pings from correct vlan should succeed
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.10")).To(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.20")).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vpp1Subif1IP)).To(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vpp1Subif2IP)).To(Succeed())
+	// Pings from incorrect vlan should fail
+	ctx.Expect(agent1.PingFromVPP(ms1TapIP, "source", "memif1/1.20")).NotTo(Succeed())
+	ctx.Expect(agent1.PingFromVPP(ms2TapIP, "source", "memif1/1.10")).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms1Name, vpp1Subif2IP)).NotTo(Succeed())
+	ctx.Expect(ctx.PingFromMs(ms2Name, vpp1Subif1IP)).NotTo(Succeed())
 }
 
 // connect VPP with a microservice via TAP tunnel interface
