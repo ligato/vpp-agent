@@ -192,7 +192,7 @@ func (c *grpcClient) GetFilteredConfig(filter client.Filter, dsts ...interface{}
 }
 
 func (c *grpcClient) GetConfig(dsts ...interface{}) error {
-	return c.GetFilteredConfig(client.Filter{}, dsts)
+	return c.GetFilteredConfig(client.Filter{}, dsts...)
 }
 
 func (c *grpcClient) GetItems(ctx context.Context) ([]*client.ConfigItem, error) {
