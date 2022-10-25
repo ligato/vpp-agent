@@ -181,7 +181,7 @@ func (s *genericService) GetConfig(ctx context.Context, req *generic.GetConfigRe
 	}
 	for key, data := range s.dispatch.ListData() {
 		labels := s.dispatch.ListLabels(key)
-		if !ContainsAllLabels(req.Labels, labels) {
+		if !HasCorrectLabels(req.Labels, labels) {
 			continue
 		}
 		item, err := models.MarshalItem(data)

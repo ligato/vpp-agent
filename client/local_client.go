@@ -91,7 +91,7 @@ func (c *client) GetFilteredConfig(filter Filter, dsts ...interface{}) error {
 			return err
 		}
 		labels := c.dispatcher.ListLabels(key)
-		if !orchestrator.ContainsAllLabels(filter.Labels, labels) ||
+		if !orchestrator.HasCorrectLabels(filter.Labels, labels) ||
 			!orchestrator.ContainsItemID(filter.Ids, item.Id) {
 			delete(protos, key)
 		}

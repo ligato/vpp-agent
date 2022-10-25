@@ -352,9 +352,23 @@ func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, err
 	return instance, nil
 }
 
-func ContainsAllLabels(want map[string]string, have Labels) bool {
-	for wk, wv := range want {
-		if hv, ok := have[wk]; !ok || wv != "" && wv != hv {
+func HasCorrectLabels(want map[string]string, have Labels) bool {
+	include := make(map[string]string)
+	exclude := make(map[string]string)
+	for wk, wl := range want {
+		if len(wk) > 0 && wk[0] == '!' {
+			exclude[wk[1:]] = wl
+		} else {
+			include[wk] = wl
+		}
+	}
+	for ik, iv := range include {
+		if hv, ok := have[ik]; !ok || iv != "" && iv != hv {
+			return false
+		}
+	}
+	for ek, ev := range exclude {
+		if hv, ok := have[ek]; ok && ev == hv || ok && ev == "" {
 			return false
 		}
 	}
