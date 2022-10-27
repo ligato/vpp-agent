@@ -184,7 +184,7 @@ func (p *Plugin) watchEvents() {
 
 			var err error
 			var kvPairs []KeyVal
-			var keyLabels map[string]Labels
+			keyLabels := make(map[string]Labels)
 
 			ctx := e.GetContext()
 			if ctx == nil {
