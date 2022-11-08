@@ -3,9 +3,9 @@
 // Package tunnel_types contains generated bindings for API file tunnel_types.api.
 //
 // Contents:
-//   3 enums
-//   1 struct
 //
+//	3 enums
+//	1 struct
 package tunnel_types
 
 import (

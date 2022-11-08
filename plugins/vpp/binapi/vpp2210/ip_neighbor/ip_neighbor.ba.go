@@ -3,10 +3,10 @@
 // Package ip_neighbor contains generated bindings for API file ip_neighbor.api.
 //
 // Contents:
-//   2 enums
-//   1 struct
-//  18 messages
 //
+//	 2 enums
+//	 1 struct
+//	18 messages
 package ip_neighbor
 
 import (

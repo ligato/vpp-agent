@@ -3,11 +3,11 @@
 // Package ip_types contains generated bindings for API file ip_types.api.
 //
 // Contents:
-//   5 aliases
-//   5 enums
-//   8 structs
-//   1 union
 //
+//	5 aliases
+//	5 enums
+//	8 structs
+//	1 union
 package ip_types
 
 import (

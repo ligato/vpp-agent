@@ -3,11 +3,11 @@
 // Package punt contains generated bindings for API file punt.api.
 //
 // Contents:
-//   1 enum
-//   5 structs
-//   1 union
-//  10 messages
 //
+//	 1 enum
+//	 5 structs
+//	 1 union
+//	10 messages
 package punt
 
 import (

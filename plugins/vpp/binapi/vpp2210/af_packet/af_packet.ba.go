@@ -3,9 +3,9 @@
 // Package af_packet contains generated bindings for API file af_packet.api.
 //
 // Contents:
-//   2 enums
-//  12 messages
 //
+//	 2 enums
+//	12 messages
 package af_packet
 
 import (

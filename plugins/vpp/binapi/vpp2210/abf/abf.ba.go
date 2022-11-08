@@ -3,9 +3,9 @@
 // Package abf contains generated bindings for API file abf.api.
 //
 // Contents:
-//   2 structs
-//  10 messages
 //
+//	 2 structs
+//	10 messages
 package abf
 
 import (

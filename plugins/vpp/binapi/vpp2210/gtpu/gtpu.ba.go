@@ -3,8 +3,8 @@
 // Package gtpu contains generated bindings for API file gtpu.api.
 //
 // Contents:
-//  10 messages
 //
+//	10 messages
 package gtpu
 
 import (

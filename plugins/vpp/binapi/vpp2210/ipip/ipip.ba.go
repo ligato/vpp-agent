@@ -3,9 +3,9 @@
 // Package ipip contains generated bindings for API file ipip.api.
 //
 // Contents:
-//   1 struct
-//  10 messages
 //
+//	 1 struct
+//	10 messages
 package ipip
 
 import (

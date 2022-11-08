@@ -3,9 +3,9 @@
 // Package vmxnet3 contains generated bindings for API file vmxnet3.api.
 //
 // Contents:
-//   2 structs
-//   8 messages
 //
+//	2 structs
+//	8 messages
 package vmxnet3
 
 import (

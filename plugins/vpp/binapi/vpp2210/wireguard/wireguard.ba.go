@@ -3,10 +3,10 @@
 // Package wireguard contains generated bindings for API file wireguard.api.
 //
 // Contents:
-//   1 enum
-//   2 structs
-//  17 messages
 //
+//	 1 enum
+//	 2 structs
+//	17 messages
 package wireguard
 
 import (

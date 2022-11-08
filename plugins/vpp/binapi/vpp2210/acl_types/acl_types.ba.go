@@ -3,9 +3,9 @@
 // Package acl_types contains generated bindings for API file acl_types.api.
 //
 // Contents:
-//   1 enum
-//   2 structs
 //
+//	1 enum
+//	2 structs
 package acl_types
 
 import (

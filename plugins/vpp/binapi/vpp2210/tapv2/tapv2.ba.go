@@ -3,9 +3,9 @@
 // Package tapv2 contains generated bindings for API file tapv2.api.
 //
 // Contents:
-//   1 enum
-//   8 messages
 //
+//	1 enum
+//	8 messages
 package tapv2
 
 import (

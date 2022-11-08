@@ -3,9 +3,9 @@
 // Package sr contains generated bindings for API file sr.api.
 //
 // Contents:
-//   2 structs
-//  22 messages
 //
+//	 2 structs
+//	22 messages
 package sr
 
 import (

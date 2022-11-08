@@ -3,9 +3,9 @@
 // Package memclnt contains generated bindings for API file memclnt.api.
 //
 // Contents:
-//   2 structs
-//  26 messages
 //
+//	 2 structs
+//	26 messages
 package memclnt
 
 import (

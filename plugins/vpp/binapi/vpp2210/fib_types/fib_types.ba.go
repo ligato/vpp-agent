@@ -3,9 +3,9 @@
 // Package fib_types contains generated bindings for API file fib_types.api.
 //
 // Contents:
-//   3 enums
-//   3 structs
 //
+//	3 enums
+//	3 structs
 package fib_types
 
 import (

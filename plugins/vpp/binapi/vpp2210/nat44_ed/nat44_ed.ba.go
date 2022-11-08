@@ -3,10 +3,10 @@
 // Package nat44_ed contains generated bindings for API file nat44_ed.api.
 //
 // Contents:
-//   1 enum
-//   1 struct
-//  90 messages
 //
+//	 1 enum
+//	 1 struct
+//	90 messages
 package nat44_ed
 
 import (

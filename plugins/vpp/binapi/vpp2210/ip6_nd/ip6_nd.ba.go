@@ -3,9 +3,9 @@
 // Package ip6_nd contains generated bindings for API file ip6_nd.api.
 //
 // Contents:
-//   1 struct
-//  15 messages
 //
+//	 1 struct
+//	15 messages
 package ip6_nd
 
 import (

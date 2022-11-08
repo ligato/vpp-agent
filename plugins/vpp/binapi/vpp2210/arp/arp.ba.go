@@ -3,9 +3,9 @@
 // Package arp contains generated bindings for API file arp.api.
 //
 // Contents:
-//   1 struct
-//   8 messages
 //
+//	1 struct
+//	8 messages
 package arp
 
 import (

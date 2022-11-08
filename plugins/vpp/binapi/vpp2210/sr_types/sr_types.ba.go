@@ -3,8 +3,8 @@
 // Package sr_types contains generated bindings for API file sr_types.api.
 //
 // Contents:
-//   3 enums
 //
+//	3 enums
 package sr_types
 
 import (

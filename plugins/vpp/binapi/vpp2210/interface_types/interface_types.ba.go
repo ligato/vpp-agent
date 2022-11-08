@@ -3,9 +3,9 @@
 // Package interface_types contains generated bindings for API file interface_types.api.
 //
 // Contents:
-//   1 alias
-//   7 enums
 //
+//	1 alias
+//	7 enums
 package interface_types
 
 import (

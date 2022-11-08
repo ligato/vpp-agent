@@ -3,8 +3,8 @@
 // Package rd_cp contains generated bindings for API file rd_cp.api.
 //
 // Contents:
-//   2 messages
 //
+//	2 messages
 package rd_cp
 
 import (

@@ -3,9 +3,9 @@
 // Package mfib_types contains generated bindings for API file mfib_types.api.
 //
 // Contents:
-//   2 enums
-//   1 struct
 //
+//	2 enums
+//	1 struct
 package mfib_types
 
 import (
