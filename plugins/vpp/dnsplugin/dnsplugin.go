@@ -28,6 +28,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2202"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2210"
 )
 
 // DNSPlugin configures VPP ability to act as DNS cache server.
