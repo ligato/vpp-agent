@@ -32,6 +32,7 @@ import (
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2101"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2202"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/vppcalls/vpp2210"
 )
 
 // SRPlugin configures segment routing.

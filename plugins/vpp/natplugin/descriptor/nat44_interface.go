@@ -62,6 +62,15 @@ func NewNAT44InterfaceDescriptor(nat44GlobalDesc *NAT44GlobalDescriptor,
 	return adapter.NewNAT44InterfaceDescriptor(typedDescr)
 }
 
+// TODO: Maybe we should split the Nat44Interface type into two types:
+// Nat44Interface and Nat44OutputInterface. Currently Nat44Interface contains 3
+// flags: inside, outside and output. When output flag is set the other two
+// flags should be false for VPP >= 22.10 (? need to investigate this more in VPP).
+// This is currently not enforced and it can create problems with the configuration of
+// NAT interfaces. With the type split into two, Nat44Interface would contain 2
+// flags: inside and outside. Nat44OutputInterface would contain 0 flags
+// (output is implicit in the type itself).
+
 // Validate validates VPP NAT44 interface configuration.
 func (d *NAT44InterfaceDescriptor) Validate(key string, natIface *nat.Nat44Interface) error {
 	if natIface.NatOutside && natIface.NatInside && natIface.OutputFeature {
@@ -85,6 +94,12 @@ func (d *NAT44InterfaceDescriptor) Create(key string, natIface *nat.Nat44Interfa
 			return
 		}
 	}
+	if natIface.OutputFeature && !natIface.NatInside && !natIface.NatOutside {
+		err = d.natHandler.EnableNat44Interface(natIface.Name, false, natIface.OutputFeature)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -97,6 +112,12 @@ func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Interfa
 		}
 	}
 	if natIface.NatOutside {
+		err = d.natHandler.DisableNat44Interface(natIface.Name, false, natIface.OutputFeature)
+		if err != nil {
+			return
+		}
+	}
+	if natIface.OutputFeature && !natIface.NatOutside && !natIface.NatInside {
 		err = d.natHandler.DisableNat44Interface(natIface.Name, false, natIface.OutputFeature)
 		if err != nil {
 			return
