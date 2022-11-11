@@ -23,6 +23,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -47,6 +48,7 @@ const (
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
 	shareDir             = "/test-share"
+	logDir               = "/testlogs"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
 	mainAgentName        = "agent0"
 
@@ -81,6 +83,7 @@ type TestCtx struct {
 	vppVersion    string
 
 	outputBuf *bytes.Buffer
+	traceBuf  *bytes.Buffer
 }
 
 // ComponentRuntime represents running instance of test topology component. Different implementation can
@@ -160,6 +163,7 @@ func NewTest(t *testing.T) *TestCtx {
 		microservices: make(map[string]*Microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
 		outputBuf:     outputBuf,
+		traceBuf:      new(bytes.Buffer),
 		Logger:        logger,
 	}
 	te.ctx, te.cancel = context.WithCancel(context.Background())
@@ -263,6 +267,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 func (test *TestCtx) Teardown() {
 	if test.t.Failed() || *debug {
 		defer test.dumpLog()
+		defer test.dumpPacketTrace()
 	}
 
 	if test.cancel != nil {
@@ -303,6 +308,22 @@ func (test *TestCtx) dumpLog() {
 	output := test.outputBuf.String()
 	test.outputBuf.Reset()
 	test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
+}
+
+func (test *TestCtx) dumpPacketTrace() {
+	defer test.traceBuf.Reset()
+	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e_packettrace.log", test.VppRelease(), test.t.Name()))
+	f, err := os.Create(path)
+	if err != nil {
+		test.t.Errorf("failed to create packet trace file: %v", err)
+	}
+	_, err = f.Write(test.traceBuf.Bytes())
+	if err != nil {
+		test.t.Errorf("failed to write packet trace into file: %v", err)
+	}
+	if err = f.Close(); err != nil {
+		test.t.Errorf("failed to close packet trace file: %v", err)
+	}
 }
 
 // VppRelease provides VPP version of VPP in default VPP-Agent test component
@@ -532,12 +553,15 @@ func (test *TestCtx) TestConnection(
 	if err != nil {
 		outcome = err.Error()
 	}
-	test.Logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
+	info := fmt.Sprintf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
+	test.Logger.Print(info)
+	test.traceBuf.WriteString(info)
 	stopPacketTrace()
-	test.Logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
+	info = fmt.Sprintf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
 		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
-
+	test.Logger.Print(info)
+	test.traceBuf.WriteString(info)
 	return err
 }
 
@@ -613,7 +637,11 @@ func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 			test.t.Errorf("Failed to show packet trace: %v", err)
 			return
 		}
-		test.Logger.Printf("Packet trace:\n%s\n", traces)
+		_, err = test.traceBuf.WriteString(fmt.Sprintf("Packet trace:\n%s\n", traces))
+		if err != nil {
+			test.t.Errorf("Failed to write packet trace into buffer: %v", err)
+			return
+		}
 	}
 }
 

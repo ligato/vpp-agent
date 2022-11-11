@@ -129,7 +129,9 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 
 	cmdStr := fmt.Sprintf("`%s %s`", cmd, strings.Join(args, " "))
 
-	c.ctx.Logger.Printf("docker exec: %v:\nstdout(%d): %v\nstderr(%d): %v", cmdStr, len(stdout), stdout, len(stderr), stderr)
+	if cmdStr != "`vppctl -s /run/vpp/cli.sock show trace`" {
+		c.ctx.Logger.Printf("docker exec: %v:\nstdout(%d): %v\nstderr(%d): %v", cmdStr, len(stdout), stdout, len(stderr), stderr)
+	}
 
 	if err != nil {
 		errMsg := fmt.Sprintf("exec command %v failed due to: %v", cmdStr, err)
