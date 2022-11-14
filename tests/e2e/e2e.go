@@ -17,7 +17,6 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -41,8 +40,6 @@ import (
 	"github.com/onsi/gomega"
 	. "github.com/onsi/gomega"
 )
-
-var debug = flag.Bool("debug", false, "Turn on debug mode.")
 
 const (
 	checkPollingInterval = time.Millisecond * 100
@@ -145,7 +142,7 @@ func NewTest(t *testing.T) *TestCtx {
 
 	outputBuf := new(bytes.Buffer)
 	var logW io.Writer
-	if *debug {
+	if debug {
 		logW = os.Stderr // io.MultiWriter(os.Stderr, outputBuf)
 	} else {
 		logW = outputBuf
@@ -186,7 +183,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
 	}
-	if *debug {
+	if debug {
 		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
 	}
 
@@ -196,7 +193,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// if setupE2E fails we need to stop started containers
 	defer func() {
-		if testCtx.t.Failed() || *debug {
+		if testCtx.t.Failed() || debug {
 			testCtx.dumpLog()
 		}
 		if testCtx.t.Failed() {
@@ -265,7 +262,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 
 // Teardown perform test cleanup
 func (test *TestCtx) Teardown() {
-	if test.t.Failed() || *debug {
+	if test.t.Failed() || debug {
 		defer test.dumpLog()
 		defer test.dumpPacketTrace()
 	}
