@@ -302,8 +302,20 @@ func (test *TestCtx) Teardown() {
 }
 
 func (test *TestCtx) dumpLog() {
+	defer test.outputBuf.Reset()
+	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e.log", test.VppRelease(), test.t.Name()))
+	f, err := os.Create(path)
+	if err != nil {
+		test.t.Errorf("failed to create test log file: %v", err)
+	}
+	_, err = f.Write(test.outputBuf.Bytes())
+	if err != nil {
+		test.t.Errorf("failed to write into test log file: %v", err)
+	}
+	if err = f.Close(); err != nil {
+		test.t.Errorf("failed to close test log file: %v", err)
+	}
 	output := test.outputBuf.String()
-	test.outputBuf.Reset()
 	test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
 }
 
@@ -312,14 +324,14 @@ func (test *TestCtx) dumpPacketTrace() {
 	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e_packettrace.log", test.VppRelease(), test.t.Name()))
 	f, err := os.Create(path)
 	if err != nil {
-		test.t.Errorf("failed to create packet trace file: %v", err)
+		test.t.Errorf("failed to create packet trace log file: %v", err)
 	}
 	_, err = f.Write(test.traceBuf.Bytes())
 	if err != nil {
-		test.t.Errorf("failed to write packet trace into file: %v", err)
+		test.t.Errorf("failed to write into packet trace log file: %v", err)
 	}
 	if err = f.Close(); err != nil {
-		test.t.Errorf("failed to close packet trace file: %v", err)
+		test.t.Errorf("failed to close packet trace log file: %v", err)
 	}
 }
 
