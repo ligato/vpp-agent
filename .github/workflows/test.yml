@@ -55,13 +55,9 @@ jobs:
         with:
           report_paths: './tests/e2e/reports/*.xml'
 
-      - name: "Tar Logs"
-        if: failure()
-        run: tar -cvf logs.tar -C tests/e2e/logs/ .
-
       - name: "Publish Test Artifacts"
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: "VPP ${{ matrix.version }} RUN_ID ${{ github.run_id }}"
-          path: logs.tar
+          path: tests/e2e/logs/
