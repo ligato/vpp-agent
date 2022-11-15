@@ -304,6 +304,9 @@ func (test *TestCtx) Teardown() {
 }
 
 func (test *TestCtx) dumpLog() {
+	if test.outputBuf.Len() == 0 {
+		return
+	}
 	defer test.outputBuf.Reset()
 	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e.log", test.VppRelease(), test.t.Name()))
 	f, err := os.Create(path)
@@ -322,6 +325,9 @@ func (test *TestCtx) dumpLog() {
 }
 
 func (test *TestCtx) dumpPacketTrace() {
+	if test.traceBuf.Len() == 0 {
+		return
+	}
 	defer test.traceBuf.Reset()
 	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e_packettrace.log", test.VppRelease(), test.t.Name()))
 	f, err := os.Create(path)
