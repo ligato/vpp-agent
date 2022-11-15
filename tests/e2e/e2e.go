@@ -495,7 +495,13 @@ func (test *TestCtx) TestConnection(
 		srvExitTimeout = 500 * time.Millisecond
 		reqData        = "Hi server!"
 		respData       = "Hi client!"
+		timeFormat     = "2006-01-02 15:04:05.00000"
 	)
+
+	protocol := "TCP"
+	if udp {
+		protocol = "UDP"
+	}
 
 	clientMs, found := test.microservices[fromMs]
 	if !found {
@@ -535,6 +541,11 @@ func (test *TestCtx) TestConnection(
 	}
 
 	stopPacketTrace := test.startPacketTrace(traceVPPNodes...)
+	// log info about connection
+	info := fmt.Sprintf("%s connection <time=%s, from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
+		protocol, time.Now().Format(timeFormat), fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
+	test.Logger.Print(info)
+	test.traceBuf.WriteString(info)
 
 	go runServer()
 	go runClient()
@@ -555,22 +566,15 @@ func (test *TestCtx) TestConnection(
 		err = srvErr
 	}
 
-	// log info about connection
-	protocol := "TCP"
-	if udp {
-		protocol = "UDP"
-	}
 	outcome := "OK"
 	if err != nil {
 		outcome = err.Error()
 	}
-	info := fmt.Sprintf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
-		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
-	test.Logger.Print(info)
-	test.traceBuf.WriteString(info)
+
 	stopPacketTrace()
-	info = fmt.Sprintf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
-		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
+	// log info about connection
+	info = fmt.Sprintf("%s connection <time=%s, from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
+		protocol, time.Now().Format(timeFormat), fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 	test.Logger.Print(info)
 	test.traceBuf.WriteString(info)
 	return err
