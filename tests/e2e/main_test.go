@@ -26,8 +26,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 
-var debug bool
-
 func TestMain(m *testing.M) {
 	debugFlag := flag.Bool("debug", false, "Turn on debug mode.")
 	// Detect if GitHub Workflow debug flag is set.

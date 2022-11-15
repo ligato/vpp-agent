@@ -41,6 +41,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var debug bool
+
 const (
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
