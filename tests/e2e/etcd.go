@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	etcdImage       = "gcr.io/etcd-development/etcd"
+	etcdImage       = "gcr.io/etcd-development/etcd:v3.5.5"
 	etcdStopTimeout = 1 // seconds
 )
 
