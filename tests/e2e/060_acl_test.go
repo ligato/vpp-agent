@@ -341,7 +341,7 @@ func TestL3ACLs(t *testing.T) {
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
 			ms1BlockedUDPPort, ms1BlockedUDPPort, true, tapv2InputNode)).To(beBlocked) // blocked by ms1EgressACL
 		ctx.ExpectWithOffset(1, ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			9999, 9999, true, tapv2InputNode)).To(beBlocked)
+			9999, 9999, true, tapv2InputNode)).To(beAllowed)
 	}
 
 	ctx.StartMicroservice(ms1Name)
