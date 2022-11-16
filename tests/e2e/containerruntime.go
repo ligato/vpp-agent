@@ -74,8 +74,8 @@ func (c *ContainerRuntime) Start(options interface{}) error {
 
 	// attach logs (using one buffer from testctx -> all logs from all containers are merged together)
 	if opts.AttachLogs {
-		logWriter := textio.NewPrefixWriter(c.ctx.outputBuf, fmt.Sprintf("[container::%s/%v] ", c.container.Name, stringid.TruncateID(c.container.ID)))
-		if err = c.attachLoggingToContainer(logWriter); err != nil {
+		logOutput := textio.NewPrefixWriter(c.ctx.logWriter, fmt.Sprintf("[container::%s/%v] ", c.container.Name, stringid.TruncateID(c.container.ID)))
+		if err = c.attachLoggingToContainer(logOutput); err != nil {
 			return errors.Errorf("can't attach logging to %s container due to: %v", c.logIdentity, err)
 		}
 	}

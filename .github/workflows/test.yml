@@ -57,7 +57,7 @@ jobs:
 
       - name: "Publish Test Artifacts"
         uses: actions/upload-artifact@v3
-        if: failure() || ${{ runner.debug == '1' }}
+        if: ${{ failure() || runner.debug == '1' }}
         with:
           name: "VPP ${{ matrix.version }} RUN_ID ${{ github.run_id }}"
           path: tests/e2e/logs/

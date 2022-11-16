@@ -66,7 +66,8 @@ type TestCtx struct {
 	Etcd      *Etcd
 	DNSServer *DNSServer
 
-	Logger *log.Logger
+	logWriter io.Writer
+	Logger    *log.Logger
 
 	t      *testing.T
 	ctx    context.Context
@@ -143,15 +144,15 @@ func NewTest(t *testing.T) *TestCtx {
 	logging.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
 
 	outputBuf := new(bytes.Buffer)
-	var logW io.Writer
+	var logWriter io.Writer
 	if debug {
-		logW = os.Stderr // io.MultiWriter(os.Stderr, outputBuf)
+		logWriter = io.MultiWriter(outputBuf, os.Stderr)
 	} else {
-		logW = outputBuf
+		logWriter = outputBuf
 	}
 
 	prefix := fmt.Sprintf("[E2E-TEST::%v] ", t.Name())
-	logger := log.New(logW, prefix, log.Lshortfile|log.Lmicroseconds)
+	logger := log.New(logWriter, prefix, log.Lshortfile|log.Lmicroseconds)
 
 	te := &TestCtx{
 		WithT:         g,
@@ -163,6 +164,7 @@ func NewTest(t *testing.T) *TestCtx {
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
 		outputBuf:     outputBuf,
 		traceBuf:      new(bytes.Buffer),
+		logWriter:     logWriter,
 		Logger:        logger,
 	}
 	te.ctx, te.cancel = context.WithCancel(context.Background())
@@ -320,8 +322,10 @@ func (test *TestCtx) dumpLog() {
 	if err = f.Close(); err != nil {
 		test.t.Errorf("failed to close test log file: %v", err)
 	}
-	output := test.outputBuf.String()
-	test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
+	if !debug {
+		output := test.outputBuf.String()
+		test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
+	}
 }
 
 func (test *TestCtx) dumpPacketTrace() {
