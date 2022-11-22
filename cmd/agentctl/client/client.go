@@ -186,7 +186,7 @@ func (c *Client) MetaServiceClient() (generic.MetaServiceClient, error) {
 // HTTPClient returns configured HTTP client.
 func (c *Client) HTTPClient() *http.Client {
 	if c.httpClient == nil {
-		tr := cloneHTTPTransport()
+		tr := http.DefaultTransport.(*http.Transport).Clone()
 		tr.TLSClientConfig = c.httpTLS
 		c.httpClient = &http.Client{
 			Transport: tr,
