@@ -15,12 +15,12 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"net"
 	"time"
 
-	"context"
 	"github.com/namsral/flag"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"

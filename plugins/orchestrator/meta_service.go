@@ -15,10 +15,10 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"context"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"

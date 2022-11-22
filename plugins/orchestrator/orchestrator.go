@@ -15,11 +15,11 @@
 package orchestrator
 
 import (
+	"context"
 	"os"
 	"strings"
 	"sync"
 
-	"context"
 	"github.com/go-errors/errors"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
