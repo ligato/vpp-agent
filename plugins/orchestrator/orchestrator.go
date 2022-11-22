@@ -19,13 +19,13 @@ import (
 	"strings"
 	"sync"
 
+	"context"
 	"github.com/go-errors/errors"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 

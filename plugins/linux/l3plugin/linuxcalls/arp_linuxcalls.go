@@ -1,4 +1,4 @@
-// +build !windows,!darwin
+//go:build !windows && !darwin
 
 // Copyright (c) 2017 Cisco and/or its affiliates.
 //
