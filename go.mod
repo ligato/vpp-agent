@@ -1,6 +1,6 @@
 module go.ligato.io/vpp-agent/v3
 
-go 1.17
+go 1.18
 
 require (
 	github.com/alecthomas/jsonschema v0.0.0-20200217214135-7152f22193c9
@@ -39,7 +39,6 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.fd.io/govpp v0.6.0-alpha.0.20220808231750-0eff8d05da27
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
-	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
@@ -131,6 +130,7 @@ require (
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
+	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

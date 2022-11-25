@@ -13,7 +13,6 @@
 //  limitations under the License.
 
 //go:build !mockvpp && !vppapiclient
-// +build !mockvpp,!vppapiclient
 
 package govppmux
 

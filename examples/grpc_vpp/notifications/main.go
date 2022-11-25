@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"net"
@@ -24,7 +25,6 @@ import (
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
