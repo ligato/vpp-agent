@@ -27,9 +27,13 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	debugFlag := flag.Bool("debug", false, "Turn on debug mode.")
+	// Detect if GitHub Workflow debug flag is set.
+	debugEnv := os.Getenv("RUNNER_DEBUG") != "" && os.Getenv("GITHUB_WORKFLOW") != ""
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
-	if *debug {
+	debug = *debugFlag || debugEnv
+	if debug {
 		logrus.SetLevel(logrus.DebugLevel)
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}

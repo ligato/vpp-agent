@@ -10,6 +10,7 @@ echo "Preparing e2e tests.."
 export VPP_AGENT="${VPP_AGENT:-ligato/vpp-agent:latest}"
 export VPP_AGENT_CUSTOM="vppagent.test.ligato.io:custom"
 export TESTDATA_DIR="$SCRIPT_DIR/resources"
+export TESTLOGS_DIR="${TESTLOGS_DIR:-$SCRIPT_DIR/logs}"
 export TESTREPORT_DIR="${TESTREPORT_DIR:-$SCRIPT_DIR/reports}"
 export GOTESTSUM_FORMAT="${GOTESTSUM_FORMAT:-testname}"
 export GOTESTSUM_JUNITFILE="${GOTESTSUM_JUNITFILE:-}"
@@ -118,6 +119,7 @@ else
 fi
 
 mkdir -vp "${TESTREPORT_DIR}"
+mkdir -vp "${TESTLOGS_DIR}"
 
 vppver=$(docker run --rm -i "$VPP_AGENT" dpkg-query -f '${Version}' -W vpp)
 
@@ -139,6 +141,7 @@ if docker run -i \
 	--label io.ligato.vpp-agent.testsuite=e2e \
 	--label io.ligato.vpp-agent.testname="${testname}" \
 	--volume "${TESTREPORT_DIR}":/testreport \
+	--volume "${TESTLOGS_DIR}":/testlogs \
 	--volume "${TESTDATA_DIR}":/testdata:ro \
 	--volume /var/run/docker.sock:/var/run/docker.sock \
 	--volume "${sharevolumename}":/test-share \
@@ -147,6 +150,7 @@ if docker run -i \
 	--env VPP_AGENT \
 	--env GOTESTSUM_FORMAT \
 	--env GOTESTSUM_JUNITFILE \
+	--env RUNNER_DEBUG \
 	--env GITHUB_WORKFLOW \
 	${DOCKER_ARGS-} \
 	"${imgname}" ${args[@]:-}
