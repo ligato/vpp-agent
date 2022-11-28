@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"context"
@@ -26,6 +26,7 @@ import (
 	linux_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/linux/l3"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 // TestIPv4Routes tests L3 routes in the default VRF and for various scopes

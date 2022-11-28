@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 // Simulate public and private networks using two microservices and test

@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 // configure only link on the Linux side of the interface and leave addresses

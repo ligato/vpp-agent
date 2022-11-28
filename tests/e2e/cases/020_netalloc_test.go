@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 // test IP address allocation using the netalloc plugin for VPP+Linux interfaces,
@@ -34,9 +35,12 @@ import (
 // of the associated GW.
 //
 // topology + addressing:
-//  VPP loop (192.168.10.1/24) <--> VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/24)
+//
+//	VPP loop (192.168.10.1/24) <--> VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/24)
+//
 // topology + addressing AFTER CHANGE:
-//  VPP loop (192.168.20.1/24) <--> VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24)
+//
+//	VPP loop (192.168.20.1/24) <--> VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24)
 func TestIPWithNeighGW(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
@@ -227,9 +231,12 @@ func TestIPWithNeighGW(t *testing.T) {
 // of the associated GW.
 //
 // topology + addressing (note the single-host network mask for Linux TAP):
-//  VPP loop (192.168.10.1/24) <--> VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/32)
+//
+//	VPP loop (192.168.10.1/24) <--> VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/32)
+//
 // topology + addressing AFTER CHANGE:
-//  VPP loop (192.168.20.1/24) <--> VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/32)
+//
+//	VPP loop (192.168.20.1/24) <--> VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/32)
 func TestIPWithNonLocalGW(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
@@ -421,10 +428,12 @@ func TestIPWithNonLocalGW(t *testing.T) {
 // test IP address allocation using the netalloc plugin for VPP routes mainly.
 //
 // topology + addressing:
-//  VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/24) <--> Linux loop (192.168.20.1/24, 10.10.10.10/32)
+//
+//	VPP tap (192.168.11.1/24) <--> Linux tap (192.168.11.2/24) <--> Linux loop (192.168.20.1/24, 10.10.10.10/32)
 //
 // topology + addressing AFTER CHANGE:
-//  VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24) <--> Linux loop (192.168.30.1/24, 10.10.10.10/32)
+//
+//	VPP tap (192.168.12.1/24) <--> Linux tap (192.168.12.2/24) <--> Linux loop (192.168.30.1/24, 10.10.10.10/32)
 func TestVPPRoutesWithNetalloc(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()

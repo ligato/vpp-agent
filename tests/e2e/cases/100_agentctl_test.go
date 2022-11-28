@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"bufio"
@@ -24,6 +24,8 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 func TestAgentCtlCommands(t *testing.T) {

@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 // connect VPP with a microservice via TAP interface
@@ -151,7 +152,6 @@ func TestInterfaceConnTap(t *testing.T) {
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
-//
 // +---------------------------------------------------+
 // | VPP                                               |
 // |                                                   |
@@ -163,7 +163,7 @@ func TestInterfaceConnTap(t *testing.T) {
 // |     |                                       |     |
 // |     +-------------------+-------------------+     |
 // +-------------------------|-------------------------+
-//                           | (MEMIF)
+// -                         | (MEMIF)                 -
 // +-------------------------|-------------------------+
 // |     +-------------------+-------------------+     |
 // |     |                                       |     |
@@ -179,7 +179,7 @@ func TestInterfaceConnTap(t *testing.T) {
 // |     |192.168.1.11/24|       |192.168.2.22/24|     |
 // |     +-------+-------+       +-------+-------+     |
 // +-------------|-----------------------|-------------+
-//               | (TAP)                 | (TAP)
+// -             | (TAP)                 | (TAP)       -
 // +-------------|----------+ +----------|-------------+
 // |     +-------+-------+  | |  +-------+-------+     |
 // |     |192.168.1.11/24|  | |  |192.168.2.22/24|     |
@@ -193,7 +193,6 @@ func TestInterfaceConnTap(t *testing.T) {
 // from: 192.168.2.20 (right subif in top vpp) to: 192.168.2.22 (right linux microservice) - should pass (same vlan)
 // from: 192.168.1.10 (left subif in top vpp) to: 192.168.2.22 (right linux microservice) - should fail (different vlans)
 // from: 192.168.2.20 (right subif in top vpp) to: 192.168.1.11 (left linux microservice) - should fail (different vlans)
-//
 func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()

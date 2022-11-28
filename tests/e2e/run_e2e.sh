@@ -33,10 +33,10 @@ go build -o ./tests/e2e/agentctl.test \
 
 # Compile testing suite
 go test -c -o ./tests/e2e/e2e.test \
-	  -tags 'osusergo netgo e2e' \
+	  -tags 'osusergo netgo e2etest' \
     -ldflags '-w -s -extldflags "-static"' \
     -trimpath \
-    ./tests/e2e
+    ./tests/e2e/cases
 
 # Build testing image
 docker build \

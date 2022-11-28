@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"context"
@@ -21,6 +21,8 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+
+	. "go.ligato.io/vpp-agent/v3/tests/e2e"
 )
 
 func TestInfoVersionHandler(t *testing.T) {
