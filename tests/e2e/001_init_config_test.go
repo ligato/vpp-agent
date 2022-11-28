@@ -197,17 +197,19 @@ endpoints:
 	)
 
 	// check whether initial configuration is correctly loaded from Etcd and file in running VPP-Agent
-	initInterfaceConfigState := func(interfaceName string, ipAddress string) kvscheduler.ValueState {
-		return ctx.GetValueStateByKey(
-			fmt.Sprintf("vpp/interface/%v/address/static/%v/32", interfaceName, ipAddress))
+	initInterfaceConfigStateClb := func(interfaceName string, ipAddress string) func() kvscheduler.ValueState {
+		return func() kvscheduler.ValueState {
+			return ctx.GetValueStateByKey(
+				fmt.Sprintf("vpp/interface/%v/address/static/%v/32", interfaceName, ipAddress))
+		}
 	}
-	ctx.Eventually(initInterfaceConfigState("memif-from-etcd", "10.10.1.1")).
+	ctx.Eventually(initInterfaceConfigStateClb("memif-from-etcd", "10.10.1.1")).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED),
 			"unique memif from etcd was not properly created")
-	ctx.Eventually(initInterfaceConfigState("memif-from-init-file", "10.10.1.2")).
+	ctx.Eventually(initInterfaceConfigStateClb("memif-from-init-file", "10.10.1.2")).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED),
 			"unique memif from init file was not properly created")
-	ctx.Eventually(initInterfaceConfigState("memif-from-both-sources", "10.10.1.3")).
+	ctx.Eventually(initInterfaceConfigStateClb("memif-from-both-sources", "10.10.1.3")).
 		Should(Equal(kvscheduler.ValueState_CONFIGURED),
 			"conflicting memif (defined in init file and etcd) was either not correctly "+
 				"merged (etcd data should have priority) or other things prevented its proper creation")

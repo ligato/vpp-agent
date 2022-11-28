@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"time"
@@ -29,7 +30,10 @@ type connectionRequest struct {
 	err  error
 }
 
-func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error, logger *log.Logger) {
+	defer func() {
+		done <- nil
+	}()
 	// move to the network namespace where server should listen
 	exitNetNs := ms.enterNetNs()
 	defer exitNetNs()
@@ -45,6 +49,10 @@ func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 	newConn := make(chan connectionRequest, 1)
 	go func() {
 		conn, err := listener.Accept()
+		if err != nil {
+			err = fmt.Errorf("accept failed with: %v", err)
+			logger.Println(err)
+		}
 		newConn <- connectionRequest{conn: conn, err: err}
 		close(newConn)
 	}()
@@ -57,7 +65,7 @@ func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 		return
 	case cr = <-newConn:
 		if cr.err != nil {
-			done <- fmt.Errorf("accept failed with: %v", cr.err)
+			done <- cr.err
 			return
 		}
 		defer cr.conn.Close()
@@ -70,20 +78,26 @@ func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 		// receive message from the client
 		message, err := bufio.NewReader(cr.conn).ReadString('\n')
 		if err != nil {
-			commRv <- fmt.Errorf("failed to read data from client: %v", err)
+			err = fmt.Errorf("failed to read data from client: %v", err)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		// send response to the client
 		_, err = cr.conn.Write([]byte(respMsg + "\n"))
 		if err != nil {
-			commRv <- fmt.Errorf("failed to send data to client: %v", err)
+			err = fmt.Errorf("failed to send data to client: %v", err)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		// check if the exchanged data are as expected
 		message = strings.TrimRight(message, "\n")
 		if message != expReqMsg {
-			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
+			err = fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
 				message, expReqMsg)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		commRv <- nil
@@ -102,13 +116,18 @@ func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 	<-ctx.Done()
 }
 
-func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
+func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error, ready chan<- error, logger *log.Logger) {
+	defer func() {
+		done <- nil
+	}()
+
 	const maxBufferSize = 1024
 	// move to the network namespace where server should listen
 	exitNetNs := ms.enterNetNs()
 	defer exitNetNs()
 
 	conn, err := net.ListenPacket("udp", addr)
+	ready <- err
 	if err != nil {
 		done <- err
 		return
@@ -123,21 +142,27 @@ func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 		buffer := make([]byte, maxBufferSize)
 		n, addr, err := conn.ReadFrom(buffer)
 		if err != nil {
-			commRv <- fmt.Errorf("failed to read data from client: %v", err)
+			err = fmt.Errorf("failed to read data from client: %v", err)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		message := string(buffer[:n])
 		// send response to the client
 		_, err = conn.WriteTo([]byte(respMsg+"\n"), addr)
 		if err != nil {
-			commRv <- fmt.Errorf("failed to send data to client: %v", err)
+			err = fmt.Errorf("failed to send data to client: %v", err)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		// check if the exchanged data are as expected
 		message = strings.TrimRight(message, "\n")
 		if message != expReqMsg {
-			commRv <- fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
+			err = fmt.Errorf("unexpected message received from client ('%s' vs. '%s')",
 				message, expReqMsg)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		commRv <- nil
@@ -156,7 +181,7 @@ func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 	<-ctx.Done()
 }
 
-func simpleTCPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+func simpleTCPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error, logger *log.Logger) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
 
@@ -171,16 +196,20 @@ func simpleTCPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, t
 				time.Sleep(checkPollingInterval)
 				continue
 			}
+			if err != nil {
+				err = fmt.Errorf("dial failed with: %v", err)
+				logger.Println(err)
+			}
 			newConn <- connectionRequest{conn: conn, err: err}
 			break
 		}
 		close(newConn)
 	}()
 
-	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done, logger)
 }
 
-func simpleUDPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error) {
+func simpleUDPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, timeout time.Duration, done chan<- error, srvReady chan error, logger *log.Logger) {
 	// try to connect with the server
 	newConn := make(chan connectionRequest, 1)
 
@@ -190,27 +219,40 @@ func simpleUDPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, t
 		defer exitNetNs()
 		udpAddr, err := net.ResolveUDPAddr("udp", addr)
 		if err != nil {
+			err = fmt.Errorf("dial failed with: %v", err)
+			logger.Println(err)
 			newConn <- connectionRequest{conn: nil, err: err}
 		} else {
 			start := time.Now()
-			for {
-				conn, err := net.DialUDP("udp", nil, udpAddr)
-				if err != nil && time.Since(start) < timeout {
-					time.Sleep(checkPollingInterval)
-					continue
+			err = <-srvReady
+			if err != nil {
+				err = fmt.Errorf("dial failed with: %v", "server not ready")
+				logger.Println(err)
+				newConn <- connectionRequest{conn: nil, err: err}
+			} else {
+				for {
+					conn, err := net.DialUDP("udp", nil, udpAddr)
+					if err != nil && time.Since(start) < timeout {
+						time.Sleep(checkPollingInterval)
+						continue
+					}
+					if err != nil {
+						err = fmt.Errorf("dial failed with: %v", err)
+						logger.Println(err)
+					}
+					newConn <- connectionRequest{conn: conn, err: err}
+					break
 				}
-				newConn <- connectionRequest{conn: conn, err: err}
-				break
 			}
 		}
 		close(newConn)
 	}()
 
-	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done)
+	simpleTCPOrUDPClient(newConn, addr, reqMsg, expRespMsg, timeout, done, logger)
 }
 
 func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespMsg string,
-	timeout time.Duration, done chan<- error) {
+	timeout time.Duration, done chan<- error, logger *log.Logger) {
 
 	// wait for connection
 	var cr connectionRequest
@@ -220,7 +262,7 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 		return
 	case cr = <-newConn:
 		if cr.err != nil {
-			done <- fmt.Errorf("dial failed with: %v", cr.err)
+			done <- cr.err
 			return
 		}
 		defer cr.conn.Close()
@@ -234,7 +276,9 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 		// send message to the server
 		_, err := cr.conn.Write([]byte(reqMsg + "\n"))
 		if err != nil {
-			commRv <- fmt.Errorf("failed to send data to the server: %v", err)
+			err = fmt.Errorf("failed to send data to the server: %v", err)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 		// listen for reply
@@ -247,7 +291,9 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 				continue
 			}
 			if err != nil {
-				commRv <- fmt.Errorf("failed to read data from server: %v", err)
+				err = fmt.Errorf("failed to read data from server: %v", err)
+				logger.Println(err)
+				commRv <- err
 				return
 			}
 			break
@@ -255,8 +301,10 @@ func simpleTCPOrUDPClient(newConn chan connectionRequest, addr, reqMsg, expRespM
 		// check if the exchanged data are as expected
 		message = strings.TrimRight(message, "\n")
 		if message != expRespMsg {
-			commRv <- fmt.Errorf("unexpected message received from server ('%s' vs. '%s')",
+			err = fmt.Errorf("unexpected message received from server ('%s' vs. '%s')",
 				message, expRespMsg)
+			logger.Println(err)
+			commRv <- err
 			return
 		}
 
