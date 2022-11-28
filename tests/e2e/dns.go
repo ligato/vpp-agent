@@ -109,7 +109,7 @@ func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{})
 		},
 		HostConfig: &docker.HostConfig{
 			Binds: []string{
-				shareVolumeName + ":" + ctx.testShareDir, // needed for coredns configuration
+				shareVolumeName + ":" + ctx.ShareDir, // needed for coredns configuration
 			},
 		},
 	}

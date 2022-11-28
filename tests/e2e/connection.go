@@ -31,7 +31,7 @@ type connectionRequest struct {
 
 func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
 	// move to the network namespace where server should listen
-	exitNetNs := ms.enterNetNs()
+	exitNetNs := ms.EnterNetNs()
 	defer exitNetNs()
 
 	listener, err := net.Listen("tcp", addr)
@@ -105,7 +105,7 @@ func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqMsg, respMsg string, done chan<- error) {
 	const maxBufferSize = 1024
 	// move to the network namespace where server should listen
-	exitNetNs := ms.enterNetNs()
+	exitNetNs := ms.EnterNetNs()
 	defer exitNetNs()
 
 	conn, err := net.ListenPacket("udp", addr)
@@ -162,7 +162,7 @@ func simpleTCPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, t
 
 	go func() {
 		// move to the network namespace from which the connection should be initiated
-		exitNetNs := ms.enterNetNs()
+		exitNetNs := ms.EnterNetNs()
 		defer exitNetNs()
 		start := time.Now()
 		for {
@@ -186,7 +186,7 @@ func simpleUDPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, t
 
 	go func() {
 		// move to the network namespace from which the connection should be initiated
-		exitNetNs := ms.enterNetNs()
+		exitNetNs := ms.EnterNetNs()
 		defer exitNetNs()
 		udpAddr, err := net.ResolveUDPAddr("udp", addr)
 		if err != nil {

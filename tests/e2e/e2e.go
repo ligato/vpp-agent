@@ -46,16 +46,17 @@ var debug bool
 const (
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
-	shareDir             = "/test-share"
 	logDir               = "/testlogs"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
-	mainAgentName        = "agent0"
+
+	DefaultShareDir      = "/test-share"
+	DefaultMainAgentName = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
-	tapv2InputNode = "virtio-input"
-	// tapv1InputNode    = "tapcli-rx"
-	// afPacketInputNode = "af-packet-input"
-	// memifInputNode    = "memif-input"
+	Tapv2InputNode = "virtio-input"
+	// Tapv1InputNode    = "tapcli-rx"
+	// AfPacketInputNode = "af-packet-input"
+	// MemifInputNode    = "memif-input"
 )
 
 // TestCtx represents data context fur currently running test
@@ -66,15 +67,15 @@ type TestCtx struct {
 	Etcd      *Etcd
 	DNSServer *DNSServer
 
+	DataDir  string
+	ShareDir string
+
 	logWriter io.Writer
 	Logger    *log.Logger
 
 	t      *testing.T
 	ctx    context.Context
 	cancel context.CancelFunc
-
-	testDataDir  string
-	testShareDir string
 
 	agents        map[string]*Agent
 	dockerClient  *docker.Client
@@ -157,8 +158,8 @@ func NewTest(t *testing.T) *TestCtx {
 	te := &TestCtx{
 		WithT:         g,
 		t:             t,
-		testDataDir:   os.Getenv("TESTDATA_DIR"),
-		testShareDir:  shareDir,
+		DataDir:       os.Getenv("TESTDATA_DIR"),
+		ShareDir:      DefaultShareDir,
 		agents:        make(map[string]*Agent),
 		microservices: make(map[string]*Microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
@@ -233,7 +234,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// setup main VPP-Agent
 	if opts.SetupAgent {
-		testCtx.Agent = testCtx.StartAgent(mainAgentName, opts.AgentOptMods...)
+		testCtx.Agent = testCtx.StartAgent(DefaultMainAgentName, opts.AgentOptMods...)
 
 		// fill VPP version (this depends on agentctl and that depends on agent to be set up)
 		if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
@@ -261,7 +262,7 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	if testCtx.Agent != nil {
 		return testCtx.Agent.name
 	}
-	return mainAgentName
+	return DefaultMainAgentName
 }
 
 // Teardown perform test cleanup
@@ -670,7 +671,7 @@ func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 	}
 }
 
-func supportsLinuxVRF() bool {
+func SupportsLinuxVRF() bool {
 	if os.Getenv("GITHUB_WORKFLOW") != "" {
 		// Linux VRFs are not enabled by default in the github workflow runners
 		// Notes:

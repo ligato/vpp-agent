@@ -17,7 +17,7 @@ package e2e
 import "strings"
 
 // parseVPPTable parses table returned by one of the VPP show commands.
-func parseVPPTable(table string) (parsed []map[string]string) {
+func ParseVPPTable(table string) (parsed []map[string]string) {
 	lines := strings.Split(table, "\r\n")
 	if len(lines) == 0 {
 		return

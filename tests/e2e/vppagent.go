@@ -137,9 +137,9 @@ func AgentStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (in
 			PidMode:         "host",
 			Binds: []string{
 				"/var/run/docker.sock:/var/run/docker.sock",
-				ctx.testDataDir + ":/testdata:ro",
-				filepath.Join(ctx.testDataDir, "certs") + ":/etc/certs:ro",
-				shareVolumeName + ":" + ctx.testShareDir,
+				ctx.DataDir + ":/testdata:ro",
+				filepath.Join(ctx.DataDir, "certs") + ":/etc/certs:ro",
+				shareVolumeName + ":" + ctx.ShareDir,
 			},
 		},
 	}

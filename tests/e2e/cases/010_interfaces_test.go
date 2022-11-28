@@ -224,7 +224,7 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 	)
 
 	// needed for creation of memif socket
-	if err := os.MkdirAll(shareDir+memifFilepath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(ctx.ShareDir+memifFilepath, os.ModePerm); err != nil {
 		t.Fatal(err)
 	}
 
@@ -237,7 +237,7 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 			Memif: &vpp_interfaces.MemifLink{
 				Master:         true,
 				Id:             1,
-				SocketFilename: shareDir + memifFilepath + memifSockname,
+				SocketFilename: ctx.ShareDir + memifFilepath + memifSockname,
 			},
 		},
 	}
@@ -277,7 +277,7 @@ func TestMemifSubinterfaceVlanConn(t *testing.T) {
 			Memif: &vpp_interfaces.MemifLink{
 				Master:         false,
 				Id:             1,
-				SocketFilename: shareDir + memifFilepath + memifSockname,
+				SocketFilename: ctx.ShareDir + memifFilepath + memifSockname,
 			},
 		},
 	}

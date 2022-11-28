@@ -53,7 +53,7 @@ initial-configuration-file-path: %v
 
 	// create VPP-Agent
 	ctx.StartAgent(
-		mainAgentName,
+		DefaultMainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
@@ -92,7 +92,7 @@ endpoints:
 
 	// create VPP-Agent
 	ctx.StartAgent(
-		mainAgentName,
+		DefaultMainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig)),
 		WithoutManualInitialAgentResync(),
 	)
@@ -191,7 +191,7 @@ endpoints:
 
 	// create VPP-Agent
 	ctx.StartAgent(
-		mainAgentName,
+		DefaultMainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig),
 			WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),

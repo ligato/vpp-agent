@@ -35,7 +35,7 @@ func bridgeDomains(ctx *TestCtx) ([]map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parseVPPTable(stdout), nil
+	return ParseVPPTable(stdout), nil
 }
 
 func bdAgeIs(min int) types.GomegaMatcher {

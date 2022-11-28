@@ -51,7 +51,7 @@ import (
 // |         +-------------------+  |  |          +------------------+  |
 // +--------------------------------+  +--------------------------------+
 func TestVRFsWithSameSubnets(t *testing.T) {
-	if !supportsLinuxVRF() {
+	if !SupportsLinuxVRF() {
 		t.Skip("Linux VRFs are not supported")
 	}
 
@@ -277,7 +277,7 @@ func TestVRFsWithSameSubnets(t *testing.T) {
 // |    RT: 192.168.2.0/24 --+     |            |    RT: 192.168.1.0/24 --+     |
 // +-------------------------------+            +-------------------------------+
 func TestVRFRoutes(t *testing.T) {
-	if !supportsLinuxVRF() {
+	if !SupportsLinuxVRF() {
 		t.Skip("Linux VRFs are not supported")
 	}
 
@@ -486,7 +486,7 @@ func TestVRFRoutes(t *testing.T) {
 
 // Test VRF created externally (i.e. not by the agent).
 func TestExistingLinuxVRF(t *testing.T) {
-	if !supportsLinuxVRF() {
+	if !SupportsLinuxVRF() {
 		t.Skip("Linux VRFs are not supported")
 	}
 

@@ -279,7 +279,7 @@ func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) 
 func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent string) string {
 	// subtest test names can container filepath.Separator
 	testName := strings.ReplaceAll(ctx.t.Name(), string(filepath.Separator), "-")
-	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
+	filePath, err := filepath.Abs(filepath.Join(ctx.ShareDir,
 		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
 	ctx.Expect(err).To(Not(HaveOccurred()))
 	ctx.Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())

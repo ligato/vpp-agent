@@ -30,7 +30,7 @@ import (
 )
 
 func TestDhcpProxy(t *testing.T) {
-	if !supportsLinuxVRF() {
+	if !SupportsLinuxVRF() {
 		t.Skip("Linux VRFs are not supported")
 	}
 

@@ -140,8 +140,8 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 		return
 	}
 
-	if info, er := c.ctx.dockerClient.InspectExec(exec.ID); er != nil {
-		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmdStr, er)
+	if info, err := c.ctx.dockerClient.InspectExec(exec.ID); err != nil {
+		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmdStr, err)
 		err = errors.Errorf("inspect exec error: %v", err)
 	} else {
 		c.ctx.Logger.Printf("exec details (ID %v, Cmd %s): %+v", exec.ID, cmdStr, info)
