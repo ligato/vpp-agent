@@ -17,12 +17,12 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -41,12 +41,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var debug = flag.Bool("debug", false, "Turn on debug mode.")
+var debug bool
 
 const (
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
 	shareDir             = "/test-share"
+	logDir               = "/testlogs"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
 	mainAgentName        = "agent0"
 
@@ -65,7 +66,8 @@ type TestCtx struct {
 	Etcd      *Etcd
 	DNSServer *DNSServer
 
-	Logger *log.Logger
+	logWriter io.Writer
+	Logger    *log.Logger
 
 	t      *testing.T
 	ctx    context.Context
@@ -81,6 +83,7 @@ type TestCtx struct {
 	vppVersion    string
 
 	outputBuf *bytes.Buffer
+	traceBuf  *bytes.Buffer
 }
 
 // ComponentRuntime represents running instance of test topology component. Different implementation can
@@ -141,15 +144,15 @@ func NewTest(t *testing.T) *TestCtx {
 	logging.Debugf("Environ:\n%v", strings.Join(os.Environ(), "\n"))
 
 	outputBuf := new(bytes.Buffer)
-	var logW io.Writer
-	if *debug {
-		logW = os.Stderr // io.MultiWriter(os.Stderr, outputBuf)
+	var logWriter io.Writer
+	if debug {
+		logWriter = io.MultiWriter(outputBuf, os.Stderr)
 	} else {
-		logW = outputBuf
+		logWriter = outputBuf
 	}
 
 	prefix := fmt.Sprintf("[E2E-TEST::%v] ", t.Name())
-	logger := log.New(logW, prefix, log.Lshortfile|log.Lmicroseconds)
+	logger := log.New(logWriter, prefix, log.Lshortfile|log.Lmicroseconds)
 
 	te := &TestCtx{
 		WithT:         g,
@@ -160,6 +163,8 @@ func NewTest(t *testing.T) *TestCtx {
 		microservices: make(map[string]*Microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
 		outputBuf:     outputBuf,
+		traceBuf:      new(bytes.Buffer),
+		logWriter:     logWriter,
 		Logger:        logger,
 	}
 	te.ctx, te.cancel = context.WithCancel(context.Background())
@@ -182,7 +187,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
 	}
-	if *debug {
+	if debug {
 		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
 	}
 
@@ -192,7 +197,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// if setupE2E fails we need to stop started containers
 	defer func() {
-		if testCtx.t.Failed() || *debug {
+		if testCtx.t.Failed() || debug {
 			testCtx.dumpLog()
 		}
 		if testCtx.t.Failed() {
@@ -261,8 +266,9 @@ func AgentInstanceName(testCtx *TestCtx) string {
 
 // Teardown perform test cleanup
 func (test *TestCtx) Teardown() {
-	if test.t.Failed() || *debug {
+	if test.t.Failed() || debug {
 		defer test.dumpLog()
+		defer test.dumpPacketTrace()
 	}
 
 	if test.cancel != nil {
@@ -300,9 +306,45 @@ func (test *TestCtx) Teardown() {
 }
 
 func (test *TestCtx) dumpLog() {
-	output := test.outputBuf.String()
-	test.outputBuf.Reset()
-	test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
+	if test.outputBuf.Len() == 0 {
+		return
+	}
+	defer test.outputBuf.Reset()
+	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e.log", test.VppRelease(), test.t.Name()))
+	f, err := os.Create(path)
+	if err != nil {
+		test.t.Errorf("failed to create test log file: %v", err)
+	}
+	_, err = f.Write(test.outputBuf.Bytes())
+	if err != nil {
+		test.t.Errorf("failed to write into test log file: %v", err)
+	}
+	if err = f.Close(); err != nil {
+		test.t.Errorf("failed to close test log file: %v", err)
+	}
+	if !debug {
+		output := test.outputBuf.String()
+		test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
+	}
+}
+
+func (test *TestCtx) dumpPacketTrace() {
+	if test.traceBuf.Len() == 0 {
+		return
+	}
+	defer test.traceBuf.Reset()
+	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e_packettrace.log", test.VppRelease(), test.t.Name()))
+	f, err := os.Create(path)
+	if err != nil {
+		test.t.Errorf("failed to create packet trace log file: %v", err)
+	}
+	_, err = f.Write(test.traceBuf.Bytes())
+	if err != nil {
+		test.t.Errorf("failed to write into packet trace log file: %v", err)
+	}
+	if err = f.Close(); err != nil {
+		test.t.Errorf("failed to close packet trace log file: %v", err)
+	}
 }
 
 // VppRelease provides VPP version of VPP in default VPP-Agent test component
@@ -468,7 +510,13 @@ func (test *TestCtx) TestConnection(
 		srvExitTimeout = 500 * time.Millisecond
 		reqData        = "Hi server!"
 		respData       = "Hi client!"
+		timeFormat     = "2006-01-02 15:04:05.00000"
 	)
+
+	protocol := "TCP"
+	if udp {
+		protocol = "UDP"
+	}
 
 	clientMs, found := test.microservices[fromMs]
 	if !found {
@@ -510,6 +558,11 @@ func (test *TestCtx) TestConnection(
 	}
 
 	stopPacketTrace := test.startPacketTrace(traceVPPNodes...)
+	// log info about connection
+	info := fmt.Sprintf("%s connection <time=%s, from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
+		protocol, time.Now().Format(timeFormat), fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
+	test.Logger.Print(info)
+	test.traceBuf.WriteString(info)
 
 	go runServer()
 	go runClient()
@@ -529,23 +582,19 @@ func (test *TestCtx) TestConnection(
 	// wait until server actually stops
 	<-srvRet
 
-	// log info about connection
-	protocol := "TCP"
-	if udp {
-		protocol = "UDP"
-	}
 	outcome := "OK"
 	if err != nil || srvErr != nil {
 		time.Sleep(50 * time.Millisecond) // give other goroutines time to print logs
 		err = fmt.Errorf("server: <%v>, client: <%v>", srvErr, err)
 		outcome = err.Error()
 	}
-	test.Logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d>\n",
-		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort)
-	stopPacketTrace()
-	test.Logger.Printf("%s connection <from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
-		protocol, fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
 
+	stopPacketTrace()
+	// log info about connection
+	info = fmt.Sprintf("%s connection <time=%s, from-ms=%s, dest=%s:%d, to-ms=%s, server=%s:%d> => outcome: %s\n",
+		protocol, time.Now().Format(timeFormat), fromMs, toAddr, toPort, toMs, listenAddr, listenPort, outcome)
+	test.Logger.Print(info)
+	test.traceBuf.WriteString(info)
 	return err
 }
 
@@ -621,7 +670,11 @@ func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 			test.t.Errorf("Failed to show packet trace: %v", err)
 			return
 		}
-		test.Logger.Printf("Packet trace:\n%s\n", traces)
+		_, err = test.traceBuf.WriteString(fmt.Sprintf("Packet trace:\n%s\n", traces))
+		if err != nil {
+			test.t.Errorf("Failed to write packet trace into buffer: %v", err)
+			return
+		}
 	}
 }
 

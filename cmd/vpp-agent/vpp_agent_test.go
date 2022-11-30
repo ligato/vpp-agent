@@ -1,4 +1,4 @@
-// +build teste2e
+//go:build teste2e
 
 package main
 

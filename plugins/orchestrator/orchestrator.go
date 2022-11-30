@@ -15,6 +15,7 @@
 package orchestrator
 
 import (
+	"context"
 	"os"
 	"strings"
 	"sync"
@@ -25,7 +26,6 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 

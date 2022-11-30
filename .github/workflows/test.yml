@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Run tests"
         run: |
@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Dump Info"
         run: |
@@ -54,3 +54,10 @@ jobs:
         if: always()
         with:
           report_paths: './tests/e2e/reports/*.xml'
+
+      - name: "Publish Test Artifacts"
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() || runner.debug == '1' }}
+        with:
+          name: "VPP ${{ matrix.version }} RUN_ID ${{ github.run_id }}"
+          path: tests/e2e/logs/
