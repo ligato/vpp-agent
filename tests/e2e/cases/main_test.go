@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"flag"
@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	govppcore "go.fd.io/govpp/core"
 
+	"go.ligato.io/vpp-agent/v3/tests/e2e"
 	"go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 
@@ -32,8 +33,8 @@ func TestMain(m *testing.M) {
 	debugEnv := os.Getenv("RUNNER_DEBUG") != "" && os.Getenv("GITHUB_WORKFLOW") != ""
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
-	debug = *debugFlag || debugEnv
-	if debug {
+	e2e.Debug = *debugFlag || debugEnv
+	if e2e.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}

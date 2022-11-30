@@ -260,7 +260,7 @@ func (agent *Agent) ExecVppctl(action string, args ...string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("execute `vppctl %s` error: %v", strings.Join(cmd, " "), err)
 	}
-	if debug {
+	if Debug {
 		agent.ctx.t.Logf("executed (vppctl %v): %v", strings.Join(cmd, " "), stdout)
 	}
 
