@@ -17,7 +17,7 @@ package e2etest
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -51,7 +51,7 @@ func TestJsonschema(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if res.StatusCode > 299 {
 		t.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)

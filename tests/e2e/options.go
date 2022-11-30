@@ -16,10 +16,8 @@ package e2e
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
@@ -282,7 +280,7 @@ func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent s
 	filePath, err := filepath.Abs(filepath.Join(ctx.ShareDir,
 		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
 	ctx.Expect(err).To(gomega.Not(gomega.HaveOccurred()))
-	ctx.Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(gomega.Succeed())
+	ctx.Expect(os.WriteFile(filePath, []byte(fileContent), 0777)).To(gomega.Succeed())
 
 	// TODO register in context and delete in teardown? this doesn't matter
 	//  that much because file names contain unique test names so no file collision can happen
@@ -347,13 +345,5 @@ func PingWithAllowedLoss(maxLoss int) PingOptModifier {
 func PingWithSourceInterface(iface string) PingOptModifier {
 	return func(opts *PingOpt) {
 		opts.SourceIface = iface
-	}
-}
-
-func copyOptions(to interface{}, from interface{}) {
-	fromVal := reflect.ValueOf(from).Elem()
-	toVal := reflect.ValueOf(to).Elem()
-	for i := 0; i < fromVal.NumField(); i++ {
-		toVal.Field(i).Set(fromVal.Field(i))
 	}
 }

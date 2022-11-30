@@ -99,7 +99,7 @@ func (c *ContainerRuntime) Stop(options ...interface{}) error {
 }
 
 // ExecCmd executes command inside docker container
-func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr string, err error) {
+func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (string, string, error) {
 	c.ctx.Logger.Printf("[container:%v] ExecCmd(%s, %v)", c.container.ID, cmd, args)
 
 	opts := docker.CreateExecOptions{
@@ -112,7 +112,7 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 	exec, err := c.ctx.dockerClient.CreateExec(opts)
 	if err != nil {
 		err = errors.Errorf("failed to create docker exec for command %v due to: %v", cmd, err)
-		return
+		return "", "", err
 	}
 
 	ctx, cancel := context.WithTimeout(c.ctx.ctx, containerExecTimeout)
@@ -124,8 +124,8 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 		OutputStream: &stdoutBuf,
 		ErrorStream:  &stderrBuf,
 	})
-	stdout = stdoutBuf.String()
-	stderr = stderrBuf.String()
+	stdout := stdoutBuf.String()
+	stderr := stderrBuf.String()
 
 	cmdStr := fmt.Sprintf("`%s %s`", cmd, strings.Join(args, " "))
 
@@ -137,12 +137,12 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 		errMsg := fmt.Sprintf("exec command %v failed due to: %v", cmdStr, err)
 		c.ctx.Logger.Printf(errMsg)
 		err = errors.Errorf(errMsg)
-		return
+		return stdout, stderr, err
 	}
 
-	if info, err := c.ctx.dockerClient.InspectExec(exec.ID); err != nil {
+	if info, e := c.ctx.dockerClient.InspectExec(exec.ID); err != nil {
 		c.ctx.t.Logf("exec inspect failed (ID %v, Cmd %s)s: %v", exec.ID, cmdStr, err)
-		err = errors.Errorf("inspect exec error: %v", err)
+		err = errors.Errorf("inspect exec error: %v", e)
 	} else {
 		c.ctx.Logger.Printf("exec details (ID %v, Cmd %s): %+v", exec.ID, cmdStr, info)
 		if info.ExitCode != 0 {
@@ -150,7 +150,7 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (stdout, stderr s
 		}
 	}
 
-	return
+	return stdout, stderr, err
 }
 
 // IPAddress provides ip address for connecting to the component

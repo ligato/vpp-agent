@@ -147,7 +147,7 @@ func TestDnsCache(t *testing.T) {
 					Send(context.Background())).To(Succeed())
 			} else {
 				// using local container as DNS server -> the easy way how to block it is to kill it
-				ctx.DNSServer.Stop()
+				ctx.Expect(ctx.DNSServer.Stop()).To(Succeed())
 			}
 
 			// verify the upstream DNS blocking (without it some mild test/container changes could introduce
