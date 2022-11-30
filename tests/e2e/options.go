@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
@@ -281,8 +281,8 @@ func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent s
 	testName := strings.ReplaceAll(ctx.t.Name(), string(filepath.Separator), "-")
 	filePath, err := filepath.Abs(filepath.Join(ctx.ShareDir,
 		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
-	ctx.Expect(err).To(Not(HaveOccurred()))
-	ctx.Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
+	ctx.Expect(err).To(gomega.Not(gomega.HaveOccurred()))
+	ctx.Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(gomega.Succeed())
 
 	// TODO register in context and delete in teardown? this doesn't matter
 	//  that much because file names contain unique test names so no file collision can happen

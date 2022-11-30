@@ -28,6 +28,7 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -36,9 +37,6 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-
-	"github.com/onsi/gomega"
-	. "github.com/onsi/gomega"
 )
 
 var debug bool
@@ -223,13 +221,13 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 	// setup DNS server
 	if opts.SetupDNSServer {
 		testCtx.DNSServer, err = NewDNSServer(testCtx, opts.DNSOptMods...)
-		testCtx.Expect(err).ShouldNot(HaveOccurred())
+		testCtx.Expect(err).ShouldNot(gomega.HaveOccurred())
 	}
 
 	// setup Etcd
 	if opts.SetupEtcd {
 		testCtx.Etcd, err = NewEtcd(testCtx, opts.EtcdOptMods...)
-		testCtx.Expect(err).ShouldNot(HaveOccurred())
+		testCtx.Expect(err).ShouldNot(gomega.HaveOccurred())
 	}
 
 	// setup main VPP-Agent
@@ -456,6 +454,7 @@ func (test *TestCtx) StopAgent(name string) {
 
 // GetRunningMicroservice retrieves already running microservice by its name.
 func (test *TestCtx) GetRunningMicroservice(msName string) *Microservice {
+	test.t.Helper()
 	ms, found := test.microservices[msName]
 	if !found {
 		// bug inside a test
