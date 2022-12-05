@@ -493,6 +493,11 @@ func (test *TestCtx) PingFromVPPClb(destAddress string) func() error {
 	return test.Agent.PingFromVPPAsCallback(destAddress)
 }
 
+// TestConnection starts a simple TCP or UPD server and client, sends some data
+// and stops the client and server.
+//
+// If upd is true and there was no prior traffic (TPC/UDP/ICMP) between the
+// endpoints, ARP glean may happen and TestConnection may fail.
 func (test *TestCtx) TestConnection(
 	fromMs, toMs, toAddr, listenAddr string,
 	toPort, listenPort uint16, udp bool,
@@ -529,12 +534,14 @@ func (test *TestCtx) TestConnection(
 
 	srvRet := make(chan error, 1)
 	srvCtx, cancelSrv := context.WithCancel(context.Background())
+	udpSrvReady := make(chan error, 1)
+	defer close(udpSrvReady)
 	runServer := func() {
 		defer close(srvRet)
 		if udp {
-			simpleUDPServer(srvCtx, serverMs, serverAddr, reqData, respData, srvRet)
+			simpleUDPServer(srvCtx, serverMs, serverAddr, reqData, respData, srvRet, udpSrvReady, test.Logger)
 		} else {
-			simpleTCPServer(srvCtx, serverMs, serverAddr, reqData, respData, srvRet)
+			simpleTCPServer(srvCtx, serverMs, serverAddr, reqData, respData, srvRet, test.Logger)
 		}
 	}
 
@@ -543,10 +550,10 @@ func (test *TestCtx) TestConnection(
 		defer close(clientRet)
 		if udp {
 			simpleUDPClient(clientMs, clientAddr,
-				reqData, respData, connTimeout, clientRet)
+				reqData, respData, connTimeout, clientRet, udpSrvReady, test.Logger)
 		} else {
 			simpleTCPClient(clientMs, clientAddr,
-				reqData, respData, connTimeout, clientRet)
+				reqData, respData, connTimeout, clientRet, test.Logger)
 		}
 	}
 
@@ -572,12 +579,13 @@ func (test *TestCtx) TestConnection(
 		cancelSrv()
 		srvErr = <-srvRet
 	}
-	if err == nil {
-		err = srvErr
-	}
+	// wait until server actually stops
+	<-srvRet
 
 	outcome := "OK"
-	if err != nil {
+	if err != nil || srvErr != nil {
+		time.Sleep(50 * time.Millisecond) // give other goroutines time to print logs
+		err = fmt.Errorf("server: <%v>, client: <%v>", srvErr, err)
 		outcome = err.Error()
 	}
 
