@@ -53,11 +53,11 @@ jobs:
         uses: mikepenz/action-junit-report@v3
         if: always()
         with:
-          report_paths: './tests/e2e/reports/*.xml'
+          report_paths: './tests/e2e/e2etest/reports/*.xml'
 
       - name: "Publish Test Artifacts"
         uses: actions/upload-artifact@v3
         if: ${{ failure() || runner.debug == '1' }}
         with:
           name: "VPP ${{ matrix.version }} RUN_ID ${{ github.run_id }}"
-          path: tests/e2e/logs/
+          path: tests/e2e/e2etest/logs/
