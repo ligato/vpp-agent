@@ -31,7 +31,7 @@ import (
 	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
-	. "go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // +----------------------------------------------------------------------+

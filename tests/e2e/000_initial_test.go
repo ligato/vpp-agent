@@ -21,7 +21,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 	ns "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
-	. "go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 func TestAgentInSync(t *testing.T) {

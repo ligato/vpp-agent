@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-	. "go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // TestInitFromFile tests configuring initial state of NB from file

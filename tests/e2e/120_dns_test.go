@@ -29,7 +29,7 @@ import (
 	vpp_dns "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/dns"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
-	. "go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // TestDnsCache tests ability of VPP to act as DNS server with cache capabilities (cache info from upstream DNS server)

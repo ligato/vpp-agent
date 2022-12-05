@@ -23,7 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	govppcore "go.fd.io/govpp/core"
 
-	"go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	"go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 	"go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 

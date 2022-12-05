@@ -22,7 +22,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	. "go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 func TestInfoVersionHandler(t *testing.T) {

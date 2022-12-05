@@ -27,7 +27,7 @@ import (
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_acl "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/acl"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	. "go.ligato.io/vpp-agent/v3/tests/harness/e2etest"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 func vppACLs(ctx *TestCtx) (string, error) {
