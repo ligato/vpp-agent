@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"go.fd.io/govpp/adapter/mock"
@@ -213,6 +214,10 @@ type mockStream struct {
 	stream        govppapi.Stream
 }
 
+func (m *mockStream) Context() context.Context {
+	return m.stream.Context()
+}
+
 func (m *mockStream) SendMsg(msg govppapi.Message) error {
 	m.mockVPPClient.mockedChannel.Msg = msg
 	m.mockVPPClient.mockedChannel.Msgs = append(m.mockVPPClient.mockedChannel.Msgs, msg)
@@ -244,6 +249,10 @@ func newMockVPPClient(ctx *TestCtx) *mockVPPClient {
 	conn, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	channel, err := conn.NewAPIChannel()
+	// TODO: From GoVPP version 0.7.0 onwards, default reply timeout for GoVPP
+	// channel is set to 0. But then some vppcalls tests hang indefinitely. So
+	// we set the reply timeout manually to 1 second.
+	channel.SetReplyTimeout(time.Second)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.MockChannel = &mockedChannel{
@@ -272,6 +281,10 @@ func (m *mockVPPClient) Invoke(ctx context.Context, req govppapi.Message, reply 
 	m.Msg = req
 	m.Msgs = append(m.Msgs, req)
 	return m.conn.Invoke(ctx, req, reply)
+}
+
+func (m *mockVPPClient) WatchEvent(ctx context.Context, event govppapi.Message) (govppapi.Watcher, error) {
+	return m.conn.WatchEvent(ctx, event)
 }
 
 func (m *mockVPPClient) Version() vpp.Version {

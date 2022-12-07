@@ -64,8 +64,13 @@ func proxyStats(client *proxy.Client) {
 	log.Printf("SystemStats: %+v", sysStats)
 }
 
+type BinapiClient struct {
+	*proxy.BinapiClient
+}
+
 func proxyBinapi(client *proxy.Client) {
-	binapiChannel, err := client.NewBinapiClient()
+	proxyBinapiChannel, err := client.NewBinapiClient()
+	binapiChannel := BinapiClient{proxyBinapiChannel}
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -112,4 +117,9 @@ func proxyBinapi(client *proxy.Client) {
 		}
 		log.Printf("- interface %d: %v", iface.SwIfIndex, iface.InterfaceName)
 	}
+}
+
+func (b BinapiClient) WatchEvent(ctx context.Context, event api.Message) (api.Watcher, error) {
+	// dummy implementation so that BinapiClient implements api.Connection interface
+	return nil, nil
 }

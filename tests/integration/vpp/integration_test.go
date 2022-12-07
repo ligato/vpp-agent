@@ -384,6 +384,10 @@ func (v *vppClient) Invoke(ctx context.Context, req govppapi.Message, reply govp
 	return v.conn.Invoke(ctx, req, reply)
 }
 
+func (v *vppClient) WatchEvent(ctx context.Context, event govppapi.Message) (govppapi.Watcher, error) {
+	return v.conn.WatchEvent(ctx, event)
+}
+
 func (v *vppClient) Version() vpp.Version {
 	return v.version
 }
