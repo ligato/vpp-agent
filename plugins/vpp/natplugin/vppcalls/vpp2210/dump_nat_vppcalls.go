@@ -15,7 +15,9 @@
 package vpp2210
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net"
 	"sort"
 	"strings"
@@ -195,42 +197,38 @@ func (h *NatVppHandler) nat44EiInterfacesDump() ([]*nat.Nat44Interface, error) {
 	// dump output NAT interfaces
 	var cursor uint32
 	for {
-		if cursor == ^uint32(0) {
-			return natIfs, nil
-		}
-		err := h.callsStream.SendMsg(&vpp_nat_ei.Nat44EiOutputInterfaceGet{Cursor: cursor})
+		rpcServ, err := h.natEi.Nat44EiOutputInterfaceGet(context.Background(), &vpp_nat_ei.Nat44EiOutputInterfaceGet{
+			Cursor: cursor,
+		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 		}
-	Inner:
+	RecvLoop:
 		for {
-			msg, err := h.callsStream.RecvMsg()
-			if err != nil {
+			details, reply, err := rpcServ.Recv()
+			if err != nil && err != io.EOF {
 				return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 			}
-			switch msg := msg.(type) {
-			case *vpp_nat_ei.Nat44EiOutputInterfaceDetails:
-				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+			if reply != nil {
+				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
+				// reply often returns cursor value of 0 repeatedly even though it should return
+				// ^uint32(0). So if the reply contains cursor that is the same as cursor
+				// from previous reply, return.
+				if reply.Cursor == cursor || reply.Cursor == ^uint32(0) {
+					return natIfs, nil
+				}
+				cursor = reply.Cursor
+				break RecvLoop
+			}
+			if details != nil {
+				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(details.SwIfIndex))
 				if !found {
-					h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-					continue Inner
+					h.log.Warnf("Interface with index %d not found in the mapping", details.SwIfIndex)
 				}
 				natIfs = append(natIfs, &nat.Nat44Interface{
 					Name:          ifName,
 					OutputFeature: true,
 				})
-			case *vpp_nat_ei.Nat44EiOutputInterfaceGetReply:
-				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
-				// reply often returns cursor value of 0 repeatedly even though it should return
-				// ^uint32(0). So if the reply contains cursor that is the same as cursor
-				// from previous reply, return.
-				if msg.Cursor == cursor {
-					return natIfs, nil
-				}
-				cursor = msg.Cursor
-				break Inner
-			default:
-				return nil, fmt.Errorf("received unexpected message %v during NAT44 interface output feature dump", msg)
 			}
 		}
 	}
@@ -269,42 +267,38 @@ func (h *NatVppHandler) nat44EdInterfacesDump() ([]*nat.Nat44Interface, error) {
 	// dump output NAT interfaces
 	var cursor uint32
 	for {
-		if cursor == ^uint32(0) {
-			return natIfs, nil
-		}
-		err := h.callsStream.SendMsg(&vpp_nat_ed.Nat44EdOutputInterfaceGet{Cursor: cursor})
+		rpcServ, err := h.natEd.Nat44EdOutputInterfaceGet(context.Background(), &vpp_nat_ed.Nat44EdOutputInterfaceGet{
+			Cursor: cursor,
+		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 		}
-	Inner:
+	RecvLoop:
 		for {
-			msg, err := h.callsStream.RecvMsg()
-			if err != nil {
+			details, reply, err := rpcServ.Recv()
+			if err != nil && err != io.EOF {
 				return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 			}
-			switch msg := msg.(type) {
-			case *vpp_nat_ed.Nat44EdOutputInterfaceDetails:
-				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+			if reply != nil {
+				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
+				// reply often returns cursor value of 0 repeatedly even though it should return
+				// ^uint32(0). So if the reply contains cursor that is the same as cursor
+				// from previous reply, return.
+				if reply.Cursor == cursor || reply.Cursor == ^uint32(0) {
+					return natIfs, nil
+				}
+				cursor = reply.Cursor
+				break RecvLoop
+			}
+			if details != nil {
+				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(details.SwIfIndex))
 				if !found {
-					h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-					continue Inner
+					h.log.Warnf("Interface with index %d not found in the mapping", details.SwIfIndex)
 				}
 				natIfs = append(natIfs, &nat.Nat44Interface{
 					Name:          ifName,
 					OutputFeature: true,
 				})
-			case *vpp_nat_ed.Nat44EdOutputInterfaceGetReply:
-				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
-				// reply often returns cursor value of 0 repeatedly even though it should return
-				// ^uint32(0). So if the reply contains cursor that is the same as cursor
-				// from previous reply, return.
-				if msg.Cursor == cursor {
-					return natIfs, nil
-				}
-				cursor = msg.Cursor
-				break Inner
-			default:
-				return nil, fmt.Errorf("received unexpected message %v during NAT44 interface output feature dump", msg)
 			}
 		}
 	}
@@ -951,42 +945,38 @@ func (h *NatVppHandler) nat44EiInterfaceDump() ([]*nat.Nat44Global_Interface, er
 	// dump output NAT interfaces
 	var cursor uint32
 	for {
-		if cursor == ^uint32(0) {
-			return natIfs, nil
-		}
-		err := h.callsStream.SendMsg(&vpp_nat_ei.Nat44EiOutputInterfaceGet{Cursor: cursor})
+		rpcServ, err := h.natEi.Nat44EiOutputInterfaceGet(context.Background(), &vpp_nat_ei.Nat44EiOutputInterfaceGet{
+			Cursor: cursor,
+		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 		}
-	Inner:
+	RecvLoop:
 		for {
-			msg, err := h.callsStream.RecvMsg()
-			if err != nil {
+			details, reply, err := rpcServ.Recv()
+			if err != nil && err != io.EOF {
 				return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 			}
-			switch msg := msg.(type) {
-			case *vpp_nat_ei.Nat44EiOutputInterfaceDetails:
-				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+			if reply != nil {
+				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
+				// reply often returns cursor value of 0 repeatedly even though it should return
+				// ^uint32(0). So if the reply contains cursor that is the same as cursor
+				// from previous reply, return.
+				if reply.Cursor == cursor || reply.Cursor == ^uint32(0) {
+					return natIfs, nil
+				}
+				cursor = reply.Cursor
+				break RecvLoop
+			}
+			if details != nil {
+				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(details.SwIfIndex))
 				if !found {
-					h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-					continue Inner
+					h.log.Warnf("Interface with index %d not found in the mapping", details.SwIfIndex)
 				}
 				natIfs = append(natIfs, &nat.Nat44Global_Interface{
 					Name:          ifName,
 					OutputFeature: true,
 				})
-			case *vpp_nat_ei.Nat44EiOutputInterfaceGetReply:
-				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
-				// reply often returns cursor value of 0 repeatedly even though it should return
-				// ^uint32(0). So if the reply contains cursor that is the same as cursor
-				// from previous reply, return.
-				if msg.Cursor == cursor {
-					return natIfs, nil
-				}
-				cursor = msg.Cursor
-				break Inner
-			default:
-				return nil, fmt.Errorf("received unexpected message %v during NAT44 interface output feature dump", msg)
 			}
 		}
 	}
@@ -1034,42 +1024,38 @@ func (h *NatVppHandler) nat44EdInterfaceDump() ([]*nat.Nat44Global_Interface, er
 	// dump output NAT interfaces
 	var cursor uint32
 	for {
-		if cursor == ^uint32(0) {
-			return natIfs, nil
-		}
-		err := h.callsStream.SendMsg(&vpp_nat_ed.Nat44EdOutputInterfaceGet{Cursor: cursor})
+		rpcServ, err := h.natEd.Nat44EdOutputInterfaceGet(context.Background(), &vpp_nat_ed.Nat44EdOutputInterfaceGet{
+			Cursor: cursor,
+		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 		}
-	Inner:
+	RecvLoop:
 		for {
-			msg, err := h.callsStream.RecvMsg()
-			if err != nil {
+			details, reply, err := rpcServ.Recv()
+			if err != nil && err != io.EOF {
 				return nil, fmt.Errorf("failed to dump NAT44 interface output feature: %v", err)
 			}
-			switch msg := msg.(type) {
-			case *vpp_nat_ed.Nat44EdOutputInterfaceDetails:
-				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(msg.SwIfIndex))
+			if reply != nil {
+				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
+				// reply often returns cursor value of 0 repeatedly even though it should return
+				// ^uint32(0). So if the reply contains cursor that is the same as cursor
+				// from previous reply, return.
+				if reply.Cursor == cursor || reply.Cursor == ^uint32(0) {
+					return natIfs, nil
+				}
+				cursor = reply.Cursor
+				break RecvLoop
+			}
+			if details != nil {
+				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(uint32(details.SwIfIndex))
 				if !found {
-					h.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
-					continue Inner
+					h.log.Warnf("Interface with index %d not found in the mapping", details.SwIfIndex)
 				}
 				natIfs = append(natIfs, &nat.Nat44Global_Interface{
 					Name:          ifName,
 					OutputFeature: true,
 				})
-			case *vpp_nat_ed.Nat44EdOutputInterfaceGetReply:
-				// TODO: Possible bug in VPP? When VPP contains no NAT interfaces this
-				// reply often returns cursor value of 0 repeatedly even though it should return
-				// ^uint32(0). So if the reply contains cursor that is the same as cursor
-				// from previous reply, return.
-				if msg.Cursor == cursor {
-					return natIfs, nil
-				}
-				cursor = msg.Cursor
-				break Inner
-			default:
-				return nil, fmt.Errorf("received unexpected message %v during NAT44 interface output feature dump", msg)
 			}
 		}
 	}
