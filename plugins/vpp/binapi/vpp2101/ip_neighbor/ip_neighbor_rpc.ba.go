@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  ip_neighbor.
+// RPCService defines RPC service ip_neighbor.
 type RPCService interface {
 	IPNeighborAddDel(ctx context.Context, in *IPNeighborAddDel) (*IPNeighborAddDelReply, error)
 	IPNeighborConfig(ctx context.Context, in *IPNeighborConfig) (*IPNeighborConfigReply, error)
@@ -37,7 +37,7 @@ func (c *serviceClient) IPNeighborAddDel(ctx context.Context, in *IPNeighborAddD
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPNeighborConfig(ctx context.Context, in *IPNeighborConfig) (*IPNeighborConfigReply, error) {
@@ -46,7 +46,7 @@ func (c *serviceClient) IPNeighborConfig(ctx context.Context, in *IPNeighborConf
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPNeighborDump(ctx context.Context, in *IPNeighborDump) (RPCService_IPNeighborDumpClient, error) {
@@ -82,6 +82,10 @@ func (c *serviceClient_IPNeighborDumpClient) Recv() (*IPNeighborDetails, error) 
 	case *IPNeighborDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -94,7 +98,7 @@ func (c *serviceClient) IPNeighborFlush(ctx context.Context, in *IPNeighborFlush
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPNeighborReplaceBegin(ctx context.Context, in *IPNeighborReplaceBegin) (*IPNeighborReplaceBeginReply, error) {
@@ -103,7 +107,7 @@ func (c *serviceClient) IPNeighborReplaceBegin(ctx context.Context, in *IPNeighb
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPNeighborReplaceEnd(ctx context.Context, in *IPNeighborReplaceEnd) (*IPNeighborReplaceEndReply, error) {
@@ -112,7 +116,7 @@ func (c *serviceClient) IPNeighborReplaceEnd(ctx context.Context, in *IPNeighbor
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WantIPNeighborEvents(ctx context.Context, in *WantIPNeighborEvents) (*WantIPNeighborEventsReply, error) {
@@ -121,7 +125,7 @@ func (c *serviceClient) WantIPNeighborEvents(ctx context.Context, in *WantIPNeig
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WantIPNeighborEventsV2(ctx context.Context, in *WantIPNeighborEventsV2) (*WantIPNeighborEventsV2Reply, error) {
@@ -130,5 +134,5 @@ func (c *serviceClient) WantIPNeighborEventsV2(ctx context.Context, in *WantIPNe
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

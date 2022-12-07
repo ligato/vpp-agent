@@ -95,6 +95,10 @@ func (c *serviceClient_BdIPMacDumpClient) Recv() (*BdIPMacDetails, error) {
 	case *BdIPMacDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -152,6 +156,10 @@ func (c *serviceClient_BridgeDomainDumpClient) Recv() (*BridgeDomainDetails, err
 	case *BridgeDomainDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -254,6 +262,10 @@ func (c *serviceClient_L2FibTableDumpClient) Recv() (*L2FibTableDetails, error) 
 	case *L2FibTableDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -338,6 +350,10 @@ func (c *serviceClient_L2XconnectDumpClient) Recv() (*L2XconnectDetails, error) 
 	case *L2XconnectDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

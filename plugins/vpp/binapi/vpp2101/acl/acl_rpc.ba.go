@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  acl.
+// RPCService defines RPC service acl.
 type RPCService interface {
 	ACLAddReplace(ctx context.Context, in *ACLAddReplace) (*ACLAddReplaceReply, error)
 	ACLDel(ctx context.Context, in *ACLDel) (*ACLDelReply, error)
@@ -48,7 +48,7 @@ func (c *serviceClient) ACLAddReplace(ctx context.Context, in *ACLAddReplace) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) ACLDel(ctx context.Context, in *ACLDel) (*ACLDelReply, error) {
@@ -57,7 +57,7 @@ func (c *serviceClient) ACLDel(ctx context.Context, in *ACLDel) (*ACLDelReply, e
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) ACLDump(ctx context.Context, in *ACLDump) (RPCService_ACLDumpClient, error) {
@@ -93,6 +93,10 @@ func (c *serviceClient_ACLDumpClient) Recv() (*ACLDetails, error) {
 	case *ACLDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -105,7 +109,7 @@ func (c *serviceClient) ACLInterfaceAddDel(ctx context.Context, in *ACLInterface
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) ACLInterfaceEtypeWhitelistDump(ctx context.Context, in *ACLInterfaceEtypeWhitelistDump) (RPCService_ACLInterfaceEtypeWhitelistDumpClient, error) {
@@ -141,6 +145,10 @@ func (c *serviceClient_ACLInterfaceEtypeWhitelistDumpClient) Recv() (*ACLInterfa
 	case *ACLInterfaceEtypeWhitelistDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -180,6 +188,10 @@ func (c *serviceClient_ACLInterfaceListDumpClient) Recv() (*ACLInterfaceListDeta
 	case *ACLInterfaceListDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -192,7 +204,7 @@ func (c *serviceClient) ACLInterfaceSetACLList(ctx context.Context, in *ACLInter
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) ACLInterfaceSetEtypeWhitelist(ctx context.Context, in *ACLInterfaceSetEtypeWhitelist) (*ACLInterfaceSetEtypeWhitelistReply, error) {
@@ -201,7 +213,7 @@ func (c *serviceClient) ACLInterfaceSetEtypeWhitelist(ctx context.Context, in *A
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) ACLPluginControlPing(ctx context.Context, in *ACLPluginControlPing) (*ACLPluginControlPingReply, error) {
@@ -210,7 +222,7 @@ func (c *serviceClient) ACLPluginControlPing(ctx context.Context, in *ACLPluginC
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) ACLPluginGetConnTableMaxEntries(ctx context.Context, in *ACLPluginGetConnTableMaxEntries) (*ACLPluginGetConnTableMaxEntriesReply, error) {
@@ -237,7 +249,7 @@ func (c *serviceClient) ACLStatsIntfCountersEnable(ctx context.Context, in *ACLS
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MacipACLAdd(ctx context.Context, in *MacipACLAdd) (*MacipACLAddReply, error) {
@@ -246,7 +258,7 @@ func (c *serviceClient) MacipACLAdd(ctx context.Context, in *MacipACLAdd) (*Maci
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MacipACLAddReplace(ctx context.Context, in *MacipACLAddReplace) (*MacipACLAddReplaceReply, error) {
@@ -255,7 +267,7 @@ func (c *serviceClient) MacipACLAddReplace(ctx context.Context, in *MacipACLAddR
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MacipACLDel(ctx context.Context, in *MacipACLDel) (*MacipACLDelReply, error) {
@@ -264,7 +276,7 @@ func (c *serviceClient) MacipACLDel(ctx context.Context, in *MacipACLDel) (*Maci
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MacipACLDump(ctx context.Context, in *MacipACLDump) (RPCService_MacipACLDumpClient, error) {
@@ -300,6 +312,10 @@ func (c *serviceClient_MacipACLDumpClient) Recv() (*MacipACLDetails, error) {
 	case *MacipACLDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -312,7 +328,7 @@ func (c *serviceClient) MacipACLInterfaceAddDel(ctx context.Context, in *MacipAC
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MacipACLInterfaceGet(ctx context.Context, in *MacipACLInterfaceGet) (*MacipACLInterfaceGetReply, error) {
@@ -357,6 +373,10 @@ func (c *serviceClient_MacipACLInterfaceListDumpClient) Recv() (*MacipACLInterfa
 	case *MacipACLInterfaceListDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

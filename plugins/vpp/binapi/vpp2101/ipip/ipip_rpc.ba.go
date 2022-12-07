@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  ipip.
+// RPCService defines RPC service ipip.
 type RPCService interface {
 	Ipip6rdAddTunnel(ctx context.Context, in *Ipip6rdAddTunnel) (*Ipip6rdAddTunnelReply, error)
 	Ipip6rdDelTunnel(ctx context.Context, in *Ipip6rdDelTunnel) (*Ipip6rdDelTunnelReply, error)
@@ -34,7 +34,7 @@ func (c *serviceClient) Ipip6rdAddTunnel(ctx context.Context, in *Ipip6rdAddTunn
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) Ipip6rdDelTunnel(ctx context.Context, in *Ipip6rdDelTunnel) (*Ipip6rdDelTunnelReply, error) {
@@ -43,7 +43,7 @@ func (c *serviceClient) Ipip6rdDelTunnel(ctx context.Context, in *Ipip6rdDelTunn
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IpipAddTunnel(ctx context.Context, in *IpipAddTunnel) (*IpipAddTunnelReply, error) {
@@ -52,7 +52,7 @@ func (c *serviceClient) IpipAddTunnel(ctx context.Context, in *IpipAddTunnel) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IpipDelTunnel(ctx context.Context, in *IpipDelTunnel) (*IpipDelTunnelReply, error) {
@@ -61,7 +61,7 @@ func (c *serviceClient) IpipDelTunnel(ctx context.Context, in *IpipDelTunnel) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IpipTunnelDump(ctx context.Context, in *IpipTunnelDump) (RPCService_IpipTunnelDumpClient, error) {
@@ -97,6 +97,10 @@ func (c *serviceClient_IpipTunnelDumpClient) Recv() (*IpipTunnelDetails, error) 
 	case *IpipTunnelDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

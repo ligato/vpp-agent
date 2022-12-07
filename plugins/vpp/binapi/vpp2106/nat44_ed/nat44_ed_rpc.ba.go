@@ -158,6 +158,10 @@ func (c *serviceClient_Nat44AddressDumpClient) Recv() (*Nat44AddressDetails, err
 	case *Nat44AddressDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -260,6 +264,10 @@ func (c *serviceClient_Nat44IdentityMappingDumpClient) Recv() (*Nat44IdentityMap
 	case *Nat44IdentityMappingDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -317,6 +325,10 @@ func (c *serviceClient_Nat44InterfaceAddrDumpClient) Recv() (*Nat44InterfaceAddr
 	case *Nat44InterfaceAddrDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -356,6 +368,10 @@ func (c *serviceClient_Nat44InterfaceDumpClient) Recv() (*Nat44InterfaceDetails,
 	case *Nat44InterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -395,6 +411,10 @@ func (c *serviceClient_Nat44InterfaceOutputFeatureDumpClient) Recv() (*Nat44Inte
 	case *Nat44InterfaceOutputFeatureDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -443,6 +463,10 @@ func (c *serviceClient_Nat44LbStaticMappingDumpClient) Recv() (*Nat44LbStaticMap
 	case *Nat44LbStaticMappingDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -518,6 +542,10 @@ func (c *serviceClient_Nat44StaticMappingDumpClient) Recv() (*Nat44StaticMapping
 	case *Nat44StaticMappingDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -557,6 +585,10 @@ func (c *serviceClient_Nat44UserDumpClient) Recv() (*Nat44UserDetails, error) {
 	case *Nat44UserDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -596,6 +628,10 @@ func (c *serviceClient_Nat44UserSessionDumpClient) Recv() (*Nat44UserSessionDeta
 	case *Nat44UserSessionDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -797,6 +833,10 @@ func (c *serviceClient_NatWorkerDumpClient) Recv() (*NatWorkerDetails, error) {
 	case *NatWorkerDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

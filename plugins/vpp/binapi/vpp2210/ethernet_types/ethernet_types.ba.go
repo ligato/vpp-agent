@@ -3,8 +3,7 @@
 // Package ethernet_types contains generated bindings for API file ethernet_types.api.
 //
 // Contents:
-//
-//	1 alias
+// -  1 alias
 package ethernet_types
 
 import (

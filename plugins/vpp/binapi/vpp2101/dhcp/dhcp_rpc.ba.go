@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  dhcp.
+// RPCService defines RPC service dhcp.
 type RPCService interface {
 	DHCP6ClientsEnableDisable(ctx context.Context, in *DHCP6ClientsEnableDisable) (*DHCP6ClientsEnableDisableReply, error)
 	DHCP6DuidLlSet(ctx context.Context, in *DHCP6DuidLlSet) (*DHCP6DuidLlSetReply, error)
@@ -42,7 +42,7 @@ func (c *serviceClient) DHCP6ClientsEnableDisable(ctx context.Context, in *DHCP6
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCP6DuidLlSet(ctx context.Context, in *DHCP6DuidLlSet) (*DHCP6DuidLlSetReply, error) {
@@ -51,7 +51,7 @@ func (c *serviceClient) DHCP6DuidLlSet(ctx context.Context, in *DHCP6DuidLlSet) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCP6PdSendClientMessage(ctx context.Context, in *DHCP6PdSendClientMessage) (*DHCP6PdSendClientMessageReply, error) {
@@ -60,7 +60,7 @@ func (c *serviceClient) DHCP6PdSendClientMessage(ctx context.Context, in *DHCP6P
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCP6SendClientMessage(ctx context.Context, in *DHCP6SendClientMessage) (*DHCP6SendClientMessageReply, error) {
@@ -69,7 +69,7 @@ func (c *serviceClient) DHCP6SendClientMessage(ctx context.Context, in *DHCP6Sen
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCPClientConfig(ctx context.Context, in *DHCPClientConfig) (*DHCPClientConfigReply, error) {
@@ -78,7 +78,7 @@ func (c *serviceClient) DHCPClientConfig(ctx context.Context, in *DHCPClientConf
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCPClientDump(ctx context.Context, in *DHCPClientDump) (RPCService_DHCPClientDumpClient, error) {
@@ -114,6 +114,10 @@ func (c *serviceClient_DHCPClientDumpClient) Recv() (*DHCPClientDetails, error) 
 	case *DHCPClientDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -126,7 +130,7 @@ func (c *serviceClient) DHCPPluginControlPing(ctx context.Context, in *DHCPPlugi
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCPPluginGetVersion(ctx context.Context, in *DHCPPluginGetVersion) (*DHCPPluginGetVersionReply, error) {
@@ -144,7 +148,7 @@ func (c *serviceClient) DHCPProxyConfig(ctx context.Context, in *DHCPProxyConfig
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DHCPProxyDump(ctx context.Context, in *DHCPProxyDump) (RPCService_DHCPProxyDumpClient, error) {
@@ -180,6 +184,10 @@ func (c *serviceClient_DHCPProxyDumpClient) Recv() (*DHCPProxyDetails, error) {
 	case *DHCPProxyDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -192,7 +200,7 @@ func (c *serviceClient) DHCPProxySetVss(ctx context.Context, in *DHCPProxySetVss
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WantDHCP6PdReplyEvents(ctx context.Context, in *WantDHCP6PdReplyEvents) (*WantDHCP6PdReplyEventsReply, error) {
@@ -201,7 +209,7 @@ func (c *serviceClient) WantDHCP6PdReplyEvents(ctx context.Context, in *WantDHCP
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WantDHCP6ReplyEvents(ctx context.Context, in *WantDHCP6ReplyEvents) (*WantDHCP6ReplyEventsReply, error) {
@@ -210,5 +218,5 @@ func (c *serviceClient) WantDHCP6ReplyEvents(ctx context.Context, in *WantDHCP6R
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

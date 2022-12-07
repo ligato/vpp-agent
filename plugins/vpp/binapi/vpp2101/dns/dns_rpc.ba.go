@@ -8,7 +8,7 @@ import (
 	api "go.fd.io/govpp/api"
 )
 
-// RPCService defines RPC service  dns.
+// RPCService defines RPC service dns.
 type RPCService interface {
 	DNSEnableDisable(ctx context.Context, in *DNSEnableDisable) (*DNSEnableDisableReply, error)
 	DNSNameServerAddDel(ctx context.Context, in *DNSNameServerAddDel) (*DNSNameServerAddDelReply, error)
@@ -30,7 +30,7 @@ func (c *serviceClient) DNSEnableDisable(ctx context.Context, in *DNSEnableDisab
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DNSNameServerAddDel(ctx context.Context, in *DNSNameServerAddDel) (*DNSNameServerAddDelReply, error) {
@@ -39,7 +39,7 @@ func (c *serviceClient) DNSNameServerAddDel(ctx context.Context, in *DNSNameServ
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DNSResolveIP(ctx context.Context, in *DNSResolveIP) (*DNSResolveIPReply, error) {
@@ -48,7 +48,7 @@ func (c *serviceClient) DNSResolveIP(ctx context.Context, in *DNSResolveIP) (*DN
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) DNSResolveName(ctx context.Context, in *DNSResolveName) (*DNSResolveNameReply, error) {
@@ -57,5 +57,5 @@ func (c *serviceClient) DNSResolveName(ctx context.Context, in *DNSResolveName) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

@@ -3,9 +3,8 @@
 // Package bond contains generated bindings for API file bond.api.
 //
 // Contents:
-//   2 enums
-//  24 messages
-//
+// -  2 enums
+// - 24 messages
 package bond
 
 import (

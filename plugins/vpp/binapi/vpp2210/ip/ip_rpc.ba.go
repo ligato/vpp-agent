@@ -359,7 +359,7 @@ func (c *serviceClient) IPPathMtuGet(ctx context.Context, in *IPPathMtuGet) (RPC
 }
 
 type RPCService_IPPathMtuGetClient interface {
-	Recv() (*IPPathMtuDetails, error)
+	Recv() (*IPPathMtuDetails, *IPPathMtuGetReply, error)
 	api.Stream
 }
 
@@ -367,22 +367,25 @@ type serviceClient_IPPathMtuGetClient struct {
 	api.Stream
 }
 
-func (c *serviceClient_IPPathMtuGetClient) Recv() (*IPPathMtuDetails, error) {
+func (c *serviceClient_IPPathMtuGetClient) Recv() (*IPPathMtuDetails, *IPPathMtuGetReply, error) {
 	msg, err := c.Stream.RecvMsg()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	switch m := msg.(type) {
 	case *IPPathMtuDetails:
-		return m, nil
+		return m, nil, nil
 	case *IPPathMtuGetReply:
+		if err := api.RetvalToVPPApiError(m.Retval); err != nil {
+			return nil, nil, err
+		}
 		err = c.Stream.Close()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return nil, io.EOF
+		return nil, m, io.EOF
 	default:
-		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
+		return nil, nil, fmt.Errorf("unexpected message: %T %v", m, m)
 	}
 }
 

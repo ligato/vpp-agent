@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  vmxnet3.
+// RPCService defines RPC service vmxnet3.
 type RPCService interface {
 	SwVmxnet3InterfaceDump(ctx context.Context, in *SwVmxnet3InterfaceDump) (RPCService_SwVmxnet3InterfaceDumpClient, error)
 	Vmxnet3Create(ctx context.Context, in *Vmxnet3Create) (*Vmxnet3CreateReply, error)
@@ -60,6 +60,10 @@ func (c *serviceClient_SwVmxnet3InterfaceDumpClient) Recv() (*SwVmxnet3Interface
 	case *SwVmxnet3InterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -72,7 +76,7 @@ func (c *serviceClient) Vmxnet3Create(ctx context.Context, in *Vmxnet3Create) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) Vmxnet3Delete(ctx context.Context, in *Vmxnet3Delete) (*Vmxnet3DeleteReply, error) {
@@ -81,7 +85,7 @@ func (c *serviceClient) Vmxnet3Delete(ctx context.Context, in *Vmxnet3Delete) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) Vmxnet3Dump(ctx context.Context, in *Vmxnet3Dump) (RPCService_Vmxnet3DumpClient, error) {
@@ -117,6 +121,10 @@ func (c *serviceClient_Vmxnet3DumpClient) Recv() (*Vmxnet3Details, error) {
 	case *Vmxnet3Details:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

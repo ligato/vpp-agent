@@ -3,8 +3,7 @@
 // Package vxlan contains generated bindings for API file vxlan.api.
 //
 // Contents:
-//   8 messages
-//
+// -  8 messages
 package vxlan
 
 import (

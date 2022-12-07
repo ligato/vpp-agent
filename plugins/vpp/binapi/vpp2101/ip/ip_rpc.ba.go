@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  ip.
+// RPCService defines RPC service ip.
 type RPCService interface {
 	IoamDisable(ctx context.Context, in *IoamDisable) (*IoamDisableReply, error)
 	IoamEnable(ctx context.Context, in *IoamEnable) (*IoamEnableReply, error)
@@ -59,7 +59,7 @@ func (c *serviceClient) IoamDisable(ctx context.Context, in *IoamDisable) (*Ioam
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IoamEnable(ctx context.Context, in *IoamEnable) (*IoamEnableReply, error) {
@@ -68,7 +68,7 @@ func (c *serviceClient) IoamEnable(ctx context.Context, in *IoamEnable) (*IoamEn
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPAddressDump(ctx context.Context, in *IPAddressDump) (RPCService_IPAddressDumpClient, error) {
@@ -104,6 +104,10 @@ func (c *serviceClient_IPAddressDumpClient) Recv() (*IPAddressDetails, error) {
 	case *IPAddressDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -116,7 +120,7 @@ func (c *serviceClient) IPContainerProxyAddDel(ctx context.Context, in *IPContai
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPContainerProxyDump(ctx context.Context, in *IPContainerProxyDump) (RPCService_IPContainerProxyDumpClient, error) {
@@ -152,6 +156,10 @@ func (c *serviceClient_IPContainerProxyDumpClient) Recv() (*IPContainerProxyDeta
 	case *IPContainerProxyDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -191,6 +199,10 @@ func (c *serviceClient_IPDumpClient) Recv() (*IPDetails, error) {
 	case *IPDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -203,7 +215,7 @@ func (c *serviceClient) IPMrouteAddDel(ctx context.Context, in *IPMrouteAddDel) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPMrouteDump(ctx context.Context, in *IPMrouteDump) (RPCService_IPMrouteDumpClient, error) {
@@ -239,6 +251,10 @@ func (c *serviceClient_IPMrouteDumpClient) Recv() (*IPMrouteDetails, error) {
 	case *IPMrouteDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -278,6 +294,10 @@ func (c *serviceClient_IPMtableDumpClient) Recv() (*IPMtableDetails, error) {
 	case *IPMtableDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -290,7 +310,7 @@ func (c *serviceClient) IPPuntPolice(ctx context.Context, in *IPPuntPolice) (*IP
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPPuntRedirect(ctx context.Context, in *IPPuntRedirect) (*IPPuntRedirectReply, error) {
@@ -299,7 +319,7 @@ func (c *serviceClient) IPPuntRedirect(ctx context.Context, in *IPPuntRedirect) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPPuntRedirectDump(ctx context.Context, in *IPPuntRedirectDump) (RPCService_IPPuntRedirectDumpClient, error) {
@@ -335,6 +355,10 @@ func (c *serviceClient_IPPuntRedirectDumpClient) Recv() (*IPPuntRedirectDetails,
 	case *IPPuntRedirectDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -347,7 +371,7 @@ func (c *serviceClient) IPReassemblyEnableDisable(ctx context.Context, in *IPRea
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPReassemblyGet(ctx context.Context, in *IPReassemblyGet) (*IPReassemblyGetReply, error) {
@@ -356,7 +380,7 @@ func (c *serviceClient) IPReassemblyGet(ctx context.Context, in *IPReassemblyGet
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPReassemblySet(ctx context.Context, in *IPReassemblySet) (*IPReassemblySetReply, error) {
@@ -365,7 +389,7 @@ func (c *serviceClient) IPReassemblySet(ctx context.Context, in *IPReassemblySet
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPRouteAddDel(ctx context.Context, in *IPRouteAddDel) (*IPRouteAddDelReply, error) {
@@ -374,7 +398,7 @@ func (c *serviceClient) IPRouteAddDel(ctx context.Context, in *IPRouteAddDel) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPRouteDump(ctx context.Context, in *IPRouteDump) (RPCService_IPRouteDumpClient, error) {
@@ -410,6 +434,10 @@ func (c *serviceClient_IPRouteDumpClient) Recv() (*IPRouteDetails, error) {
 	case *IPRouteDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -422,7 +450,7 @@ func (c *serviceClient) IPRouteLookup(ctx context.Context, in *IPRouteLookup) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPSourceAndPortRangeCheckAddDel(ctx context.Context, in *IPSourceAndPortRangeCheckAddDel) (*IPSourceAndPortRangeCheckAddDelReply, error) {
@@ -431,7 +459,7 @@ func (c *serviceClient) IPSourceAndPortRangeCheckAddDel(ctx context.Context, in 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPSourceAndPortRangeCheckInterfaceAddDel(ctx context.Context, in *IPSourceAndPortRangeCheckInterfaceAddDel) (*IPSourceAndPortRangeCheckInterfaceAddDelReply, error) {
@@ -440,7 +468,7 @@ func (c *serviceClient) IPSourceAndPortRangeCheckInterfaceAddDel(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPTableAddDel(ctx context.Context, in *IPTableAddDel) (*IPTableAddDelReply, error) {
@@ -449,7 +477,7 @@ func (c *serviceClient) IPTableAddDel(ctx context.Context, in *IPTableAddDel) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPTableDump(ctx context.Context, in *IPTableDump) (RPCService_IPTableDumpClient, error) {
@@ -485,6 +513,10 @@ func (c *serviceClient_IPTableDumpClient) Recv() (*IPTableDetails, error) {
 	case *IPTableDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -497,7 +529,7 @@ func (c *serviceClient) IPTableFlush(ctx context.Context, in *IPTableFlush) (*IP
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPTableReplaceBegin(ctx context.Context, in *IPTableReplaceBegin) (*IPTableReplaceBeginReply, error) {
@@ -506,7 +538,7 @@ func (c *serviceClient) IPTableReplaceBegin(ctx context.Context, in *IPTableRepl
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPTableReplaceEnd(ctx context.Context, in *IPTableReplaceEnd) (*IPTableReplaceEndReply, error) {
@@ -515,7 +547,7 @@ func (c *serviceClient) IPTableReplaceEnd(ctx context.Context, in *IPTableReplac
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) IPUnnumberedDump(ctx context.Context, in *IPUnnumberedDump) (RPCService_IPUnnumberedDumpClient, error) {
@@ -551,6 +583,10 @@ func (c *serviceClient_IPUnnumberedDumpClient) Recv() (*IPUnnumberedDetails, err
 	case *IPUnnumberedDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -590,6 +626,10 @@ func (c *serviceClient_MfibSignalDumpClient) Recv() (*MfibSignalDetails, error) 
 	case *MfibSignalDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -602,7 +642,7 @@ func (c *serviceClient) SetIPFlowHash(ctx context.Context, in *SetIPFlowHash) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SwInterfaceIP6EnableDisable(ctx context.Context, in *SwInterfaceIP6EnableDisable) (*SwInterfaceIP6EnableDisableReply, error) {
@@ -611,7 +651,7 @@ func (c *serviceClient) SwInterfaceIP6EnableDisable(ctx context.Context, in *SwI
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SwInterfaceIP6SetLinkLocalAddress(ctx context.Context, in *SwInterfaceIP6SetLinkLocalAddress) (*SwInterfaceIP6SetLinkLocalAddressReply, error) {
@@ -620,5 +660,5 @@ func (c *serviceClient) SwInterfaceIP6SetLinkLocalAddress(ctx context.Context, i
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

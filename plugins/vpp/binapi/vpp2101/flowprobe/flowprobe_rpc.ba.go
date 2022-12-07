@@ -8,7 +8,7 @@ import (
 	api "go.fd.io/govpp/api"
 )
 
-// RPCService defines RPC service  flowprobe.
+// RPCService defines RPC service flowprobe.
 type RPCService interface {
 	FlowprobeParams(ctx context.Context, in *FlowprobeParams) (*FlowprobeParamsReply, error)
 	FlowprobeTxInterfaceAddDel(ctx context.Context, in *FlowprobeTxInterfaceAddDel) (*FlowprobeTxInterfaceAddDelReply, error)
@@ -28,7 +28,7 @@ func (c *serviceClient) FlowprobeParams(ctx context.Context, in *FlowprobeParams
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) FlowprobeTxInterfaceAddDel(ctx context.Context, in *FlowprobeTxInterfaceAddDel) (*FlowprobeTxInterfaceAddDelReply, error) {
@@ -37,5 +37,5 @@ func (c *serviceClient) FlowprobeTxInterfaceAddDel(ctx context.Context, in *Flow
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

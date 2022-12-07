@@ -8,7 +8,7 @@ import (
 	api "go.fd.io/govpp/api"
 )
 
-// RPCService defines RPC service  memclnt.
+// RPCService defines RPC service memclnt.
 type RPCService interface {
 	APIVersions(ctx context.Context, in *APIVersions) (*APIVersionsReply, error)
 	GetFirstMsgID(ctx context.Context, in *GetFirstMsgID) (*GetFirstMsgIDReply, error)
@@ -39,7 +39,7 @@ func (c *serviceClient) APIVersions(ctx context.Context, in *APIVersions) (*APIV
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) GetFirstMsgID(ctx context.Context, in *GetFirstMsgID) (*GetFirstMsgIDReply, error) {
@@ -48,7 +48,7 @@ func (c *serviceClient) GetFirstMsgID(ctx context.Context, in *GetFirstMsgID) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MemclntCreate(ctx context.Context, in *MemclntCreate) (*MemclntCreateReply, error) {
@@ -75,7 +75,7 @@ func (c *serviceClient) MemclntKeepalive(ctx context.Context, in *MemclntKeepali
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) MemclntReadTimeout(ctx context.Context, in *MemclntReadTimeout) error {
@@ -84,6 +84,10 @@ func (c *serviceClient) MemclntReadTimeout(ctx context.Context, in *MemclntReadT
 		return err
 	}
 	err = stream.SendMsg(in)
+	if err != nil {
+		return err
+	}
+	err = stream.Close()
 	if err != nil {
 		return err
 	}
@@ -99,6 +103,10 @@ func (c *serviceClient) MemclntRxThreadSuspend(ctx context.Context, in *MemclntR
 	if err != nil {
 		return err
 	}
+	err = stream.Close()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -108,7 +116,7 @@ func (c *serviceClient) RPCCall(ctx context.Context, in *RPCCall) (*RPCCallReply
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) RxThreadExit(ctx context.Context, in *RxThreadExit) error {
@@ -117,6 +125,10 @@ func (c *serviceClient) RxThreadExit(ctx context.Context, in *RxThreadExit) erro
 		return err
 	}
 	err = stream.SendMsg(in)
+	if err != nil {
+		return err
+	}
+	err = stream.Close()
 	if err != nil {
 		return err
 	}
@@ -129,7 +141,7 @@ func (c *serviceClient) SockInitShm(ctx context.Context, in *SockInitShm) (*Sock
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SockclntCreate(ctx context.Context, in *SockclntCreate) (*SockclntCreateReply, error) {
@@ -156,6 +168,10 @@ func (c *serviceClient) TracePluginMsgIds(ctx context.Context, in *TracePluginMs
 		return err
 	}
 	err = stream.SendMsg(in)
+	if err != nil {
+		return err
+	}
+	err = stream.Close()
 	if err != nil {
 		return err
 	}

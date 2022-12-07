@@ -3,9 +3,8 @@
 // Package nat44_ei contains generated bindings for API file nat44_ei.api.
 //
 // Contents:
-//   1 enum
-//  73 messages
-//
+// -  1 enum
+// - 73 messages
 package nat44_ei
 
 import (

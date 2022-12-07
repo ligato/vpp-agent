@@ -93,6 +93,10 @@ func (c *serviceClient_ACLDumpClient) Recv() (*ACLDetails, error) {
 	case *ACLDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -141,6 +145,10 @@ func (c *serviceClient_ACLInterfaceEtypeWhitelistDumpClient) Recv() (*ACLInterfa
 	case *ACLInterfaceEtypeWhitelistDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -180,6 +188,10 @@ func (c *serviceClient_ACLInterfaceListDumpClient) Recv() (*ACLInterfaceListDeta
 	case *ACLInterfaceListDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -300,6 +312,10 @@ func (c *serviceClient_MacipACLDumpClient) Recv() (*MacipACLDetails, error) {
 	case *MacipACLDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -357,6 +373,10 @@ func (c *serviceClient_MacipACLInterfaceListDumpClient) Recv() (*MacipACLInterfa
 	case *MacipACLInterfaceListDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

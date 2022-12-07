@@ -3,8 +3,7 @@
 // Package sr_types contains generated bindings for API file sr_types.api.
 //
 // Contents:
-//   3 enums
-//
+// -  3 enums
 package sr_types
 
 import (
@@ -18,6 +17,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "sr_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x7955bd50
+)
 
 // SrBehavior defines enum 'sr_behavior'.
 type SrBehavior uint8

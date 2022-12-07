@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  punt.
+// RPCService defines RPC service punt.
 type RPCService interface {
 	PuntReasonDump(ctx context.Context, in *PuntReasonDump) (RPCService_PuntReasonDumpClient, error)
 	PuntSocketDeregister(ctx context.Context, in *PuntSocketDeregister) (*PuntSocketDeregisterReply, error)
@@ -61,6 +61,10 @@ func (c *serviceClient_PuntReasonDumpClient) Recv() (*PuntReasonDetails, error) 
 	case *PuntReasonDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -73,7 +77,7 @@ func (c *serviceClient) PuntSocketDeregister(ctx context.Context, in *PuntSocket
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) PuntSocketDump(ctx context.Context, in *PuntSocketDump) (RPCService_PuntSocketDumpClient, error) {
@@ -109,6 +113,10 @@ func (c *serviceClient_PuntSocketDumpClient) Recv() (*PuntSocketDetails, error) 
 	case *PuntSocketDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -121,7 +129,7 @@ func (c *serviceClient) PuntSocketRegister(ctx context.Context, in *PuntSocketRe
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SetPunt(ctx context.Context, in *SetPunt) (*SetPuntReply, error) {
@@ -130,5 +138,5 @@ func (c *serviceClient) SetPunt(ctx context.Context, in *SetPunt) (*SetPuntReply
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

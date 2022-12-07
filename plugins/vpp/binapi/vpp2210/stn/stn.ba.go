@@ -3,8 +3,7 @@
 // Package stn contains generated bindings for API file stn.api.
 //
 // Contents:
-//
-//	4 messages
+// -  4 messages
 package stn
 
 import (

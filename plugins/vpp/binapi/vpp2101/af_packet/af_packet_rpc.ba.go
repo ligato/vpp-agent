@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  af_packet.
+// RPCService defines RPC service af_packet.
 type RPCService interface {
 	AfPacketCreate(ctx context.Context, in *AfPacketCreate) (*AfPacketCreateReply, error)
 	AfPacketDelete(ctx context.Context, in *AfPacketDelete) (*AfPacketDeleteReply, error)
@@ -33,7 +33,7 @@ func (c *serviceClient) AfPacketCreate(ctx context.Context, in *AfPacketCreate) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) AfPacketDelete(ctx context.Context, in *AfPacketDelete) (*AfPacketDeleteReply, error) {
@@ -42,7 +42,7 @@ func (c *serviceClient) AfPacketDelete(ctx context.Context, in *AfPacketDelete) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) AfPacketDump(ctx context.Context, in *AfPacketDump) (RPCService_AfPacketDumpClient, error) {
@@ -78,6 +78,10 @@ func (c *serviceClient_AfPacketDumpClient) Recv() (*AfPacketDetails, error) {
 	case *AfPacketDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -90,5 +94,5 @@ func (c *serviceClient) AfPacketSetL4CksumOffload(ctx context.Context, in *AfPac
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

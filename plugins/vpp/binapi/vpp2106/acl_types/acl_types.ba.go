@@ -3,9 +3,8 @@
 // Package acl_types contains generated bindings for API file acl_types.api.
 //
 // Contents:
-//   1 enum
-//   2 structs
-//
+// -  1 enum
+// -  2 structs
 package acl_types
 
 import (
@@ -21,6 +20,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "acl_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x878da4fa
+)
 
 // ACLAction defines enum 'acl_action'.
 type ACLAction uint8

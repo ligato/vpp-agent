@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  abf.
+// RPCService defines RPC service abf.
 type RPCService interface {
 	AbfItfAttachAddDel(ctx context.Context, in *AbfItfAttachAddDel) (*AbfItfAttachAddDelReply, error)
 	AbfItfAttachDump(ctx context.Context, in *AbfItfAttachDump) (RPCService_AbfItfAttachDumpClient, error)
@@ -34,7 +34,7 @@ func (c *serviceClient) AbfItfAttachAddDel(ctx context.Context, in *AbfItfAttach
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) AbfItfAttachDump(ctx context.Context, in *AbfItfAttachDump) (RPCService_AbfItfAttachDumpClient, error) {
@@ -70,6 +70,10 @@ func (c *serviceClient_AbfItfAttachDumpClient) Recv() (*AbfItfAttachDetails, err
 	case *AbfItfAttachDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -91,7 +95,7 @@ func (c *serviceClient) AbfPolicyAddDel(ctx context.Context, in *AbfPolicyAddDel
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) AbfPolicyDump(ctx context.Context, in *AbfPolicyDump) (RPCService_AbfPolicyDumpClient, error) {
@@ -127,6 +131,10 @@ func (c *serviceClient_AbfPolicyDumpClient) Recv() (*AbfPolicyDetails, error) {
 	case *AbfPolicyDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

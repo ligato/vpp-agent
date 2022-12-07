@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  gre.
+// RPCService defines RPC service gre.
 type RPCService interface {
 	GreTunnelAddDel(ctx context.Context, in *GreTunnelAddDel) (*GreTunnelAddDelReply, error)
 	GreTunnelDump(ctx context.Context, in *GreTunnelDump) (RPCService_GreTunnelDumpClient, error)
@@ -31,7 +31,7 @@ func (c *serviceClient) GreTunnelAddDel(ctx context.Context, in *GreTunnelAddDel
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) GreTunnelDump(ctx context.Context, in *GreTunnelDump) (RPCService_GreTunnelDumpClient, error) {
@@ -67,6 +67,10 @@ func (c *serviceClient_GreTunnelDumpClient) Recv() (*GreTunnelDetails, error) {
 	case *GreTunnelDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

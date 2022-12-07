@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  vxlan_gpe.
+// RPCService defines RPC service vxlan_gpe.
 type RPCService interface {
 	SwInterfaceSetVxlanGpeBypass(ctx context.Context, in *SwInterfaceSetVxlanGpeBypass) (*SwInterfaceSetVxlanGpeBypassReply, error)
 	VxlanGpeAddDelTunnel(ctx context.Context, in *VxlanGpeAddDelTunnel) (*VxlanGpeAddDelTunnelReply, error)
@@ -32,7 +32,7 @@ func (c *serviceClient) SwInterfaceSetVxlanGpeBypass(ctx context.Context, in *Sw
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) VxlanGpeAddDelTunnel(ctx context.Context, in *VxlanGpeAddDelTunnel) (*VxlanGpeAddDelTunnelReply, error) {
@@ -41,7 +41,7 @@ func (c *serviceClient) VxlanGpeAddDelTunnel(ctx context.Context, in *VxlanGpeAd
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) VxlanGpeTunnelDump(ctx context.Context, in *VxlanGpeTunnelDump) (RPCService_VxlanGpeTunnelDumpClient, error) {
@@ -77,6 +77,10 @@ func (c *serviceClient_VxlanGpeTunnelDumpClient) Recv() (*VxlanGpeTunnelDetails,
 	case *VxlanGpeTunnelDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

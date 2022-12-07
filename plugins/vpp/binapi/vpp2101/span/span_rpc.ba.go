@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  span.
+// RPCService defines RPC service span.
 type RPCService interface {
 	SwInterfaceSpanDump(ctx context.Context, in *SwInterfaceSpanDump) (RPCService_SwInterfaceSpanDumpClient, error)
 	SwInterfaceSpanEnableDisable(ctx context.Context, in *SwInterfaceSpanEnableDisable) (*SwInterfaceSpanEnableDisableReply, error)
@@ -58,6 +58,10 @@ func (c *serviceClient_SwInterfaceSpanDumpClient) Recv() (*SwInterfaceSpanDetail
 	case *SwInterfaceSpanDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -70,5 +74,5 @@ func (c *serviceClient) SwInterfaceSpanEnableDisable(ctx context.Context, in *Sw
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

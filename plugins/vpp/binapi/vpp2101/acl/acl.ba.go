@@ -3,8 +3,7 @@
 // Package acl contains generated bindings for API file acl.api.
 //
 // Contents:
-//  38 messages
-//
+// - 38 messages
 package acl
 
 import (

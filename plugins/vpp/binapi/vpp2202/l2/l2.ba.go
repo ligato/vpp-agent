@@ -3,10 +3,9 @@
 // Package l2 contains generated bindings for API file l2.api.
 //
 // Contents:
-//   3 enums
-//   3 structs
-//  62 messages
-//
+// -  3 enums
+// -  3 structs
+// - 62 messages
 package l2
 
 import (

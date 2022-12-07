@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  bond.
+// RPCService defines RPC service bond.
 type RPCService interface {
 	BondAddMember(ctx context.Context, in *BondAddMember) (*BondAddMemberReply, error)
 	BondCreate(ctx context.Context, in *BondCreate) (*BondCreateReply, error)
@@ -41,7 +41,7 @@ func (c *serviceClient) BondAddMember(ctx context.Context, in *BondAddMember) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) BondCreate(ctx context.Context, in *BondCreate) (*BondCreateReply, error) {
@@ -50,7 +50,7 @@ func (c *serviceClient) BondCreate(ctx context.Context, in *BondCreate) (*BondCr
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) BondCreate2(ctx context.Context, in *BondCreate2) (*BondCreate2Reply, error) {
@@ -59,7 +59,7 @@ func (c *serviceClient) BondCreate2(ctx context.Context, in *BondCreate2) (*Bond
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) BondDelete(ctx context.Context, in *BondDelete) (*BondDeleteReply, error) {
@@ -68,7 +68,7 @@ func (c *serviceClient) BondDelete(ctx context.Context, in *BondDelete) (*BondDe
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) BondDetachMember(ctx context.Context, in *BondDetachMember) (*BondDetachMemberReply, error) {
@@ -77,7 +77,7 @@ func (c *serviceClient) BondDetachMember(ctx context.Context, in *BondDetachMemb
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) BondDetachSlave(ctx context.Context, in *BondDetachSlave) (*BondDetachSlaveReply, error) {
@@ -86,7 +86,7 @@ func (c *serviceClient) BondDetachSlave(ctx context.Context, in *BondDetachSlave
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) BondEnslave(ctx context.Context, in *BondEnslave) (*BondEnslaveReply, error) {
@@ -95,7 +95,7 @@ func (c *serviceClient) BondEnslave(ctx context.Context, in *BondEnslave) (*Bond
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SwBondInterfaceDump(ctx context.Context, in *SwBondInterfaceDump) (RPCService_SwBondInterfaceDumpClient, error) {
@@ -131,6 +131,10 @@ func (c *serviceClient_SwBondInterfaceDumpClient) Recv() (*SwBondInterfaceDetail
 	case *SwBondInterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -170,6 +174,10 @@ func (c *serviceClient_SwInterfaceBondDumpClient) Recv() (*SwInterfaceBondDetail
 	case *SwInterfaceBondDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -182,7 +190,7 @@ func (c *serviceClient) SwInterfaceSetBondWeight(ctx context.Context, in *SwInte
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SwInterfaceSlaveDump(ctx context.Context, in *SwInterfaceSlaveDump) (RPCService_SwInterfaceSlaveDumpClient, error) {
@@ -218,6 +226,10 @@ func (c *serviceClient_SwInterfaceSlaveDumpClient) Recv() (*SwInterfaceSlaveDeta
 	case *SwInterfaceSlaveDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -257,6 +269,10 @@ func (c *serviceClient_SwMemberInterfaceDumpClient) Recv() (*SwMemberInterfaceDe
 	case *SwMemberInterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

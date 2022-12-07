@@ -3,9 +3,8 @@
 // Package vpe contains generated bindings for API file vpe.api.
 //
 // Contents:
-//   1 struct
-//  26 messages
-//
+// -  1 struct
+// - 26 messages
 package vpe
 
 import (

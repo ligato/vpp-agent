@@ -3,10 +3,9 @@
 // Package ip contains generated bindings for API file ip.api.
 //
 // Contents:
-//   2 enums
-//   6 structs
-//  81 messages
-//
+// -  2 enums
+// -  6 structs
+// - 81 messages
 package ip
 
 import (

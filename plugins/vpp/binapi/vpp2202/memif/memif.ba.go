@@ -3,9 +3,8 @@
 // Package memif contains generated bindings for API file memif.api.
 //
 // Contents:
-//   2 enums
-//  10 messages
-//
+// -  2 enums
+// - 10 messages
 package memif
 
 import (

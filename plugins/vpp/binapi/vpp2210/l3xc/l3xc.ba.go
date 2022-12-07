@@ -3,9 +3,8 @@
 // Package l3xc contains generated bindings for API file l3xc.api.
 //
 // Contents:
-//
-//	1 struct
-//	8 messages
+// -  1 struct
+// -  8 messages
 package l3xc
 
 import (

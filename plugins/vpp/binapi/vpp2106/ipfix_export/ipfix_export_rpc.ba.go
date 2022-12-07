@@ -63,6 +63,10 @@ func (c *serviceClient_IpfixClassifyStreamDumpClient) Recv() (*IpfixClassifyStre
 	case *IpfixClassifyStreamDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -111,6 +115,10 @@ func (c *serviceClient_IpfixClassifyTableDumpClient) Recv() (*IpfixClassifyTable
 	case *IpfixClassifyTableDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -150,6 +158,10 @@ func (c *serviceClient_IpfixExporterDumpClient) Recv() (*IpfixExporterDetails, e
 	case *IpfixExporterDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

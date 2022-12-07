@@ -3,9 +3,8 @@
 // Package flowprobe contains generated bindings for API file flowprobe.api.
 //
 // Contents:
-//   2 enums
-//   4 messages
-//
+// -  2 enums
+// -  4 messages
 package flowprobe
 
 import (

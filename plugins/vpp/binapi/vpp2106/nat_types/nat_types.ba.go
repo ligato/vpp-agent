@@ -3,9 +3,8 @@
 // Package nat_types contains generated bindings for API file nat_types.api.
 //
 // Contents:
-//   2 enums
-//   1 struct
-//
+// -  2 enums
+// -  1 struct
 package nat_types
 
 import (
@@ -19,6 +18,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "nat_types"
+	APIVersion = "0.0.1"
+	VersionCrc = 0x2ca9110f
+)
 
 // NatConfigFlags defines enum 'nat_config_flags'.
 type NatConfigFlags uint8

@@ -3,9 +3,8 @@
 // Package span contains generated bindings for API file span.api.
 //
 // Contents:
-//
-//	1 enum
-//	4 messages
+// -  1 enum
+// -  4 messages
 package span
 
 import (
