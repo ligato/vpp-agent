@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  l3xc.
+// RPCService defines RPC service l3xc.
 type RPCService interface {
 	L3xcDel(ctx context.Context, in *L3xcDel) (*L3xcDelReply, error)
 	L3xcDump(ctx context.Context, in *L3xcDump) (RPCService_L3xcDumpClient, error)
@@ -33,7 +33,7 @@ func (c *serviceClient) L3xcDel(ctx context.Context, in *L3xcDel) (*L3xcDelReply
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) L3xcDump(ctx context.Context, in *L3xcDump) (RPCService_L3xcDumpClient, error) {
@@ -69,6 +69,10 @@ func (c *serviceClient_L3xcDumpClient) Recv() (*L3xcDetails, error) {
 	case *L3xcDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -90,5 +94,5 @@ func (c *serviceClient) L3xcUpdate(ctx context.Context, in *L3xcUpdate) (*L3xcUp
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

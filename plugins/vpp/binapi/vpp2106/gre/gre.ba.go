@@ -3,10 +3,9 @@
 // Package gre contains generated bindings for API file gre.api.
 //
 // Contents:
-//   1 enum
-//   1 struct
-//   4 messages
-//
+// -  1 enum
+// -  1 struct
+// -  4 messages
 package gre
 
 import (

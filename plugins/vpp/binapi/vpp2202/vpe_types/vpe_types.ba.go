@@ -3,10 +3,9 @@
 // Package vpe_types contains generated bindings for API file vpe_types.api.
 //
 // Contents:
-//   2 aliases
-//   1 enum
-//   1 struct
-//
+// -  2 aliases
+// -  1 enum
+// -  1 struct
 package vpe_types
 
 import (
@@ -21,6 +20,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "vpe_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x5f754a1c
+)
 
 // LogLevel defines enum 'log_level'.
 type LogLevel uint32

@@ -3,8 +3,7 @@
 // Package vxlan_gpe contains generated bindings for API file vxlan_gpe.api.
 //
 // Contents:
-//   6 messages
-//
+// -  6 messages
 package vxlan_gpe
 
 import (

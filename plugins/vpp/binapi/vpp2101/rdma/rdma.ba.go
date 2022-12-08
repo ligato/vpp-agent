@@ -3,9 +3,8 @@
 // Package rdma contains generated bindings for API file rdma.api.
 //
 // Contents:
-//   1 enum
-//   6 messages
-//
+// -  1 enum
+// -  6 messages
 package rdma
 
 import (

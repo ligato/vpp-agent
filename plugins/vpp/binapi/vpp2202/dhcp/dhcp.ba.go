@@ -3,10 +3,9 @@
 // Package dhcp contains generated bindings for API file dhcp.api.
 //
 // Contents:
-//   3 enums
-//   6 structs
-//  29 messages
-//
+// -  3 enums
+// -  6 structs
+// - 29 messages
 package dhcp
 
 import (

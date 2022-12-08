@@ -3,9 +3,8 @@
 // Package ipsec_types contains generated bindings for API file ipsec_types.api.
 //
 // Contents:
-//
-//	5 enums
-//	6 structs
+// -  5 enums
+// -  6 structs
 package ipsec_types
 
 import (

@@ -32,6 +32,10 @@ func (p *Plugin) Invoke(ctx context.Context, req govppapi.Message, reply govppap
 	return p.vppConn.Invoke(ctx, req, reply)
 }
 
+func (p *Plugin) WatchEvent(ctx context.Context, event govppapi.Message) (govppapi.Watcher, error) {
+	return p.vppConn.WatchEvent(ctx, event)
+}
+
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 // It uses default buffer sizes for the request and reply Go channels.
 func (p *Plugin) NewAPIChannel() (govppapi.Channel, error) {

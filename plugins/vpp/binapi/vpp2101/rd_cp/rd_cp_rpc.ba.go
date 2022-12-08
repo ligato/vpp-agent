@@ -8,7 +8,7 @@ import (
 	api "go.fd.io/govpp/api"
 )
 
-// RPCService defines RPC service  rd_cp.
+// RPCService defines RPC service rd_cp.
 type RPCService interface {
 	IP6NdAddressAutoconfig(ctx context.Context, in *IP6NdAddressAutoconfig) (*IP6NdAddressAutoconfigReply, error)
 }
@@ -27,5 +27,5 @@ func (c *serviceClient) IP6NdAddressAutoconfig(ctx context.Context, in *IP6NdAdd
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

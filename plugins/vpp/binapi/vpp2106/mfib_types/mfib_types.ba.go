@@ -3,9 +3,8 @@
 // Package mfib_types contains generated bindings for API file mfib_types.api.
 //
 // Contents:
-//   2 enums
-//   1 struct
-//
+// -  2 enums
+// -  1 struct
 package mfib_types
 
 import (
@@ -21,6 +20,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "mfib_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0xd2b57aaf
+)
 
 // MfibEntryFlags defines enum 'mfib_entry_flags'.
 type MfibEntryFlags uint32

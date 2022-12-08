@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  vrrp.
+// RPCService defines RPC service vrrp.
 type RPCService interface {
 	VrrpVrAddDel(ctx context.Context, in *VrrpVrAddDel) (*VrrpVrAddDelReply, error)
 	VrrpVrDump(ctx context.Context, in *VrrpVrDump) (RPCService_VrrpVrDumpClient, error)
@@ -37,7 +37,7 @@ func (c *serviceClient) VrrpVrAddDel(ctx context.Context, in *VrrpVrAddDel) (*Vr
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) VrrpVrDump(ctx context.Context, in *VrrpVrDump) (RPCService_VrrpVrDumpClient, error) {
@@ -73,6 +73,10 @@ func (c *serviceClient_VrrpVrDumpClient) Recv() (*VrrpVrDetails, error) {
 	case *VrrpVrDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -112,6 +116,10 @@ func (c *serviceClient_VrrpVrPeerDumpClient) Recv() (*VrrpVrPeerDetails, error) 
 	case *VrrpVrPeerDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -124,7 +132,7 @@ func (c *serviceClient) VrrpVrSetPeers(ctx context.Context, in *VrrpVrSetPeers) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) VrrpVrStartStop(ctx context.Context, in *VrrpVrStartStop) (*VrrpVrStartStopReply, error) {
@@ -133,7 +141,7 @@ func (c *serviceClient) VrrpVrStartStop(ctx context.Context, in *VrrpVrStartStop
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) VrrpVrTrackIfAddDel(ctx context.Context, in *VrrpVrTrackIfAddDel) (*VrrpVrTrackIfAddDelReply, error) {
@@ -142,7 +150,7 @@ func (c *serviceClient) VrrpVrTrackIfAddDel(ctx context.Context, in *VrrpVrTrack
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) VrrpVrTrackIfDump(ctx context.Context, in *VrrpVrTrackIfDump) (RPCService_VrrpVrTrackIfDumpClient, error) {
@@ -178,6 +186,10 @@ func (c *serviceClient_VrrpVrTrackIfDumpClient) Recv() (*VrrpVrTrackIfDetails, e
 	case *VrrpVrTrackIfDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -190,5 +202,5 @@ func (c *serviceClient) WantVrrpVrEvents(ctx context.Context, in *WantVrrpVrEven
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  wireguard.
+// RPCService defines RPC service wireguard.
 type RPCService interface {
 	WireguardInterfaceCreate(ctx context.Context, in *WireguardInterfaceCreate) (*WireguardInterfaceCreateReply, error)
 	WireguardInterfaceDelete(ctx context.Context, in *WireguardInterfaceDelete) (*WireguardInterfaceDeleteReply, error)
@@ -35,7 +35,7 @@ func (c *serviceClient) WireguardInterfaceCreate(ctx context.Context, in *Wiregu
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WireguardInterfaceDelete(ctx context.Context, in *WireguardInterfaceDelete) (*WireguardInterfaceDeleteReply, error) {
@@ -44,7 +44,7 @@ func (c *serviceClient) WireguardInterfaceDelete(ctx context.Context, in *Wiregu
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WireguardInterfaceDump(ctx context.Context, in *WireguardInterfaceDump) (RPCService_WireguardInterfaceDumpClient, error) {
@@ -80,6 +80,10 @@ func (c *serviceClient_WireguardInterfaceDumpClient) Recv() (*WireguardInterface
 	case *WireguardInterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -92,7 +96,7 @@ func (c *serviceClient) WireguardPeerAdd(ctx context.Context, in *WireguardPeerA
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WireguardPeerRemove(ctx context.Context, in *WireguardPeerRemove) (*WireguardPeerRemoveReply, error) {
@@ -101,7 +105,7 @@ func (c *serviceClient) WireguardPeerRemove(ctx context.Context, in *WireguardPe
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) WireguardPeersDump(ctx context.Context, in *WireguardPeersDump) (RPCService_WireguardPeersDumpClient, error) {
@@ -137,6 +141,10 @@ func (c *serviceClient_WireguardPeersDumpClient) Recv() (*WireguardPeersDetails,
 	case *WireguardPeersDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

@@ -60,6 +60,10 @@ func (c *serviceClient_SwVmxnet3InterfaceDumpClient) Recv() (*SwVmxnet3Interface
 	case *SwVmxnet3InterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -117,6 +121,10 @@ func (c *serviceClient_Vmxnet3DumpClient) Recv() (*Vmxnet3Details, error) {
 	case *Vmxnet3Details:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

@@ -3,8 +3,7 @@
 // Package ipfix_export contains generated bindings for API file ipfix_export.api.
 //
 // Contents:
-//  14 messages
-//
+// - 14 messages
 package ipfix_export
 
 import (

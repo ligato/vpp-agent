@@ -82,6 +82,10 @@ func (c *serviceClient_IPNeighborDumpClient) Recv() (*IPNeighborDetails, error) 
 	case *IPNeighborDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

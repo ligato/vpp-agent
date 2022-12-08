@@ -3,11 +3,10 @@
 // Package ip_types contains generated bindings for API file ip_types.api.
 //
 // Contents:
-//   5 aliases
-//   5 enums
-//   8 structs
-//   1 union
-//
+// -  5 aliases
+// -  5 enums
+// -  8 structs
+// -  1 union
 package ip_types
 
 import (
@@ -25,6 +24,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "ip_types"
+	APIVersion = "3.0.0"
+	VersionCrc = 0xfee023ed
+)
 
 // AddressFamily defines enum 'address_family'.
 type AddressFamily uint8

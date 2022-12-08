@@ -3,9 +3,8 @@
 // Package interface_types contains generated bindings for API file interface_types.api.
 //
 // Contents:
-//   1 alias
-//   7 enums
-//
+// -  1 alias
+// -  7 enums
 package interface_types
 
 import (
@@ -19,6 +18,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "interface_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x7f2ba79a
+)
 
 // Direction defines enum 'direction'.
 type Direction uint8

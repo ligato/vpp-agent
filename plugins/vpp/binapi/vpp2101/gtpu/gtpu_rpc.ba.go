@@ -11,7 +11,7 @@ import (
 	vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/vpe"
 )
 
-// RPCService defines RPC service  gtpu.
+// RPCService defines RPC service gtpu.
 type RPCService interface {
 	GtpuAddDelTunnel(ctx context.Context, in *GtpuAddDelTunnel) (*GtpuAddDelTunnelReply, error)
 	GtpuOffloadRx(ctx context.Context, in *GtpuOffloadRx) (*GtpuOffloadRxReply, error)
@@ -34,7 +34,7 @@ func (c *serviceClient) GtpuAddDelTunnel(ctx context.Context, in *GtpuAddDelTunn
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) GtpuOffloadRx(ctx context.Context, in *GtpuOffloadRx) (*GtpuOffloadRxReply, error) {
@@ -43,7 +43,7 @@ func (c *serviceClient) GtpuOffloadRx(ctx context.Context, in *GtpuOffloadRx) (*
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) GtpuTunnelDump(ctx context.Context, in *GtpuTunnelDump) (RPCService_GtpuTunnelDumpClient, error) {
@@ -79,6 +79,10 @@ func (c *serviceClient_GtpuTunnelDumpClient) Recv() (*GtpuTunnelDetails, error) 
 	case *GtpuTunnelDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -91,7 +95,7 @@ func (c *serviceClient) GtpuTunnelUpdateTteid(ctx context.Context, in *GtpuTunne
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }
 
 func (c *serviceClient) SwInterfaceSetGtpuBypass(ctx context.Context, in *SwInterfaceSetGtpuBypass) (*SwInterfaceSetGtpuBypassReply, error) {
@@ -100,5 +104,5 @@ func (c *serviceClient) SwInterfaceSetGtpuBypass(ctx context.Context, in *SwInte
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return out, api.RetvalToVPPApiError(out.Retval)
 }

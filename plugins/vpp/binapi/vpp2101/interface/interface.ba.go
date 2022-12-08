@@ -3,8 +3,7 @@
 // Package interfaces contains generated bindings for API file interface.api.
 //
 // Contents:
-//  57 messages
-//
+// - 57 messages
 package interfaces
 
 import (

@@ -3,8 +3,7 @@
 // Package tunnel_types contains generated bindings for API file tunnel_types.api.
 //
 // Contents:
-//   2 enums
-//
+// -  2 enums
 package tunnel_types
 
 import (
@@ -18,6 +17,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "tunnel_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0xc56b5084
+)
 
 // TunnelEncapDecapFlags defines enum 'tunnel_encap_decap_flags'.
 type TunnelEncapDecapFlags uint8

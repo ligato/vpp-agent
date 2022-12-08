@@ -3,10 +3,9 @@
 // Package vpe_types contains generated bindings for API file vpe_types.api.
 //
 // Contents:
-//   2 aliases
-//   1 enum
-//   1 struct
-//
+// -  2 aliases
+// -  1 enum
+// -  1 struct
 package vpe_types
 
 import (
@@ -21,6 +20,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "vpe_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0x5f754a1c
+)
 
 // LogLevel defines enum 'log_level'.
 type LogLevel uint32
@@ -82,18 +87,22 @@ func NewTimestamp(t time.Time) Timestamp {
 	ns := float64(sec) + float64(nsec/1e9)
 	return Timestamp(ns)
 }
+
 func (x Timestamp) ToTime() time.Time {
 	ns := int64(x * 1e9)
 	sec := ns / 1e9
 	nsec := ns % 1e9
 	return time.Unix(sec, nsec)
 }
+
 func (x Timestamp) String() string {
 	return x.ToTime().String()
 }
+
 func (x *Timestamp) MarshalText() ([]byte, error) {
 	return []byte(x.ToTime().Format(time.RFC3339Nano)), nil
 }
+
 func (x *Timestamp) UnmarshalText(text []byte) error {
 	t, err := time.Parse(time.RFC3339Nano, string(text))
 	if err != nil {

@@ -76,6 +76,10 @@ func (c *serviceClient_SrLocalsidsDumpClient) Recv() (*SrLocalsidsDetails, error
 	case *SrLocalsidsDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -115,6 +119,10 @@ func (c *serviceClient_SrPoliciesDumpClient) Recv() (*SrPoliciesDetails, error) 
 	case *SrPoliciesDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -154,6 +162,10 @@ func (c *serviceClient_SrPoliciesWithSlIndexDumpClient) Recv() (*SrPoliciesWithS
 	case *SrPoliciesWithSlIndexDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -247,6 +259,10 @@ func (c *serviceClient_SrSteeringPolDumpClient) Recv() (*SrSteeringPolDetails, e
 	case *SrSteeringPolDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

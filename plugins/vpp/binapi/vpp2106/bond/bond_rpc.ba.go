@@ -131,6 +131,10 @@ func (c *serviceClient_SwBondInterfaceDumpClient) Recv() (*SwBondInterfaceDetail
 	case *SwBondInterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -170,6 +174,10 @@ func (c *serviceClient_SwInterfaceBondDumpClient) Recv() (*SwInterfaceBondDetail
 	case *SwInterfaceBondDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -218,6 +226,10 @@ func (c *serviceClient_SwInterfaceSlaveDumpClient) Recv() (*SwInterfaceSlaveDeta
 	case *SwInterfaceSlaveDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -257,6 +269,10 @@ func (c *serviceClient_SwMemberInterfaceDumpClient) Recv() (*SwMemberInterfaceDe
 	case *SwMemberInterfaceDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

@@ -3,8 +3,7 @@
 // Package ethernet_types contains generated bindings for API file ethernet_types.api.
 //
 // Contents:
-//   1 alias
-//
+// -  1 alias
 package ethernet_types
 
 import (
@@ -18,6 +17,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "ethernet_types"
+	APIVersion = "1.0.0"
+	VersionCrc = 0xf24103d6
+)
 
 // MacAddress defines alias 'mac_address'.
 type MacAddress [6]uint8

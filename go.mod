@@ -19,7 +19,7 @@ require (
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 	github.com/jhump/protoreflect v1.10.1
 	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe
-	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
+	github.com/mitchellh/go-ps v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/namsral/flag v1.7.4-pre
 	github.com/olekukonko/tablewriter v0.0.4
@@ -37,7 +37,7 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
 	github.com/xeipuuv/gojsonschema v1.1.0
 	go.etcd.io/etcd/client/v3 v3.5.1
-	go.fd.io/govpp v0.6.0-alpha.0.20220808231750-0eff8d05da27
+	go.fd.io/govpp v0.7.0
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20220211111933-3d9ff310b1fa
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 	google.golang.org/grpc v1.47.0

@@ -3,9 +3,8 @@
 // Package teib contains generated bindings for API file teib.api.
 //
 // Contents:
-//   1 struct
-//   4 messages
-//
+// -  1 struct
+// -  4 messages
 package teib
 
 import (

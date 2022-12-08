@@ -3,9 +3,8 @@
 // Package vlib contains generated bindings for API file vlib.api.
 //
 // Contents:
-//   1 struct
-//  18 messages
-//
+// -  1 struct
+// - 18 messages
 package vlib
 
 import (

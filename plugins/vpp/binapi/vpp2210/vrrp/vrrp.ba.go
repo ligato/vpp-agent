@@ -3,10 +3,9 @@
 // Package vrrp contains generated bindings for API file vrrp.api.
 //
 // Contents:
-//
-//	 2 enums
-//	 5 structs
-//	21 messages
+// -  2 enums
+// -  5 structs
+// - 21 messages
 package vrrp
 
 import (

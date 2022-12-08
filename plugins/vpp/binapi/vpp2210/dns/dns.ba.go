@@ -3,8 +3,7 @@
 // Package dns contains generated bindings for API file dns.api.
 //
 // Contents:
-//
-//	8 messages
+// -  8 messages
 package dns
 
 import (

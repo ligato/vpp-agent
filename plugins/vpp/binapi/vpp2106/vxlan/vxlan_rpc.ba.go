@@ -108,6 +108,10 @@ func (c *serviceClient_VxlanTunnelDumpClient) Recv() (*VxlanTunnelDetails, error
 	case *VxlanTunnelDetails:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
@@ -147,6 +151,10 @@ func (c *serviceClient_VxlanTunnelV2DumpClient) Recv() (*VxlanTunnelV2Details, e
 	case *VxlanTunnelV2Details:
 		return m, nil
 	case *vpe.ControlPingReply:
+		err = c.Stream.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, io.EOF
 	default:
 		return nil, fmt.Errorf("unexpected message: %T %v", m, m)

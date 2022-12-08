@@ -87,6 +87,10 @@ func (c *serviceClient) MemclntReadTimeout(ctx context.Context, in *MemclntReadT
 	if err != nil {
 		return err
 	}
+	err = stream.Close()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -96,6 +100,10 @@ func (c *serviceClient) MemclntRxThreadSuspend(ctx context.Context, in *MemclntR
 		return err
 	}
 	err = stream.SendMsg(in)
+	if err != nil {
+		return err
+	}
+	err = stream.Close()
 	if err != nil {
 		return err
 	}
@@ -117,6 +125,10 @@ func (c *serviceClient) RxThreadExit(ctx context.Context, in *RxThreadExit) erro
 		return err
 	}
 	err = stream.SendMsg(in)
+	if err != nil {
+		return err
+	}
+	err = stream.Close()
 	if err != nil {
 		return err
 	}
@@ -156,6 +168,10 @@ func (c *serviceClient) TracePluginMsgIds(ctx context.Context, in *TracePluginMs
 		return err
 	}
 	err = stream.SendMsg(in)
+	if err != nil {
+		return err
+	}
+	err = stream.Close()
 	if err != nil {
 		return err
 	}

@@ -15,8 +15,6 @@
 package vpp2210
 
 import (
-	"context"
-
 	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
@@ -40,7 +38,8 @@ func init() {
 // NatVppHandler is accessor for NAT-related vppcalls methods.
 type NatVppHandler struct {
 	callsChannel govppapi.Channel
-	callsStream  govppapi.Stream
+	natEd        vpp_nat_ed.RPCService
+	natEi        vpp_nat_ei.RPCService
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	dhcpIndex    idxmap.NamedMapping
 	log          logging.Logger
@@ -52,10 +51,10 @@ func NewNatVppHandler(c vpp.Client,
 	ifIndexes ifaceidx.IfaceMetadataIndex, dhcpIndex idxmap.NamedMapping, log logging.Logger,
 ) vppcalls.NatVppAPI {
 	callsChan, _ := c.NewAPIChannel()
-	callsStream, _ := c.NewStream(context.Background())
 	return &NatVppHandler{
 		callsChannel: callsChan,
-		callsStream:  callsStream,
+		natEd:        vpp_nat_ed.NewServiceClient(c),
+		natEi:        vpp_nat_ei.NewServiceClient(c),
 		ifIndexes:    ifIndexes,
 		dhcpIndex:    dhcpIndex,
 		log:          log,

@@ -460,7 +460,7 @@ func (c *serviceClient) Nat44EiOutputInterfaceGet(ctx context.Context, in *Nat44
 }
 
 type RPCService_Nat44EiOutputInterfaceGetClient interface {
-	Recv() (*Nat44EiOutputInterfaceDetails, error)
+	Recv() (*Nat44EiOutputInterfaceDetails, *Nat44EiOutputInterfaceGetReply, error)
 	api.Stream
 }
 
@@ -468,22 +468,25 @@ type serviceClient_Nat44EiOutputInterfaceGetClient struct {
 	api.Stream
 }
 
-func (c *serviceClient_Nat44EiOutputInterfaceGetClient) Recv() (*Nat44EiOutputInterfaceDetails, error) {
+func (c *serviceClient_Nat44EiOutputInterfaceGetClient) Recv() (*Nat44EiOutputInterfaceDetails, *Nat44EiOutputInterfaceGetReply, error) {
 	msg, err := c.Stream.RecvMsg()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	switch m := msg.(type) {
 	case *Nat44EiOutputInterfaceDetails:
-		return m, nil
+		return m, nil, nil
 	case *Nat44EiOutputInterfaceGetReply:
+		if err := api.RetvalToVPPApiError(m.Retval); err != nil {
+			return nil, nil, err
+		}
 		err = c.Stream.Close()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return nil, io.EOF
+		return nil, m, io.EOF
 	default:
-		return nil, fmt.Errorf("unexpected message: %T %v", m, m)
+		return nil, nil, fmt.Errorf("unexpected message: %T %v", m, m)
 	}
 }
 

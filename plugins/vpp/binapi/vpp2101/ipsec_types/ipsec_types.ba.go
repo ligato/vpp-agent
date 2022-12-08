@@ -3,9 +3,8 @@
 // Package ipsec_types contains generated bindings for API file ipsec_types.api.
 //
 // Contents:
-//   4 enums
-//   3 structs
-//
+// -  4 enums
+// -  3 structs
 package ipsec_types
 
 import (
@@ -21,6 +20,12 @@ import (
 // A compilation error at this line likely means your copy of the
 // GoVPP api package needs to be updated.
 const _ = api.GoVppAPIPackageIsVersion2
+
+const (
+	APIFile    = "ipsec_types"
+	APIVersion = "3.0.0"
+	VersionCrc = 0xbe68e142
+)
 
 // IpsecCryptoAlg defines enum 'ipsec_crypto_alg'.
 type IpsecCryptoAlg uint32
