@@ -68,6 +68,11 @@ type BinapiClient struct {
 	*proxy.BinapiClient
 }
 
+func (b BinapiClient) WatchEvent(ctx context.Context, event api.Message) (api.Watcher, error) {
+	// dummy implementation so that BinapiClient implements api.Connection interface
+	return nil, nil
+}
+
 func proxyBinapi(client *proxy.Client) {
 	proxyBinapiChannel, err := client.NewBinapiClient()
 	binapiChannel := BinapiClient{proxyBinapiChannel}
@@ -117,9 +122,4 @@ func proxyBinapi(client *proxy.Client) {
 		}
 		log.Printf("- interface %d: %v", iface.SwIfIndex, iface.InterfaceName)
 	}
-}
-
-func (b BinapiClient) WatchEvent(ctx context.Context, event api.Message) (api.Watcher, error) {
-	// dummy implementation so that BinapiClient implements api.Connection interface
-	return nil, nil
 }
