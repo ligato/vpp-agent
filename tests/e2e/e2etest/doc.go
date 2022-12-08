@@ -12,5 +12,5 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-// Package e2e contains end-to-end tests.
-package e2e
+// Package e2etest contains end-to-end test harness.
+package e2etest

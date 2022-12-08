@@ -27,6 +27,7 @@ import (
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 func bridgeDomains(ctx *TestCtx) ([]map[string]string, error) {
@@ -34,7 +35,7 @@ func bridgeDomains(ctx *TestCtx) ([]map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parseVPPTable(stdout), nil
+	return ParseVPPTable(stdout), nil
 }
 
 func bdAgeIs(min int) types.GomegaMatcher {

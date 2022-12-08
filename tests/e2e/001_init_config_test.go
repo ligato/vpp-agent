@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // TestInitFromFile tests configuring initial state of NB from file
@@ -52,7 +53,7 @@ initial-configuration-file-path: %v
 
 	// create VPP-Agent
 	ctx.StartAgent(
-		mainAgentName,
+		DefaultMainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),
 	)
@@ -91,7 +92,7 @@ endpoints:
 
 	// create VPP-Agent
 	ctx.StartAgent(
-		mainAgentName,
+		DefaultMainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig)),
 		WithoutManualInitialAgentResync(),
 	)
@@ -190,7 +191,7 @@ endpoints:
 
 	// create VPP-Agent
 	ctx.StartAgent(
-		mainAgentName,
+		DefaultMainAgentName,
 		WithAdditionalAgentCmdParams(WithPluginConfigArg(ctx, "etcd", etcdConfig),
 			WithPluginConfigArg(ctx, "initfileregistry", initFileRegistryConfig)),
 		WithoutManualInitialAgentResync(),

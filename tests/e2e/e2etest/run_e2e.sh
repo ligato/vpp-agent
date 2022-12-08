@@ -25,24 +25,24 @@ dnsservercontainername="e2e-test-dns"
 sharevolumename="share-for-vpp-agent-e2e-tests"
 
 # Compile agentctl for testing
-go build -o ./tests/e2e/agentctl.test \
+go build -o ${SCRIPT_DIR}/agentctl.test \
 	  -tags 'osusergo netgo' \
     -ldflags '-w -s -extldflags "-static"' \
     -trimpath \
     ./cmd/agentctl
 
 # Compile testing suite
-go test -c -o ./tests/e2e/e2e.test \
+go test -c -o "${SCRIPT_DIR}"/e2e.test \
 	  -tags 'osusergo netgo e2e' \
     -ldflags '-w -s -extldflags "-static"' \
     -trimpath \
-    ./tests/e2e
+    ./tests/e2e/
 
 # Build testing image
 docker build \
-    -f ./tests/e2e/Dockerfile.e2e \
+    -f "${SCRIPT_DIR}"/Dockerfile.e2e \
     --tag "${imgname}" \
-    ./tests/e2e
+    "${SCRIPT_DIR}"
 
 # Build custom VPP-Agent image (needed in some tests)
 docker run -d -e ETCD_CONFIG=disabled --name customVPPAgent ${VPP_AGENT}
@@ -53,7 +53,7 @@ docker rm -f customVPPAgent
 run_e2e() {
     gotestsum --raw-command -- \
         go tool test2json -t -p "e2e" \
-        ./tests/e2e/e2e.test -test.v "$@"
+        "${SCRIPT_DIR}"/e2e.test -test.v "$@"
 }
 
 cleanup() {

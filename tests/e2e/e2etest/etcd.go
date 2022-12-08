@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"path/filepath"
@@ -98,7 +98,7 @@ func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (int
 			"--advertise-client-urls=https://127.0.0.1:2379",
 			"--listen-client-urls=https://127.0.0.1:2379",
 		)
-		hostConfig.Binds = []string{filepath.Join(ctx.testDataDir, "certs") + ":/etc/certs:ro"}
+		hostConfig.Binds = []string{filepath.Join(ctx.DataDir, "certs") + ":/etc/certs:ro"}
 	} else { // HTTP connection
 		cmd = append(cmd,
 			"--advertise-client-urls=http://0.0.0.0:2379",

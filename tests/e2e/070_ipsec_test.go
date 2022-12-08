@@ -24,6 +24,7 @@ import (
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 func TestIPSec(t *testing.T) {

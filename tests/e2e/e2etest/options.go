@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging"
 )
 
@@ -279,10 +277,10 @@ func WithPluginConfigArg(ctx *TestCtx, pluginName string, configContent string) 
 func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent string) string {
 	// subtest test names can container filepath.Separator
 	testName := strings.ReplaceAll(ctx.t.Name(), string(filepath.Separator), "-")
-	filePath, err := filepath.Abs(filepath.Join(ctx.testShareDir,
+	filePath, err := filepath.Abs(filepath.Join(ctx.ShareDir,
 		fmt.Sprintf("e2e-test-%v-%v", testName, simpleFileName)))
-	ctx.Expect(err).To(Not(HaveOccurred()))
-	ctx.Expect(ioutil.WriteFile(filePath, []byte(fileContent), 0777)).To(Succeed())
+	ctx.Expect(err).To(gomega.Not(gomega.HaveOccurred()))
+	ctx.Expect(os.WriteFile(filePath, []byte(fileContent), 0777)).To(gomega.Succeed())
 
 	// TODO register in context and delete in teardown? this doesn't matter
 	//  that much because file names contain unique test names so no file collision can happen
@@ -347,13 +345,5 @@ func PingWithAllowedLoss(maxLoss int) PingOptModifier {
 func PingWithSourceInterface(iface string) PingOptModifier {
 	return func(opts *PingOpt) {
 		opts.SourceIface = iface
-	}
-}
-
-func copyOptions(to interface{}, from interface{}) {
-	fromVal := reflect.ValueOf(from).Elem()
-	toVal := reflect.ValueOf(to).Elem()
-	for i := 0; i < fromVal.NumField(); i++ {
-		toVal.Field(i).Set(fromVal.Field(i))
 	}
 }

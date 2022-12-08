@@ -28,6 +28,7 @@ import (
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
 	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // configure only link on the Linux side of the interface and leave addresses
@@ -103,7 +104,7 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 		return false
 	}
 
-	leaveMs := ms.enterNetNs()
+	leaveMs := ms.EnterNetNs()
 	tapLinkName, err := netlink.LinkByName(linuxTapHostname)
 	ctx.Expect(err).ToNot(HaveOccurred())
 
@@ -123,7 +124,7 @@ func TestInterfaceLinkOnlyTap(t *testing.T) {
 
 	// run downstream resync
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue()) // everything in-sync even though the IP addr was added
-	leaveMs = ms.enterNetNs()
+	leaveMs = ms.EnterNetNs()
 	ctx.Expect(hasIP(tapLinkName, linuxTapIPIgnored)).To(BeFalse())
 	ctx.Expect(hasIP(tapLinkName, linuxTapIPExternal)).To(BeTrue())
 	link, err := netlink.LinkByName(linuxTapHostname)

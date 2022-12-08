@@ -24,6 +24,8 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 func TestAgentCtlCommands(t *testing.T) {
@@ -34,7 +36,7 @@ func TestAgentCtlCommands(t *testing.T) {
 	var stdout, stderr string
 
 	// File created below is required to test `import` action.
-	config1File := ctx.testShareDir + "/agentctl-config1.yaml"
+	config1File := ctx.ShareDir + "/agentctl-config1.yaml"
 	_, err = createFileWithContent(
 		config1File,
 		`config/vpp/v2/interfaces/tap1 {"name":"tap1", "type":"TAP", "enabled":true, "ip_addresses":["10.10.10.10/24"], "tap":{"version": "2"}}`,
@@ -593,7 +595,7 @@ func dummyIfFactory(ctx *TestCtx) func() (string, string) {
 	seq := 0
 	return func() (string, string) {
 		strseq := strconv.Itoa(seq)
-		file := ctx.testShareDir + "/agentctl-dummyif" + strseq + ".yaml"
+		file := ctx.ShareDir + "/agentctl-dummyif" + strseq + ".yaml"
 		content := `linuxConfig:
   interfaces:
   - name: "dummyif` + strseq + `"

@@ -14,7 +14,7 @@
 
 //go:build e2e
 
-package e2e
+package e2etest
 
 import (
 	"go.ligato.io/vpp-agent/v3/tests/testutils"

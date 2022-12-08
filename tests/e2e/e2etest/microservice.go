@@ -1,4 +1,4 @@
-package e2e
+package e2etest
 
 import (
 	"runtime"
@@ -147,7 +147,8 @@ func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 // TODO this is runtime specific -> integrate it into runtime concept
 // enterNetNs enters the **network** namespace of the microservice (other namespaces
 // remain unchanged). Leave using the returned callback.
-func (ms *Microservice) enterNetNs() (exitNetNs func()) {
+func (ms *Microservice) EnterNetNs() (exitNetNs func()) {
+	ms.ctx.t.Helper()
 	origns, err := netns.Get()
 	if err != nil {
 		ms.ctx.t.Fatalf("failed to obtain current network namespace: %v", err)

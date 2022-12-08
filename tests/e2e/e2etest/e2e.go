@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"bytes"
@@ -28,6 +28,7 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -36,26 +37,24 @@ import (
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
-
-	"github.com/onsi/gomega"
-	. "github.com/onsi/gomega"
 )
 
-var debug bool
+var Debug bool
 
 const (
 	checkPollingInterval = time.Millisecond * 100
 	checkTimeout         = time.Second * 6
-	shareDir             = "/test-share"
 	logDir               = "/testlogs"
 	shareVolumeName      = "share-for-vpp-agent-e2e-tests"
-	mainAgentName        = "agent0"
+
+	DefaultShareDir      = "/test-share"
+	DefaultMainAgentName = "agent0"
 
 	// VPP input nodes for packet tracing (uncomment when needed)
-	tapv2InputNode = "virtio-input"
-	// tapv1InputNode    = "tapcli-rx"
-	// afPacketInputNode = "af-packet-input"
-	// memifInputNode    = "memif-input"
+	Tapv2InputNode = "virtio-input"
+	// Tapv1InputNode    = "tapcli-rx"
+	// AfPacketInputNode = "af-packet-input"
+	// MemifInputNode    = "memif-input"
 )
 
 // TestCtx represents data context fur currently running test
@@ -66,15 +65,15 @@ type TestCtx struct {
 	Etcd      *Etcd
 	DNSServer *DNSServer
 
+	DataDir  string
+	ShareDir string
+
 	logWriter io.Writer
 	Logger    *log.Logger
 
 	t      *testing.T
 	ctx    context.Context
 	cancel context.CancelFunc
-
-	testDataDir  string
-	testShareDir string
 
 	agents        map[string]*Agent
 	dockerClient  *docker.Client
@@ -145,7 +144,7 @@ func NewTest(t *testing.T) *TestCtx {
 
 	outputBuf := new(bytes.Buffer)
 	var logWriter io.Writer
-	if debug {
+	if Debug {
 		logWriter = io.MultiWriter(outputBuf, os.Stderr)
 	} else {
 		logWriter = outputBuf
@@ -157,8 +156,8 @@ func NewTest(t *testing.T) *TestCtx {
 	te := &TestCtx{
 		WithT:         g,
 		t:             t,
-		testDataDir:   os.Getenv("TESTDATA_DIR"),
-		testShareDir:  shareDir,
+		DataDir:       os.Getenv("TESTDATA_DIR"),
+		ShareDir:      DefaultShareDir,
 		agents:        make(map[string]*Agent),
 		microservices: make(map[string]*Microservice),
 		nsCalls:       nslinuxcalls.NewSystemHandler(),
@@ -187,7 +186,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
 	}
-	if debug {
+	if Debug {
 		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
 	}
 
@@ -197,7 +196,7 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// if setupE2E fails we need to stop started containers
 	defer func() {
-		if testCtx.t.Failed() || debug {
+		if testCtx.t.Failed() || Debug {
 			testCtx.dumpLog()
 		}
 		if testCtx.t.Failed() {
@@ -222,18 +221,18 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 	// setup DNS server
 	if opts.SetupDNSServer {
 		testCtx.DNSServer, err = NewDNSServer(testCtx, opts.DNSOptMods...)
-		testCtx.Expect(err).ShouldNot(HaveOccurred())
+		testCtx.Expect(err).ShouldNot(gomega.HaveOccurred())
 	}
 
 	// setup Etcd
 	if opts.SetupEtcd {
 		testCtx.Etcd, err = NewEtcd(testCtx, opts.EtcdOptMods...)
-		testCtx.Expect(err).ShouldNot(HaveOccurred())
+		testCtx.Expect(err).ShouldNot(gomega.HaveOccurred())
 	}
 
 	// setup main VPP-Agent
 	if opts.SetupAgent {
-		testCtx.Agent = testCtx.StartAgent(mainAgentName, opts.AgentOptMods...)
+		testCtx.Agent = testCtx.StartAgent(DefaultMainAgentName, opts.AgentOptMods...)
 
 		// fill VPP version (this depends on agentctl and that depends on agent to be set up)
 		if version, err := testCtx.Agent.ExecVppctl("show version"); err != nil {
@@ -261,12 +260,12 @@ func AgentInstanceName(testCtx *TestCtx) string {
 	if testCtx.Agent != nil {
 		return testCtx.Agent.name
 	}
-	return mainAgentName
+	return DefaultMainAgentName
 }
 
 // Teardown perform test cleanup
 func (test *TestCtx) Teardown() {
-	if test.t.Failed() || debug {
+	if test.t.Failed() || Debug {
 		defer test.dumpLog()
 		defer test.dumpPacketTrace()
 	}
@@ -322,7 +321,7 @@ func (test *TestCtx) dumpLog() {
 	if err = f.Close(); err != nil {
 		test.t.Errorf("failed to close test log file: %v", err)
 	}
-	if !debug {
+	if !Debug {
 		output := test.outputBuf.String()
 		test.t.Logf("OUTPUT:\n------------------\n%s\n------------------\n\n", output)
 	}
@@ -455,6 +454,7 @@ func (test *TestCtx) StopAgent(name string) {
 
 // GetRunningMicroservice retrieves already running microservice by its name.
 func (test *TestCtx) GetRunningMicroservice(msName string) *Microservice {
+	test.t.Helper()
 	ms, found := test.microservices[msName]
 	if !found {
 		// bug inside a test
@@ -678,7 +678,7 @@ func (test *TestCtx) startPacketTrace(nodes ...string) (stopTrace func()) {
 	}
 }
 
-func supportsLinuxVRF() bool {
+func SupportsLinuxVRF() bool {
 	if os.Getenv("GITHUB_WORKFLOW") != "" {
 		// Linux VRFs are not enabled by default in the github workflow runners
 		// Notes:

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"fmt"
@@ -109,7 +109,7 @@ func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{})
 		},
 		HostConfig: &docker.HostConfig{
 			Binds: []string{
-				shareVolumeName + ":" + ctx.testShareDir, // needed for coredns configuration
+				shareVolumeName + ":" + ctx.ShareDir, // needed for coredns configuration
 			},
 		},
 	}

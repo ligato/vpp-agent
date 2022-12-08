@@ -184,7 +184,7 @@ integration-tests: test-tools ## Run integration tests
 
 e2e-tests: images test-tools ## Run end-to-end tests
 	@echo "# running end-to-end tests"
-	VPP_AGENT=prod_vpp_agent ./tests/e2e/run_e2e.sh
+	VPP_AGENT=prod_vpp_agent ./tests/e2e/e2etest/run_e2e.sh
 
 # -------------------------------
 #  Code generation

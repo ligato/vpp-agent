@@ -29,6 +29,7 @@ import (
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	vpp_nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // Simulate public and private networks using two microservices and test
@@ -150,11 +151,11 @@ func TestSourceNAT(t *testing.T) {
 	}
 	connectTCP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, false, tapv2InputNode)
+			8000, 8000, false, Tapv2InputNode)
 	}
 	connectUDP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, true, tapv2InputNode)
+			8000, 8000, true, Tapv2InputNode)
 	}
 	ping := func() error {
 		return ctx.PingFromMs(ms2Name, linuxTap1IP)
@@ -545,11 +546,11 @@ func TestNATStaticMappings(t *testing.T) {
 
 	connectTCP := func() error {
 		return ctx.TestConnection(ms1Name, ms2Name, tcpSvcExtIP, linuxTap2IP,
-			tcpSvcExtPort, tcpSvcLocalPort, false, tapv2InputNode)
+			tcpSvcExtPort, tcpSvcLocalPort, false, Tapv2InputNode)
 	}
 	connectUDP := func() error {
 		return ctx.TestConnection(ms1Name, ms2Name, udpSvcExtIP, linuxTap2IP,
-			udpSvcExtPort, udpSvcLocalPort, true, tapv2InputNode)
+			udpSvcExtPort, udpSvcLocalPort, true, Tapv2InputNode)
 	}
 
 	ctx.StartMicroservice(ms1Name)
@@ -751,11 +752,11 @@ func TestSourceNATDeprecatedAPI(t *testing.T) {
 	}
 	connectTCP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, false, tapv2InputNode)
+			8000, 8000, false, Tapv2InputNode)
 	}
 	connectUDP := func() error {
 		return ctx.TestConnection(ms2Name, ms1Name, linuxTap1IP, linuxTap1IP,
-			8000, 8000, true, tapv2InputNode)
+			8000, 8000, true, Tapv2InputNode)
 	}
 	ping := func() error {
 		return ctx.PingFromMs(ms2Name, linuxTap1IP)

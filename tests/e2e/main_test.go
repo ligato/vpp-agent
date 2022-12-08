@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	govppcore "go.fd.io/govpp/core"
 
+	"go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 	"go.ligato.io/vpp-agent/v3/tests/testutils"
 )
 
@@ -32,8 +33,8 @@ func TestMain(m *testing.M) {
 	debugEnv := os.Getenv("RUNNER_DEBUG") != "" && os.Getenv("GITHUB_WORKFLOW") != ""
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	flag.Parse()
-	debug = *debugFlag || debugEnv
-	if debug {
+	e2etest.Debug = *debugFlag || debugEnv
+	if e2etest.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 		govppcore.SetLogLevel(logrus.DebugLevel)
 	}

@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e_test
+package e2e
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 	vpp_dns "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/dns"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
-	. "go.ligato.io/vpp-agent/v3/tests/e2e"
+	. "go.ligato.io/vpp-agent/v3/tests/e2e/e2etest"
 )
 
 // TestDnsCache tests ability of VPP to act as DNS server with cache capabilities (cache info from upstream DNS server)
@@ -147,7 +147,7 @@ func TestDnsCache(t *testing.T) {
 					Send(context.Background())).To(Succeed())
 			} else {
 				// using local container as DNS server -> the easy way how to block it is to kill it
-				ctx.DNSServer.Stop()
+				ctx.Expect(ctx.DNSServer.Stop()).To(Succeed())
 			}
 
 			// verify the upstream DNS blocking (without it some mild test/container changes could introduce

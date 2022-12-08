@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package e2e
+package e2etest
 
 import (
 	"bufio"
@@ -35,7 +35,7 @@ func simpleTCPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 		done <- nil
 	}()
 	// move to the network namespace where server should listen
-	exitNetNs := ms.enterNetNs()
+	exitNetNs := ms.EnterNetNs()
 	defer exitNetNs()
 
 	listener, err := net.Listen("tcp", addr)
@@ -123,7 +123,7 @@ func simpleUDPServer(ctx context.Context, ms *Microservice, addr string, expReqM
 
 	const maxBufferSize = 1024
 	// move to the network namespace where server should listen
-	exitNetNs := ms.enterNetNs()
+	exitNetNs := ms.EnterNetNs()
 	defer exitNetNs()
 
 	conn, err := net.ListenPacket("udp", addr)
@@ -187,7 +187,7 @@ func simpleTCPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, t
 
 	go func() {
 		// move to the network namespace from which the connection should be initiated
-		exitNetNs := ms.enterNetNs()
+		exitNetNs := ms.EnterNetNs()
 		defer exitNetNs()
 		start := time.Now()
 		for {
@@ -215,7 +215,7 @@ func simpleUDPClient(ms *Microservice, addr string, reqMsg, expRespMsg string, t
 
 	go func() {
 		// move to the network namespace from which the connection should be initiated
-		exitNetNs := ms.enterNetNs()
+		exitNetNs := ms.EnterNetNs()
 		defer exitNetNs()
 		udpAddr, err := net.ResolveUDPAddr("udp", addr)
 		if err != nil {
