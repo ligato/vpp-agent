@@ -44,10 +44,6 @@ type L3Plugin struct {
 
 	// system handlers
 	l3Handler linuxcalls.NetlinkAPI
-
-	// descriptors
-	arpDescriptor   *descriptor.ARPDescriptor
-	routeDescriptor *descriptor.RouteDescriptor
 }
 
 // Deps lists dependencies of the interface p.

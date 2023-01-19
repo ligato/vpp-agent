@@ -71,10 +71,3 @@ func (h *StnVppHandler) DumpSTNRules() ([]*vppcalls.StnDetails, error) {
 
 	return stnDetails, nil
 }
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
-}

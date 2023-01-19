@@ -82,7 +82,6 @@ type InterfaceWatcher struct {
 
 type hostInterface struct {
 	name    string
-	index   int
 	linkRev uint64
 	enabled bool
 	ipAddrs []string

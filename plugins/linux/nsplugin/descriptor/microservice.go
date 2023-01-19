@@ -83,13 +83,6 @@ type Microservice struct {
 	ID    string
 }
 
-// microserviceCtx contains all data required to handle microservice changes.
-type microserviceCtx struct {
-	created       []string
-	since         string
-	lastInspected int64
-}
-
 // NewMicroserviceDescriptor creates a new instance of the descriptor for microservices.
 func NewMicroserviceDescriptor(kvscheduler kvs.KVScheduler, log logging.PluginLogger) (*MicroserviceDescriptor, error) {
 	var err error

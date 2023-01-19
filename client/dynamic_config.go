@@ -21,8 +21,6 @@ import (
 
 // field proto name/json name constants (can't be changes to not break json/yaml compatibility with configurator.Config)
 const (
-	// configName is Name of field in fake config root Message that hold the real config root
-	configName = "config"
 	// configGroupSuffix is field proto name suffix that all fields referencing config groups has
 	configGroupSuffix = "Config"
 	// repeatedFieldsSuffix is suffix added to repeated fields inside config group message

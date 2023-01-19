@@ -1507,13 +1507,6 @@ func policySegmentList(weight uint32, sids ...srv6.SID) *srv6.Policy_SegmentList
 	}
 }
 
-func boolToUint(input bool) uint8 {
-	if input {
-		return uint8(1)
-	}
-	return uint8(0)
-}
-
 func sidToStr(sid ip_types.IP6Address) string {
 	return srv6.SID(sid[:]).String()
 }

@@ -155,8 +155,7 @@ type GRPCStressPlugin struct {
 	infra.PluginName
 	Log *logrus.Logger
 
-	conn  *grpc.ClientConn
-	conns []*grpc.ClientConn
+	conn *grpc.ClientConn
 
 	wg sync.WaitGroup
 }
