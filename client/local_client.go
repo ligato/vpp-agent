@@ -146,84 +146,13 @@ func (c *client) GetItems(ctx context.Context) ([]*ConfigItem, error) {
 }
 
 func (c *client) UpdateItems(ctx context.Context, items []UpdateItem, resync bool) ([]*UpdateResult, error) {
-	txn := c.txnFactory.NewTxn(resync)
-	for _, ui := range items {
-		key, err := models.GetKey(ui.Message)
-		if err != nil {
-			return nil, err
-		}
-		txn.Put(key, ui.Message)
-		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
-		if !withDataSrc {
-			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
-		}
-		ctx = contextdecorator.LabelsContext(ctx, ui.Labels)
-	}
-	if err := txn.Commit(ctx); err != nil {
-		return nil, err
-	}
-	var updateResults []*UpdateResult
-	r, _ := contextdecorator.PushDataResultFromContext(ctx)
-	resWrapper, ok := r.(orchestrator.ResultWrapper)
-	if !ok {
-		return nil, fmt.Errorf("cannot retrieve update results!")
-	}
-	for _, res := range resWrapper.Results {
-		var msg string
-		if details := res.Status.GetDetails(); len(details) > 0 {
-			msg = strings.Join(res.Status.GetDetails(), ", ")
-		} else {
-			msg = res.Status.GetError()
-		}
-		updateResults = append(updateResults, &UpdateResult{
-			Key: res.Key,
-			Status: &generic.ItemStatus{
-				Status:  res.Status.State.String(),
-				Message: msg,
-			},
-		})
-	}
-	return updateResults, nil
+	// TODO: use grpc client to update items with labels
+	return nil, nil
 }
 
 func (c *client) DeleteItems(ctx context.Context, items []UpdateItem) ([]*UpdateResult, error) {
-	txn := c.txnFactory.NewTxn(false)
-	for _, ui := range items {
-		key, err := models.GetKey(ui.Message)
-		if err != nil {
-			return nil, err
-		}
-		txn.Delete(key)
-		_, withDataSrc := contextdecorator.DataSrcFromContext(ctx)
-		if !withDataSrc {
-			ctx = contextdecorator.DataSrcContext(ctx, "localclient")
-		}
-	}
-	if err := txn.Commit(ctx); err != nil {
-		return nil, err
-	}
-	var updateResults []*UpdateResult
-	r, _ := contextdecorator.PushDataResultFromContext(ctx)
-	resWrapper, ok := r.(orchestrator.ResultWrapper)
-	if !ok {
-		return nil, fmt.Errorf("cannot retrieve update results!")
-	}
-	for _, res := range resWrapper.Results {
-		var msg string
-		if details := res.Status.GetDetails(); len(details) > 0 {
-			msg = strings.Join(res.Status.GetDetails(), ", ")
-		} else {
-			msg = res.Status.GetError()
-		}
-		updateResults = append(updateResults, &UpdateResult{
-			Key: res.Key,
-			Status: &generic.ItemStatus{
-				Status:  res.Status.State.String(),
-				Message: msg,
-			},
-		})
-	}
-	return updateResults, nil
+	// TODO: use grpc client to delete items with labels
+	return nil, nil
 }
 
 func (c *client) DumpState() ([]*generic.StateItem, error) {
