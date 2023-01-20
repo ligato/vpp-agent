@@ -21,7 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -534,7 +534,7 @@ func (p *Plugin) versionHandler(formatter *render.Render) http.HandlerFunc {
 func (p *Plugin) validationHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		// reading input data (yaml-formatted dynamic config containing all VPP-Agent configuration)
-		yamlBytes, err := ioutil.ReadAll(req.Body)
+		yamlBytes, err := io.ReadAll(req.Body)
 		if err != nil {
 			p.internalError("can't read request body", err, w, formatter)
 			return
@@ -816,7 +816,7 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 		}
 
 		// reading input data (yaml-formatted dynamic config containing all VPP-Agent configuration)
-		yamlBytes, err := ioutil.ReadAll(req.Body)
+		yamlBytes, err := io.ReadAll(req.Body)
 		if err != nil {
 			p.internalError("can't read request body", err, w, formatter)
 			return

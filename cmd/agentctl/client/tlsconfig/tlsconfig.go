@@ -15,33 +15,34 @@
 // Package tlsconfig provides more convenient way to create "tls.Config".
 //
 // Usage:
-// 		package main
 //
-// 		import "fmt"
-//		import "go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
+//	package main
 //
-// 		func main() {
-// 			tc, err := tlsconfig.New(
-// 				tlsconfig.CA("/path/to/ca.crt"),
-// 				tlsconfig.CertKey("/path/to/server.crt", "/path/to/server.key"),
-// 			)
+//	import "fmt"
+//	import "go.ligato.io/vpp-agent/v3/cmd/agentctl/client/tlsconfig"
 //
-// 			if err != nil {
-// 				fmt.Printf("Error while creating TLS config: %v\n", err)
-// 				return
-// 			}
-// 			fmt.Println("TLS config is ready to use")
+//	func main() {
+//		tc, err := tlsconfig.New(
+//			tlsconfig.CA("/path/to/ca.crt"),
+//			tlsconfig.CertKey("/path/to/server.crt", "/path/to/server.key"),
+//		)
 //
-// 			// `tc` usage
-// 		}
+//		if err != nil {
+//			fmt.Printf("Error while creating TLS config: %v\n", err)
+//			return
+//		}
+//		fmt.Println("TLS config is ready to use")
 //
+//		// `tc` usage
+//	}
+
 package tlsconfig
 
 import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // New returns tls.Config with all options applied.
@@ -70,7 +71,7 @@ func CA(path string) Option {
 			config.RootCAs = x509.NewCertPool()
 		}
 
-		cert, err := ioutil.ReadFile(path)
+		cert, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

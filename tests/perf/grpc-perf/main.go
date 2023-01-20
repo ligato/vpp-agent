@@ -18,7 +18,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -34,6 +34,7 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.ligato.io/vpp-agent/v3/pkg/version"
@@ -121,7 +122,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		if b, err := ioutil.ReadAll(resp.Body); err != nil {
+		if b, err := io.ReadAll(resp.Body); err != nil {
 			log.Fatalln(err)
 		} else {
 			fmt.Println("----------------------")
@@ -182,19 +183,17 @@ func (p *GRPCStressPlugin) Close() error {
 }
 
 // Dialer for unix domain socket
-func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
-	return func(addr string, timeout time.Duration) (net.Conn, error) {
-		// Pass values
-		addr, timeout = address, timeoutVal
+func dialer(socket, address string, timeoutVal time.Duration) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, addr string) (net.Conn, error) {
 		// Dial with timeout
-		return net.DialTimeout(socket, addr, timeoutVal)
+		return net.DialTimeout(socket, address, timeoutVal)
 	}
 }
 
 func (p *GRPCStressPlugin) setupInitial() {
 	conn, err := grpc.Dial("unix",
-		grpc.WithInsecure(),
-		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(dialer(*socketType, *address, dialTimeout)),
 		grpc.WithUnaryInterceptor(grpcMetrics.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(grpcMetrics.StreamClientInterceptor()),
 	)

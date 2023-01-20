@@ -158,9 +158,7 @@ func (p *Plugin) Init() (err error) {
 		statsSocket = adapter.DefaultStatsSocket
 	}
 	statsAdapter := NewStatsAdapter(statsSocket)
-	if statsAdapter == nil {
-		p.Log.Warnf("Unable to connect to the VPP statistics socket, nil stats adapter", err)
-	} else if p.statsConn, err = govpp.ConnectStats(statsAdapter); err != nil {
+	if p.statsConn, err = govpp.ConnectStats(statsAdapter); err != nil {
 		p.Log.Warnf("Unable to connect to the VPP statistics socket, %v", err)
 		p.statsAdapter = nil
 	}

@@ -127,9 +127,6 @@ func (d *LocalSIDDescriptor) Validate(key string, localSID *srv6.LocalSID) error
 	if err != nil {
 		return scheduler.NewInvalidValueError(errors.Errorf("failed to parse local sid %s, should be a valid ipv6 address: %v", localSID.GetSid(), err), "sid")
 	}
-	if localSID.GetInstallationVrfId() < 0 {
-		return scheduler.NewInvalidValueError(errors.Errorf("installation vrf id can't be lower than zero, input value %v", localSID.GetInstallationVrfId()), "installationVrfId")
-	}
 
 	// checking end functions
 	switch ef := localSID.EndFunction.(type) {

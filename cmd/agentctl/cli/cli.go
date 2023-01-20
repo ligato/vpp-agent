@@ -20,7 +20,7 @@ import (
 	"runtime"
 
 	"github.com/docker/cli/cli/streams"
-	"github.com/docker/docker/pkg/term"
+	"github.com/moby/term"
 	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api"

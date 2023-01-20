@@ -798,7 +798,7 @@ func TestAddPolicy(t *testing.T) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsgs).To(HaveLen(1))
 				Expect(catchedMsgs[0]).To(Equal(&vpp_sr.SrPolicyAdd{
-					BsidAddr: *(&sidA),
+					BsidAddr: sidA,
 					FibTable: 10, // installationVrfId
 					IsSpray:  false,
 					IsEncap:  true,

@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -146,12 +147,11 @@ func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{
 }
 
 // Delete removes VPP punt configuration.
-func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata interface{}) error {
+func (d *PuntToHostDescriptor) Delete(key string, p *punt.ToHost, metadata interface{}) error {
 	// check if the socketpath contains '!' as prefix from retrieve
-	p := punt
-	if strings.HasPrefix(p.SocketPath, "!") {
-		p = &(*punt)
-		p.SocketPath = strings.TrimPrefix(p.SocketPath, "!")
+	punt := proto.Clone(p).(*punt.ToHost)
+	if strings.HasPrefix(punt.SocketPath, "!") {
+		punt.SocketPath = strings.TrimPrefix(punt.SocketPath, "!")
 	}
 
 	// deregister punt to socket

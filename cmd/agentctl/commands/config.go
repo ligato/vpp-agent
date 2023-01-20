@@ -461,7 +461,6 @@ Value:  {{protomulti .Notification.GetNotification}}
 
 		logrus.Debugf("Notification[%d]: %v",
 			notif.NextIdx-1, notif.Notification)
-		nextIdx = notif.NextIdx
 
 		if err := formatAsTemplate(cli.Out(), format, notif); err != nil {
 			return err

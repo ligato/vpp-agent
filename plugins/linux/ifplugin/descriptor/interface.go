@@ -16,8 +16,8 @@ package descriptor
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -263,8 +263,7 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	}
 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
-	if newIntf.PhysAddress != "" &&
-		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
+	if newIntf.PhysAddress != "" && !strings.EqualFold(oldIntf.PhysAddress, newIntf.PhysAddress) {
 		return false
 	}
 
@@ -1138,7 +1137,7 @@ func isChksmOffloadingOn(offloading interfaces.VethLink_ChecksumOffloading) bool
 func getSysctl(name string) (string, error) {
 	fullName := filepath.Join("/proc/sys", strings.Replace(name, ".", "/", -1))
 	fullName = filepath.Clean(fullName)
-	data, err := ioutil.ReadFile(fullName)
+	data, err := os.ReadFile(fullName)
 	if err != nil {
 		return "", err
 	}
@@ -1148,7 +1147,7 @@ func getSysctl(name string) (string, error) {
 func setSysctl(name, value string) (string, error) {
 	fullName := filepath.Join("/proc/sys", strings.Replace(name, ".", "/", -1))
 	fullName = filepath.Clean(fullName)
-	if err := ioutil.WriteFile(fullName, []byte(value), 0644); err != nil {
+	if err := os.WriteFile(fullName, []byte(value), 0644); err != nil {
 		return "", err
 	}
 	return getSysctl(name)

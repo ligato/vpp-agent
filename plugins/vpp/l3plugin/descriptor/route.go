@@ -131,7 +131,7 @@ func (d *RouteDescriptor) Validate(key string, route *l3.Route) (err error) {
 	// validate IP network implied by the IP and prefix length
 	if !strings.HasPrefix(route.DstNetwork, netalloc_api.AllocRefPrefix) {
 		_, ipNet, _ := net.ParseCIDR(route.DstNetwork)
-		if strings.ToLower(ipNet.String()) != strings.ToLower(route.DstNetwork) {
+		if !strings.EqualFold(ipNet.String(), route.DstNetwork) {
 			e := fmt.Errorf("DstNetwork (%s) must represent IP network (%s)",
 				route.DstNetwork, ipNet.String())
 			return kvs.NewInvalidValueError(e, "dst_network")
@@ -272,14 +272,14 @@ func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []kvs.Depend
 // equalAddrs compares two IP addresses for equality.
 func equalAddrs(addr1, addr2 string) bool {
 	if strings.HasPrefix(addr1, netalloc_api.AllocRefPrefix) ||
-		strings.HasPrefix(addr1, netalloc_api.AllocRefPrefix) {
+		strings.HasPrefix(addr2, netalloc_api.AllocRefPrefix) {
 		return addr1 == addr2
 	}
 	a1 := net.ParseIP(addr1)
 	a2 := net.ParseIP(addr2)
 	if a1 == nil || a2 == nil {
 		// if parsing fails, compare as strings
-		return strings.ToLower(addr1) == strings.ToLower(addr2)
+		return strings.EqualFold(addr1, addr2)
 	}
 	return a1.Equal(a2)
 }
@@ -322,7 +322,7 @@ func equalNetworks(net1, net2 string) bool {
 	_, n2, err2 := net.ParseCIDR(net2)
 	if err1 != nil || err2 != nil {
 		// if parsing fails, compare as strings
-		return strings.ToLower(net1) == strings.ToLower(net2)
+		return strings.EqualFold(net1, net2)
 	}
 	return n1.IP.Equal(n2.IP) && bytes.Equal(n1.Mask, n2.Mask)
 }

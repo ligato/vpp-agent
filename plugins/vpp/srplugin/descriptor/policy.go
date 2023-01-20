@@ -86,9 +86,6 @@ func NewPolicyDescriptor(srHandler vppcalls.SRv6VppAPI, log logging.PluginLogger
 
 // Validate validates VPP policies.
 func (d *PolicyDescriptor) Validate(key string, policy *srv6.Policy) error {
-	if policy.GetInstallationVrfId() < 0 {
-		return scheduler.NewInvalidValueError(errors.Errorf("installationVrfId can't be lower than zero, input value %v)", policy.GetInstallationVrfId()), "installationVrfId")
-	}
 	_, err := ParseIPv6(policy.GetBsid())
 	if err != nil {
 		return scheduler.NewInvalidValueError(errors.Errorf("failed to parse binding sid %s, should be a valid ipv6 address: %v", policy.GetBsid(), err), "bsid")

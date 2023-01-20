@@ -576,7 +576,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(exists).To(BeTrue())
 	Expect(metadata.GetInteger()).To(Equal(1))
 	Expect(label).To(Equal(value1Label))
-	label, metadata, exists = intMap.LookupByIndex(2)
+	_, _, exists = intMap.LookupByIndex(2)
 	Expect(exists).To(BeFalse())
 	label, metadata, exists = intMap.LookupByIndex(3)
 	Expect(exists).To(BeTrue())
@@ -588,7 +588,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(metaMap).ToNot(BeNil())
 	checkMetadataValues(metaMap)
 	intMap = metaMap.(NameToInteger)
-	label, metadata, exists = intMap.LookupByIndex(1)
+	_, _, exists = intMap.LookupByIndex(1)
 	Expect(exists).To(BeFalse())
 
 	// check history
@@ -856,7 +856,7 @@ func TestNodeMetadata(t *testing.T) {
 	Expect(metaMap).ToNot(BeNil())
 	checkMetadataValues(metaMap)
 	intMap = metaMap.(NameToInteger)
-	label, metadata, exists = intMap.LookupByIndex(1)
+	_, _, exists = intMap.LookupByIndex(1)
 	Expect(exists).To(BeFalse())
 	graphR.Release()
 
@@ -876,9 +876,9 @@ func TestNodeMetadata(t *testing.T) {
 	Expect(metaMap).ToNot(BeNil())
 	checkMetadataValues(metaMap, value2Label, value3Label)
 	intMap = metaMap.(NameToInteger)
-	label, metadata, exists = intMap.LookupByIndex(1)
+	_, _, exists = intMap.LookupByIndex(1)
 	Expect(exists).To(BeFalse())
-	label, metadata, exists = intMap.LookupByIndex(2)
+	_, _, exists = intMap.LookupByIndex(2)
 	Expect(exists).To(BeFalse())
 	label, metadata, exists = intMap.LookupByIndex(4)
 	Expect(exists).To(BeTrue())

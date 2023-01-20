@@ -252,7 +252,8 @@ func (d *MicroserviceDescriptor) setStateInSync() {
 // processStartedContainer processes a started Docker container - inspects whether it is a microservice.
 // If it is, notifies scheduler about a new microservice.
 func (d *MicroserviceDescriptor) processStartedContainer(id string) {
-	container, err := d.dockerClient.InspectContainer(id)
+	opts := docker.InspectContainerOptions{ID: id}
+	container, err := d.dockerClient.InspectContainerWithOptions(opts)
 	if err != nil {
 		d.log.Warnf("Error by inspecting container %s: %v", id, err)
 		return
@@ -300,7 +301,8 @@ func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 	}
 	for _, container := range containers {
 		if container.State == dockerStateRunning {
-			details, err := d.dockerClient.InspectContainer(container.ID)
+			opts := docker.InspectContainerOptions{ID: container.ID}
+			details, err := d.dockerClient.InspectContainerWithOptions(opts)
 			if err != nil {
 				d.log.Warnf("Error by inspecting container %s: %v", container.ID, err)
 				continue

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -89,7 +88,7 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 
 	// create temporal directory
 	dirNamePattern := fmt.Sprintf("%v--*", reportName)
-	dirName, err := ioutil.TempDir("", dirNamePattern)
+	dirName, err := os.MkdirTemp("", dirNamePattern)
 	if err != nil {
 		return fmt.Errorf("can't create tmp directory with name pattern %s due to %v", dirNamePattern, err)
 	}
@@ -752,7 +751,7 @@ func writeVPPCLICommandReport(subTaskActionName string, vppCLICmd string, w io.W
 	if len(otherArgs) > 0 {
 		formattedOutput = otherArgs[0].(func(string, string) string)(vppCLICmd, cmdOutput)
 	}
-	fmt.Fprintf(w, formattedOutput)
+	fmt.Fprint(w, formattedOutput)
 	return nil
 }
 
@@ -921,7 +920,7 @@ func createZipFile(zipFileName string, dirName string) (err error) {
 	}()
 
 	// Add files to zip
-	dirItems, err := ioutil.ReadDir(dirName)
+	dirItems, err := os.ReadDir(dirName)
 	if err != nil {
 		return fmt.Errorf("can't read report directory(%v) due to: %v", dirName, err)
 	}

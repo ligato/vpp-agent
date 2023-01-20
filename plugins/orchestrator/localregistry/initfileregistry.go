@@ -16,7 +16,6 @@ package localregistry
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -50,22 +49,22 @@ type Option func(*InitFileRegistry)
 // inside given file after initial content loading.
 //
 // The NB configuration provisioning process and how this registry fits into it:
-// 	1. NB data sources register to default resync plugin (InitFileRegistry registers too in watchNBResync(),
-//	   but only when there are some NB config data from file, otherwise it makes no sense to register because
-//	   there is nothing to forward. This also means that before register to resync plugin, the NB config from
-//	   file will be preloaded)
-// 	2. Call to resync plugin's DoResync triggers resync to NB configuration sources (InitFileRegistry takes
-//	   its preloaded NB config and stores it into another inner local registry)
-// 	3. NB configuration sources are also watchable (datasync.KeyValProtoWatcher) and the resync data is
-//	   collected by the watcher.Aggregator (InitFileRegistry is also watchable/forwards data to watcher.Aggregator,
-//	   it relies on the watcher capabilities of its inner local registry. This is the cause why to preloaded
-//	   the NB config from file([]proto.Message storage) and push it to another inner local storage later
-//	   (syncbase.Registry). If we used only one storage (syncbase.Registry for its watch capabilities), we
-//	   couldn't answer some questins about the storage soon enough (watcher.Aggregator in Watch(...) needs to
-//	   know whether this storage will send some data or not, otherwise the retrieval can hang on waiting for
-//	   data that never come))
-// 	4. watcher.Aggregator merges all collected resync data and forwards them its watch clients (it also implements
-//	   datasync.KeyValProtoWatcher just like the NB data sources).
+//  1. NB data sources register to default resync plugin (InitFileRegistry registers too in watchNBResync(),
+//     but only when there are some NB config data from file, otherwise it makes no sense to register because
+//     there is nothing to forward. This also means that before register to resync plugin, the NB config from
+//     file will be preloaded)
+//  2. Call to resync plugin's DoResync triggers resync to NB configuration sources (InitFileRegistry takes
+//     its preloaded NB config and stores it into another inner local registry)
+//  3. NB configuration sources are also watchable (datasync.KeyValProtoWatcher) and the resync data is
+//     collected by the watcher.Aggregator (InitFileRegistry is also watchable/forwards data to watcher.Aggregator,
+//     it relies on the watcher capabilities of its inner local registry. This is the cause why to preloaded
+//     the NB config from file([]proto.Message storage) and push it to another inner local storage later
+//     (syncbase.Registry). If we used only one storage (syncbase.Registry for its watch capabilities), we
+//     couldn't answer some questins about the storage soon enough (watcher.Aggregator in Watch(...) needs to
+//     know whether this storage will send some data or not, otherwise the retrieval can hang on waiting for
+//     data that never come))
+//  4. watcher.Aggregator merges all collected resync data and forwards them its watch clients (it also implements
+//     datasync.KeyValProtoWatcher just like the NB data sources).
 //  5. Clients of Aggregator (currently orchestrator and ifplugin) handle the NB changes/resync properly.
 type InitFileRegistry struct {
 	infra.PluginDeps
@@ -230,7 +229,7 @@ func (r *InitFileRegistry) preloadNBConfigs(filePath string) error {
 	}
 
 	// read data from file
-	b, err := ioutil.ReadFile(filePath)
+	b, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("problem reading file %s: %w", filePath, err)
 	}

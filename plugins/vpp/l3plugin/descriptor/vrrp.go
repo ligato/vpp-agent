@@ -202,6 +202,9 @@ func (d *VrrpDescriptor) Retrieve(correlate []adapter.VRRPEntryKVWithMetadata) (
 	retrieved []adapter.VRRPEntryKVWithMetadata, err error,
 ) {
 	entries, err := d.vrrpHandler.DumpVrrpEntries()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, entry := range entries {
 		retrieved = append(retrieved, adapter.VRRPEntryKVWithMetadata{

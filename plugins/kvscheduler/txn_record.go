@@ -81,11 +81,6 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 	if getNodeState(node) != kvscheduler.ValueState_REMOVED {
 		prevValue = utils.RecordProtoMessage(node.GetValue())
 	}
-	prevOrigin := getNodeOrigin(node)
-	if prevOrigin == kvs.UnknownOrigin {
-		// new value
-		prevOrigin = args.kv.origin
-	}
 	_, prevErr := getNodeError(node)
 	var prevErrMsg string
 	if prevErr != nil {

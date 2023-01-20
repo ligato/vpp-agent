@@ -35,6 +35,7 @@ import (
 	"go.ligato.io/cn-infra/v2/logging/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/client/remoteclient"
@@ -297,7 +298,7 @@ func (c *Client) negotiateAPIVersionPing(p *types.Version) {
 }
 
 func connectGrpc(addr string, tc *tls.Config) (*grpc.ClientConn, error) {
-	dialOpt := grpc.WithInsecure()
+	dialOpt := grpc.WithTransportCredentials(insecure.NewCredentials())
 	if tc != nil {
 		dialOpt = grpc.WithTransportCredentials(credentials.NewTLS(tc))
 	}

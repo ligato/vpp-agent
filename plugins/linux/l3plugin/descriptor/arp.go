@@ -117,7 +117,7 @@ func NewARPDescriptor(
 // which is already given to be the same for the two values.
 func (d *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.ARPEntry) bool {
 	// compare MAC addresses case-insensitively
-	return strings.ToLower(oldArp.HwAddress) == strings.ToLower(NewArp.HwAddress)
+	return strings.EqualFold(oldArp.HwAddress, NewArp.HwAddress)
 }
 
 // Validate validates ARP entry configuration.

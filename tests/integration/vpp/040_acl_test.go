@@ -363,7 +363,6 @@ func TestCRUDIPAcl(t *testing.T) {
 	// find the acl with aclname test0
 	var foundaclidx uint32
 	for _, item := range acls {
-		rules = item.ACL.Rules
 		if aclname == item.Meta.Tag {
 			foundaclidx = item.Meta.Index
 			break
@@ -577,7 +576,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 				t.Logf("- rule #%d: \"%v\"", i, rule)
 				if (rule.MacipRule.SourceAddress == "192.168.0.1") &&
 					(rule.MacipRule.SourceAddressPrefix == 16) &&
-					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:35")) &&
+					strings.EqualFold(rule.MacipRule.SourceMacAddress, "11:44:0A:B8:4A:35") &&
 					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
 					isPresent = true
 					break
@@ -660,7 +659,7 @@ func TestCRUDMacIPAcl(t *testing.T) {
 			for _, rule := range rules {
 				if (rule.MacipRule.SourceAddress == "192.168.0.1") &&
 					(rule.MacipRule.SourceAddressPrefix == 16) &&
-					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:35")) &&
+					strings.EqualFold(rule.MacipRule.SourceMacAddress, "11:44:0A:B8:4A:35") &&
 					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
 					isPresent = true
 					break
@@ -688,7 +687,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	// find the acl with aclname test6
 	var foundaclidx uint32
 	for _, item := range acls {
-		rules = item.ACL.Rules
 		if aclname == item.Meta.Tag {
 			foundaclidx = item.Meta.Index
 			break
@@ -737,13 +735,13 @@ func TestCRUDMacIPAcl(t *testing.T) {
 			for _, rule := range rules {
 				if (rule.MacipRule.SourceAddress == "192.168.0.1") &&
 					(rule.MacipRule.SourceAddressPrefix == 16) &&
-					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:35")) &&
+					strings.EqualFold(rule.MacipRule.SourceMacAddress, "11:44:0A:B8:4A:35") &&
 					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
 					t.Fatal("Old rules should not be present")
 				}
 				if (rule.MacipRule.SourceAddress == "192.168.10.1") &&
 					(rule.MacipRule.SourceAddressPrefix == 24) &&
-					(strings.ToLower(rule.MacipRule.SourceMacAddress) == strings.ToLower("11:44:0A:B8:4A:37")) &&
+					strings.EqualFold(rule.MacipRule.SourceMacAddress, "11:44:0A:B8:4A:37") &&
 					(rule.MacipRule.SourceMacAddressMask == "ff:ff:ff:ff:00:00") {
 					isPresent = true
 					break
@@ -800,7 +798,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
-		rules = item.ACL.Rules
 		if item.Meta.Index == aclIdx {
 			t.Logf("found modified ACL \"%v\"", item.Meta.Tag)
 			// check assignation to interface
@@ -828,7 +825,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
-		rules = item.ACL.Rules
 		if item.Meta.Index == aclIdx {
 			t.Logf("found modified ACL \"%v\"", item.Meta.Tag)
 			// check assignation to interface
@@ -856,7 +852,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
-		rules = item.ACL.Rules
 		if item.Meta.Index == aclIdx {
 			t.Logf("Found modified ACL \"%v\"", item.Meta.Tag)
 			// check assignation to interface
@@ -883,7 +878,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
-		rules = item.ACL.Rules
 		if item.Meta.Index == aclIdx {
 			t.Logf("Found modified ACL \"%v\"", item.Meta.Tag)
 			// check assignation to interface

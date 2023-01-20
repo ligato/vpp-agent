@@ -104,7 +104,7 @@ func TestArp(t *testing.T) {
 
 			newArpEntryIsPresent := false
 			for _, arpentry := range arpentries {
-				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
+				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && strings.EqualFold(arpentry.Arp.PhysAddress, test.newArpEntry.PhysAddress) {
 					t.Logf("dumped arpentry %+v", arpentry)
 					newArpEntryIsPresent = true
 					break
@@ -133,7 +133,7 @@ func TestArp(t *testing.T) {
 			}
 
 			for _, arpentry := range arpentries {
-				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
+				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && strings.EqualFold(arpentry.Arp.PhysAddress, test.newArpEntry.PhysAddress) {
 					t.Error("Added arp entry is still present in arp dump - should be deleted")
 				}
 			}
