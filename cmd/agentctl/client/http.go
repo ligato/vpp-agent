@@ -231,10 +231,8 @@ func (c *Client) addHeaders(req *http.Request, headers headers) *http.Request {
 	for k, v := range c.customHTTPHeaders {
 		req.Header.Set(k, v)
 	}
-	if headers != nil {
-		for k, v := range headers {
-			req.Header[k] = v
-		}
+	for k, v := range headers {
+		req.Header[k] = v
 	}
 	return req
 }

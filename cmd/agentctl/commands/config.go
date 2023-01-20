@@ -686,13 +686,11 @@ func printHistoryTable(out io.Writer, txns kvs.RecordedTxns, withDetails bool) {
 			resClr = tablewriter.FgGreenColor
 		}
 		if withDetails {
-			if errs != nil {
-				for _, e := range errs {
-					if detail != "" {
-						detail += "\n"
-					}
-					detail += fmt.Sprintf("%v", e.Error())
+			for _, e := range errs {
+				if detail != "" {
+					detail += "\n"
 				}
+				detail += fmt.Sprintf("%v", e.Error())
 			}
 			if reasons := txnPendingReasons(txn); reasons != "" {
 				if detail != "" {

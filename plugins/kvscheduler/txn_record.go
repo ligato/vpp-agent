@@ -144,7 +144,7 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		// build header for the log
 		txnInfo := ""
 		if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
-			txnInfo = fmt.Sprintf("%s", txn.nb.resyncType.String())
+			txnInfo = txn.nb.resyncType.String()
 		} else if txn.txnType == kvs.RetryFailedOps && txn.retry != nil {
 			txnInfo = fmt.Sprintf("retrying TX #%d (attempt %d)", txn.retry.txnSeqNum, txn.retry.attempt)
 		}

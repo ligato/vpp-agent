@@ -72,7 +72,7 @@ func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		command, ok := reqParam["vppclicommand"]
 		if !ok || command == "" {
-			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
+			errMsg := "400 Bad request: vppclicommand parameter missing or empty\n"
 			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}

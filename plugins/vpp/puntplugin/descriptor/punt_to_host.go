@@ -150,9 +150,7 @@ func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (interface{
 func (d *PuntToHostDescriptor) Delete(key string, p *punt.ToHost, metadata interface{}) error {
 	// check if the socketpath contains '!' as prefix from retrieve
 	punt := proto.Clone(p).(*punt.ToHost)
-	if strings.HasPrefix(punt.SocketPath, "!") {
-		punt.SocketPath = strings.TrimPrefix(punt.SocketPath, "!")
-	}
+	punt.SocketPath = strings.TrimPrefix(punt.SocketPath, "!")
 
 	// deregister punt to socket
 	if err := d.puntHandler.DeregisterPuntSocket(punt); err != nil {

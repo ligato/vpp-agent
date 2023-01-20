@@ -122,9 +122,7 @@ func (d *PuntExceptionDescriptor) Create(key string, punt *punt.Exception) (inte
 func (d *PuntExceptionDescriptor) Delete(key string, p *punt.Exception, metadata interface{}) error {
 	// check if the socketpath contains '!' as prefix from retrieve
 	punt := proto.Clone(p).(*punt.Exception)
-	if strings.HasPrefix(punt.SocketPath, "!") {
-		punt.SocketPath = strings.TrimPrefix(punt.SocketPath, "!")
-	}
+	punt.SocketPath = strings.TrimPrefix(punt.SocketPath, "!")
 
 	// delete punt exception
 	err := d.puntHandler.DeletePuntException(punt)

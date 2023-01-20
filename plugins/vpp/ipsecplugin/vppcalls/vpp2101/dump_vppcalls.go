@@ -113,7 +113,7 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*ipsec.SecurityPolicyDatabas
 		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
 	}
 
-	for spdIdx, _ := range spdIndexes {
+	for spdIdx := range spdIndexes {
 		spd := &ipsec.SecurityPolicyDatabase{
 			Index: spdIdx,
 		}
@@ -142,7 +142,7 @@ func (h *IPSecVppHandler) DumpIPSecSP() (spList []*ipsec.SecurityPolicy, err err
 	if err != nil {
 		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
 	}
-	for spdIdx, _ := range spdIndexes {
+	for spdIdx := range spdIndexes {
 		req := &vpp_ipsec.IpsecSpdDump{
 			SpdID: spdIdx,
 			SaID:  ^uint32(0),

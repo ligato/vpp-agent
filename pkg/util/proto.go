@@ -73,7 +73,6 @@ func PlaceProtos(protos map[string]proto.Message, dsts ...interface{}) {
 			}
 		}
 	}
-	return
 }
 
 // PlaceProtosIntoProtos fills dsts proto messages (direct or transitive) fields with protos values.

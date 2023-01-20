@@ -713,10 +713,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 }
 
 func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
-	if err == ErrLoopbackAlreadyConfigured {
-		return false
-	}
-	return true
+	return err != ErrLoopbackAlreadyConfigured
 }
 
 // Retrieve returns all Linux interfaces managed by this agent, attached to the default namespace

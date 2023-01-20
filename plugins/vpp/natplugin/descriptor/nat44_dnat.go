@@ -234,10 +234,8 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 			// - they will get removed by resync (not configured by agent, or tagging has failed)
 			dnat.Label = untaggedDNAT
 		}
-		if _, expectedToBeEmpty := corrEmptyDNATs[dnat.Label]; expectedToBeEmpty {
-			// a DNAT mapping which is expected to be empty, but actually is not
-			delete(corrEmptyDNATs, dnat.Label)
-		}
+		// a DNAT mapping which is expected to be empty, but actually is not
+		delete(corrEmptyDNATs, dnat.Label)
 		retrieved = append(retrieved, adapter.DNAT44KVWithMetadata{
 			Key:    nat.DNAT44Key(dnat.Label),
 			Value:  dnat,

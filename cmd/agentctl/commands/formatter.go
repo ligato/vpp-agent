@@ -140,9 +140,9 @@ func agoTmpl(t time.Time) time.Duration {
 
 func shortHumanDuration(d time.Duration) string {
 	if seconds := int(d.Seconds()); seconds < -1 {
-		return fmt.Sprintf("<invalid>")
+		return "<invalid>"
 	} else if seconds < 0 {
-		return fmt.Sprintf("0s")
+		return "0s"
 	} else if seconds < 60 {
 		return fmt.Sprintf("%ds", seconds)
 	} else if minutes := int(d.Minutes()); minutes < 60 {

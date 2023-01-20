@@ -43,7 +43,7 @@ func (h *RouteHandler) dumpRoutesForVrfAndIP(vrfID uint32, proto l3.VrfTable_Pro
 	reqCtx := h.callsChannel.SendMultiRequest(&vpp_ip.IPRouteDump{
 		Table: vpp_ip.IPTable{
 			TableID: vrfID,
-			IsIP6:   protoToUint(proto),
+			IsIP6:   proto == l3.VrfTable_IPV6,
 		},
 	})
 	for {
@@ -88,9 +88,9 @@ func (h *RouteHandler) dumpRouteIPDetails(ipRoute vpp_ip.IPRoute) ([]*vppcalls.R
 			netIP := make([]byte, 16)
 			copy(netIP[:], path.Nh.Address.XXX_UnionData[:])
 			if path.Proto == fib_types.FIB_API_PATH_NH_PROTO_IP6 {
-				nextHopIP = fmt.Sprintf("%s", net.IP(netIP).To16().String())
+				nextHopIP = net.IP(netIP).To16().String()
 			} else {
-				nextHopIP = fmt.Sprintf("%s", net.IP(netIP[:4]).To4().String())
+				nextHopIP = net.IP(netIP[:4]).To4().String()
 			}
 
 			// Route type (if via VRF is used)
@@ -202,11 +202,4 @@ func resolvePathFlags(meta *vppcalls.RouteMeta, pathFlags fib_types.FibPathFlags
 	case fib_types.FIB_API_PATH_FLAG_RESOLVE_VIA_ATTACHED:
 		meta.IsResolveAttached = true
 	}
-}
-
-func protoToUint(proto l3.VrfTable_Protocol) bool {
-	if proto == l3.VrfTable_IPV6 {
-		return true
-	}
-	return false
 }

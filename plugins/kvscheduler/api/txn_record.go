@@ -221,9 +221,9 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 			goto printOps
 		}
 		if len(txn.Values) == 0 {
-			str += indent2 + fmt.Sprintf("- values: NONE\n")
+			str += indent2 + "- values: NONE\n"
 		} else {
-			str += indent2 + fmt.Sprintf("- values:\n")
+			str += indent2 + "- values:\n"
 		}
 		for _, kv := range txn.Values {
 			if txn.ResyncType != NotResync && kv.Origin == FromSB {
