@@ -2,7 +2,7 @@ issues:
   exclude-rules:
     - linters:
         - staticcheck
-      text: "SA1019:"
+      text: "SA1019:|SA1021:"
     - path: tests/
       linters:
         - errcheck
