@@ -432,9 +432,7 @@ func TestCRUDIPAcl(t *testing.T) {
 					(rule.IpRule.GetIcmp().GetIcmpCodeRange().GetLast() == 25) &&
 					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetFirst() == 35) &&
 					(rule.IpRule.GetIcmp().GetIcmpTypeRange().GetLast() == 45) {
-					if rule.IpRule.GetIcmp().GetIcmpv6() {
-						isICMP6RulePresent = true
-					} else {
+					if !rule.IpRule.GetIcmp().GetIcmpv6() {
 						isICMPRulePresent = true
 					}
 				}
@@ -467,8 +465,6 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isIPRulePresent = false
-	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx && (aclname4 == item.Meta.Tag) {
 			t.Logf("Found modified ACL \"%v\"", item.Meta.Tag)
@@ -488,8 +484,6 @@ func TestCRUDIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isIPRulePresent = false
-	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx { //&& (aclname2 == item.Meta.Tag) {
 			t.Logf("Found modified ACL \"%v\"", item.Meta.Tag)
@@ -795,7 +789,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx {
@@ -822,7 +815,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
 	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx {
@@ -849,8 +841,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
-	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx {
 			t.Logf("Found modified ACL \"%v\"", item.Meta.Tag)
@@ -875,8 +865,6 @@ func TestCRUDMacIPAcl(t *testing.T) {
 	Expect(acls).Should(HaveLen(1))
 	t.Log("amount of acls dumped: 1")
 
-	isPresent = false
-	isForInterface = false
 	for _, item := range acls {
 		if item.Meta.Index == aclIdx {
 			t.Logf("Found modified ACL \"%v\"", item.Meta.Tag)
