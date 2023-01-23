@@ -23,7 +23,7 @@ import (
 )
 
 func TestRouteKey(t *testing.T) {
-	tests := []struct {
+	tests := []*struct {
 		name        string
 		route       Route
 		expectedKey string
@@ -125,7 +125,7 @@ func TestRouteKey(t *testing.T) {
 			if key != test.expectedKey {
 				t.Errorf("failed key for route: %+v\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
-					test.route, test.expectedKey, key)
+					&test.route, test.expectedKey, key)
 			}
 		})
 	}

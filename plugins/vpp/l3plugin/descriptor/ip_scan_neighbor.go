@@ -126,10 +126,10 @@ func (d *IPScanNeighborDescriptor) Retrieve(correlate []adapter.IPScanNeighborKV
 func (d *IPScanNeighborDescriptor) withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
 	var (
 		def = d.defaultIPScanNeighbor
-		val = *orig
+		val = proto.Clone(orig).(*l3.IPScanNeighbor)
 	)
 	if def == nil {
-		return &val
+		return val
 	}
 	if val.ScanInterval == 0 {
 		val.ScanInterval = def.GetScanInterval()
@@ -146,7 +146,7 @@ func (d *IPScanNeighborDescriptor) withDefaults(orig *l3.IPScanNeighbor) *l3.IPS
 	if val.StaleThreshold == 0 {
 		val.StaleThreshold = def.GetStaleThreshold()
 	}
-	return &val
+	return val
 }
 
 func (d *IPScanNeighborDescriptor) fillDefaults(orig *l3.IPScanNeighbor) {

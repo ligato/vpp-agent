@@ -24,6 +24,7 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
@@ -99,9 +100,9 @@ func (p *PuntPlugin) Init() (err error) {
 		}
 		key := strings.Replace(models.Key(toHost), "config/", "status/", -1)
 		if register {
-			puntToHost := *toHost
+			puntToHost := proto.Clone(toHost).(*vpp_punt.Exception)
 			puntToHost.SocketPath = socketPath
-			if err := p.PublishState.Put(key, &puntToHost, datasync.WithClientLifetimeTTL()); err != nil {
+			if err := p.PublishState.Put(key, puntToHost, datasync.WithClientLifetimeTTL()); err != nil {
 				p.Log.Errorf("publishing registered punt socket failed: %v", err)
 			}
 		} else {
@@ -116,9 +117,9 @@ func (p *PuntPlugin) Init() (err error) {
 		}
 		key := strings.Replace(models.Key(puntExc), "config/", "status/", -1)
 		if register {
-			punt := *puntExc
+			punt := proto.Clone(puntExc).(*vpp_punt.Exception)
 			punt.SocketPath = socketPath
-			if err := p.PublishState.Put(key, &punt, datasync.WithClientLifetimeTTL()); err != nil {
+			if err := p.PublishState.Put(key, punt, datasync.WithClientLifetimeTTL()); err != nil {
 				p.Log.Errorf("publishing registered punt exception socket failed: %v", err)
 			}
 		} else {

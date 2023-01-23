@@ -51,7 +51,7 @@ func TestArp(t *testing.T) {
 	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
-	tests := []struct {
+	tests := []*struct {
 		name        string
 		newArpEntry vpp_l3.ARPEntry
 	}{
@@ -89,7 +89,7 @@ func TestArp(t *testing.T) {
 			if err != nil {
 				t.Fatalf("adding arpentry failed: %v", err)
 			}
-			t.Logf("arpentry added %+v", test.newArpEntry)
+			t.Logf("arpentry added %+v", &test.newArpEntry)
 
 			arpentries, err = h.DumpArpEntries()
 			if err != nil {

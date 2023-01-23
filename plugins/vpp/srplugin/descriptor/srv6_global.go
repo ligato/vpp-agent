@@ -75,9 +75,9 @@ func (d *SRv6GlobalDescriptor) Update(key string, oldValue, newValue *srv6.SRv6G
 }
 
 func withDefaults(orig *srv6.SRv6Global) *srv6.SRv6Global {
-	var val = *orig
+	var val = proto.Clone(orig).(*srv6.SRv6Global)
 	if val.EncapSourceAddress == "" {
 		val.EncapSourceAddress = defaultEncapSourceAddress
 	}
-	return &val
+	return val
 }

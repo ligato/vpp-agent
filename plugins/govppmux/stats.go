@@ -22,6 +22,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/pkg/metrics"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/govppmux"
+	"google.golang.org/protobuf/proto"
 )
 
 // DisableOldStats is used to disabled old way of collecting stats.
@@ -51,16 +52,22 @@ func GetStats() *Stats {
 	if DisableOldStats {
 		return nil
 	}
-	s := new(Stats)
+	// s := new(Stats)
 	statsMu.RLock()
-	*s = stats
+	s := &Stats{
+		Metrics:     proto.Clone(stats.Metrics).(*govppmux.Metrics),
+		Errors:      stats.Errors.Copy(),
+		AllMessages: stats.AllMessages,
+		Messages:    stats.Messages.Copy(),
+		Replies:     stats.Replies.Copy(),
+	}
 	statsMu.RUnlock()
 	return s
 }
 
 // Stats defines various statistics for govppmux plugin.
 type Stats struct {
-	govppmux.Metrics
+	*govppmux.Metrics
 
 	Errors metrics.Calls
 
