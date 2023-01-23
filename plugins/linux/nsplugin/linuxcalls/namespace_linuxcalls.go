@@ -92,18 +92,29 @@ func (nh *namedNetNsHandler) CreateNamedNetNs(ctx NamespaceMgmtCtx, nsName strin
 			Error("failed to create namespace")
 		return netns.None(), errors.Errorf("failed to create namespace %s: %v", nsName, err)
 	}
-	nh.sysHandler.SetNamespace(newNsHandle)
+	err = nh.sysHandler.SetNamespace(newNsHandle)
+	if err != nil {
+		newNsHandle.Close()
+		nh.log.WithFields(logging.Fields{"namespace": nsName}).
+			Error("failed to set namespace")
+		return netns.None(), errors.Errorf("failed to set namespace %s: %v", nsName, err)
+	}
 
 	// Create a bind-mount for the namespace.
 	tid := syscall.Gettid()
 	err = nh.sysHandler.Mount("/proc/self/task/"+strconv.Itoa(tid)+"/ns/net", netnsMountFile, "none", syscall.MS_BIND, "")
-
-	// Switch back to the original namespace.
-	nh.sysHandler.SetNamespace(origns)
-
 	if err != nil {
 		newNsHandle.Close()
 		return netns.None(), errors.Errorf("failed to create namespace %s bind-mount: %v", nsName, err)
+	}
+
+	// Switch back to the original namespace.
+	err = nh.sysHandler.SetNamespace(origns)
+	if err != nil {
+		newNsHandle.Close()
+		nh.log.WithFields(logging.Fields{"namespace": nsName}).
+			Error("failed to set namespace")
+		return netns.None(), errors.Errorf("failed to set namespace %s: %v", nsName, err)
 	}
 
 	return newNsHandle, nil

@@ -402,7 +402,11 @@ func (p *Plugin) jsonSchemaHandler(formatter *render.Render) http.HandlerFunc {
 		// (jsonschema is in raw form (string) and non of the available format renders supports raw data output
 		// with customizable content type setting in header -> custom handling)
 		w.Header().Set(render.ContentType, render.ContentJSON+"; charset=UTF-8")
-		w.Write([]byte(sb.String())) // will also call WriteHeader(http.StatusOK) automatically
+		_, err = w.Write([]byte(sb.String())) // will also call WriteHeader(http.StatusOK) automatically
+		if err != nil {
+			p.internalError("failed to write to HTTP response", err, w, formatter)
+			return
+		}
 	}
 }
 
@@ -788,7 +792,11 @@ func (p *Plugin) configurationGetHandler(formatter *render.Render) http.HandlerF
 
 		// writing response (no YAML support in formatters -> custom handling)
 		w.Header().Set(render.ContentType, YamlContentType+"; charset=UTF-8")
-		w.Write(yamlBytes) // will also call WriteHeader(http.StatusOK) automatically
+		_, err = w.Write(yamlBytes) // will also call WriteHeader(http.StatusOK) automatically
+		if err != nil {
+			p.internalError("failed to write to HTTP response", err, w, formatter)
+			return
+		}
 	}
 }
 

@@ -208,11 +208,13 @@ func (d *MicroserviceDescriptor) processNewMicroservice(microserviceLabel string
 
 	// Notify scheduler about new microservice
 	if d.msStateInSync {
-		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+		if err := d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 			Key:      nsmodel.MicroserviceKey(ms.Label),
 			Value:    &emptypb.Empty{},
 			Metadata: nil,
-		})
+		}); err != nil {
+			d.log.Errorf("pushing SB notification failed: %v", err)
+		}
 	}
 }
 
@@ -233,11 +235,13 @@ func (d *MicroserviceDescriptor) processTerminatedMicroservice(id string) {
 
 	// Notify scheduler about terminated microservice
 	if d.msStateInSync {
-		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+		if err := d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 			Key:      nsmodel.MicroserviceKey(ms.Label),
 			Value:    nil,
 			Metadata: nil,
-		})
+		}); err != nil {
+			d.log.Errorf("pushing SB notification failed: %v", err)
+		}
 	}
 }
 

@@ -159,7 +159,9 @@ func (idx *nameToIndex) WatchItems(subscriber string, channel chan<- NameToIndex
 			idx.log.Warn("Unable to deliver notification")
 		}
 	}
-	idx.Watch(subscriber, watcher)
+	if err := idx.Watch(subscriber, watcher); err != nil {
+		idx.log.Error(err)
+	}
 }
 
 // internalIndexFunction is an index function used internally for nameToIndex.

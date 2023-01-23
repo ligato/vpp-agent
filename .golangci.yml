@@ -3,6 +3,12 @@ issues:
     - linters:
         - staticcheck
       text: "SA1019:"
+    - path: tests/
+      linters:
+        - errcheck
+    - path: _test\.go
+      linters:
+        - errcheck
     - path: clientv2/vpp/dbadapter/data_resync_db.go
       linters:
         - staticcheck
@@ -15,3 +21,6 @@ issues:
       linters:
         - staticcheck
       text: "SA1021:"
+  # disable issue output limits
+  max-issues-per-linter: 0
+  max-same-issues: 0

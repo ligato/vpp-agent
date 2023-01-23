@@ -132,7 +132,7 @@ func (d *DNAT44Descriptor) Validate(key string, dnat *nat.DNat44) error {
 					"st_mappings.twice_nat_pool_ip")
 			}
 			if len(stMapping.LocalIps) > 1 {
-				kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings,
+				return kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings,
 					"st_mappings.twice_nat_pool_ip")
 			}
 			if _, err := ParseIPv4(stMapping.TwiceNatPoolIp); err != nil {

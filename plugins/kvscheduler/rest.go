@@ -179,7 +179,7 @@ func (s *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerF
 			format = formatStr[0]
 			if format != formatJSON && format != formatText {
 				err := errors.New("unrecognized output format")
-				formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 				return
 			}
 		}
@@ -559,7 +559,10 @@ func (s *Scheduler) graphHandler(formatter *render.Render) http.HandlerFunc {
 		format := req.FormValue("format")
 		switch format {
 		case "raw":
-			w.Write(output)
+			_, err = w.Write(output)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		case "dot":
 			dot, err := validateDot(output)
@@ -567,7 +570,10 @@ func (s *Scheduler) graphHandler(formatter *render.Render) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			w.Write(dot)
+			_, err = w.Write(dot)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		default:
 			format = "svg"
@@ -586,7 +592,7 @@ func (s *Scheduler) graphHandler(formatter *render.Render) http.HandlerFunc {
 
 func (s *Scheduler) statsHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		formatter.JSON(w, http.StatusOK, GetStats())
+		s.logError(formatter.JSON(w, http.StatusOK, GetStats()))
 	}
 }
 
