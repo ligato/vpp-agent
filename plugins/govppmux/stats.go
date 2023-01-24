@@ -37,6 +37,7 @@ func init() {
 	if DisableOldStats {
 		return
 	}
+	stats.Metrics = &govppmux.Metrics{}
 	stats.Errors = make(metrics.Calls)
 	stats.Messages = make(metrics.Calls)
 	stats.Replies = make(metrics.Calls)
@@ -52,7 +53,6 @@ func GetStats() *Stats {
 	if DisableOldStats {
 		return nil
 	}
-	// s := new(Stats)
 	statsMu.RLock()
 	s := &Stats{
 		Metrics:     proto.Clone(stats.Metrics).(*govppmux.Metrics),
