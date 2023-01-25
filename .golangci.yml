@@ -1,0 +1,27 @@
+---
+issues:
+  exclude-rules:
+    - linters:
+        - staticcheck
+      text: "SA1019:|SA1021:"
+    - path: tests/
+      linters:
+        - errcheck
+    - path: _test\.go
+      linters:
+        - errcheck
+    - path: clientv2/vpp/dbadapter/data_resync_db.go
+      linters:
+        - staticcheck
+      text: "SA4004:"
+    - path: plugins/kvscheduler/plugin_scheduler.go
+      linters:
+        - staticcheck
+      text: "SA2001:"
+    - path: plugins/netalloc/netalloc_plugin.go
+      linters:
+        - staticcheck
+      text: "SA1021:"
+  # disable issue output limits
+  max-issues-per-linter: 0
+  max-same-issues: 0

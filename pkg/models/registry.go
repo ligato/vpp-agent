@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"strings"
 
+	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -145,11 +146,17 @@ func (r *LocalRegistry) RegisteredModels() []KnownModel {
 func (r *LocalRegistry) MessageTypeRegistry() *protoregistry.Types {
 	typeRegistry := new(protoregistry.Types)
 	for _, model := range r.modelNames {
-		typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.proto.ProtoReflect().Descriptor()))
+		err := typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.proto.ProtoReflect().Descriptor()))
+		if err != nil {
+			logging.Warn("registering message %v for local registry failed: %v", model, err)
+		}
 	}
 	proxiedTypes := r.proxied.MessageTypeRegistry()
 	proxiedTypes.RangeMessages(func(mt protoreflect.MessageType) bool {
-		typeRegistry.RegisterMessage(mt)
+		err := typeRegistry.RegisterMessage(mt)
+		if err != nil {
+			logging.Warn("registering proxied message %v for local registry failed: %v", mt, err)
+		}
 		return true
 	})
 	return typeRegistry

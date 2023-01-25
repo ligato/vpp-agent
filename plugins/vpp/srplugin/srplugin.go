@@ -41,11 +41,6 @@ type SRPlugin struct {
 
 	// VPP handler
 	srHandler vppcalls.SRv6VppAPI
-
-	// descriptors
-	localSIDDescriptor *descriptor.LocalSIDDescriptor
-	policyDescriptor   *descriptor.PolicyDescriptor
-	steeringDescriptor *descriptor.SteeringDescriptor
 }
 
 type Deps struct {

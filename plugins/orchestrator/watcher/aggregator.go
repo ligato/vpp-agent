@@ -284,19 +284,11 @@ func (p *Aggregator) watchAggrResync(aggrResync, resyncCh chan datasync.ResyncEv
 	var cachedResyncs []datasync.ResyncEvent
 
 	// process resync events from watchers
-	for {
-		select {
-		case e, ok := <-aggrResync:
-			if !ok {
-				p.Log.Debugf("aggrResync channel was closed")
-				return
-			}
+	for e := range aggrResync {
+		cachedResyncs = append(cachedResyncs, e)
+		p.Log.Debugf("watchers received resync event (%d/%d watchers done)", len(cachedResyncs), len(p.Watchers))
 
-			cachedResyncs = append(cachedResyncs, e)
-			p.Log.Debugf("watchers received resync event (%d/%d watchers done)", len(cachedResyncs), len(p.Watchers))
-
-			e.Done(nil)
-		}
+		e.Done(nil)
 
 		if len(cachedResyncs) == len(p.Watchers) {
 			p.Log.Debug("resyncs from all watchers received, calling aggregated resync")
@@ -305,6 +297,7 @@ func (p *Aggregator) watchAggrResync(aggrResync, resyncCh chan datasync.ResyncEv
 			cachedResyncs = nil
 		}
 	}
+	p.Log.Debugf("aggrResync channel was closed")
 }
 
 func (p *Aggregator) watchLocalEvents(partChange, changeChan chan datasync.ChangeEvent, partResync chan datasync.ResyncEvent) {

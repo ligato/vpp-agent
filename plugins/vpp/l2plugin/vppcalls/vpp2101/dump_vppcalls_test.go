@@ -279,8 +279,6 @@ var testDataOutXconnect = []*vppcalls.XConnectDetails{
 	},
 }
 
-/*
-TODO: re-enable the test once l2_xconnect_dump is fixed in VPP (it crashes in 21.01, see https://jira.fd.io/browse/VPP-1968)
 // Scenario:
 // - 2 Xconnect entries in VPP
 // TestDumpXConnectPairs tests DumpXConnectPairs method
@@ -307,4 +305,3 @@ func TestDumpXConnectPairs(t *testing.T) {
 	_, err = xcHandler.DumpXConnectPairs()
 	Expect(err).Should(HaveOccurred())
 }
-*/

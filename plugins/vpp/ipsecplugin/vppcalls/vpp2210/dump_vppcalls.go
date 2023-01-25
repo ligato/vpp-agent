@@ -232,29 +232,32 @@ func (h *IPSecVppHandler) DumpTunnelProtections() (tpList []*ipsec.TunnelProtect
 	return
 }
 
+// TODO: dumping of SPD interfaces is broken in VPP. Instead of the SPD index value given by control-plane,
+// the index to the VPP's internal array of SPDs is returned, which is useless.
+
 // Get all interfaces of SPD configured on the VPP
-func (h *IPSecVppHandler) dumpSpdInterfaces() (map[uint32][]uint32, error) {
-	// SPD index to interface indexes
-	spdInterfaces := make(map[uint32][]uint32)
+// func (h *IPSecVppHandler) dumpSpdInterfaces() (map[uint32][]uint32, error) {
+// 	// SPD index to interface indexes
+// 	spdInterfaces := make(map[uint32][]uint32)
 
-	req := &vpp_ipsec.IpsecSpdInterfaceDump{}
-	reqCtx := h.callsChannel.SendMultiRequest(req)
+// 	req := &vpp_ipsec.IpsecSpdInterfaceDump{}
+// 	reqCtx := h.callsChannel.SendMultiRequest(req)
 
-	for {
-		spdDetails := &vpp_ipsec.IpsecSpdInterfaceDetails{}
-		stop, err := reqCtx.ReceiveReply(spdDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
+// 	for {
+// 		spdDetails := &vpp_ipsec.IpsecSpdInterfaceDetails{}
+// 		stop, err := reqCtx.ReceiveReply(spdDetails)
+// 		if stop {
+// 			break
+// 		}
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		spdInterfaces[spdDetails.SpdIndex] = append(spdInterfaces[spdDetails.SpdIndex], uint32(spdDetails.SwIfIndex))
-	}
+// 		spdInterfaces[spdDetails.SpdIndex] = append(spdInterfaces[spdDetails.SpdIndex], uint32(spdDetails.SwIfIndex))
+// 	}
 
-	return spdInterfaces, nil
-}
+// 	return spdInterfaces, nil
+// }
 
 // Get all indexes of SPD configured on the VPP
 func (h *IPSecVppHandler) dumpSpdIndexes() (map[uint32]uint32, error) {

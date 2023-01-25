@@ -299,10 +299,7 @@ func networkToPrefix(dstNetwork *net.IPNet) ip_types.Prefix {
 }
 
 func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
+	return value != 0
 }
 
 func boolToUint(input bool) uint8 {

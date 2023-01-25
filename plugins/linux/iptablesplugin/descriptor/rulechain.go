@@ -267,7 +267,6 @@ func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleC
 				Key:   ifmodel.InterfaceKey(i),
 			})
 		}
-		return deps
 	}
 
 	// microservice must be available
@@ -278,7 +277,7 @@ func (d *RuleChainDescriptor) Dependencies(key string, rch *linux_iptables.RuleC
 		})
 	}
 
-	return nil
+	return deps
 }
 
 // retrievedRuleChains is used as the return value sent via channel by retrieveRuleChains().

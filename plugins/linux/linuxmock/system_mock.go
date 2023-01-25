@@ -24,8 +24,6 @@ import (
 // SystemMock allows to mock netlink-related methods
 type SystemMock struct {
 	responses []*WhenStResp
-	respCurr  int
-	respMax   int
 }
 
 // NewSystemMock creates new instance of the mock and initializes response list

@@ -51,7 +51,7 @@ func TestArp(t *testing.T) {
 	h := l3plugin_vppcalls.CompatibleL3VppHandler(ctx.vppClient, ifIndexes, vrfIndexes,
 		netalloc_mock.NewMockNetAlloc(), logrus.NewLogger("test"))
 
-	tests := []struct {
+	tests := []*struct {
 		name        string
 		newArpEntry vpp_l3.ARPEntry
 	}{
@@ -89,7 +89,7 @@ func TestArp(t *testing.T) {
 			if err != nil {
 				t.Fatalf("adding arpentry failed: %v", err)
 			}
-			t.Logf("arpentry added %+v", test.newArpEntry)
+			t.Logf("arpentry added %+v", &test.newArpEntry)
 
 			arpentries, err = h.DumpArpEntries()
 			if err != nil {
@@ -104,7 +104,7 @@ func TestArp(t *testing.T) {
 
 			newArpEntryIsPresent := false
 			for _, arpentry := range arpentries {
-				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
+				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && strings.EqualFold(arpentry.Arp.PhysAddress, test.newArpEntry.PhysAddress) {
 					t.Logf("dumped arpentry %+v", arpentry)
 					newArpEntryIsPresent = true
 					break
@@ -133,7 +133,7 @@ func TestArp(t *testing.T) {
 			}
 
 			for _, arpentry := range arpentries {
-				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && (strings.ToLower(arpentry.Arp.PhysAddress) == strings.ToLower(test.newArpEntry.PhysAddress)) {
+				if (arpentry.Arp.Interface == test.newArpEntry.Interface) && (arpentry.Arp.IpAddress == test.newArpEntry.IpAddress) && strings.EqualFold(arpentry.Arp.PhysAddress, test.newArpEntry.PhysAddress) {
 					t.Error("Added arp entry is still present in arp dump - should be deleted")
 				}
 			}

@@ -45,8 +45,8 @@ func (d *InterfaceDescriptor) createVETH(
 	_, peerExists := d.intfIndex.LookupByName(peerName)
 	if !peerExists {
 		// delete obsolete/invalid unfinished VETH (ignore errors)
-		d.ifHandler.DeleteInterface(tempHostName)
-		d.ifHandler.DeleteInterface(tempPeerHostName)
+		_ = d.ifHandler.DeleteInterface(tempHostName)
+		_ = d.ifHandler.DeleteInterface(tempPeerHostName)
 
 		// create a new VETH pair
 		err = d.ifHandler.AddVethInterfacePair(tempHostName, tempPeerHostName)

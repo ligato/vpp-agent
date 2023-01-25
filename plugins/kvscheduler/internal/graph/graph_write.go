@@ -87,7 +87,7 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 		target, targetIdx := sourceNode.targets.GetTargetForLabel(relation, label)
 		keySelector := sourceNode.targetsDef[targetIdx].Selector.KeySelector
 		if keySelector != nil {
-			if keySelector(key) == false {
+			if !keySelector(key) {
 				return
 			}
 		}

@@ -101,7 +101,7 @@ func (d *FIBDescriptor) EquivalentFIBs(key string, oldFIB, newFIB *l2.FIBEntry) 
 	}
 
 	// MAC addresses compared case-insensitively
-	return strings.ToLower(oldFIB.PhysAddress) == strings.ToLower(newFIB.PhysAddress)
+	return strings.EqualFold(oldFIB.PhysAddress, newFIB.PhysAddress)
 }
 
 // Validate validates VPP L2 FIB configuration.
@@ -156,8 +156,8 @@ func (d *FIBDescriptor) Retrieve(correlate []adapter.FIBKVWithMetadata) (retriev
 }
 
 // Dependencies for FIBs are:
-//  * FORWARD FIB: bridge domain + outgoing interface already put into the bridge domain
-//  * DROP FIB: bridge domain
+//   - FORWARD FIB: bridge domain + outgoing interface already put into the bridge domain
+//   - DROP FIB: bridge domain
 func (d *FIBDescriptor) Dependencies(key string, fib *l2.FIBEntry) (dependencies []kvs.Dependency) {
 	if fib.Action == l2.FIBEntry_FORWARD {
 		dependencies = append(dependencies, kvs.Dependency{

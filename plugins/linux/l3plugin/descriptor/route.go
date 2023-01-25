@@ -326,7 +326,7 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 						}
 						return false
 					}
-					ifName, address, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					_, address, source, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
 					if isAddrKey && source != netalloc_api.IPAddressSource_ALLOC_REF {
 						if _, network, err := net.ParseCIDR(address); err == nil && network.Contains(gwAddr) {
 							// GW address is inside the local network of the outgoing interface
@@ -510,7 +510,7 @@ func equalAddrs(addr1, addr2 string) bool {
 	a2 := net.ParseIP(addr2)
 	if a1 == nil || a2 == nil {
 		// if parsing fails, compare as strings
-		return strings.ToLower(addr1) == strings.ToLower(addr2)
+		return strings.EqualFold(addr1, addr2)
 	}
 	return a1.Equal(a2)
 }
@@ -524,7 +524,7 @@ func equalNetworks(net1, net2 string) bool {
 	_, n2, err2 := net.ParseCIDR(net2)
 	if err1 != nil || err2 != nil {
 		// if parsing fails, compare as strings
-		return strings.ToLower(net1) == strings.ToLower(net2)
+		return strings.EqualFold(net1, net2)
 	}
 	return n1.IP.Equal(n2.IP) && bytes.Equal(n1.Mask, n2.Mask)
 }

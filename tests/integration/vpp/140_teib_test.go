@@ -15,6 +15,7 @@
 package vpp
 
 import (
+	"context"
 	"testing"
 
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -93,7 +94,7 @@ func TestTeib(t *testing.T) {
 			}
 			ifIndexes.Put(test.teib.Interface, &ifaceidx.IfaceMetadata{SwIfIndex: ifIdx})
 
-			err = l3Handler.VppAddTeibEntry(nil, test.teib)
+			err = l3Handler.VppAddTeibEntry(context.Background(), test.teib)
 			if err != nil {
 				if test.shouldFail {
 					return
@@ -126,7 +127,7 @@ func TestTeib(t *testing.T) {
 				t.Fatalf("expected NextHopAddr <%s>, got: <%s>", test.teib.NextHopAddr, entries[0].NextHopAddr)
 			}
 
-			err = l3Handler.VppDelTeibEntry(nil, test.teib)
+			err = l3Handler.VppDelTeibEntry(context.Background(), test.teib)
 			if err != nil {
 				t.Fatalf("delete TEIB entry failed: %v\n", err)
 			}

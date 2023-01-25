@@ -488,9 +488,7 @@ func (svc *dumpService) DumpWgPeers() (peers []*vpp_wg.Peer, err error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, peer := range _peers {
-		peers = append(peers, peer)
-	}
+	peers = append(peers, _peers...)
 	return
 }
 

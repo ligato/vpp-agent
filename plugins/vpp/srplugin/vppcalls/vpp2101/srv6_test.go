@@ -797,7 +797,7 @@ func TestAddPolicy(t *testing.T) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsgs).To(HaveLen(1))
 				Expect(catchedMsgs[0]).To(Equal(&vpp_sr.SrPolicyAdd{
-					BsidAddr: *(&sidA),
+					BsidAddr: sidA,
 					FibTable: 10, // installationVrfId
 					IsSpray:  false,
 					IsEncap:  true,
@@ -1505,13 +1505,6 @@ func policySegmentList(weight uint32, sids ...srv6.SID) *srv6.Policy_SegmentList
 		Weight:   weight,
 		Segments: segments,
 	}
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return uint8(1)
-	}
-	return uint8(0)
 }
 
 func sidToStr(sid ip_types.IP6Address) string {

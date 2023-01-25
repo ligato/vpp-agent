@@ -239,9 +239,7 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*ac
 			data := &vppcalls.ACLToInterface{
 				SwIfIdx: uint32(replyMACIP.SwIfIndex),
 			}
-			for _, aclIdx := range replyMACIP.Acls {
-				data.IngressACL = append(data.IngressACL, aclIdx)
-			}
+			data.IngressACL = append(data.IngressACL, replyMACIP.Acls...)
 			interfaceData = append(interfaceData, data)
 		}
 	}

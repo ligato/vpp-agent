@@ -132,7 +132,7 @@ func (d *DNAT44Descriptor) Validate(key string, dnat *nat.DNat44) error {
 					"st_mappings.twice_nat_pool_ip")
 			}
 			if len(stMapping.LocalIps) > 1 {
-				kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings,
+				return kvs.NewInvalidValueError(ErrDNAT44TwiceNATPoolIPIsNotSupportedForLBStMappings,
 					"st_mappings.twice_nat_pool_ip")
 			}
 			if _, err := ParseIPv4(stMapping.TwiceNatPoolIp); err != nil {
@@ -234,10 +234,8 @@ func (d *DNAT44Descriptor) Retrieve(correlate []adapter.DNAT44KVWithMetadata) (
 			// - they will get removed by resync (not configured by agent, or tagging has failed)
 			dnat.Label = untaggedDNAT
 		}
-		if _, expectedToBeEmpty := corrEmptyDNATs[dnat.Label]; expectedToBeEmpty {
-			// a DNAT mapping which is expected to be empty, but actually is not
-			delete(corrEmptyDNATs, dnat.Label)
-		}
+		// a DNAT mapping which is expected to be empty, but actually is not
+		delete(corrEmptyDNATs, dnat.Label)
 		retrieved = append(retrieved, adapter.DNAT44KVWithMetadata{
 			Key:    nat.DNAT44Key(dnat.Label),
 			Value:  dnat,
@@ -399,7 +397,7 @@ func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) 
 	// attributes compared as usually
 	if stMapping1.Protocol != stMapping2.Protocol || stMapping1.ExternalPort != stMapping2.ExternalPort ||
 		stMapping1.ExternalIp != stMapping2.ExternalIp || stMapping1.ExternalInterface != stMapping2.ExternalInterface ||
-		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping1.SessionAffinity ||
+		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping2.SessionAffinity ||
 		!equivalentIPv4(stMapping1.TwiceNatPoolIp, stMapping2.TwiceNatPoolIp) {
 		return false
 	}

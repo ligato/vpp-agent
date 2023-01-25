@@ -26,7 +26,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -135,7 +134,7 @@ func main() {
 
 	// output the generated adapter into the file
 	filename := directory + "/" + strings.ToLower(*descriptorNameFlag) + ".go"
-	err = ioutil.WriteFile(filename, buf.Bytes(), 0644)
+	err = os.WriteFile(filename, buf.Bytes(), 0644)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERROR: ", err)
 		os.Exit(4)

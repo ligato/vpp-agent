@@ -36,8 +36,12 @@ func Register(pb proto.Message, spec Spec, opts ...ModelOption) KnownModel {
 }
 
 // RegisterRemote registers remotely known model in given RemoteRegistry
-func RegisterRemote(remoteModel *ModelInfo, remoteRegistry *RemoteRegistry) {
-	remoteRegistry.Register(remoteModel, ToSpec(remoteModel.Spec))
+func RegisterRemote(remoteModel *ModelInfo, remoteRegistry *RemoteRegistry) KnownModel {
+	model, err := remoteRegistry.Register(remoteModel, ToSpec(remoteModel.Spec))
+	if err != nil {
+		panic(err)
+	}
+	return model
 }
 
 // RegisteredModels returns models registered in the DefaultRegistry.

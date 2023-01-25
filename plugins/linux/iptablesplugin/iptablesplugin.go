@@ -49,9 +49,6 @@ type IPTablesPlugin struct {
 
 	// system handlers
 	iptHandler linuxcalls.IPTablesAPI
-
-	// descriptors
-	ruleChainDescriptor *descriptor.RuleChainDescriptor
 }
 
 // Deps lists dependencies of the plugin.

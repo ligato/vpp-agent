@@ -1344,11 +1344,11 @@ func TestAddNat44EdStaticMappingLb(t *testing.T) {
 	for _, local := range msg.Locals {
 		localAddr := make(net.IP, net.IPv4len)
 		copy(localAddr, local.Addr[:])
-		if bytes.Compare(localAddr, localIP1) == 0 && local.Port == 8080 && local.Probability == 35 {
+		if bytes.Equal(localAddr, localIP1) && local.Port == 8080 && local.Probability == 35 {
 			expectedCount++
 		}
 		copy(localAddr, local.Addr[:])
-		if bytes.Compare(localAddr, localIP2) == 0 && local.Port == 8181 && local.Probability == 65 {
+		if bytes.Equal(localAddr, localIP2) && local.Port == 8181 && local.Probability == 65 {
 			expectedCount++
 		}
 	}
@@ -1396,11 +1396,11 @@ func TestDelNat44EdStaticMappingLb(t *testing.T) {
 	for _, local := range msg.Locals {
 		localAddr := make(net.IP, net.IPv4len)
 		copy(localAddr, local.Addr[:])
-		if bytes.Compare(localAddr, localIP1) == 0 && local.Port == 8080 && local.Probability == 35 {
+		if bytes.Equal(localAddr, localIP1) && local.Port == 8080 && local.Probability == 35 {
 			expectedCount++
 		}
 		copy(localAddr, local.Addr[:])
-		if bytes.Compare(localAddr, localIP2) == 0 && local.Port == 8181 && local.Probability == 65 {
+		if bytes.Equal(localAddr, localIP2) && local.Port == 8181 && local.Probability == 65 {
 			expectedCount++
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"path"
 	"regexp"
 	"strings"
@@ -44,7 +43,7 @@ func New(logger *logrus.Logger) *Converter {
 // ConvertFrom tells the convert to work on the given input:
 func (c *Converter) ConvertFrom(rd io.Reader) (*pluginpb.CodeGeneratorResponse, error) {
 	c.logger.Debug("Reading code generation request")
-	input, err := ioutil.ReadAll(rd)
+	input, err := io.ReadAll(rd)
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to read request")
 		return nil, err

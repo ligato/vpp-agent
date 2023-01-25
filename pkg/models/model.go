@@ -29,9 +29,8 @@ type LocallyKnownModel struct {
 	spec Spec
 	modelOptions
 
-	goType    reflect.Type
-	proto     protoreflect.ProtoMessage
-	protoName string
+	goType reflect.Type
+	proto  protoreflect.ProtoMessage
 
 	// cache
 	keyPrefix *string

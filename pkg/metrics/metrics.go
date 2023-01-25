@@ -26,6 +26,15 @@ var RoundDuration = time.Millisecond * 1
 
 type Calls map[string]*CallStats
 
+func (m Calls) Copy() Calls {
+	calls := make(Calls)
+	for k, s := range m {
+		copy := *s
+		calls[k] = &copy
+	}
+	return calls
+}
+
 // MarshalJSON implements json.Marshaler interface
 func (m Calls) MarshalJSON() ([]byte, error) {
 	calls := make([]*CallStats, 0, len(m))

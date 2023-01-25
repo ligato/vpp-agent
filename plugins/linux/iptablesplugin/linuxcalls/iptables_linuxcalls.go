@@ -47,17 +47,17 @@ type IPTablesHandler struct {
 
 // Init initializes an iptables handler.
 func (h *IPTablesHandler) Init(config *HandlerConfig) error {
-	var err error
+	var err, errv4, errv6 error
 
-	h.v4Handler, err = iptables.NewWithProtocol(iptables.ProtocolIPv4)
-	if err != nil {
-		err = fmt.Errorf("errr by initializing iptables v4 handler: %v", err)
+	h.v4Handler, errv4 = iptables.NewWithProtocol(iptables.ProtocolIPv4)
+	if errv4 != nil {
+		err = fmt.Errorf("error initializing iptables v4 handler: %v", errv4)
 		// continue, iptables just may not be installed
 	}
 
-	h.v6Handler, err = iptables.NewWithProtocol(iptables.ProtocolIPv6)
-	if err != nil {
-		err = fmt.Errorf("errr by initializing iptables v6 handler: %v", err)
+	h.v6Handler, errv6 = iptables.NewWithProtocol(iptables.ProtocolIPv6)
+	if errv6 != nil {
+		err = fmt.Errorf("errors: %w; error initializing iptables v6 handler: %v", err, errv6)
 		// continue, ip6tables just may not be installed
 	}
 
@@ -254,7 +254,7 @@ func (h *IPTablesHandler) getHandler(protocol L3Protocol) (*iptables.IPTables, e
 	}
 
 	if handler == nil {
-		return nil, fmt.Errorf("iptables handler for protocol %v is not initialized " +
+		return nil, fmt.Errorf("iptables handler for protocol %v is not initialized "+
 			"(please check that you have installed iptables in host system)", protocol)
 	}
 	return handler, nil

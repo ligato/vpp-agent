@@ -17,7 +17,7 @@ package govppmux
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/rpc"
 
@@ -57,7 +57,7 @@ func (p *Plugin) proxyHandler(_ *render.Render) http.HandlerFunc {
 
 func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		body, err := ioutil.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
 		if err != nil {
 			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v", err)
 			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
@@ -72,7 +72,7 @@ func (p *Plugin) cliCommandHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		command, ok := reqParam["vppclicommand"]
 		if !ok || command == "" {
-			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
+			errMsg := "400 Bad request: vppclicommand parameter missing or empty\n"
 			_ = formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}

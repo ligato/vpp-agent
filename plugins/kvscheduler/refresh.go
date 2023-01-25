@@ -446,7 +446,7 @@ func dumpGraph(g graph.RWAccess) string {
 		))
 		writeLines(prototext.Format(node.GetValue()), "  ")
 
-		if f := node.GetTargets(DependencyRelation); f != nil && len(f) > 0 {
+		if f := node.GetTargets(DependencyRelation); len(f) > 0 {
 			writeLine("Depends on:", "")
 			for _, dep := range f {
 				var nodeDeps []string
@@ -463,12 +463,12 @@ func dumpGraph(g graph.RWAccess) string {
 				}
 			}
 		}
-		if f := node.GetTargets(DerivesRelation); f != nil && len(f) > 0 {
+		if f := node.GetTargets(DerivesRelation); len(f) > 0 {
 			writeLine("Derives:", "")
 			var nodeDers []string
 			for _, der := range f {
 				if len(der.Nodes) == 0 {
-					nodeDers = append(nodeDers, fmt.Sprintf("%s", der.Label))
+					nodeDers = append(nodeDers, der.Label)
 				} else {
 					for _, node := range der.Nodes {
 						desc := ""

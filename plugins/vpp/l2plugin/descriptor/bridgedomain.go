@@ -292,7 +292,7 @@ func calculateARPDiff(oldARPs, newARPs []*l2.BridgeDomain_ArpTerminationEntry) (
 // equalTerminationARPs compares two termination ARP entries for equality.
 func equalTerminationARPs(arp1, arp2 *l2.BridgeDomain_ArpTerminationEntry) bool {
 	// compare MAC addresses
-	if strings.ToLower(arp1.PhysAddress) != strings.ToLower(arp2.PhysAddress) {
+	if !strings.EqualFold(arp1.PhysAddress, arp2.PhysAddress) {
 		return false
 	}
 
@@ -301,7 +301,7 @@ func equalTerminationARPs(arp1, arp2 *l2.BridgeDomain_ArpTerminationEntry) bool 
 	ip2 := net.ParseIP(arp2.IpAddress)
 	if ip1 == nil || ip2 == nil {
 		// if parsing fails, compare as strings
-		return strings.ToLower(arp1.IpAddress) == strings.ToLower(arp2.IpAddress)
+		return strings.EqualFold(arp1.IpAddress, arp2.IpAddress)
 	}
 	return ip1.Equal(ip2)
 }

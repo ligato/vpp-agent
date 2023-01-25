@@ -131,10 +131,6 @@ func (d *SteeringDescriptor) Validate(key string, steering *srv6.Steering) error
 		if err != nil {
 			return scheduler.NewInvalidValueError(errors.Errorf("failed to parse steering's policy bsid %s, should be a valid ipv6 address: %v", ref.PolicyBsid, err), "policybsid")
 		}
-	case *srv6.Steering_PolicyIndex:
-		if ref.PolicyIndex < 0 {
-			return scheduler.NewInvalidValueError(errors.Errorf("policy index can't be negative number"), "policyindex")
-		}
 	case nil:
 		return scheduler.NewInvalidValueError(errors.New("policy reference must be filled, either by policy bsid or policy index"), "PolicyRef(policybsid/policyindex)")
 	default:
@@ -148,9 +144,6 @@ func (d *SteeringDescriptor) Validate(key string, steering *srv6.Steering) error
 			return scheduler.NewInvalidValueError(errors.New("(non-empty) interface name must be given (L2 traffic definition)"), "InterfaceName")
 		}
 	case *srv6.Steering_L3Traffic_:
-		if t.L3Traffic.InstallationVrfId < 0 {
-			return scheduler.NewInvalidValueError(errors.Errorf("installationVrfId for l3 traffic can't be lower than zero, input value %v", t.L3Traffic.InstallationVrfId), "installationVrfId")
-		}
 		_, _, err := net.ParseCIDR(t.L3Traffic.PrefixAddress)
 		if err != nil {
 			return scheduler.NewInvalidValueError(errors.Errorf("steering l3 traffic prefix address %v can't be parsed as CIDR formatted prefix: %v", t.L3Traffic.PrefixAddress, err), "prefixaddress")

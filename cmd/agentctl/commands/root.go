@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/common-nighthawk/go-figure"
-	"github.com/docker/docker/pkg/term"
+	"github.com/moby/term"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.ligato.io/cn-infra/v2/agent"

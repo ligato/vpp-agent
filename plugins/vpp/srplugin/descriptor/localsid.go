@@ -21,7 +21,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.ligato.io/cn-infra/v2/logging"
-	"go.ligato.io/cn-infra/v2/utils/addrs"
 
 	scheduler "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/srplugin/descriptor/adapter"
@@ -127,9 +126,6 @@ func (d *LocalSIDDescriptor) Validate(key string, localSID *srv6.LocalSID) error
 	_, err := ParseIPv6(localSID.GetSid())
 	if err != nil {
 		return scheduler.NewInvalidValueError(errors.Errorf("failed to parse local sid %s, should be a valid ipv6 address: %v", localSID.GetSid(), err), "sid")
-	}
-	if localSID.GetInstallationVrfId() < 0 {
-		return scheduler.NewInvalidValueError(errors.Errorf("installation vrf id can't be lower than zero, input value %v", localSID.GetInstallationVrfId()), "installationVrfId")
 	}
 
 	// checking end functions
@@ -251,24 +247,6 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 	return dependencies
 }
 
-func (d *LocalSIDDescriptor) isIPv4RouteKey(key string) bool {
-	isIPv6, err := isRouteDstIpv6(key)
-	if err != nil {
-		d.log.Debug("Can't determine whether key %v is for ipv4 route or not due to: %v", key, err)
-		return false // it fails also in route creation (vpp_calls) and it is before needed vrf creation
-	}
-	return !isIPv6
-}
-
-func (d *LocalSIDDescriptor) isIPv6RouteKey(key string) bool {
-	isIPv6, err := isRouteDstIpv6(key)
-	if err != nil {
-		d.log.Debug("Can't determine whether key %v is for ipv6 route or not due to: %v", key, err)
-		return false // it fails also in route creation (vpp_calls) and it is before needed vrf creation
-	}
-	return isIPv6
-}
-
 // ParseIPv6 parses string <str> to IPv6 address (including IPv4 address converted to IPv6 address)
 func ParseIPv6(str string) (net.IP, error) {
 	ip := net.ParseIP(str)
@@ -293,15 +271,6 @@ func ParseIPv4(str string) (net.IP, error) {
 		return nil, errors.Errorf(" %q is not ipv4 address", str)
 	}
 	return ipv4, nil
-}
-
-func isRouteDstIpv6(key string) (bool, error) {
-	_, _, dstNet, _, isRouteKey := vpp_l3.ParseRouteKey(key)
-	if !isRouteKey {
-		return false, errors.Errorf("Key %v is not route key", key)
-	}
-	_, isIPv6, err := addrs.ParseIPWithPrefix(dstNet)
-	return isIPv6, err
 }
 
 func equivalentSIDs(sid1, sid2 string) bool {

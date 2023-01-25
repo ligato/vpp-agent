@@ -157,7 +157,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 				// -> remove obsolete targets
 				var obsolete []string
 				for _, key := range target.MatchingKeys.Iterate() {
-					if targetsDef[i].Selector.KeySelector(key) == false {
+					if !targetsDef[i].Selector.KeySelector(key) {
 						obsolete = append(obsolete, key)
 					}
 				}
@@ -305,7 +305,7 @@ func (node *node) addDelEdges(target RelationTargetDef, del bool) {
 // iterEveryEdge iterates over every outgoing edge.
 func (node *node) iterEveryEdge(target RelationTargetDef, cb func(targetKey string)) {
 	checkTarget := func(key string) {
-		if !target.WithKeySelector() || target.Selector.KeySelector(key) == true {
+		if !target.WithKeySelector() || target.Selector.KeySelector(key) {
 			cb(key)
 		}
 	}
