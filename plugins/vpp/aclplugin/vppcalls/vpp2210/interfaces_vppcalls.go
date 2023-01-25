@@ -259,16 +259,12 @@ func (h *ACLVppHandler) requestSetACLToInterfaces(logicalReq *aclInterfaceLogica
 				// added to the beginning of the list
 				// TODO it would be nicer to add new acl index to newNInput index
 				ACLs = append(ACLs, logicalReq.aclIndex)
-				for _, aclIndex := range aclInterfaceDetails.Acls {
-					ACLs = append(ACLs, aclIndex)
-				}
+				ACLs = append(ACLs, aclInterfaceDetails.Acls...)
 				nInput++ // Rise NInput
 			} else {
 				// Construct ACL list. ACLs outside of NInput are defined as egress, so provided new aclIndex has to be
 				// added to the end of the list
-				for _, aclIndex := range aclInterfaceDetails.Acls {
-					ACLs = append(ACLs, aclIndex)
-				}
+				ACLs = append(ACLs, aclInterfaceDetails.Acls...)
 				ACLs = append(ACLs, logicalReq.aclIndex)
 				// NInput remains the same
 			}

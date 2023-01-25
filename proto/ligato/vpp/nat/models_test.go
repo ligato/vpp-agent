@@ -287,7 +287,7 @@ func TestParseAddressNAT44Key(t *testing.T) {
 }
 
 func TestNat44AddressPoolKey(t *testing.T) {
-	tests := []struct {
+	tests := []*struct {
 		name        string
 		pool        Nat44AddressPool
 		expectedKey string
@@ -343,7 +343,7 @@ func TestNat44AddressPoolKey(t *testing.T) {
 			if key != test.expectedKey {
 				t.Errorf("failed key for NAT44 address pool: %+v\n"+
 					"expected key:\n\t%q\ngot key:\n\t%q",
-					test.pool, test.expectedKey, key)
+					&test.pool, test.expectedKey, key)
 			}
 		})
 	}

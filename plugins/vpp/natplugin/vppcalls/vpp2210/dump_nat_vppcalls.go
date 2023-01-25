@@ -1193,13 +1193,6 @@ func getNat44EiFlags(flags vpp_nat_ei.Nat44EiConfigFlags) *nat44EiFlags {
 	return natFlags
 }
 
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
-}
-
 // incIP increments IP address and returns it.
 // Based on: https://play.golang.org/p/m8TNTtygK0
 func incIP(ip net.IP) net.IP {

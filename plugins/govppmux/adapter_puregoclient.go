@@ -39,7 +39,7 @@ const noShmWarning = `Using shared memory for VPP binary API is not currently su
 // NewVppAdapter returns VPP binary API adapter, implemented as pure Go client.
 func NewVppAdapter(addr string, useShm bool) adapter.VppAPI {
 	if useShm {
-		fmt.Fprintf(os.Stderr, noShmWarning)
+		fmt.Fprint(os.Stderr, noShmWarning)
 		panic("No implementation for shared memory in pure Go client!")
 	}
 	// addr is used as socket path

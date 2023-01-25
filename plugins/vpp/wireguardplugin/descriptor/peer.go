@@ -42,9 +42,6 @@ const (
 
 	// MaxU16
 	MaxU16 = 0xFFFF
-
-	// dependency labels
-	wgPeerVrfTableDep = "vrf-table-exists"
 )
 
 // A list of errors:

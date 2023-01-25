@@ -39,9 +39,7 @@ import (
 type ABFPlugin struct {
 	Deps
 
-	abfHandler             vppcalls.ABFVppAPI
-	abfDescriptor          *descriptor.ABFDescriptor
-	abfInterfaceDescriptor *descriptor.ABFToInterfaceDescriptor
+	abfHandler vppcalls.ABFVppAPI
 
 	// index maps
 	abfIndex abfidx.ABFMetadataIndex

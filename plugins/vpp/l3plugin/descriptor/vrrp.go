@@ -202,6 +202,9 @@ func (d *VrrpDescriptor) Retrieve(correlate []adapter.VRRPEntryKVWithMetadata) (
 	retrieved []adapter.VRRPEntryKVWithMetadata, err error,
 ) {
 	entries, err := d.vrrpHandler.DumpVrrpEntries()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, entry := range entries {
 		retrieved = append(retrieved, adapter.VRRPEntryKVWithMetadata{
@@ -248,8 +251,5 @@ func allFieldsWhithoutEnabledEquals(entry1, entry2 *l3.VRRPEntry) bool {
 
 // intervalEquals returns true if i1 and i2 are equal in centisonds.
 func intervalEquals(i1, i2 uint32) bool {
-	if i1/centisecondInMilliseconds == i2/centisecondInMilliseconds {
-		return true
-	}
-	return false
+	return i1/centisecondInMilliseconds == i2/centisecondInMilliseconds
 }

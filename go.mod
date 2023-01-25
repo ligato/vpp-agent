@@ -21,6 +21,7 @@ require (
 	github.com/lunixbochs/struc v0.0.0-20200521075829-a4cb8d33dbbe
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/moby/term v0.0.0-20200429084858-129dac9f73f6
 	github.com/namsral/flag v1.7.4-pre
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/onsi/gomega v1.19.0
@@ -102,7 +103,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/sys/mount v0.1.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
-	github.com/moby/term v0.0.0-20200429084858-129dac9f73f6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect

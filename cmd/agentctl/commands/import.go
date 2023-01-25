@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -161,7 +161,7 @@ type keyVal struct {
 }
 
 func parseImportFile(importFile string) (keyVals []keyVal, err error) {
-	b, err := ioutil.ReadFile(importFile)
+	b, err := os.ReadFile(importFile)
 	if err != nil {
 		return nil, fmt.Errorf("reading input file failed: %v", err)
 	}

@@ -159,7 +159,7 @@ func TestGre(t *testing.T) {
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
-			iface, ok = ifaces[ifIdx]
+			_, ok = ifaces[ifIdx]
 			if ok {
 				t.Fatalf("GRE interface was found in dump")
 			}

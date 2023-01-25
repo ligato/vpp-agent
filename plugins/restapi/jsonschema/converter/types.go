@@ -431,9 +431,7 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptorpb.FieldD
 
 			// Build up the list of required fields:
 			if c.AllFieldsRequired && recursedJSONSchemaType.Properties != nil {
-				for _, property := range recursedJSONSchemaType.Properties.Keys() {
-					jsonSchemaType.Items.Required = append(jsonSchemaType.Items.Required, property)
-				}
+				jsonSchemaType.Items.Required = append(jsonSchemaType.Items.Required, recursedJSONSchemaType.Properties.Keys()...)
 			}
 
 		// Not maps, not arrays:
@@ -461,9 +459,7 @@ func (c *Converter) convertField(curPkg *ProtoPackage, desc *descriptorpb.FieldD
 
 			// Build up the list of required fields:
 			if c.AllFieldsRequired && recursedJSONSchemaType.Properties != nil {
-				for _, property := range recursedJSONSchemaType.Properties.Keys() {
-					jsonSchemaType.Required = append(jsonSchemaType.Required, property)
-				}
+				jsonSchemaType.Required = append(jsonSchemaType.Required, recursedJSONSchemaType.Properties.Keys()...)
 			}
 		}
 

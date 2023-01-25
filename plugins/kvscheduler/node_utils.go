@@ -254,19 +254,6 @@ func getNodeLastOperation(node graph.Node) kvscheduler.TxnOperation {
 	return kvscheduler.TxnOperation_UNDEFINED
 }
 
-// getNodeDescriptor returns name of the descriptor associated with the given node.
-// Empty for properties and unimplemented values.
-func getNodeDescriptor(node graph.Node) string {
-	if node == nil {
-		return ""
-	}
-	flag := node.GetFlag(DescriptorFlagIndex)
-	if flag == nil {
-		return ""
-	}
-	return flag.(*DescriptorFlag).descriptorName
-}
-
 func isNodeDerived(node graph.Node) bool {
 	return node.GetFlag(DerivedFlagIndex) != nil
 }

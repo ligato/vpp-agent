@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"go.ligato.io/cn-infra/v2/logging"
+	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -118,13 +119,10 @@ func (d *PuntExceptionDescriptor) Create(key string, punt *punt.Exception) (inte
 }
 
 // Delete removes VPP punt configuration.
-func (d *PuntExceptionDescriptor) Delete(key string, punt *punt.Exception, metadata interface{}) error {
+func (d *PuntExceptionDescriptor) Delete(key string, p *punt.Exception, metadata interface{}) error {
 	// check if the socketpath contains '!' as prefix from retrieve
-	p := punt
-	if strings.HasPrefix(p.SocketPath, "!") {
-		p = &(*punt)
-		p.SocketPath = strings.TrimPrefix(p.SocketPath, "!")
-	}
+	punt := proto.Clone(p).(*punt.Exception)
+	punt.SocketPath = strings.TrimPrefix(punt.SocketPath, "!")
 
 	// delete punt exception
 	err := d.puntHandler.DeletePuntException(punt)

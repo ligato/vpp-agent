@@ -220,8 +220,7 @@ func printDumpTable(out io.Writer, dump []api.RecordedKVWithMetadata) {
 			}
 		}
 		val = fmt.Sprintf("# %s\n%s", d.Value.ProtoReflect().Descriptor().FullName(), val)
-		var row []string
-		row = []string{
+		row := []string{
 			model,
 			orig.String(),
 			val,

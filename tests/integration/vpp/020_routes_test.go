@@ -99,8 +99,8 @@ func TestRouteIP4(t *testing.T) {
 	routesCnt := len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(test.Ctx, &newRoute)
+	newRoute := &vpp_l3.Route{VrfId: 0, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
+	err = h.VppAddRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -128,7 +128,7 @@ func TestRouteIP4(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(test.Ctx, &newRoute)
+	err = h.VppDelRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}
@@ -165,8 +165,8 @@ func TestRouteIP4(t *testing.T) {
 	routesCnt = len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(test.Ctx, &newRoute)
+	newRoute = &vpp_l3.Route{VrfId: 2, DstNetwork: "192.168.10.0/24", NextHopAddr: "192.168.30.1", OutgoingInterface: ifName}
+	err = h.VppAddRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -194,7 +194,7 @@ func TestRouteIP4(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(test.Ctx, &newRoute)
+	err = h.VppDelRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}
@@ -248,8 +248,8 @@ func TestRouteIP6(t *testing.T) {
 	routesCnt := len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute := vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(test.Ctx, &newRoute)
+	newRoute := &vpp_l3.Route{VrfId: 0, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
+	err = h.VppAddRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -276,7 +276,7 @@ func TestRouteIP6(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(test.Ctx, &newRoute)
+	err = h.VppDelRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}
@@ -313,8 +313,8 @@ func TestRouteIP6(t *testing.T) {
 	routesCnt = len(routes)
 	t.Logf("%d routes dumped", routesCnt)
 
-	newRoute = vpp_l3.Route{VrfId: 2, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
-	err = h.VppAddRoute(test.Ctx, &newRoute)
+	newRoute = &vpp_l3.Route{VrfId: 2, DstNetwork: "fd30:0:0:1::/64", NextHopAddr: "fd31::1:1:0:0:1", OutgoingInterface: ifName}
+	err = h.VppAddRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("adding route failed: %v", err)
 	}
@@ -341,7 +341,7 @@ func TestRouteIP6(t *testing.T) {
 		t.Error("Added route is not present in route dump")
 	}
 
-	err = h.VppDelRoute(test.Ctx, &newRoute)
+	err = h.VppDelRoute(test.Ctx, newRoute)
 	if err != nil {
 		t.Fatalf("deleting route failed: %v", err)
 	}

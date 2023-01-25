@@ -87,10 +87,7 @@ func (d *FPParamsDescriptor) Validate(key string, value *ipfix.FlowProbeParams) 
 // IsRetriableFailure returns false if error is one of errors
 // defined at the top of this file as non-retriable.
 func (d *FPParamsDescriptor) IsRetriableFailure(err error) bool {
-	if errors.Is(err, ErrFeatureEnabled) {
-		return false
-	}
-	return true
+	return !errors.Is(err, ErrFeatureEnabled)
 }
 
 // Create passes Flowprobe Params to Update method.

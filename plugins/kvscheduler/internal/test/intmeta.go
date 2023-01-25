@@ -58,7 +58,6 @@ func (idx *OnlyInteger) GetInteger() int {
 // nameToInteger implements NameToInteger.
 type nameToInteger struct {
 	idxmap.NamedMappingRW
-	log logging.Logger
 }
 
 const (

@@ -461,7 +461,6 @@ Value:  {{protomulti .Notification.GetNotification}}
 
 		logrus.Debugf("Notification[%d]: %v",
 			notif.NextIdx-1, notif.Notification)
-		nextIdx = notif.NextIdx
 
 		if err := formatAsTemplate(cli.Out(), format, notif); err != nil {
 			return err
@@ -687,13 +686,11 @@ func printHistoryTable(out io.Writer, txns kvs.RecordedTxns, withDetails bool) {
 			resClr = tablewriter.FgGreenColor
 		}
 		if withDetails {
-			if errs != nil {
-				for _, e := range errs {
-					if detail != "" {
-						detail += "\n"
-					}
-					detail += fmt.Sprintf("%v", e.Error())
+			for _, e := range errs {
+				if detail != "" {
+					detail += "\n"
 				}
+				detail += fmt.Sprintf("%v", e.Error())
 			}
 			if reasons := txnPendingReasons(txn); reasons != "" {
 				if detail != "" {

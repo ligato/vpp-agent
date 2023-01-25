@@ -82,10 +82,7 @@ func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 // EquivalentSTNs is case-insensitive comparison function for stn.Rule.
 func (d *STNDescriptor) EquivalentSTNs(key string, oldSTN, newSTN *stn.Rule) bool {
 	// parameters compared by proto equal
-	if proto.Equal(oldSTN, newSTN) {
-		return true
-	}
-	return false
+	return proto.Equal(oldSTN, newSTN)
 }
 
 // Validate validates VPP STN rule configuration.

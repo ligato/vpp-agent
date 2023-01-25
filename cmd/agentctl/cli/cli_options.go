@@ -18,7 +18,7 @@ import (
 	"io"
 
 	"github.com/docker/cli/cli/streams"
-	"github.com/docker/docker/pkg/term"
+	"github.com/moby/term"
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 )

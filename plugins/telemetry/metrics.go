@@ -16,6 +16,7 @@ package telemetry
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 )
@@ -29,7 +30,7 @@ var (
 	},
 		[]string{"version", "revision", "build_date", "built_by"},
 	)
-	processMetrics = prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
+	processMetrics = collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
 		Namespace: "ligato",
 	})
 )

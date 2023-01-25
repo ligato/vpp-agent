@@ -302,7 +302,7 @@ func strToFloat64(s string) float64 {
 	s = strings.Replace(s, "g", "e9", 1)
 	s = strings.Replace(s, "G", "e9", 1)
 
-	num, err := strconv.ParseFloat(s, 10)
+	num, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0
 	}

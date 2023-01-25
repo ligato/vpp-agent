@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -45,7 +45,7 @@ const logo = `                                       __
 func parseVersion() {
 	s := flag.NewFlagSet("version", flag.ContinueOnError)
 	s.Usage = func() {}
-	s.SetOutput(ioutil.Discard)
+	s.SetOutput(io.Discard)
 	var (
 		v  = s.Bool("V", false, "Print version and exit.")
 		vv = s.Bool("version", false, "Print version info and exit.")

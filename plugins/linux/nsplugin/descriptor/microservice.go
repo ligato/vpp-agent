@@ -83,13 +83,6 @@ type Microservice struct {
 	ID    string
 }
 
-// microserviceCtx contains all data required to handle microservice changes.
-type microserviceCtx struct {
-	created       []string
-	since         string
-	lastInspected int64
-}
-
 // NewMicroserviceDescriptor creates a new instance of the descriptor for microservices.
 func NewMicroserviceDescriptor(kvscheduler kvs.KVScheduler, log logging.PluginLogger) (*MicroserviceDescriptor, error) {
 	var err error
@@ -215,11 +208,13 @@ func (d *MicroserviceDescriptor) processNewMicroservice(microserviceLabel string
 
 	// Notify scheduler about new microservice
 	if d.msStateInSync {
-		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+		if err := d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 			Key:      nsmodel.MicroserviceKey(ms.Label),
 			Value:    &emptypb.Empty{},
 			Metadata: nil,
-		})
+		}); err != nil {
+			d.log.Errorf("pushing SB notification failed: %v", err)
+		}
 	}
 }
 
@@ -240,11 +235,13 @@ func (d *MicroserviceDescriptor) processTerminatedMicroservice(id string) {
 
 	// Notify scheduler about terminated microservice
 	if d.msStateInSync {
-		d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
+		if err := d.kvscheduler.PushSBNotification(kvs.KVWithMetadata{
 			Key:      nsmodel.MicroserviceKey(ms.Label),
 			Value:    nil,
 			Metadata: nil,
-		})
+		}); err != nil {
+			d.log.Errorf("pushing SB notification failed: %v", err)
+		}
 	}
 }
 
@@ -259,7 +256,8 @@ func (d *MicroserviceDescriptor) setStateInSync() {
 // processStartedContainer processes a started Docker container - inspects whether it is a microservice.
 // If it is, notifies scheduler about a new microservice.
 func (d *MicroserviceDescriptor) processStartedContainer(id string) {
-	container, err := d.dockerClient.InspectContainer(id)
+	opts := docker.InspectContainerOptions{ID: id}
+	container, err := d.dockerClient.InspectContainerWithOptions(opts)
 	if err != nil {
 		d.log.Warnf("Error by inspecting container %s: %v", id, err)
 		return
@@ -307,7 +305,8 @@ func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 	}
 	for _, container := range containers {
 		if container.State == dockerStateRunning {
-			details, err := d.dockerClient.InspectContainer(container.ID)
+			opts := docker.InspectContainerOptions{ID: container.ID}
+			details, err := d.dockerClient.InspectContainerWithOptions(opts)
 			if err != nil {
 				d.log.Warnf("Error by inspecting container %s: %v", container.ID, err)
 				continue

@@ -35,8 +35,7 @@ import (
 type DNSPlugin struct {
 	Deps
 
-	dnsHandler    vppcalls.DNSVppAPI
-	dnsDescriptor *descriptor.DNSCacheDescriptor
+	dnsHandler vppcalls.DNSVppAPI
 }
 
 type Deps struct {

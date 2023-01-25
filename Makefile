@@ -267,18 +267,17 @@ ifndef gotestsumcmd
 endif
 	@env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
 
-LINTER := $(shell command -v gometalinter 2> /dev/null)
+LINTER := $(shell command -v golangci-lint --version 2> /dev/null)
 
 get-linters:
 ifndef LINTER
 	@echo "# installing linters"
-	go install github.com/alecthomas/gometalinter@latest
-	gometalinter --install
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
 endif
 
 lint: get-linters ## Lint Go code
 	@echo "# running code analysis"
-	./scripts/static_analysis.sh golint vet
+	golangci-lint run
 
 format: ## Format Go code
 	@echo "# formatting the code"

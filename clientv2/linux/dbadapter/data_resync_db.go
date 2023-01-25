@@ -333,13 +333,13 @@ type keySet map[string] /*key*/ interface{} /*nil*/
 // It deletes obsolete keys if listKeys() (from constructor) function is not nil.
 func (dsl *DataResyncDSL) Send() vppclient.Reply {
 
-	for dsl.listKeys != nil {
+	if dsl.listKeys != nil {
 		toBeDeleted := keySet{}
 
 		// fill all known keys associated with the Linux network configuration:
 		keys, err := dsl.listKeys(interfaces.ModelInterface.KeyPrefix())
 		if err != nil {
-			break
+			return dsl.vppDataResync.Send()
 		}
 		appendKeys(&toBeDeleted, keys)
 
@@ -351,8 +351,6 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		for delKey := range toBeDeleted {
 			dsl.txn.Delete(delKey)
 		}
-
-		break
 	}
 
 	return dsl.vppDataResync.Send()

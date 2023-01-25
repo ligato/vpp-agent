@@ -15,8 +15,6 @@
 package vpp2106
 
 import (
-	"strconv"
-
 	//vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/ip_neighbor"
 	//"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2106/ip_types"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
@@ -141,13 +139,13 @@ func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
 	return ipScanNeigh, nil*/
 }
 
-func (h *IPNeighHandler) strToUint32(s string) uint32 {
-	if s == "" {
-		return 0
-	}
-	n, err := strconv.ParseUint(s, 10, 32)
-	if err != nil {
-		h.log.Error(err)
-	}
-	return uint32(n)
-}
+// func (h *IPNeighHandler) strToUint32(s string) uint32 {
+// 	if s == "" {
+// 		return 0
+// 	}
+// 	n, err := strconv.ParseUint(s, 10, 32)
+// 	if err != nil {
+// 		h.log.Error(err)
+// 	}
+// 	return uint32(n)
+// }

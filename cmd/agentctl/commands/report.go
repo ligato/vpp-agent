@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -89,7 +88,7 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 
 	// create temporal directory
 	dirNamePattern := fmt.Sprintf("%v--*", reportName)
-	dirName, err := ioutil.TempDir("", dirNamePattern)
+	dirName, err := os.MkdirTemp("", dirNamePattern)
 	if err != nil {
 		return fmt.Errorf("can't create tmp directory with name pattern %s due to %v", dirNamePattern, err)
 	}
@@ -129,15 +128,23 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	// user console and failedReportFileName file)
 	if len(errors) > 0 {
 		if !opts.IgnoreErrors {
-			cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) failed.\n\nIf you want to ignore errors "+
+			_, err = cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) failed.\n\nIf you want to ignore errors "+
 				"from subreports and create report from the successfully retrieved/processed information then "+
 				"add the --ignore-errors (-i) argument to the command (i.e. 'agentctl report -i')", len(errors))))
+			if err != nil {
+				return err
+			}
 			return errors
 		}
-		cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) couldn't be fully or partially created "+
+		_, err = cli.Out().Write([]byte(fmt.Sprintf("%d subreport(s) couldn't be fully or partially created "+
 			"(full list with errors will be in packed zip file as file %s)\n\n", len(errors), failedReportFileName)))
+		if err != nil {
+			return err
+		}
 	} else { //
-		cli.Out().Write([]byte("All subreports were successfully created...\n\n"))
+		if _, err = cli.Out().Write([]byte("All subreports were successfully created...\n\n")); err != nil {
+			return err
+		}
 		// remove empty "failed report" file (ignoring remove failure because it means only one more
 		// empty file in report zip file)
 		os.Remove(filepath.Join(dirName, failedReportFileName))
@@ -154,11 +161,15 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	}
 
 	// combine report files into one zip file
-	cli.Out().Write([]byte("Creating report zip file... "))
+	if _, err := cli.Out().Write([]byte("Creating report zip file... ")); err != nil {
+		return err
+	}
 	if err := createZipFile(zipFileName, dirName); err != nil {
 		return fmt.Errorf("can't create zip file(%v) due to: %v", zipFileName, err)
 	}
-	cli.Out().Write([]byte(fmt.Sprintf("Done.\nReport file: %v\n", zipFileName)))
+	if _, err := cli.Out().Write([]byte(fmt.Sprintf("Done.\nReport file: %v\n", zipFileName))); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -433,7 +444,9 @@ func writeKVschedulerReport(subTaskActionName string, view string, ignoreModels 
 		})
 		if err != nil {
 			if strings.Contains(err.Error(), "no descriptor found matching the key prefix") {
-				cli.Out().Write([]byte(fmt.Sprintf("Skipping key prefix %s due to: %v\n", keyPrefix, err)))
+				if _, e := cli.Out().Write([]byte(fmt.Sprintf("Skipping key prefix %s due to: %v\n", keyPrefix, err))); err != nil {
+					return e
+				}
 			} else {
 				errs = append(errs, fmt.Errorf("Failed to get data for %s view and "+
 					"key prefix %s due to: %v\n", view, keyPrefix, err))
@@ -475,17 +488,25 @@ func writeAgentTxnHistoryReport(w io.Writer, errorW io.Writer, cli agentcli.Cli,
 
 	// format and write it to output file
 	// Note: not using one big template to print at least history summary in case of full txn log formatting fail
-	w.Write([]byte("Agent transaction summary:\n"))
+	if _, err := w.Write([]byte("Agent transaction summary:\n")); err != nil {
+		return err
+	}
 	var summaryBuf bytes.Buffer
 	printHistoryTable(&summaryBuf, txns, true)
-	w.Write([]byte(fmt.Sprintf("    %s\n",
-		strings.ReplaceAll(stripTextColoring(summaryBuf.String()), "\n", "\n    "))))
-	w.Write([]byte("Agent transaction log:\n"))
+	_, err = w.Write([]byte(fmt.Sprintf("    %s\n", strings.ReplaceAll(stripTextColoring(summaryBuf.String()), "\n", "\n    "))))
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte("Agent transaction log:\n")); err != nil {
+		return err
+	}
 	var logBuf bytes.Buffer
 	if err := formatAsTemplate(&logBuf, "{{.}}", txns); err != nil { // "log" format of history
 		return fileErrorPassing(cliOutputErrPassing(err, "formatting"), w, errorW, subTaskActionName)
 	}
-	w.Write([]byte(fmt.Sprintf("    %s\n", strings.ReplaceAll(logBuf.String(), "\n", "\n    "))))
+	if _, err := w.Write([]byte(fmt.Sprintf("    %s\n", strings.ReplaceAll(logBuf.String(), "\n", "\n    ")))); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -752,7 +773,7 @@ func writeVPPCLICommandReport(subTaskActionName string, vppCLICmd string, w io.W
 	if len(otherArgs) > 0 {
 		formattedOutput = otherArgs[0].(func(string, string) string)(vppCLICmd, cmdOutput)
 	}
-	fmt.Fprintf(w, formattedOutput)
+	fmt.Fprint(w, formattedOutput)
 	return nil
 }
 
@@ -842,11 +863,11 @@ func packErrors(errors ...error) Errors {
 }
 
 func subTaskCliOutputs(cli agentcli.Cli, subTaskActionName string) (func(agentcli.Cli), func(error, ...string) error) {
-	cli.Out().Write([]byte(fmt.Sprintf("%s... ", subTaskActionName)))
+	_, _ = cli.Out().Write([]byte(fmt.Sprintf("%s... ", subTaskActionName)))
 	subTaskResult := "Done."
 	pSubTaskResult := &subTaskResult
 	return func(cli agentcli.Cli) {
-			cli.Out().Write([]byte(fmt.Sprintf("%s\n", *pSubTaskResult)))
+			_, _ = cli.Out().Write([]byte(fmt.Sprintf("%s\n", *pSubTaskResult)))
 		}, func(err error, failedActions ...string) error {
 			if len(failedActions) > 0 {
 				err = fmt.Errorf("%s failed due to:\n%v", failedActions[0], err)
@@ -860,8 +881,8 @@ func subTaskCliOutputs(cli agentcli.Cli, subTaskActionName string) (func(agentcl
 
 func fileErrorPassing(err error, w io.Writer, errorW io.Writer, subTaskActionName string) error {
 	errorStr := fmt.Sprintf("%s... failed due to:\n%v\n", subTaskActionName, err)
-	w.Write([]byte(fmt.Sprintf("<<\n%s>>\n", errorStr)))
-	errorW.Write([]byte(fmt.Sprintf("%s\n%s\n", strings.Repeat("#", 70), errorStr)))
+	_, _ = w.Write([]byte(fmt.Sprintf("<<\n%s>>\n", errorStr)))
+	_, _ = errorW.Write([]byte(fmt.Sprintf("%s\n%s\n", strings.Repeat("#", 70), errorStr)))
 	return err
 }
 
@@ -921,7 +942,7 @@ func createZipFile(zipFileName string, dirName string) (err error) {
 	}()
 
 	// Add files to zip
-	dirItems, err := ioutil.ReadDir(dirName)
+	dirItems, err := os.ReadDir(dirName)
 	if err != nil {
 		return fmt.Errorf("can't read report directory(%v) due to: %v", dirName, err)
 	}
