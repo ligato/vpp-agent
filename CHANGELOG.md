@@ -1,9 +1,10 @@
 # Changelog
 
-[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.2.0...master)
+[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.3.0...master)
 
 ## Release Notes
 
+- [v3.4.0](#v3.4.0)
 - [v3.3.0](#v3.3.0)
 - [v3.2.0](#v3.2.0)
 - [v3.1.0](#v3.1.0)
@@ -53,6 +54,32 @@ RELEASE CHANGELOG TEMPLATE:
 ### Docker Images
 ### Documentation
 -->
+
+<a name="v3.4.0"></a>
+# [3.4.0](https://github.com/ligato/vpp-agent/compare/v3.3.0...master) (2022-06-XX)
+
+### COMPATIBILITY
+- VPP 22.02 (default)
+- VPP 21.06
+- VPP 21.01
+- ~~VPP 20.09~~
+- ~~VPP 20.05~~
+
+### Bug Fixes
+- fix: Fix generating jsonschema [#1836](https://github.com/ligato/vpp-agent/pull/1836)
+- fix: Fix `agentctl report` command failing in StoneWork [#1857](https://github.com/ligato/vpp-agent/pull/1857)
+
+### Features
+- feat: Add support for VPP 22.02 [#1842](https://github.com/ligato/vpp-agent/pull/1842)
+
+### Improvements
+- Upgrade dependencies with security issues [#1849](https://github.com/ligato/vpp-agent/pull/1849)
+- fix: remove unnecessary print statement [#1852](https://github.com/ligato/vpp-agent/pull/1852)
+### Docker Images
+- Update base image to ubuntu:20.04 [#1839](https://github.com/ligato/vpp-agent/pull/1839)
+
+### Documentation
+- docs: Fix documentation comment formatting [#1838](https://github.com/ligato/vpp-agent/pull/1838)
 
 <a name="v3.3.0"></a>
 # [3.3.0](https://github.com/ligato/vpp-agent/compare/v3.2.0...v3.3.0) (2022-01-XX)
