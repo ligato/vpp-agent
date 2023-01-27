@@ -39,6 +39,8 @@ type Config struct {
 func defaultConfig() *Config {
 	return &Config{
 		PollingInterval: defaultUpdatePeriod,
+		// TODO Even if disabled, the metric endpoint is still active. Consider shutting it down completely (discuss).
+		Disabled: true,
 	}
 }
 
@@ -50,12 +52,12 @@ func (p *Plugin) loadConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if !found {
-		p.Log.Debug("Telemetry config not found")
-		return nil, nil
+		p.Log.Debugf("Telemetry config not found. Using default config: %+v", cfg)
+	} else {
+		p.Log.Debugf("Telemetry config found: %+v", cfg)
 	}
 
-	p.Log.Debugf("Telemetry config found: %+v", cfg)
-
-	return cfg, err
+	return cfg, nil
 }
