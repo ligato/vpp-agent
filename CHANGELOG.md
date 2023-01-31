@@ -1,9 +1,10 @@
 # Changelog
 
-[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.3.0...master)
+[![GitHub commits since latest release](https://img.shields.io/github/commits-since/ligato/vpp-agent/latest.svg?style=flat-square)](https://github.com/ligato/vpp-agent/compare/v3.5.0...master)
 
 ## Release Notes
 
+- [v3.5.0](#v3.5.0)
 - [v3.4.0](#v3.4.0)
 - [v3.3.0](#v3.3.0)
 - [v3.2.0](#v3.2.0)
@@ -55,8 +56,40 @@ RELEASE CHANGELOG TEMPLATE:
 ### Documentation
 -->
 
+<a name="v3.5.0"></a>
+# [3.5.0](https://github.com/ligato/vpp-agent/compare/v3.4.0...v3.5.0) (2023-02-XX)
+
+### COMPATIBILITY
+- VPP 22.10 (default)
+- VPP 22.02
+- VPP 21.06
+- VPP 21.01
+
+### Bug Fixes
+- Fix agentctl config history not working with remote models [#1860](https://github.com/ligato/vpp-agent/pull/1860)
+- Fix ParseACLToInterfaceKey [#1864](https://github.com/ligato/vpp-agent/pull/1864)
+- Fix agentctl config dump not working with remote models [#1863](https://github.com/ligato/vpp-agent/pull/1863)
+- Fix e2e tests [#1895](https://github.com/ligato/vpp-agent/pull/1895)
+
+### Features
+- Add support for e2e tests with multiple agents [#1870](https://github.com/ligato/vpp-agent/pull/1870)
+- Add support for agentctl configuration labels [#1858](https://github.com/ligato/vpp-agent/pull/1858)
+- Add support for VPP 22.10 [#1878](https://github.com/ligato/vpp-agent/pull/1878)
+
+### Improvements
+- Restore some agentctl e2e test cases [#1869](https://github.com/ligato/vpp-agent/pull/1869)
+- Add e2e test for vlan/subinterface functionality [#1872](https://github.com/ligato/vpp-agent/pull/1872)
+- Enable wireguard test case for VPP 22.02 [#1877](https://github.com/ligato/vpp-agent/pull/1877)
+- Split e2e package into test harness and tests [#1896](https://github.com/ligato/vpp-agent/pull/1896)
+- Fix issues reported by golangci-lint [#1902](https://github.com/ligato/vpp-agent/pull/1902)
+
+### Other
+- Switch to new GoVPP module path: go.fd.io/govpp [#1862](https://github.com/ligato/vpp-agent/pull/1862)
+- Update Go version to 1.18 [#1894](https://github.com/ligato/vpp-agent/pull/1894)
+- Update GoVPP to v0.7.0 [#1899](https://github.com/ligato/vpp-agent/pull/1899)
+
 <a name="v3.4.0"></a>
-# [3.4.0](https://github.com/ligato/vpp-agent/compare/v3.3.0...master) (2022-06-XX)
+# [3.4.0](https://github.com/ligato/vpp-agent/compare/v3.3.0...3.4.0) (2022-06-XX)
 
 ### COMPATIBILITY
 - VPP 22.02 (default)
