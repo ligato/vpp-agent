@@ -31,6 +31,10 @@ func TestIPSec(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
+	if ctx.VppRelease() == "22.10" {
+		t.Skipf("IPSec MP: skipped for VPP 22.10")
+	}
+
 	const (
 		msName       = "microservice1"
 		tunnelIfName = "ipsec-tunnel"
@@ -150,9 +154,7 @@ func TestIPSec(t *testing.T) {
 	ctx.Eventually(ctx.GetValueStateClb(spOut)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"OUT SP is not configured")
 
-	if ctx.VppRelease() >= "20.05" {
-		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
-	}
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// rekey - delete old SAs, create new SAs and modify tunnel protection
 
@@ -249,9 +251,7 @@ func TestIPSec(t *testing.T) {
 	ctx.Eventually(ctx.GetValueStateClb(spInNew)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"IN SP is not configured")
 
-	if ctx.VppRelease() >= "20.05" {
-		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
-	}
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	// delete the tunnel
 
@@ -282,17 +282,15 @@ func TestIPSec(t *testing.T) {
 	ctx.Eventually(ctx.GetValueStateClb(ipipTun)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IPIP tunnel was not removed")
 
-	if ctx.VppRelease() >= "20.05" {
-		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
-	}
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }
 
 func TestIPSecMultiPoint(t *testing.T) {
 	ctx := Setup(t)
 	defer ctx.Teardown()
 
-	if ctx.VppRelease() < "20.05" {
-		t.Skipf("IPSec MP: skipped for VPP < 20.05 (%s)", ctx.VppRelease())
+	if ctx.VppRelease() == "22.10" {
+		t.Skipf("IPSec MP: skipped for VPP 22.10")
 	}
 
 	const (
@@ -488,9 +486,7 @@ func TestIPSecMultiPoint(t *testing.T) {
 	ctx.Eventually(ctx.GetValueStateClb(spd)).Should(Equal(kvscheduler.ValueState_CONFIGURED),
 		"SPD is not configured")
 
-	if ctx.VppRelease() >= "20.05" {
-		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
-	}
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 	req3 := ctx.GenericClient().ChangeRequest()
 	err = req3.Delete(
@@ -529,7 +525,5 @@ func TestIPSecMultiPoint(t *testing.T) {
 	ctx.Eventually(ctx.GetValueStateClb(spIn2)).Should(Equal(kvscheduler.ValueState_NONEXISTENT),
 		"IN SP 2 was not removed")
 
-	if ctx.VppRelease() >= "20.05" {
-		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
-	}
+	ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 }

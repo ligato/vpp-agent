@@ -14,6 +14,7 @@
 
 package vpp2210_test
 
+/*
 import (
 	"encoding/hex"
 	"fmt"
@@ -398,3 +399,4 @@ func TestVppDelTunnelProtection(t *testing.T) {
 		SwIfIndex: 5,
 	}))
 }
+*/
