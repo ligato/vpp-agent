@@ -75,8 +75,6 @@ func TestVppAddSP(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	// FIXME: bug in VPP?
-	// ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelV2Reply{})
 	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.AddSP(&ipsec.SecurityPolicy{
@@ -108,8 +106,6 @@ func TestVppDelSP(t *testing.T) {
 	ctx, ipSecHandler, _ := ipSecTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	// FIXME: bug in VPP?
-	// ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelV2Reply{})
 	ctx.MockVpp.MockReply(&vpp_ipsec.IpsecSpdEntryAddDelReply{})
 
 	err := ipSecHandler.DeleteSP(&ipsec.SecurityPolicy{
