@@ -36,17 +36,18 @@ type Config struct {
 	Skipped []string `json:"skipped"`
 }
 
-func defaultConfig() *Config {
+var DefaultConfig = func() *Config {
 	return &Config{
 		PollingInterval: defaultUpdatePeriod,
-		// TODO Even if disabled, the metric endpoint is still active. Consider shutting it down completely (discuss).
-		Disabled: true,
 	}
 }
 
 // loadConfig returns telemetry plugin file configuration if exists
 func (p *Plugin) loadConfig() (*Config, error) {
-	cfg := defaultConfig()
+	cfg := &Config{}
+	if DefaultConfig != nil {
+		cfg = DefaultConfig()
+	}
 
 	found, err := p.Cfg.LoadValue(cfg)
 	if err != nil {

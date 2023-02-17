@@ -100,6 +100,8 @@ func (c *InterfaceStateUpdater) Init(
 	// Create child context
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
+	registerMetrics()
+
 	// Watch for incoming notifications
 	c.wg.Add(1)
 	go c.watchVPPNotifications(c.ctx)
@@ -360,6 +362,11 @@ func (c *InterfaceStateUpdater) processIfStateEvent(notif *vppcalls.InterfaceEve
 		Type:  intf.InterfaceNotification_UPDOWN,
 		State: ifState,
 	})
+
+	if ifState.InternalName != "" {
+		operationalStates.WithLabelValues(ifState.InternalName).Set(float64(ifState.OperStatus))
+		adminStates.WithLabelValues(ifState.InternalName).Set(float64(ifState.AdminStatus))
+	}
 }
 
 // getIfStateData returns interface state data structure for the specified interface index and interface name.
@@ -422,6 +429,7 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *vppcalls.InterfaceEve
 			ifState.OperStatus = intf.InterfaceState_DOWN
 		}
 	}
+
 	return ifState, true
 }
 
@@ -439,6 +447,9 @@ func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *vppcalls.Interfa
 	ifState.Speed = ifDetails.LinkSpeed
 	ifState.Duplex = ifDetails.LinkDuplex
 	ifState.Mtu = uint32(ifDetails.LinkMTU)
+
+	operationalStates.WithLabelValues(ifDetails.InternalName).Set(float64(ifState.OperStatus))
+	adminStates.WithLabelValues(ifDetails.InternalName).Set(float64(ifState.AdminStatus))
 
 	c.publishIfState(&intf.InterfaceNotification{State: ifState})
 }

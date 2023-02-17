@@ -96,7 +96,7 @@ func (p *Plugin) Init() error {
 	if config != nil {
 		// If telemetry is not enabled, skip plugin initialization
 		if config.Disabled {
-			p.Log.Info("Telemetry plugin is disabled")
+			p.Log.Info("Telemetry plugin disabled")
 			p.disabled = true
 			return nil
 		}
