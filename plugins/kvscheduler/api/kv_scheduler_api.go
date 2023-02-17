@@ -131,23 +131,24 @@ func (v View) String() string {
 // The values are described for scheduler by registered KVDescriptor-s.
 // The scheduler learns two kinds of relations between values that have to be
 // respected by the scheduling algorithm:
-//   -> A depends on B:
-//          - A cannot exist without B
-//          - request to create A without B existing must be postponed by storing
-//            A into the cache of values with unmet dependencies (a.k.a. pending)
-//          - if B is to be removed and A exists, A must be removed first
-//            and cached in case B is restored in the future
-//          - Note: values pushed from SB are not checked for dependencies
-//   -> B is derived from A:
-//          - value B is not created directly (by NB or SB) but gets derived
-//            from base value A (using the DerivedValues() method of the base
-//            value's descriptor)
-//          - derived value exists only as long as its base does and gets removed
-//            (without caching) once the base value goes away
-//          - derived value may be described by a different descriptor than
-//            the base and usually represents property of the base value (that
-//            other values may depend on) or an extra action to be taken
-//            when additional dependencies are met.
+//
+//	-> A depends on B:
+//	       - A cannot exist without B
+//	       - request to create A without B existing must be postponed by storing
+//	         A into the cache of values with unmet dependencies (a.k.a. pending)
+//	       - if B is to be removed and A exists, A must be removed first
+//	         and cached in case B is restored in the future
+//	       - Note: values pushed from SB are not checked for dependencies
+//	-> B is derived from A:
+//	       - value B is not created directly (by NB or SB) but gets derived
+//	         from base value A (using the DerivedValues() method of the base
+//	         value's descriptor)
+//	       - derived value exists only as long as its base does and gets removed
+//	         (without caching) once the base value goes away
+//	       - derived value may be described by a different descriptor than
+//	         the base and usually represents property of the base value (that
+//	         other values may depend on) or an extra action to be taken
+//	         when additional dependencies are met.
 //
 // Every key-value pair must have at most one descriptor associated with it.
 // Base NB value without descriptor is considered unimplemented and will never
@@ -260,6 +261,8 @@ type KVScheduler interface {
 	// remotely retrieved dynamic proto messages can't be converted to such proto messages (there are
 	// no locally available statically generated proto models).
 	ValidateSemantically([]proto.Message) error
+
+	WatchNBKeyPrefixRegistration(key string) (<-chan struct{}, error)
 }
 
 // ValueProvider provides key/value data from different sources in system (NB, SB, KVProvider cache of SB)

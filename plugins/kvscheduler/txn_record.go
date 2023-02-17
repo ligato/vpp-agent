@@ -124,6 +124,9 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		record.RetryForTxn = txn.retry.txnSeqNum
 		record.RetryAttempt = txn.retry.attempt
 	}
+	if txn.txnType == kvs.RetryUnimplOps {
+		record.RetryForTxn = txn.impl.txnSeqNum
+	}
 
 	// record values sorted alphabetically by keys
 	if txn.txnType != kvs.NBTransaction || txn.nb.resyncType != kvs.DownstreamResync {
@@ -146,7 +149,9 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 		if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
 			txnInfo = txn.nb.resyncType.String()
 		} else if txn.txnType == kvs.RetryFailedOps && txn.retry != nil {
-			txnInfo = fmt.Sprintf("retrying TX #%d (attempt %d)", txn.retry.txnSeqNum, txn.retry.attempt)
+			txnInfo = fmt.Sprintf("retrying failed TXN #%d (attempt %d)", txn.retry.txnSeqNum, txn.retry.attempt)
+		} else if txn.txnType == kvs.RetryUnimplOps && txn.impl != nil {
+			txnInfo = fmt.Sprintf("retrying unimplemented TXN #%d", txn.impl.txnSeqNum)
 		}
 		msg := fmt.Sprintf("#%d - %s", record.SeqNum, txn.txnType.String())
 		n := 115 - len(msg)

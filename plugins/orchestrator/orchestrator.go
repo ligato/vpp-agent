@@ -104,7 +104,6 @@ func (p *Plugin) Init() (err error) {
 	var prefixes []string
 	p.Log.Infof("Found %d registered models", len(models.RegisteredModels()))
 	for _, model := range models.RegisteredModels() {
-		p.Log.Infof("- model: %+v", *model.Spec())
 		p.debugf("- model: %+v", *model.Spec())
 		prefixes = append(prefixes, model.KeyPrefix())
 	}
@@ -112,9 +111,7 @@ func (p *Plugin) Init() (err error) {
 	if nbPrefixes := p.kvs.GetRegisteredNBKeyPrefixes(); len(nbPrefixes) > 0 {
 		p.log.Infof("Watching %d key prefixes from KVScheduler", len(nbPrefixes))
 		for _, prefix := range nbPrefixes {
-			p.Log.Infof("- prefix: %+v", prefix)
 			p.debugf("- prefix: %s", prefix)
-			// prefixes = append(prefixes, prefix)
 		}
 	} else {
 		p.log.Warnf("No key prefixes found in KVScheduler (ensure that all KVDescriptors are registered before this)")

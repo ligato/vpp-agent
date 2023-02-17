@@ -19,6 +19,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/protobuf/proto"
@@ -246,4 +247,65 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 		fmt.Printf("- model %s registered: %+v\n", model.Name(), model)
 	}
 	return model, nil
+}
+
+type SourceBroadcast[T any] struct {
+	*Broadcast[T]
+	S chan T
+}
+
+func NewSourceBroadcast[T any]() *SourceBroadcast[T] {
+	s := make(chan T)
+	return &SourceBroadcast[T]{
+		S:         s,
+		Broadcast: NewBroadcast(s),
+	}
+}
+
+type Broadcast[T any] struct {
+	mu          sync.RWMutex
+	source      <-chan T
+	subscribers []chan<- T
+}
+
+func NewBroadcast[T any](source <-chan T) *Broadcast[T] {
+	b := &Broadcast[T]{
+		source: source,
+	}
+	go b.serve()
+	return b
+}
+
+func (b *Broadcast[T]) Subscribe() <-chan T {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	ch := make(chan T, 1)
+	b.subscribers = append(b.subscribers, ch)
+	return ch
+}
+
+func (b *Broadcast[T]) serve() {
+	for val := range b.source {
+		b.broadcast(val)
+	}
+	b.close()
+}
+
+func (b *Broadcast[T]) broadcast(val T) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for _, sub := range b.subscribers {
+		sub <- val
+	}
+}
+
+func (b *Broadcast[T]) close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for _, sub := range b.subscribers {
+		close(sub)
+	}
 }

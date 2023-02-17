@@ -214,7 +214,6 @@ func (p *Aggregator) watchAggrResync(aggrResync, resyncCh chan datasync.ResyncEv
 
 		kvToKeyVals := func(prefix string, kv datasync.KeyVal) {
 			keyVals, ok := prefixKeyVals[prefix]
-			p.Log.Debugf(" - prefixkeyvals: %v", prefixKeyVals)
 			if !ok {
 				p.Log.Debugf(" - keyval prefix: %v", prefix)
 				keyVals = map[string]datasync.KeyVal{}

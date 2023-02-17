@@ -29,6 +29,7 @@ import (
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/rpc/rest"
 
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/registry"
@@ -45,6 +46,9 @@ const (
 
 	// how often the transaction history gets trimmed to remove records too old to keep
 	txnHistoryTrimmingPeriod = 1 * time.Minute
+
+	// buffer capacity of the transaction queue channel
+	txnQueueCapacity = 200
 
 	// by default, a history of processed transaction is recorded
 	defaultRecordTransactionHistory = true
@@ -96,8 +100,10 @@ type Scheduler struct {
 	// registry for descriptors
 	registry registry.Registry
 
-	// a list of key prefixed covered by registered descriptors
-	keyPrefixes []string
+	// a set of key prefixed covered by registered descriptors
+	keyPrefixes map[string]struct{}
+	// NBKeyPrefix -> subscribers
+	subs map[string]*models.SourceBroadcast[struct{}]
 
 	// TXN processing
 	txnLock      sync.Mutex // can be used to pause transaction processing; always lock before the graph!
@@ -178,8 +184,12 @@ func (s *Scheduler) Init() error {
 	s.graph = graph.NewGraph(graphOpts)
 	// initialize registry for key->descriptor lookups
 	s.registry = registry.NewRegistry()
+
+	s.keyPrefixes = make(map[string]struct{})
+	s.subs = make(map[string]*models.SourceBroadcast[struct{}])
+
 	// prepare channel for serializing transactions
-	s.txnQueue = make(chan *transaction, 100)
+	s.txnQueue = make(chan *transaction, txnQueueCapacity)
 	reportQueueCap(cap(s.txnQueue))
 	// register REST API handlers
 	s.registerHandlers(s.HTTPHandlers)
@@ -248,7 +258,7 @@ func (s *Scheduler) registerKVDescriptor(descriptor *kvs.KVDescriptor) error {
 
 	s.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {
-		s.keyPrefixes = append(s.keyPrefixes, descriptor.NBKeyPrefix)
+		s.keyPrefixes[descriptor.NBKeyPrefix] = struct{}{}
 	}
 
 	if descriptor.WithMetadata {
@@ -262,13 +272,35 @@ func (s *Scheduler) registerKVDescriptor(descriptor *kvs.KVDescriptor) error {
 		graphW.RegisterMetadataMap(descriptor.Name, metadataMap)
 		graphW.Release()
 	}
+
+	if sbc, ok := s.subs[descriptor.NBKeyPrefix]; ok {
+		sbc.S <- struct{}{}
+		close(sbc.S)
+		delete(s.subs, descriptor.NBKeyPrefix)
+	}
 	return nil
+}
+
+func (s *Scheduler) WatchNBKeyPrefixRegistration(keyPrefix string) (<-chan struct{}, error) {
+	if _, ok := s.keyPrefixes[keyPrefix]; ok {
+		ch := make(chan struct{}, 1)
+		ch <- struct{}{}
+		close(ch)
+		return ch, kvs.ErrDescriptorExists
+	}
+
+	s.subs[keyPrefix] = models.NewSourceBroadcast[struct{}]()
+	return s.subs[keyPrefix].Subscribe(), nil
 }
 
 // GetRegisteredNBKeyPrefixes returns a list of key prefixes from NB with values
 // described by registered descriptors and therefore managed by the scheduler.
 func (s *Scheduler) GetRegisteredNBKeyPrefixes() []string {
-	return s.keyPrefixes
+	var keyPrefixes []string
+	for kp := range s.keyPrefixes {
+		keyPrefixes = append(keyPrefixes, kp)
+	}
+	return keyPrefixes
 }
 
 // StartNBTransaction starts a new transaction from NB to SB plane.

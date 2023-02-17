@@ -16,7 +16,6 @@ package registry
 
 import (
 	"container/list"
-
 	"fmt"
 
 	. "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -120,9 +119,11 @@ func (reg *registry) GetDescriptorForKey(key string) *KVDescriptor {
 			keyDescriptor = descriptor
 		}
 	}
-	// add entry to cache
-	entry := &cacheEntry{key: key, descriptor: keyDescriptor}
-	elem = reg.keyCache.PushFront(entry)
-	reg.keyToCacheEntry[key] = elem
+	// if descriptor exists, add entry to cache
+	if keyDescriptor != nil {
+		entry := &cacheEntry{key: key, descriptor: keyDescriptor}
+		elem = reg.keyCache.PushFront(entry)
+		reg.keyToCacheEntry[key] = elem
+	}
 	return keyDescriptor
 }
