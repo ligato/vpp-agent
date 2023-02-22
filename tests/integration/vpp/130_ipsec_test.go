@@ -35,6 +35,11 @@ func TestIPSec(t *testing.T) {
 	ctx := setupVPP(t)
 	defer ctx.teardownVPP()
 
+	release := ctx.versionInfo.Release()
+	if release == "22.10" {
+		t.Skip("IPsec: skipped for VPP 22.10")
+	}
+
 	spdIfaceDumpOk := false // determines if ipsec_spd_interface_dump works correctly
 
 	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test-ifidx")

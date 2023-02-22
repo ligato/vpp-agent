@@ -117,10 +117,14 @@ func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
 	return nil
 }
 
+// TODO: this functionality does not work properly in VPP 22.10 but it should be fixed
+// in VPP 23.02 (https://github.com/FDio/vpp/commit/1d9780a43fe54a55c7540f3528b8703ede0a5871).
+// Therefore user should NOT use VPP 22.10 if IPsec functionality is needed.
+// It works fine in versions <22.10
 func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) error {
-	req := &vpp_ipsec.IpsecSpdEntryAddDelV2{
+	req := &vpp_ipsec.IpsecSpdEntryAddDel{
 		IsAdd: isAdd,
-		Entry: ipsec_types.IpsecSpdEntryV2{
+		Entry: ipsec_types.IpsecSpdEntry{
 			SpdID:           sp.SpdIndex,
 			Priority:        sp.Priority,
 			IsOutbound:      sp.IsOutbound,
@@ -158,8 +162,6 @@ func (h *IPSecVppHandler) spdAddDelEntry(sp *ipsec.SecurityPolicy, isAdd bool) e
 		return err
 	}
 
-	// FIXME: bug in VPP?
-	// reply := &vpp_ipsec.IpsecSpdEntryAddDelV2Reply{}
 	reply := &vpp_ipsec.IpsecSpdEntryAddDelReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
