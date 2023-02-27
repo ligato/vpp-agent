@@ -289,7 +289,9 @@ func (s *Scheduler) WatchNBKeyPrefixRegistration(keyPrefix string) (<-chan struc
 		return ch, kvs.ErrDescriptorExists
 	}
 
-	s.subs[keyPrefix] = models.NewSourceBroadcast[struct{}]()
+	if _, ok := s.subs[keyPrefix]; !ok {
+		s.subs[keyPrefix] = models.NewSourceBroadcast[struct{}]()
+	}
 	return s.subs[keyPrefix].Subscribe(), nil
 }
 
