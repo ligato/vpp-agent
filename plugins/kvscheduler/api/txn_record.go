@@ -24,9 +24,9 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
 )
 
-// TxnType differentiates between NB transaction, retry of failed operations and
-// SB notification. Once queued, all three different operations are classified
-// as transactions, only with different parameters.
+// TxnType differentiates between NB transaction, retry of failed|unimplemented
+// operations and SB notification. Once queued, all four different operations
+// are classified as transactions, only with different parameters.
 type TxnType int
 
 const (
@@ -39,6 +39,11 @@ const (
 	// RetryFailedOps is a transaction re-trying failed operations from previous
 	// northbound transaction.
 	RetryFailedOps
+
+	// RetryUnimplOps is a transaction re-trying unimplemented operations (those
+	// that do not have a kvdescriptor registered yet) from previous northbound
+	// transaction.
+	RetryUnimplOps
 )
 
 // String returns human-readable string representation of the transaction type.
@@ -50,6 +55,8 @@ func (t TxnType) String() string {
 		return "NBTransaction"
 	case RetryFailedOps:
 		return "RetryFailedOps"
+	case RetryUnimplOps:
+		return "RetryUnimplOps"
 	}
 	return "UndefinedTxnType"
 }
@@ -58,6 +65,7 @@ var txnType_value = map[string]int{
 	"SBNotification": int(SBNotification),
 	"NBTransaction":  int(NBTransaction),
 	"RetryFailedOps": int(RetryFailedOps),
+	"RetryUnimplOps": int(RetryUnimplOps),
 }
 
 func (t TxnType) MarshalJSON() ([]byte, error) {
@@ -201,8 +209,11 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 			str += indent2 + fmt.Sprintf("- type: %s, %s\n", TxnTypeToString(txn.TxnType), ResyncTypeToString(txn.ResyncType))
 		} else {
 			if txn.TxnType == RetryFailedOps {
-				str += indent2 + fmt.Sprintf("- type: %s (for txn %d, attempt #%d)\n",
+				str += indent2 + fmt.Sprintf("- type: %s (for txn #%d, attempt #%d)\n",
 					TxnTypeToString(txn.TxnType), txn.RetryForTxn, txn.RetryAttempt)
+			} else if txn.TxnType == RetryUnimplOps {
+				str += indent2 + fmt.Sprintf("- type: %s (for txn #%d)\n",
+					TxnTypeToString(txn.TxnType), txn.RetryForTxn)
 			} else {
 				str += indent2 + fmt.Sprintf("- type: %s\n", TxnTypeToString(txn.TxnType))
 			}
@@ -218,6 +229,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 			}
 		}
 		if txn.ResyncType == DownstreamResync {
+			// TODO: refactor the code to get rid of this goto statement
 			goto printOps
 		}
 		if len(txn.Values) == 0 {

@@ -741,6 +741,8 @@ func getTxnColor(txn *kvs.RecordedTxn) int {
 		clr = tablewriter.FgCyanColor
 	case kvs.RetryFailedOps:
 		clr = tablewriter.FgMagentaColor
+	case kvs.RetryUnimplOps:
+		clr = tablewriter.FgHiMagentaColor
 	}
 	return clr
 }
@@ -760,8 +762,10 @@ func getTxnType(txn *kvs.RecordedTxn) string {
 		return "config change"
 	case kvs.RetryFailedOps:
 		return fmt.Sprintf("retry #%d for %d", txn.RetryAttempt, txn.RetryForTxn)
+	case kvs.RetryUnimplOps:
+		return fmt.Sprintf("retry impl for %d", txn.RetryForTxn)
 	}
-	return "?"
+	return "unknown txn type"
 }
 
 func txnValueStates(txn *kvs.RecordedTxn) string {

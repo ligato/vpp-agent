@@ -77,6 +77,7 @@ func (s *Scheduler) executeTransaction(txn *transaction, graphW graph.RWAccess, 
 	applied := utils.NewMapBasedKeySet()
 
 	prevValues := make([]kvs.KeyValuePair, 0, len(txn.values))
+	isRetry := txn.txnType == kvs.RetryFailedOps || txn.txnType == kvs.RetryUnimplOps
 
 	// execute transaction either in best-effort mode or with revert on the first failure
 	var revert bool
@@ -89,7 +90,7 @@ func (s *Scheduler) executeTransaction(txn *transaction, graphW graph.RWAccess, 
 			baseKey: kv.key,
 			applied: applied,
 			dryRun:  dryRun,
-			isRetry: txn.txnType == kvs.RetryFailedOps,
+			isRetry: isRetry,
 			branch:  branch,
 		})
 		executed = append(executed, ops...)
@@ -227,7 +228,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// if the value is already "broken" by this transaction, do not try to update
 	// anymore, unless this is a revert
 	// (needs to be refreshed first in the post-processing stage)
-	if (prevState == kvscheduler.ValueState_FAILED || prevState == kvscheduler.ValueState_RETRYING) &&
+	if (prevState == kvscheduler.ValueState_FAILED || prevState == kvscheduler.ValueState_RETRYING || prevState == kvscheduler.ValueState_UNIMPLEMENTED) &&
 		!args.kv.isRevert && prevUpdate != nil && prevUpdate.txnSeqNum == args.txn.seqNum {
 		_, prevErr := getNodeError(node)
 		return executed, prevValue, prevErr

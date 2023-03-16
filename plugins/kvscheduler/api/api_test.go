@@ -33,6 +33,7 @@ func TestTxnTypeEncode(t *testing.T) {
 		{"SBNotification", api.SBNotification, `"SBNotification"`, nil},
 		{"NBTransaction", api.NBTransaction, `"NBTransaction"`, nil},
 		{"RetryFailedOps", api.RetryFailedOps, `"RetryFailedOps"`, nil},
+		{"RetryUnimplOps", api.RetryUnimplOps, `"RetryUnimplOps"`, nil},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -58,6 +59,7 @@ func TestTxnTypeDecode(t *testing.T) {
 		expectErr     error
 	}{
 		{"RetryFailedOps", `"RetryFailedOps"`, api.RetryFailedOps, nil},
+		{"RetryUnimplOps", `"RetryUnimplOps"`, api.RetryUnimplOps, nil},
 		{"NBTransaction", `"NBTransaction"`, api.NBTransaction, nil},
 		{"1 (NBTransaction)", `1`, api.NBTransaction, nil},
 		{"0 (SBNotification)", `0`, api.SBNotification, nil},

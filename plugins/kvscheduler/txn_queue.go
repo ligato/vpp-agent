@@ -90,3 +90,40 @@ func (s *Scheduler) delayRetry(args *retryTxn) {
 		}
 	}
 }
+
+func (s *Scheduler) enqueueImpl(args *implTxn) {
+	go s.waitForImpl(args)
+}
+
+func (s *Scheduler) waitForImpl(args *implTxn) {
+	s.wg.Add(1)
+	defer s.wg.Done()
+
+	select {
+	case <-s.ctx.Done():
+		return
+	case <-args.subCh:
+		err := s.enqueueTxn(&transaction{
+			txnType: kvs.RetryUnimplOps,
+			impl:    args,
+		})
+		if err != nil {
+			s.Log.WithFields(logging.Fields{
+				"txnSeqNum": args.txnSeqNum,
+				"err":       err,
+			}).Warn("Failed to enqueue impl transaction for unimplemented operations")
+
+			// Descriptor got registered but enqueue for this txn failed. So we retry
+			// this transaction as if retrying failed operation.
+			retryArgs := &retryTxn{
+				retryTxnMeta: retryTxnMeta{
+					txnSeqNum: args.txnSeqNum,
+					delay:     kvs.DefaultRetryPeriod,
+					attempt:   1,
+				},
+				keys: args.keys,
+			}
+			s.enqueueRetry(retryArgs)
+		}
+	}
+}

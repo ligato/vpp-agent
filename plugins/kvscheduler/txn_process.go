@@ -23,6 +23,7 @@ import (
 
 	"go.ligato.io/cn-infra/v2/logging"
 
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/utils"
@@ -39,6 +40,7 @@ type transaction struct {
 	values  []kvForTxn
 	nb      *nbTxn    // defined for NB transactions
 	retry   *retryTxn // defined for retry of failed operations
+	impl    *implTxn  // defined for implementation of unimplemented operations
 	created time.Time
 }
 
@@ -64,6 +66,13 @@ type nbTxn struct {
 	withSimulation  bool
 	description     string
 	resultChan      chan txnResult
+}
+
+type implTxn struct {
+	txnSeqNum uint64
+	subCh     <-chan struct{}
+	keyPrefix string
+	keys      map[string]uint64
 }
 
 // retryTxn encapsulates data for retry of failed operations.
@@ -100,7 +109,7 @@ func (s *Scheduler) consumeTransactions() {
 }
 
 // processTransaction processes transaction in 6 steps:
-//	1. Pre-processing: transaction parameters are initialized, retry operations
+//  1. Pre-processing: transaction parameters are initialized, retry operations
 //     are filtered from the obsolete ones and for the resync the graph is refreshed
 //  2. Ordering: pre-order operations using a heuristic to get the shortest graph
 //     walk in average
@@ -185,7 +194,11 @@ func (s *Scheduler) preProcessTransaction(txn *transaction) (skipExec, skipSimul
 		skipSimulation = skipExec || !txn.nb.withSimulation
 		record = txn.nb.resyncType != kvs.DownstreamResync
 	case kvs.RetryFailedOps:
-		skipExec = s.preProcessRetryTxn(txn)
+		skipExec = s.preProcessRetryTxn(txn, txn.retry.keys)
+		skipSimulation = skipExec
+		record = true
+	case kvs.RetryUnimplOps:
+		skipExec = s.preProcessRetryTxn(txn, txn.impl.keys)
 		skipSimulation = skipExec
 		record = true
 	}
@@ -204,7 +217,7 @@ func (s *Scheduler) preProcessNotification(txn *transaction) (skip bool) {
 }
 
 // preProcessNBTransaction refreshes the graph for resync.
-func (s *Scheduler) preProcessNBTransaction(txn *transaction) (skip bool) {
+func (s *Scheduler) preProcessNBTransaction(txn *transaction) bool {
 	if txn.nb.resyncType == kvs.NotResync {
 		// nothing to do in the pre-processing stage
 		return false
@@ -273,16 +286,15 @@ func (s *Scheduler) preProcessNBTransaction(txn *transaction) (skip bool) {
 			})
 	}
 
-	skip = len(txn.values) == 0
-	return
+	return len(txn.values) == 0
 }
 
 // preProcessRetryTxn filters out obsolete retry operations.
-func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
+func (s *Scheduler) preProcessRetryTxn(txn *transaction, keyRevs map[string]uint64) bool {
 	graphR := s.graph.Read()
 	defer graphR.Release()
 
-	for key, retryRev := range txn.retry.keys {
+	for key, retryRev := range keyRevs {
 		node := graphR.GetNode(key)
 		if node == nil {
 			continue
@@ -300,8 +312,7 @@ func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
 				isRevert: lastUpdate.revert,
 			})
 	}
-	skip = len(txn.values) == 0
-	return
+	return len(txn.values) == 0
 }
 
 // postProcessTransaction schedules retry for failed operations and propagates
@@ -314,6 +325,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
 	toRefresh := utils.NewSliceBasedKeySet()
+	toImpl := utils.NewSliceBasedKeySet()
 
 	var afterErrRefresh bool
 	var kvErrors []kvs.KeyWithError
@@ -326,7 +338,9 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 		state := getNodeState(node)
 		baseKey := getNodeBaseKey(node)
 		if state == kvscheduler.ValueState_UNIMPLEMENTED {
-			continue
+			toImpl.Add(baseKey)
+			toRefresh.Add(baseKey)
+			afterErrRefresh = true
 		}
 		if state == kvscheduler.ValueState_FAILED {
 			toRefresh.Add(baseKey)
@@ -351,6 +365,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 		graphW := s.graph.Write(afterErrRefresh, false)
 		s.refreshGraph(graphW, toRefresh, nil, afterErrRefresh)
 		s.scheduleRetries(txn, graphW, toRetry)
+		s.scheduleUnimpl(txn, graphW, toImpl)
 
 		// if enabled, verify transaction effects
 		if s.verifyMode {
@@ -430,6 +445,42 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 		}
 		graphW.Release()
 	}
+}
+
+func (s *Scheduler) scheduleUnimpl(txn *transaction, graphR graph.ReadAccess, toImpl utils.KeySet) {
+	if txn.txnType == kvs.RetryUnimplOps {
+		return
+	}
+	for _, key := range toImpl.Iterate() {
+		model, err := models.GetModelForKey(key)
+		if err != nil {
+			s.Log.WithFields(logging.Fields{
+				"txnSeqNum": txn.seqNum,
+				"keyPrefix": key,
+			}).Warn("Model not found for key")
+			continue
+		}
+
+		keyPrefix := model.KeyPrefix()
+		node := graphR.GetNode(key)
+		lastUpdate := getNodeLastUpdate(node)
+		ch, err := s.WatchNBKeyPrefixRegistration(keyPrefix)
+		if err != nil {
+			s.Log.WithFields(logging.Fields{
+				"txnSeqNum": txn.seqNum,
+				"keyPrefix": keyPrefix,
+			}).Warn("Descriptor already registered for key prefix")
+		}
+		implTxn := &implTxn{
+			txnSeqNum: txn.seqNum,
+			subCh:     ch,
+			keyPrefix: keyPrefix,
+			keys:      map[string]uint64{},
+		}
+		implTxn.keys[key] = lastUpdate.txnSeqNum
+		s.enqueueImpl(implTxn)
+	}
+
 }
 
 // scheduleRetries schedules a series of re-try transactions for failed values

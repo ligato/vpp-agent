@@ -101,17 +101,17 @@ func (p *Plugin) Init() (err error) {
 		p.log.Infof("grpc server is not available")
 	}
 
+	var prefixes []string
 	p.Log.Infof("Found %d registered models", len(models.RegisteredModels()))
 	for _, model := range models.RegisteredModels() {
 		p.debugf("- model: %+v", *model.Spec())
+		prefixes = append(prefixes, model.KeyPrefix())
 	}
 
-	var prefixes []string
 	if nbPrefixes := p.kvs.GetRegisteredNBKeyPrefixes(); len(nbPrefixes) > 0 {
 		p.log.Infof("Watching %d key prefixes from KVScheduler", len(nbPrefixes))
 		for _, prefix := range nbPrefixes {
 			p.debugf("- prefix: %s", prefix)
-			prefixes = append(prefixes, prefix)
 		}
 	} else {
 		p.log.Warnf("No key prefixes found in KVScheduler (ensure that all KVDescriptors are registered before this)")
