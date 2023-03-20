@@ -28,6 +28,7 @@ type Stats struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Stats:
+	//
 	//	*Stats_VppStats
 	Stats isStats_Stats `protobuf_oneof:"stats"`
 }

@@ -1854,6 +1854,99 @@ func TestNat44EiMappingLongTag(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
+func TestAddNat44VrfTable(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdAddDelVrfTableReply{})
+	err = natHandler.AddNat44VrfTable(0)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44EdAddDelVrfTable)
+	Expect(ok).To(BeTrue())
+	Expect(msg.TableVrfID).To(BeEquivalentTo(0))
+	Expect(msg.IsAdd).To(BeTrue())
+}
+
+func TestDelNat44Table(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdAddDelVrfTableReply{})
+	err = natHandler.DelNat44VrfTable(0)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44EdAddDelVrfTable)
+	Expect(ok).To(BeTrue())
+	Expect(msg.TableVrfID).To(BeEquivalentTo(0))
+	Expect(msg.IsAdd).To(BeFalse())
+}
+
+func TestAddNat44VrfRoute(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdAddDelVrfRouteReply{})
+	vrfRoute := nat.Nat44VrfRoute{
+		SrcVrfId:  0,
+		DestVrfId: 1,
+	}
+	err = natHandler.AddNat44VrfRoute(vrfRoute.SrcVrfId, vrfRoute.DestVrfId)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44EdAddDelVrfRoute)
+	Expect(ok).To(BeTrue())
+	Expect(msg.VrfID).To(BeEquivalentTo(1))
+	Expect(msg.TableVrfID).To(BeEquivalentTo(0))
+	Expect(msg.IsAdd).To(BeTrue())
+}
+
+func TestDelNat44VrfRoute(t *testing.T) {
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdAddDelVrfRouteReply{})
+	vrfRoute := nat.Nat44VrfRoute{
+		SrcVrfId:  0,
+		DestVrfId: 1,
+	}
+	err = natHandler.DelNat44VrfRoute(vrfRoute.SrcVrfId, vrfRoute.DestVrfId)
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*vpp_nat_ed.Nat44EdAddDelVrfRoute)
+	Expect(ok).To(BeTrue())
+	Expect(msg.TableVrfID).To(BeEquivalentTo(0))
+	Expect(msg.IsAdd).To(BeFalse())
+}
+
 func localIPs(addr1, addr2 net.IP) []*nat.DNat44_StaticMapping_LocalIP {
 	return []*nat.DNat44_StaticMapping_LocalIP{
 		{

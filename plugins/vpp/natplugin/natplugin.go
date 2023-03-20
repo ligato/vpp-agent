@@ -18,6 +18,8 @@
 //go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Interface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name NAT44AddressPool --value-type *vpp_nat.Nat44AddressPool --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Vrf --value-type *vpp_nat.Nat44VrfTable --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44VrfRoute --value-type *vpp_nat.Nat44VrfRoute --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat" --output-dir "descriptor"
 
 package natplugin
 
@@ -76,6 +78,8 @@ func (p *NATPlugin) Init() (err error) {
 	dnat44Descriptor := descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
 	nat44IfaceDescriptor := descriptor.NewNAT44InterfaceDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
 	nat44AddrPoolDescriptor := descriptor.NewNAT44AddressPoolDescriptor(nat44GlobalCtx, p.natHandler, p.Log)
+	nat44VrfDescriptor := descriptor.NewNAT44VrfDescriptor(p.natHandler, p.Log)
+	nat44VrfRouteDescriptor := descriptor.NewNAT44VrfRouteDescriptor(p.natHandler, p.Log)
 
 	err = p.KVScheduler.RegisterKVDescriptor(
 		nat44GlobalDescriptor,
@@ -84,6 +88,8 @@ func (p *NATPlugin) Init() (err error) {
 		dnat44Descriptor,
 		nat44IfaceDescriptor,
 		nat44AddrPoolDescriptor,
+		nat44VrfDescriptor,
+		nat44VrfRouteDescriptor,
 	)
 	if err != nil {
 		return err

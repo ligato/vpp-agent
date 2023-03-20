@@ -172,16 +172,17 @@ func (IPAddressSource) EnumDescriptor() ([]byte, []int) {
 // To reference allocated address, instead of entering specific IP address
 // for interface/route/ARP/..., use one of the following string templates
 // prefixed with netalloc keyword "alloc" followed by colon:
-//  a) reference IP address allocated for an interface:
-//        "alloc:<network_name>/<interface_name>"
-//  b) when interface is given (e.g. when asked for IP from interface model),
-//     interface_name can be omitted:
-//        "alloc:<network_name>"
-//  c) reference default gateway IP address assigned to an interface:
-//        "alloc:<network_name>/<interface_name>/GW"
-//  d) when asking for GW IP for interface which is given, interface_name
-//     can be omitted:
-//        "alloc:<network_name>/GW"
+//
+//	a) reference IP address allocated for an interface:
+//	      "alloc:<network_name>/<interface_name>"
+//	b) when interface is given (e.g. when asked for IP from interface model),
+//	   interface_name can be omitted:
+//	      "alloc:<network_name>"
+//	c) reference default gateway IP address assigned to an interface:
+//	      "alloc:<network_name>/<interface_name>/GW"
+//	d) when asking for GW IP for interface which is given, interface_name
+//	   can be omitted:
+//	      "alloc:<network_name>/GW"
 type IPAllocation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -204,9 +205,10 @@ type IPAllocation struct {
 	// Gw is the address of the default gateway assigned to the interface in
 	// the given network.
 	// If the address is specified without a mask, then either:
-	//  a) the mask of the <address> is used provided that GW IP falls into the
-	//     same network IP range, or
-	//  b) the all-ones mask is used otherwise
+	//
+	//	a) the mask of the <address> is used provided that GW IP falls into the
+	//	   same network IP range, or
+	//	b) the all-ones mask is used otherwise
 	Gw string `protobuf:"bytes,5,opt,name=gw,proto3" json:"gw,omitempty"`
 }
 

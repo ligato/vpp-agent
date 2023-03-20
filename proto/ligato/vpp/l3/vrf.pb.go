@@ -148,7 +148,7 @@ func (x *VrfTable) GetFlowHashSettings() *VrfTable_FlowHashSettings {
 // FlowHashSettings allows tuning of hash calculation of IP flows in the VRF table.
 // This affects hash table size as well as the stickiness of flows by load-balancing.
 // If not defined, default settings that are implicitly enabled are:
-//  - use_src_ip, use_dst_ip, use_src_port, use_dst_port, use_protocol
+//   - use_src_ip, use_dst_ip, use_src_port, use_dst_port, use_protocol
 type VrfTable_FlowHashSettings struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

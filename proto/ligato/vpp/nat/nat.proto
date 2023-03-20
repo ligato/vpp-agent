@@ -178,3 +178,18 @@ message VirtualReassembly {
     // If set to true fragments are dropped, translated otherwise.
     bool drop_fragments = 4;
 }
+
+// Nat44VrfTable defines a vrf table for NAT44. Only for Endpoint dependent NAT.
+message Nat44VrfTable {
+    // Id of the VRF NAT routing table
+    uint32 src_vrf_id = 1;
+    // Ids of resolving destination (tx) VRFs
+    repeated uint32 dest_vrf_ids = 2;
+}
+// Nat44EdVrfRoute defines a route for NAT44 VRF tables. Only for Endpoint dependent NAT.
+message Nat44VrfRoute {
+    // Id of the source vrf
+    uint32 src_vrf_id = 1;
+    // Id of the destination vrf
+    uint32 dest_vrf_id = 2;
+}

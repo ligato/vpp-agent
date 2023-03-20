@@ -30,6 +30,7 @@ type LocalSID struct {
 	InstallationVrfId uint32 `protobuf:"varint,2,opt,name=installation_vrf_id,json=installationVrfId,proto3" json:"installation_vrf_id,omitempty"`
 	// Configuration for end functions (all end functions are mutually exclusive)
 	// Types that are assignable to EndFunction:
+	//
 	//	*LocalSID_BaseEndFunction
 	//	*LocalSID_EndFunctionX
 	//	*LocalSID_EndFunctionT
@@ -305,11 +306,13 @@ type Steering struct {
 	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"` // globally unique steering identification (used in keys when is steering stored in key-value stores(i.e. ETCD))
 	// Referencing policy that should be used for steering traffic into (all policy references are mutual exclusive)
 	// Types that are assignable to PolicyRef:
+	//
 	//	*Steering_PolicyBsid
 	//	*Steering_PolicyIndex
 	PolicyRef isSteering_PolicyRef `protobuf_oneof:"policy_ref"`
 	// Traffic configuration (all traffic messages are mutual exclusive)
 	// Types that are assignable to Traffic:
+	//
 	//	*Steering_L2Traffic_
 	//	*Steering_L3Traffic_
 	Traffic isSteering_Traffic `protobuf_oneof:"traffic"`

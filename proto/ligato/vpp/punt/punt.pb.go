@@ -351,14 +351,14 @@ func (x *Exception) GetSocketPath() string {
 // with following command:
 //
 // vpp# show punt reasons
-//    [0] ipsec4-spi-0 from:[ipsec ]
-//    [1] ipsec6-spi-0 from:[ipsec ]
-//    [2] ipsec4-spi-o-udp-0 from:[ipsec ]
-//    [3] ipsec4-no-such-tunnel from:[ipsec ]
-//    [4] ipsec6-no-such-tunnel from:[ipsec ]
-//    [5] VXLAN-GBP-no-such-v4-tunnel from:[vxlan-gbp ]
-//    [6] VXLAN-GBP-no-such-v6-tunnel from:[vxlan-gbp ]
 //
+//	[0] ipsec4-spi-0 from:[ipsec ]
+//	[1] ipsec6-spi-0 from:[ipsec ]
+//	[2] ipsec4-spi-o-udp-0 from:[ipsec ]
+//	[3] ipsec4-no-such-tunnel from:[ipsec ]
+//	[4] ipsec6-no-such-tunnel from:[ipsec ]
+//	[5] VXLAN-GBP-no-such-v4-tunnel from:[vxlan-gbp ]
+//	[6] VXLAN-GBP-no-such-v6-tunnel from:[vxlan-gbp ]
 type Reason struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

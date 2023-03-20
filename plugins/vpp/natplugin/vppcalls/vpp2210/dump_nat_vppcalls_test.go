@@ -15,6 +15,7 @@
 package vpp2210_test
 
 import (
+	"math/bits"
 	"net"
 	"testing"
 
@@ -570,6 +571,41 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.IdMappings[1].Port).To(BeEquivalentTo(0))
 	Expect(dnat.IdMappings[1].IpAddress).To(BeEquivalentTo("0.0.0.0"))
 	Expect(dnat.IdMappings[1].Interface).To(BeEquivalentTo("if1"))
+}
+
+func TestNat44VrfTableDump(t *testing.T) {
+	ctx, natHandler, _, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_nat_ed.Nat44EdPluginEnableDisableReply{})
+	err := natHandler.EnableNAT44Plugin(vppcalls.Nat44InitOpts{EndpointDependent: true})
+	Expect(err).ShouldNot(HaveOccurred())
+
+	// vrf tables
+	ctx.MockVpp.MockReply(
+		&vpp_nat_ed.Nat44EdVrfTablesDetails{
+			TableVrfID: 5,
+			VrfIds:     []uint32{bits.ReverseBytes32(1), bits.ReverseBytes32(2)},
+			NVrfIds:    1,
+		},
+		&vpp_nat_ed.Nat44EdVrfTablesDetails{
+			TableVrfID: 10,
+			VrfIds:     []uint32{0},
+			NVrfIds:    1,
+		})
+	ctx.MockVpp.MockReply(&memclnt.ControlPingReply{})
+
+	tables, err := natHandler.Nat44VrfTablesDump()
+	Expect(err).To(Succeed())
+	Expect(tables).To(HaveLen(2))
+
+	Expect(tables[0].DestVrfIds[0]).To(BeEquivalentTo(1))
+	Expect(tables[0].DestVrfIds[1]).To(BeEquivalentTo(2))
+	Expect(tables[0].SrcVrfId).To(BeEquivalentTo(5))
+
+	Expect(tables[1].DestVrfIds[0]).To(BeEquivalentTo(0))
+	Expect(tables[1].SrcVrfId).To(BeEquivalentTo(10))
+
 }
 
 func natTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {

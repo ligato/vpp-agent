@@ -18,7 +18,6 @@ import (
 	govppapi "go.fd.io/govpp/api"
 	"go.ligato.io/cn-infra/v2/idxmap"
 	"go.ligato.io/cn-infra/v2/logging"
-
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
@@ -54,6 +53,14 @@ type NatVppAPI interface {
 	AddNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string) error
 	// DelNat44StaticMapping removes existing NAT44 static mapping entry.
 	DelNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string) error
+	// Nat44AddVrfTable adds new vrf table to list of nat vrf tables
+	AddNat44VrfTable(vrf uint32) error
+	// Nat44DelVrfTable delete vrf table from list of nat vrf tables
+	DelNat44VrfTable(vrf uint32) error
+	// Nat44AddVrfRoute adds vrf route to nat vrf table
+	AddNat44VrfRoute(tableVrfId uint32, vrf uint32) error
+	// Nat44AddVrfRoute delete vrf route from nat vrf table
+	DelNat44VrfRoute(tableVrfId uint32, vrf uint32) error
 }
 
 // NatVppRead provides read methods for VPP NAT configuration.
@@ -72,6 +79,7 @@ type NatVppRead interface {
 	Nat44InterfacesDump() ([]*nat.Nat44Interface, error)
 	// Nat44AddressPoolsDump dumps all configured NAT44 address pools.
 	Nat44AddressPoolsDump() ([]*nat.Nat44AddressPool, error)
+	Nat44VrfTablesDump() ([]*nat.Nat44VrfTable, error)
 }
 
 // Previously these options were configured for NAT44 plugin via the startup configuration file.

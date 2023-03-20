@@ -713,6 +713,19 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 	return nil
 }
 
+func (h *NatVppHandler) AddNat44VrfTable(vrf uint32) error {
+	return errors.Errorf("Not supported for this version")
+}
+func (h *NatVppHandler) DelNat44VrfTable(vrf uint32) error {
+	return errors.Errorf("Not supported for this version")
+}
+func (h *NatVppHandler) AddNat44VrfRoute(tableVrfId uint32, vrf uint32) error {
+	return errors.Errorf("Not supported for this version")
+}
+func (h *NatVppHandler) DelNat44VrfRoute(tableVrfId uint32, vrf uint32) error {
+	return errors.Errorf("Not supported for this version")
+}
+
 func setNat44EdFlags(flags *nat44EdFlags) nat_types.NatConfigFlags {
 	var flagsCfg nat_types.NatConfigFlags
 	if flags.isTwiceNat {

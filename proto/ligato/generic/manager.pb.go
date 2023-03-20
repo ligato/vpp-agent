@@ -136,6 +136,7 @@ type Data struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Union:
+	//
 	//	*Data_Any
 	Union isData_Union `protobuf_oneof:"union"`
 }
