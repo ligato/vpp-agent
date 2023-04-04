@@ -7,7 +7,7 @@ require (
 	github.com/common-nighthawk/go-figure v0.0.0-20200609044655-c4b36f998cf2
 	github.com/coreos/go-iptables v0.5.0
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
-	github.com/docker/docker v20.10.12+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/fsouza/go-dockerclient v1.6.6
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-errors/errors v1.0.1
