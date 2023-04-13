@@ -875,7 +875,7 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 				return
 			}
 			var message proto.Message
-			if _, isRemoteModel := model.(*models.RemotelyKnownModel); isRemoteModel {
+			if model.LocalGoType() == nil {
 				// message is retrieved from localclient but it has remotely known model => it is the proxy
 				// models in local model registry => can't convert it to generated message due to unknown
 				// generated message go type (to use reflection to create it), however the processing of proxy

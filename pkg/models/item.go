@@ -20,7 +20,6 @@ import (
 
 	"github.com/go-errors/errors"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
@@ -83,33 +82,15 @@ func UnmarshalItemUsingModelRegistry(item *api.Item, modelRegistry Registry) (pr
 	// LocallyKnownModel is used for proto message with go type generated from imported proto file and known
 	// at compile time, while RemotelyKnownModel can't produce such go typed instances (we know the name of go type,
 	// but can't produce it from remote information) so dynamic proto message must be enough (*dynamicpb.Message))
-	if _, ok := model.(*LocallyKnownModel); ok {
-		return unmarshalItemDataAnyOfLocalModel(item.GetData().GetAny())
+	var opts proto.UnmarshalOptions
+	if model.LocalGoType() != nil {
+		opts.Resolver = modelRegistry.MessageTypeRegistry()
 	}
-	return unmarshalItemDataAnyOfRemoteModel(item.GetData().GetAny(), modelRegistry.MessageTypeRegistry())
-}
-
-// unmarshalItemDataAnyOfRemoteModel unmarshalls the generic data part of api.Item that has remote model.
-// The unmarshalled proto.Message will have dynamic type (*dynamicpb.Message).
-func unmarshalItemDataAnyOfRemoteModel(itemAny *anypb.Any, msgTypeResolver *protoregistry.Types) (proto.Message, error) {
-	msg, err := anypb.UnmarshalNew(itemAny, proto.UnmarshalOptions{
-		Resolver: msgTypeResolver,
-	})
+	msg, err := anypb.UnmarshalNew(item.GetData().GetAny(), opts)
 	if err != nil {
 		return nil, err
 	}
 	return msg, nil
-}
-
-// unmarshalItemDataAnyOfLocalModel unmarshalls the generic data part of api.Item that has local model.
-// The unmarshalled proto.Message will have the go type of model generated go structures (that is due to
-// go type registering in init() method of generated go structures file).
-func unmarshalItemDataAnyOfLocalModel(itemAny *anypb.Any) (proto.Message, error) {
-	m, err := anypb.UnmarshalNew(itemAny, proto.UnmarshalOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 // GetModelForItem returns model for given item.

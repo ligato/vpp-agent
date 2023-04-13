@@ -15,11 +15,15 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"path"
 	"reflect"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/runtime/protoimpl"
@@ -27,17 +31,8 @@ import (
 )
 
 // Register registers model in DefaultRegistry.
-func Register(pb proto.Message, spec Spec, opts ...ModelOption) KnownModel {
-	model, err := DefaultRegistry.Register(pb, spec, opts...)
-	if err != nil {
-		panic(err)
-	}
-	return model
-}
-
-// RegisterRemote registers remotely known model in given RemoteRegistry
-func RegisterRemote(remoteModel *ModelInfo, remoteRegistry *RemoteRegistry) KnownModel {
-	model, err := remoteRegistry.Register(remoteModel, ToSpec(remoteModel.Spec))
+func Register(x any, spec Spec, opts ...ModelOption) KnownModel {
+	model, err := DefaultRegistry.Register(x, spec, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -143,6 +138,50 @@ func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
 		keyPrefix = strings.TrimSuffix(keyPrefix, "/")
 	}
 	return keyPrefix
+}
+
+// upperFirst converts the first letter of string to upper case
+func upperFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[n:]
+}
+
+func resolveDynamicProtoModelName(msg *dynamicpb.Message) (any, error) {
+	model, err := GetModelFor(msg)
+	if err != nil {
+		return nil, fmt.Errorf("can't get model "+
+			"for dynamic message due to: %w (message=%v)", err, msg)
+	}
+	goType := model.LocalGoType()
+	if goType != nil {
+		var value any
+		if goType.Kind() == reflect.Ptr {
+			value = reflect.New(goType.Elem()).Interface()
+		} else {
+			value = reflect.Zero(goType).Interface()
+		}
+		pb := protoMessageOf(value)
+		proto.Merge(pb, msg)
+		return pb, nil
+	} else {
+		marshaller := protojson.MarshalOptions{
+			EmitUnpopulated: true,
+		}
+		jsonData, err := marshaller.Marshal(msg)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshall message "+
+				"to json due to: %w (message: %+v)", err, msg)
+		}
+		var mapData map[string]any
+		if err := json.Unmarshal(jsonData, &mapData); err != nil {
+			return nil, fmt.Errorf("can't load json of marshalled "+
+				"message to generic map due to: %w (json=%v)", err, jsonData)
+		}
+		return mapData, nil
+	}
 }
 
 // DynamicLocallyKnownMessageToGeneratedMessage converts locally registered/known proto dynamic message to

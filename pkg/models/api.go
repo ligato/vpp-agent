@@ -39,7 +39,7 @@ type Registry interface {
 	GetModel(name string) (KnownModel, error)
 
 	// GetModelFor returns registered model for the given proto message.
-	GetModelFor(x interface{}) (KnownModel, error)
+	GetModelFor(x any) (KnownModel, error)
 
 	// GetModelForKey returns registered model for the given key or error.
 	GetModelForKey(key string) (KnownModel, error)
@@ -47,7 +47,7 @@ type Registry interface {
 	// MessageTypeRegistry creates new message type registry from registered proto messages
 	MessageTypeRegistry() *protoregistry.Types
 
-	// RegisteredModels returns all registered modules.
+	// RegisteredModels returns all registered modules in the order they were registered in.
 	RegisteredModels() []KnownModel
 
 	// Register registers either a protobuf message known at compile-time together
@@ -55,13 +55,15 @@ type Registry interface {
 	// or a remote model represented by an instance of ModelInfo obtained via KnownModels RPC from MetaService
 	// (for RemoteRegistry or also for LocalRegistry but most likely just proxied to a remote agent).
 	// If spec.Class is unset, then it defaults to 'config'.
-	Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error)
+	Register(x any, spec Spec, opts ...ModelOption) (KnownModel, error)
+
+	RegisterMsg(msg proto.Message) (KnownModel, error)
 }
 
 // KnownModel represents a registered model
 type KnownModel interface {
 	// Spec returns model specification for the model.
-	Spec() *Spec
+	Spec() Spec
 
 	// ModelDetail returns descriptor for the model.
 	ModelDetail() *generic.ModelDetail
@@ -78,17 +80,11 @@ type KnownModel interface {
 	// NameTemplate returns name template for the model.
 	NameTemplate() string
 
-	// GoType returns go type for the model.
-	GoType() string
-
 	// LocalGoType returns reflect go type for the model. The reflect type can be retrieved only
 	// for locally registered model that provide locally known go types. The remotely retrieved model
 	// can't provide reflect type so if known model information is retrieved remotely, this method
 	// will return nil.
 	LocalGoType() reflect.Type
-
-	// PkgPath returns package import path for the model definition.
-	PkgPath() string
 
 	// Name returns name for the model.
 	Name() string
@@ -107,5 +103,5 @@ type KnownModel interface {
 	StripKeyPrefix(key string) string
 
 	// InstanceName computes message name for given proto message using name template (if present).
-	InstanceName(x interface{}) (string, error)
+	InstanceName(x any) (string, error)
 }

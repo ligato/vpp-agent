@@ -45,8 +45,8 @@ func TestYamlCompatibility(t *testing.T) {
 	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
 	config := &configurator.Config{
 		VppConfig: &vpp.ConfigData{
-			Interfaces: ifaces,
 			Srv6Global: srv6Global,
+			Interfaces: ifaces,
 		},
 	}
 	// TODO add more configuration to hardcoded version of configuration so it can cover all configuration

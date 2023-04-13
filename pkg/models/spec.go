@@ -5,7 +5,10 @@ import (
 	"regexp"
 	"strings"
 
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 	api "go.ligato.io/vpp-agent/v3/proto/ligato/generic"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -41,6 +44,14 @@ func (spec Spec) Proto() *api.ModelSpec {
 	}
 }
 
+func SpecFromProtoDesc(desc protoreflect.MessageDescriptor) (Spec, error) {
+	opts := desc.Options()
+	if !proto.HasExtension(opts, generic.E_Model) {
+		return Spec{}, fmt.Errorf("can't extract spec from proto message %s: missing proto message model extension", desc.FullName())
+	}
+	return ToSpec(proto.GetExtension(opts, generic.E_Model).(*generic.ModelSpec)).Normalize(), nil
+}
+
 func (spec Spec) KeyPrefix() string {
 	modulePath := strings.Replace(spec.Module, ".", "/", -1)
 	typePath := strings.Replace(spec.Type, ".", "/", -1)
@@ -66,4 +77,17 @@ func (spec Spec) Validate() error {
 		return fmt.Errorf("invalid class: %q", spec.Class)
 	}
 	return nil
+}
+
+// Normalize returns normalized model specification
+func (spec Spec) Normalize() Spec {
+	// spec with undefined class fallbacks to config
+	if spec.Class == "" {
+		spec.Class = "config"
+	}
+	// spec with undefined version fallbacks to v0
+	if spec.Version == "" {
+		spec.Version = "v0"
+	}
+	return spec
 }

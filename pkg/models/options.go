@@ -5,7 +5,11 @@ import (
 	"strings"
 	"text/template"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 type modelOptions struct {
@@ -17,7 +21,7 @@ type modelOptions struct {
 type ModelOption func(*modelOptions)
 
 // NameFunc represents function which can name model instance.
-type NameFunc func(obj interface{}) (string, error)
+type NameFunc func(x any) (string, error)
 
 // WithNameTemplate returns option for models which sets function
 // for generating name of instances using custom template.
@@ -38,13 +42,13 @@ func NameTemplate(t string) NameFunc {
 	tmpl := template.Must(
 		template.New("name").Funcs(funcMap).Option("missingkey=error").Parse(t),
 	)
-	return func(obj interface{}) (string, error) {
+	return func(x any) (string, error) {
 		// handling locally known dynamic messages (they don't have data fields as generated proto messages)
 		// (dynamic messages of remotely known models are not supported, remote_model implementation is
 		// not using dynamic message for name template resolving so it is ok)
-		if dynMessage, ok := obj.(*dynamicpb.Message); ok {
+		if dynMessage, ok := x.(*dynamicpb.Message); ok {
 			var err error
-			obj, err = DynamicLocallyKnownMessageToGeneratedMessage(dynMessage)
+			x, err = resolveDynamicProtoModelName(dynMessage)
 			if err != nil {
 				return "", err
 			}
@@ -52,14 +56,50 @@ func NameTemplate(t string) NameFunc {
 
 		// execute name template on generated proto message
 		var s strings.Builder
-		if err := tmpl.Execute(&s, obj); err != nil {
+		if err := tmpl.Execute(&s, x); err != nil {
 			return "", err
 		}
 		return s.String(), nil
 	}
 }
 
+func defaultOptions(x any) modelOptions {
+	var opts modelOptions
+	if _, ok := x.(named); ok {
+		opts.nameFunc = func(x any) (s string, err error) {
+			// handling dynamic messages (they don't implement named interface)
+			if dynMessage, ok := x.(*dynamicpb.Message); ok {
+				x, err = DynamicLocallyKnownMessageToGeneratedMessage(dynMessage)
+				if err != nil {
+					return "", err
+				}
+			}
+			// handling other proto message
+			return x.(named).GetName(), nil
+		}
+		opts.nameTemplate = namedTemplate
+	}
+	return opts
+}
+
+func optsFromProtoDesc(desc protoreflect.MessageDescriptor) []ModelOption {
+	var opts []ModelOption
+	descOpts := desc.Options()
+	if proto.HasExtension(descOpts, generic.E_ModelNameTemplate) {
+		t := proto.GetExtension(descOpts, generic.E_ModelNameTemplate).(string)
+		opts = append(opts, WithNameTemplate(t))
+	}
+	return opts
+}
+
 var funcMap = template.FuncMap{
+	"field": func(msg proto.Message, fieldNum protoreflect.FieldNumber) string {
+		desc := msg.ProtoReflect().Descriptor().Fields().ByNumber(fieldNum)
+		if desc == nil {
+			return "<invalid>"
+		}
+		return msg.ProtoReflect().Get(desc).String()
+	},
 	"ip": func(s string) string {
 		ip := net.ParseIP(s)
 		if ip == nil {

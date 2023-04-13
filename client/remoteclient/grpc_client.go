@@ -332,7 +332,7 @@ func UseRemoteRegistry(modelClass string) NewClientOption {
 			}
 
 			// fill them into new remote registry and use that registry instead of default local model registry
-			grpcClient.modelRegistry = models.NewRemoteRegistry()
+			grpcClient.modelRegistry = models.NewRegistry()
 			for _, knowModel := range knownModels {
 				if _, err := grpcClient.modelRegistry.Register(knowModel, models.ToSpec(knowModel.Spec)); err != nil {
 					return fmt.Errorf("cannot register remote known model "+
