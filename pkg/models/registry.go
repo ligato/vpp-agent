@@ -63,9 +63,6 @@ func (r *LocalRegistry) GetModel(name string) (KnownModel, error) {
 
 // GetModelFor returns registered model for the given proto message.
 func (r *LocalRegistry) GetModelFor(x any) (KnownModel, error) {
-	if len(r.modelsByGoType) > len(r.modelsByProtoName) {
-		r.lazyInitRegisteredTypesByProtoName()
-	}
 	msg, ok := x.(proto.Message)
 	if !ok {
 		return &knownModel{}, fmt.Errorf("can't get model: %v is not a proto message", x)
@@ -76,20 +73,6 @@ func (r *LocalRegistry) GetModelFor(x any) (KnownModel, error) {
 		return &knownModel{}, fmt.Errorf("no model registered for proto message %s", msgName)
 	}
 	return model, nil
-}
-
-// lazyInitRegisteredTypesByProtoName performs lazy initialization of registeredModelsByProtoName. The reason
-// why initialization can't happen while registration (call of func Register(...)) is that some proto reflect
-// functionality is not available during this time. The registration happens as variable initialization, but
-// the reflection is initialized in init() func and that happens after variable initialization.
-//
-// Alternative solution would be to change when the models are registered (VPP-Agent have it like described
-// above and 3rd party model are probably copying the same behaviour). So to not break anything, the lazy
-// initialization seems like the best solution for now.
-func (r *LocalRegistry) lazyInitRegisteredTypesByProtoName() {
-	for _, model := range r.modelsByGoType {
-		r.modelsByProtoName[model.ProtoName()] = model // ProtoName() == ProtoReflect().Descriptor().FullName()
-	}
 }
 
 // GetModelForKey returns registered model for the given key or error.
@@ -104,9 +87,6 @@ func (r *LocalRegistry) GetModelForKey(key string) (KnownModel, error) {
 
 // RegisteredModels returns all registered models.
 func (r *LocalRegistry) RegisteredModels() []KnownModel {
-	if len(r.modelsByGoType) > len(r.modelsByProtoName) {
-		r.lazyInitRegisteredTypesByProtoName()
-	}
 	var models []KnownModel
 	for _, model := range r.modelsByProtoName {
 		models = append(models, model)
@@ -126,89 +106,27 @@ func (r *LocalRegistry) MessageTypeRegistry() *protoregistry.Types {
 	return typeRegistry
 }
 
-// Register registers either a protobuf message known at compile-time together with the given model specification,
-// or a remote model represented by an instance of ModelInfo obtained via KnownModels RPC from MetaService.
-// While the former case is prevalent, the latter option is useful for scenarios with multiple agents and configuration
-// requests being proxied from one to another (remote model registered into LocalRegistry may act as a proxy for the
-// agent from which it was learned).
-// If spec.Class is unset then it defaults to 'config'.
-func (r *LocalRegistry) RegisterMsg(msg proto.Message) (KnownModel, error) {
-	var goType reflect.Type
-	// if the message is not dynamic store the Go type information
-	if _, ok := msg.(*dynamicpb.Message); !ok {
-		goType = reflect.TypeOf(msg)
-		// Check go type duplicate registration
-		if m, ok := r.modelsByGoType[goType]; ok {
-			return nil, fmt.Errorf("go type %v already registered for model %v", goType, m.Name())
-		}
+// Register registers proto.Message into registry.
+func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error) {
+	msg, ok := x.(proto.Message)
+	if !ok {
+		return nil, fmt.Errorf("can't register a non-proto message model")
 	}
-
-	desc := msg.ProtoReflect().Descriptor()
-	protoName := string(desc.FullName())
-	spec, err := SpecFromProtoDesc(desc)
-	if err != nil {
-		return nil, fmt.Errorf("model registration failed: %w", err)
-	}
-	if err := spec.Validate(); err != nil {
-		return nil, fmt.Errorf("spec validation for %s failed: %v", goType, err)
+	protoName := string(msg.ProtoReflect().Descriptor().FullName())
+	s := spec.Normalize()
+	if err := s.Validate(); err != nil {
+		return nil, fmt.Errorf("spec validation for %s failed: %v", protoName, err)
 	}
 
 	// Check model name collisions
 	if model, ok := r.modelsByProtoName[protoName]; ok {
 		return nil, fmt.Errorf("proto name %s already used by model %s", protoName, model.Name())
 	}
-	if model, ok := r.modelsByName[spec.ModelName()]; ok {
-		return nil, fmt.Errorf("model name %q already used by model %s", spec.ModelName(), model.Name())
-	}
-
-	model := &knownModel{
-		pb:     msg,
-		spec:   spec,
-		goType: goType,
-	}
-
-	// Apply custom options
-	for _, opt := range optsFromProtoDesc(desc) {
-		opt(&model.modelOptions)
-	}
-
-	r.modelsByGoType[goType] = model
-	r.modelsByProtoName[string(desc.FullName())] = model
-	r.modelsByName[model.Name()] = model
-
-	if debugRegister {
-		fmt.Printf("- model %s registered: %+v\n", model.Name(), model)
-	}
-	return model, nil
-}
-
-func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error) {
-	msg, ok := x.(proto.Message)
-	if !ok {
-		return nil, fmt.Errorf("can't register a non-proto message model")
-	}
-	goType := reflect.TypeOf(x)
-	// Check go type duplicate registration
-	if m, ok := r.modelsByGoType[goType]; ok {
-		return nil, fmt.Errorf("go type %v already registered for model %v", goType, m.Name())
-	}
-
-	s := spec.Normalize()
-	if err := s.Validate(); err != nil {
-		return nil, fmt.Errorf("spec validation for %s failed: %v", goType, err)
-	}
-
-	// Check model name collisions
-	// if model, ok := r.modelsByProtoName[protoName]; ok {
-	// 	return nil, fmt.Errorf("proto name %s already used by model %s", protoName, model.Name())
-	// }
 	if model, ok := r.modelsByName[s.ModelName()]; ok {
 		return nil, fmt.Errorf("model name %q already used by model %s", spec.ModelName(), model.Name())
 	}
-
 	model := &knownModel{
 		spec:         s,
-		goType:       goType,
 		pb:           msg,
 		modelOptions: defaultOptions(x),
 	}
@@ -218,9 +136,17 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 		opt(&model.modelOptions)
 	}
 
-	r.modelsByGoType[goType] = model
-	// r.modelsByProtoName[string(model.pb.ProtoReflect().Descriptor().FullName())] = model
+	r.modelsByProtoName[string(model.pb.ProtoReflect().Descriptor().FullName())] = model
 	r.modelsByName[model.Name()] = model
+
+	if _, ok := x.(dynamicpb.Message); !ok {
+		goType := reflect.TypeOf(x)
+		if m, ok := r.modelsByGoType[goType]; ok {
+			return nil, fmt.Errorf("go type %v already registered for model %v", goType, m.Name())
+		}
+		model.goType = goType
+		r.modelsByGoType[goType] = model
+	}
 
 	if debugRegister {
 		fmt.Printf("- model %s registered: %+v\n", model.Name(), model)

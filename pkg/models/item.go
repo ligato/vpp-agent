@@ -83,7 +83,7 @@ func UnmarshalItemUsingModelRegistry(item *api.Item, modelRegistry Registry) (pr
 	// at compile time, while RemotelyKnownModel can't produce such go typed instances (we know the name of go type,
 	// but can't produce it from remote information) so dynamic proto message must be enough (*dynamicpb.Message))
 	var opts proto.UnmarshalOptions
-	if model.LocalGoType() != nil {
+	if model.LocalGoType() == nil {
 		opts.Resolver = modelRegistry.MessageTypeRegistry()
 	}
 	msg, err := anypb.UnmarshalNew(item.GetData().GetAny(), opts)

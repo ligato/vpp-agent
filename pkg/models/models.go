@@ -155,26 +155,23 @@ func resolveDynamicProtoModelName(msg *dynamicpb.Message) (any, error) {
 		return nil, fmt.Errorf("can't get model "+
 			"for dynamic message due to: %w (message=%v)", err, msg)
 	}
+	marshaller := protojson.MarshalOptions{
+		EmitUnpopulated: true,
+	}
+	jsonData, err := marshaller.Marshal(msg)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshall message "+
+			"to json due to: %w (message: %+v)", err, msg)
+	}
 	goType := model.LocalGoType()
 	if goType != nil {
-		var value any
-		if goType.Kind() == reflect.Ptr {
-			value = reflect.New(goType.Elem()).Interface()
-		} else {
-			value = reflect.Zero(goType).Interface()
+		pb := model.NewInstance()
+		if err := protojson.Unmarshal(jsonData, pb); err != nil {
+			return nil, fmt.Errorf("can't load json of marshalled "+
+				"message to new model instance due to: %w (json=%v)", err, jsonData)
 		}
-		pb := protoMessageOf(value)
-		proto.Merge(pb, msg)
 		return pb, nil
 	} else {
-		marshaller := protojson.MarshalOptions{
-			EmitUnpopulated: true,
-		}
-		jsonData, err := marshaller.Marshal(msg)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshall message "+
-				"to json due to: %w (message: %+v)", err, msg)
-		}
 		var mapData map[string]any
 		if err := json.Unmarshal(jsonData, &mapData); err != nil {
 			return nil, fmt.Errorf("can't load json of marshalled "+

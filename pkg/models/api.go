@@ -56,8 +56,6 @@ type Registry interface {
 	// (for RemoteRegistry or also for LocalRegistry but most likely just proxied to a remote agent).
 	// If spec.Class is unset, then it defaults to 'config'.
 	Register(x any, spec Spec, opts ...ModelOption) (KnownModel, error)
-
-	RegisterMsg(msg proto.Message) (KnownModel, error)
 }
 
 // KnownModel represents a registered model
