@@ -21,11 +21,19 @@ import (
 )
 
 // ModuleName is the module name used for models.
-const (
-	ModuleName = "vpp.srv6"
-)
+const ModuleName = "vpp.srv6"
 
 var (
+	ModelLocalSID   models.KnownModel
+	ModelPolicy     models.KnownModel
+	ModelSteering   models.KnownModel
+	ModelSRv6Global models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_srv6_srv6_proto_init()
+
 	// ModelLocalSID is registered NB model of LocalSID
 	ModelLocalSID = models.Register(&LocalSID{}, models.Spec{
 		Module:  ModuleName,
@@ -53,7 +61,7 @@ var (
 		Type:    "srv6-global",
 		Version: "v2",
 	})
-)
+}
 
 // SID (in srv6 package) is SRv6's segment id. It is always represented as IPv6 address
 type SID = net.IP
