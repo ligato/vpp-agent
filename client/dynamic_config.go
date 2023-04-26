@@ -203,7 +203,7 @@ func createDynamicConfigDescriptorProto(knownModels []*ModelInfo, dependencyRegi
 		})
 
 		// add proto file dependency for this known model (+ check that it is in dependency file descriptor registry)
-		protoFile, err := ModelOptionFor("protoFile", modelDetail.Options)
+		protoFile, err := models.ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
 			error = fmt.Errorf("cannot retrieve protoFile from model options "+
 				"from model %v due to: %v", modelDetail.ProtoName, err)
@@ -345,25 +345,8 @@ func simpleProtoName(fullProtoName string) string {
 	return nameSplit[len(nameSplit)-1]
 }
 
-// ModelOptionFor extracts value for given model detail option key
-func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, error) {
-	for _, option := range options {
-		if option.Key == key {
-			if len(option.Values) == 0 {
-				return "", fmt.Errorf("there is no value for key %v in model options", key)
-			}
-			if strings.TrimSpace(option.Values[0]) == "" {
-				return "", fmt.Errorf("there is no value(only empty string "+
-					"after trimming) for key %v in model options", key)
-			}
-			return option.Values[0], nil
-		}
-	}
-	return "", fmt.Errorf("there is no model option with key %v (model options=%+v))", key, options)
-}
-
 func existsModelOptionFor(key string, options []*generic.ModelDetail_Option) bool {
-	_, err := ModelOptionFor(key, options)
+	_, err := models.ModelOptionFor(key, options)
 	return err == nil
 }
 

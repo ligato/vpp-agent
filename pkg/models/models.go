@@ -28,6 +28,8 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // Register registers model in DefaultRegistry.
@@ -37,6 +39,24 @@ func Register(x any, spec Spec, opts ...ModelOption) KnownModel {
 		panic(err)
 	}
 	return model
+}
+
+// RegisterModelInfos registers models in the form of ModelInfo in the DefaultRegistry.
+// It returns slice of known models that were actually newly registered (didn't exist before in DefaultRegistry).
+func RegisterModelInfos(modelInfos []*ModelInfo) []KnownModel {
+	var knownModels []KnownModel
+	for _, mi := range modelInfos {
+		msg := dynamicpb.NewMessageType(mi.MessageDescriptor).New().Interface()
+		spec := ToSpec(mi.Spec)
+		t, _ := ModelOptionFor("nameTemplate", mi.GetOptions())
+		km, err := DefaultRegistry.Register(msg, spec, WithNameTemplate(t))
+		if err != nil {
+			// model registration failed, try registering remaining model infos
+			continue
+		}
+		knownModels = append(knownModels, km)
+	}
+	return knownModels
 }
 
 // RegisteredModels returns models registered in the DefaultRegistry.
@@ -215,6 +235,23 @@ func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Mess
 	proto.Merge(message, dynamicMessage)
 
 	return message, nil
+}
+
+// ModelOptionFor extracts value for given model detail option key
+func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, error) {
+	for _, option := range options {
+		if option.Key == key {
+			if len(option.Values) == 0 {
+				return "", fmt.Errorf("there is no value for key %v in model options", key)
+			}
+			if strings.TrimSpace(option.Values[0]) == "" {
+				return "", fmt.Errorf("there is no value(only empty string "+
+					"after trimming) for key %v in model options", key)
+			}
+			return option.Values[0], nil
+		}
+	}
+	return "", fmt.Errorf("there is no model option with key %v (model options=%+v))", key, options)
 }
 
 func protoMessageOf(m interface{}) protoreflect.ProtoMessage {
