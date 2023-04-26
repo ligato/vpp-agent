@@ -320,11 +320,26 @@ func (r *setConfigRequest) Send(ctx context.Context) (err error) {
 	return err
 }
 
-// Deprecated: using this option has no effect on client behavior
 // UseRemoteRegistry modifies remote client to use remote model registry instead of local model registry. The
 // remote model registry is filled with remote known models for given class (modelClass).
 func UseRemoteRegistry(modelClass string) NewClientOption {
 	return func(c client.GenericClient) error {
+		if grpcClient, ok := c.(*grpcClient); ok {
+			// get all remote models
+			knownModels, err := grpcClient.KnownModels(modelClass)
+			if err != nil {
+				return fmt.Errorf("cannot retrieve remote models (in UseRemoteRegistry) due to: %w", err)
+			}
+
+			// fill them into new remote registry and use that registry instead of default local model registry
+			grpcClient.modelRegistry = models.NewRegistry()
+			for _, knowModel := range knownModels {
+				if _, err := grpcClient.modelRegistry.Register(knowModel, models.ToSpec(knowModel.Spec)); err != nil {
+					return fmt.Errorf("cannot register remote known model "+
+						"for remote generic client usage due to: %w", err)
+				}
+			}
+		}
 		return nil
 	}
 }
