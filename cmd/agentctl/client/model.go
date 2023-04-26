@@ -21,14 +21,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	if err != nil {
 		return nil, err
 	}
-	for _, km := range knownModels {
-		kmSpec := models.ToSpec(km.GetSpec())
-		if _, err = models.DefaultRegistry.GetModel(kmSpec.ModelName()); err != nil {
-			if _, err = models.DefaultRegistry.Register(km, kmSpec); err != nil {
-				return nil, err
-			}
-		}
-	}
+
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, km := range knownModels {
@@ -41,6 +34,7 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 }
 
 // sortModels sorts models in this order:
+//
 //	Class > Name > Version
 func sortModels(list []types.Model) []types.Model {
 	sort.Slice(list, func(i, j int) bool {

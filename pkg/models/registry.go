@@ -139,7 +139,7 @@ func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) 
 	r.modelsByProtoName[string(model.pb.ProtoReflect().Descriptor().FullName())] = model
 	r.modelsByName[model.Name()] = model
 
-	if _, ok := x.(dynamicpb.Message); !ok {
+	if _, ok := x.(*dynamicpb.Message); !ok {
 		goType := reflect.TypeOf(x)
 		if m, ok := r.modelsByGoType[goType]; ok {
 			return nil, fmt.Errorf("go type %v already registered for model %v", goType, m.Name())
