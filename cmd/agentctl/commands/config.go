@@ -617,7 +617,7 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
 	}
-	models.RegisterModelInfos(modelInfos)
+	_ = models.RegisterModelInfos(modelInfos)
 
 	txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
 		SeqNum: ref,

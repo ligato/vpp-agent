@@ -21,7 +21,9 @@ func (c *Client) ModelList(ctx context.Context, opts types.ModelListOptions) ([]
 	if err != nil {
 		return nil, err
 	}
-
+	if opts.Register {
+		_ = models.RegisterModelInfos(knownModels)
+	}
 	logrus.Debugf("retrieved %d known models", len(knownModels))
 	if debug.IsEnabledFor("models") {
 		for _, km := range knownModels {
