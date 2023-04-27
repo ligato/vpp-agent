@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
@@ -52,9 +53,9 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 					"using KVDescriptor.Validate  (dynamic message=%v)", model.ProtoName(), message)
 				continue
 			}
-			message, err = models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
+			message, err = util.ConvertProto(model.NewInstance(), dynamicMessage)
 			if err != nil {
-				return errors.Errorf("can't convert dynamic message to statically generated message "+
+				return errors.Errorf("can't convert dynamic message to model proto message "+
 					"due to: %v (dynamic message=%v)", err, dynamicMessage)
 			}
 		}

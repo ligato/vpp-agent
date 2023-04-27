@@ -44,6 +44,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -874,23 +875,13 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
-			var message proto.Message
-			if model.LocalGoType() == nil {
-				// message is retrieved from localclient but it has remotely known model => it is the proxy
-				// models in local model registry => can't convert it to generated message due to unknown
-				// generated message go type (to use reflection to create it), however the processing of proxy
-				// models is different so it might no need type casting fix at all -> using the only thing
-				// available, the dynamic message
-				message = dynamicMessage
-			} else { // message has locally known model -> using generated proto message
-				message, err = models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
-				if err != nil {
-					errMsg := fmt.Sprintf("can't convert dynamic message to statically generated message "+
-						"due to: %v (dynamic message=%v)", err, dynamicMessage)
-					p.Log.Error(internalErrorLogPrefix + errMsg)
-					p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-					return
-				}
+			message, err := util.ConvertProto(model.NewInstance(), dynamicMessage)
+			if err != nil {
+				errMsg := fmt.Sprintf("can't convert dynamic message to model proto message "+
+					"due to: %v (dynamic message=%v)", err, dynamicMessage)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+				return
 			}
 
 			// extract model key

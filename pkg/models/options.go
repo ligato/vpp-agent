@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 
+	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
@@ -43,14 +44,26 @@ func NameTemplate(t string) NameFunc {
 		template.New("name").Funcs(funcMap).Option("missingkey=error").Parse(t),
 	)
 	return func(x any) (string, error) {
-		// handling locally known dynamic messages (they don't have data fields as generated proto messages)
-		// (dynamic messages of remotely known models are not supported, remote_model implementation is
-		// not using dynamic message for name template resolving so it is ok)
-		if dynMessage, ok := x.(*dynamicpb.Message); ok {
-			var err error
-			x, err = resolveDynamicProtoModelName(dynMessage)
+		if dynMsg, ok := x.(*dynamicpb.Message); ok {
+			m, err := GetModelFor(dynMsg)
 			if err != nil {
 				return "", err
+			}
+			if m.LocalGoType() != nil {
+				x, err = util.ConvertProto(m.NewInstance(), dynMsg)
+				if err != nil {
+					return "", err
+				}
+			} else {
+				x, err = util.ConvertProtoToMap(dynMsg)
+				if err != nil {
+					return "", err
+				}
+				t = replaceFieldNamesInNameTemplate(dynMsg.Descriptor(), t)
+				tmpl, err = tmpl.Parse(t)
+				if err != nil {
+					return "", err
+				}
 			}
 		}
 
@@ -76,10 +89,14 @@ func OptsFromProtoDesc(desc protoreflect.MessageDescriptor) []ModelOption {
 func defaultOptions(x any) modelOptions {
 	var opts modelOptions
 	if _, ok := x.(named); ok {
-		opts.nameFunc = func(x any) (s string, err error) {
+		opts.nameFunc = func(x any) (string, error) {
 			// handling dynamic messages (they don't implement named interface)
-			if dynMessage, ok := x.(*dynamicpb.Message); ok {
-				x, err = resolveDynamicProtoModelName(dynMessage)
+			if dynMsg, ok := x.(*dynamicpb.Message); ok {
+				m, err := GetModelFor(dynMsg)
+				if err != nil {
+					return "", err
+				}
+				x, err = util.ConvertProto(m.NewInstance(), dynMsg)
 				if err != nil {
 					return "", err
 				}
