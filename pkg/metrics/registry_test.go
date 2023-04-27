@@ -46,7 +46,7 @@ func TestRetrieve(t *testing.T) {
 	registered := models.RegisteredModels()
 	g.Expect(registered).To(HaveLen(1))
 
-	metrics.Register(&testmetrics.Basic{}, func() interface{} {
+	metrics.Register(&testmetrics.Basic{}, func() any {
 		return GetBasicMetrics()
 	})
 

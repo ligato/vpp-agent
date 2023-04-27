@@ -177,9 +177,9 @@ func ConvertProto(dst proto.Message, src proto.Message) (proto.Message, error) {
 	return msg, nil
 }
 
-// ConvertProtoToMap converts src proto.Message into map[string]interface{} via json marshaling
-func ConvertProtoToMap(src proto.Message) (map[string]interface{}, error) {
-	m := make(map[string]interface{})
+// ConvertProtoToMap converts src proto.Message into map[string]any via json marshaling
+func ConvertProtoToMap(src proto.Message) (map[string]any, error) {
+	m := make(map[string]any)
 	marshaler := protojson.MarshalOptions{
 		EmitUnpopulated: true,
 	}
