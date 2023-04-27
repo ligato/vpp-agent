@@ -94,6 +94,7 @@ type Notification struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Notification:
+	//
 	//	*Notification_VppNotification
 	//	*Notification_LinuxNotification
 	Notification isNotification_Notification `protobuf_oneof:"notification"`

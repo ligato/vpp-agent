@@ -145,9 +145,10 @@ type Nat44Global struct {
 	// operates is given by the VPP startup configuration file (i.e. config created before VPP even starts,
 	// therefore not managed by ligato). The endpoint-independent mode is the default and the dependent mode
 	// is turned on with this config stanza (included in vpp.conf used by ligato for older VPPs):
-	//     nat {
-	//         endpoint-dependent
-	//     }
+	//
+	//	nat {
+	//	    endpoint-dependent
+	//	}
 	EndpointIndependent bool `protobuf:"varint,5,opt,name=endpoint_independent,json=endpointIndependent,proto3" json:"endpoint_independent,omitempty"`
 	// List of NAT-enabled interfaces. Deprecated - use separate Nat44Interface entries instead.
 	//
@@ -309,7 +310,7 @@ type Nat44Interface struct {
 	NatInside bool `protobuf:"varint,2,opt,name=nat_inside,json=natInside,proto3" json:"nat_inside,omitempty"`
 	// Enable/disable NAT on outside.
 	NatOutside bool `protobuf:"varint,3,opt,name=nat_outside,json=natOutside,proto3" json:"nat_outside,omitempty"`
-	//  Enable/disable output feature.
+	// Enable/disable output feature.
 	OutputFeature bool `protobuf:"varint,4,opt,name=output_feature,json=outputFeature,proto3" json:"output_feature,omitempty"`
 }
 

@@ -757,6 +757,7 @@ type Interface struct {
 	// It can be nil for some interfaces types like: loopback and DPDK.
 	//
 	// Types that are assignable to Link:
+	//
 	//	*Interface_Sub
 	//	*Interface_Memif
 	//	*Interface_Afpacket
@@ -2487,7 +2488,7 @@ type Interface_RxPlacement struct {
 	// Select from interval <0, number-of-workers)
 	Worker uint32 `protobuf:"varint,2,opt,name=worker,proto3" json:"worker,omitempty"`
 	// Let the main thread to process the given queue
-	//  - if enabled, value of <worker> is ignored
+	//   - if enabled, value of <worker> is ignored
 	MainThread bool `protobuf:"varint,3,opt,name=main_thread,json=mainThread,proto3" json:"main_thread,omitempty"`
 }
 

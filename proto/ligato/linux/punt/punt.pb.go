@@ -129,10 +129,12 @@ type Proxy struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Rx:
+	//
 	//	*Proxy_RxPort
 	//	*Proxy_RxSocket
 	Rx isProxy_Rx `protobuf_oneof:"rx"`
 	// Types that are assignable to Tx:
+	//
 	//	*Proxy_TxPort
 	//	*Proxy_TxSocket
 	Tx isProxy_Tx `protobuf_oneof:"tx"`

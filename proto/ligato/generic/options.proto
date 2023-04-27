@@ -14,13 +14,3 @@ extend google.protobuf.MessageOptions {
 extend google.protobuf.MessageOptions {
     string model_name_template = 50223;
 }
-
-extend google.protobuf.MessageOptions {
-    ModelOptions model_options = 50224;
-}
-
-message ModelOptions {
-    ModelSpec model = 1;
-    string name_template = 2;
-}
-
