@@ -47,7 +47,7 @@ type Registry interface {
 	// MessageTypeRegistry creates new message type registry from registered proto messages
 	MessageTypeRegistry() *protoregistry.Types
 
-	// RegisteredModels returns all registered modules in the order they were registered in.
+	// RegisteredModels returns all registered models.
 	RegisteredModels() []KnownModel
 
 	// Register registers either a protobuf message known at compile-time together

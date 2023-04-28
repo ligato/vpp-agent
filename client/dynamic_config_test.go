@@ -45,8 +45,8 @@ func TestYamlCompatibility(t *testing.T) {
 	ifaces := []*interfaces.Interface{memIFRed, memIFBlack, loop1, vppTap1}
 	config := &configurator.Config{
 		VppConfig: &vpp.ConfigData{
-			Srv6Global: srv6Global,
 			Interfaces: ifaces,
+			Srv6Global: srv6Global,
 		},
 	}
 	// TODO add more configuration to hardcoded version of configuration so it can cover all configuration
@@ -81,7 +81,7 @@ func TestYamlCompatibility(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred(), "can't export hardcoded config as yaml")
 
 	// final compare of YAML from hardcoded and dynamic config
-	Expect(yamlFromDynConfig).To(BeEquivalentTo(yamlFromHardcodedConfig))
+	Expect(yamlFromDynConfig).To(MatchYAML(yamlFromHardcodedConfig))
 }
 
 // TestDynamicConfigWithThirdPartyModel tests whether 3rd party model (= model not in hardcoded configurator.Config)
