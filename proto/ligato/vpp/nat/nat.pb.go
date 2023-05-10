@@ -145,9 +145,10 @@ type Nat44Global struct {
 	// operates is given by the VPP startup configuration file (i.e. config created before VPP even starts,
 	// therefore not managed by ligato). The endpoint-independent mode is the default and the dependent mode
 	// is turned on with this config stanza (included in vpp.conf used by ligato for older VPPs):
-	//     nat {
-	//         endpoint-dependent
-	//     }
+	//
+	//	nat {
+	//	    endpoint-dependent
+	//	}
 	EndpointIndependent bool `protobuf:"varint,5,opt,name=endpoint_independent,json=endpointIndependent,proto3" json:"endpoint_independent,omitempty"`
 	// List of NAT-enabled interfaces. Deprecated - use separate Nat44Interface entries instead.
 	//
@@ -309,7 +310,7 @@ type Nat44Interface struct {
 	NatInside bool `protobuf:"varint,2,opt,name=nat_inside,json=natInside,proto3" json:"nat_inside,omitempty"`
 	// Enable/disable NAT on outside.
 	NatOutside bool `protobuf:"varint,3,opt,name=nat_outside,json=natOutside,proto3" json:"nat_outside,omitempty"`
-	//  Enable/disable output feature.
+	// Enable/disable output feature.
 	OutputFeature bool `protobuf:"varint,4,opt,name=output_feature,json=outputFeature,proto3" json:"output_feature,omitempty"`
 }
 
@@ -535,6 +536,122 @@ func (x *VirtualReassembly) GetDropFragments() bool {
 	return false
 }
 
+// Nat44VrfTable defines a vrf table for NAT44. Only for Endpoint dependent NAT.
+type Nat44VrfTable struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Id of the VRF NAT routing table
+	SrcVrfId uint32 `protobuf:"varint,1,opt,name=src_vrf_id,json=srcVrfId,proto3" json:"src_vrf_id,omitempty"`
+	// Ids of resolving destination (tx) VRFs
+	DestVrfIds []uint32 `protobuf:"varint,2,rep,packed,name=dest_vrf_ids,json=destVrfIds,proto3" json:"dest_vrf_ids,omitempty"`
+}
+
+func (x *Nat44VrfTable) Reset() {
+	*x = Nat44VrfTable{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Nat44VrfTable) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Nat44VrfTable) ProtoMessage() {}
+
+func (x *Nat44VrfTable) ProtoReflect() protoreflect.Message {
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Nat44VrfTable.ProtoReflect.Descriptor instead.
+func (*Nat44VrfTable) Descriptor() ([]byte, []int) {
+	return file_ligato_vpp_nat_nat_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Nat44VrfTable) GetSrcVrfId() uint32 {
+	if x != nil {
+		return x.SrcVrfId
+	}
+	return 0
+}
+
+func (x *Nat44VrfTable) GetDestVrfIds() []uint32 {
+	if x != nil {
+		return x.DestVrfIds
+	}
+	return nil
+}
+
+// Nat44EdVrfRoute defines a route for NAT44 VRF tables. Only for Endpoint dependent NAT.
+type Nat44VrfRoute struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Id of the source vrf
+	SrcVrfId uint32 `protobuf:"varint,1,opt,name=src_vrf_id,json=srcVrfId,proto3" json:"src_vrf_id,omitempty"`
+	// Id of the destination vrf
+	DestVrfId uint32 `protobuf:"varint,2,opt,name=dest_vrf_id,json=destVrfId,proto3" json:"dest_vrf_id,omitempty"`
+}
+
+func (x *Nat44VrfRoute) Reset() {
+	*x = Nat44VrfRoute{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Nat44VrfRoute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Nat44VrfRoute) ProtoMessage() {}
+
+func (x *Nat44VrfRoute) ProtoReflect() protoreflect.Message {
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Nat44VrfRoute.ProtoReflect.Descriptor instead.
+func (*Nat44VrfRoute) Descriptor() ([]byte, []int) {
+	return file_ligato_vpp_nat_nat_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Nat44VrfRoute) GetSrcVrfId() uint32 {
+	if x != nil {
+		return x.SrcVrfId
+	}
+	return 0
+}
+
+func (x *Nat44VrfRoute) GetDestVrfId() uint32 {
+	if x != nil {
+		return x.DestVrfId
+	}
+	return 0
+}
+
 // Interface defines a network interface enabled for NAT.
 type Nat44Global_Interface struct {
 	state         protoimpl.MessageState
@@ -552,7 +669,7 @@ type Nat44Global_Interface struct {
 func (x *Nat44Global_Interface) Reset() {
 	*x = Nat44Global_Interface{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[5]
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -565,7 +682,7 @@ func (x *Nat44Global_Interface) String() string {
 func (*Nat44Global_Interface) ProtoMessage() {}
 
 func (x *Nat44Global_Interface) ProtoReflect() protoreflect.Message {
-	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[5]
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -620,7 +737,7 @@ type Nat44Global_Address struct {
 func (x *Nat44Global_Address) Reset() {
 	*x = Nat44Global_Address{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[6]
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -633,7 +750,7 @@ func (x *Nat44Global_Address) String() string {
 func (*Nat44Global_Address) ProtoMessage() {}
 
 func (x *Nat44Global_Address) ProtoReflect() protoreflect.Message {
-	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[6]
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -703,7 +820,7 @@ type DNat44_StaticMapping struct {
 func (x *DNat44_StaticMapping) Reset() {
 	*x = DNat44_StaticMapping{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[7]
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -716,7 +833,7 @@ func (x *DNat44_StaticMapping) String() string {
 func (*DNat44_StaticMapping) ProtoMessage() {}
 
 func (x *DNat44_StaticMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[7]
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -809,7 +926,7 @@ type DNat44_IdentityMapping struct {
 func (x *DNat44_IdentityMapping) Reset() {
 	*x = DNat44_IdentityMapping{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[8]
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -822,7 +939,7 @@ func (x *DNat44_IdentityMapping) String() string {
 func (*DNat44_IdentityMapping) ProtoMessage() {}
 
 func (x *DNat44_IdentityMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[8]
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +1009,7 @@ type DNat44_StaticMapping_LocalIP struct {
 func (x *DNat44_StaticMapping_LocalIP) Reset() {
 	*x = DNat44_StaticMapping_LocalIP{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[9]
+		mi := &file_ligato_vpp_nat_nat_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -905,7 +1022,7 @@ func (x *DNat44_StaticMapping_LocalIP) String() string {
 func (*DNat44_StaticMapping_LocalIP) ProtoMessage() {}
 
 func (x *DNat44_StaticMapping_LocalIP) ProtoReflect() protoreflect.Message {
-	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[9]
+	mi := &file_ligato_vpp_nat_nat_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1086,7 +1203,17 @@ var file_ligato_vpp_nat_nat_proto_rawDesc = []byte{
 	0x01, 0x28, 0x0d, 0x52, 0x0c, 0x6d, 0x61, 0x78, 0x46, 0x72, 0x61, 0x67, 0x6d, 0x65, 0x6e, 0x74,
 	0x73, 0x12, 0x25, 0x0a, 0x0e, 0x64, 0x72, 0x6f, 0x70, 0x5f, 0x66, 0x72, 0x61, 0x67, 0x6d, 0x65,
 	0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x64, 0x72, 0x6f, 0x70, 0x46,
-	0x72, 0x61, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x42, 0x38, 0x5a, 0x36, 0x67, 0x6f, 0x2e, 0x6c,
+	0x72, 0x61, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x73, 0x22, 0x4f, 0x0a, 0x0d, 0x4e, 0x61, 0x74, 0x34,
+	0x34, 0x56, 0x72, 0x66, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1c, 0x0a, 0x0a, 0x73, 0x72, 0x63,
+	0x5f, 0x76, 0x72, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x73,
+	0x72, 0x63, 0x56, 0x72, 0x66, 0x49, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x64, 0x65, 0x73, 0x74, 0x5f,
+	0x76, 0x72, 0x66, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0d, 0x52, 0x0a, 0x64,
+	0x65, 0x73, 0x74, 0x56, 0x72, 0x66, 0x49, 0x64, 0x73, 0x22, 0x4d, 0x0a, 0x0d, 0x4e, 0x61, 0x74,
+	0x34, 0x34, 0x56, 0x72, 0x66, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x12, 0x1c, 0x0a, 0x0a, 0x73, 0x72,
+	0x63, 0x5f, 0x76, 0x72, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08,
+	0x73, 0x72, 0x63, 0x56, 0x72, 0x66, 0x49, 0x64, 0x12, 0x1e, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x74,
+	0x5f, 0x76, 0x72, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x64,
+	0x65, 0x73, 0x74, 0x56, 0x72, 0x66, 0x49, 0x64, 0x42, 0x38, 0x5a, 0x36, 0x67, 0x6f, 0x2e, 0x6c,
 	0x69, 0x67, 0x61, 0x74, 0x6f, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x70, 0x70, 0x2d, 0x61, 0x67, 0x65,
 	0x6e, 0x74, 0x2f, 0x76, 0x33, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x6c, 0x69, 0x67, 0x61,
 	0x74, 0x6f, 0x2f, 0x76, 0x70, 0x70, 0x2f, 0x6e, 0x61, 0x74, 0x3b, 0x76, 0x70, 0x70, 0x5f, 0x6e,
@@ -1106,7 +1233,7 @@ func file_ligato_vpp_nat_nat_proto_rawDescGZIP() []byte {
 }
 
 var file_ligato_vpp_nat_nat_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_ligato_vpp_nat_nat_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_ligato_vpp_nat_nat_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_ligato_vpp_nat_nat_proto_goTypes = []interface{}{
 	(DNat44_Protocol)(0),                   // 0: ligato.vpp.nat.DNat44.Protocol
 	(DNat44_StaticMapping_TwiceNatMode)(0), // 1: ligato.vpp.nat.DNat44.StaticMapping.TwiceNatMode
@@ -1115,19 +1242,21 @@ var file_ligato_vpp_nat_nat_proto_goTypes = []interface{}{
 	(*Nat44Interface)(nil),                 // 4: ligato.vpp.nat.Nat44Interface
 	(*Nat44AddressPool)(nil),               // 5: ligato.vpp.nat.Nat44AddressPool
 	(*VirtualReassembly)(nil),              // 6: ligato.vpp.nat.VirtualReassembly
-	(*Nat44Global_Interface)(nil),          // 7: ligato.vpp.nat.Nat44Global.Interface
-	(*Nat44Global_Address)(nil),            // 8: ligato.vpp.nat.Nat44Global.Address
-	(*DNat44_StaticMapping)(nil),           // 9: ligato.vpp.nat.DNat44.StaticMapping
-	(*DNat44_IdentityMapping)(nil),         // 10: ligato.vpp.nat.DNat44.IdentityMapping
-	(*DNat44_StaticMapping_LocalIP)(nil),   // 11: ligato.vpp.nat.DNat44.StaticMapping.LocalIP
+	(*Nat44VrfTable)(nil),                  // 7: ligato.vpp.nat.Nat44VrfTable
+	(*Nat44VrfRoute)(nil),                  // 8: ligato.vpp.nat.Nat44VrfRoute
+	(*Nat44Global_Interface)(nil),          // 9: ligato.vpp.nat.Nat44Global.Interface
+	(*Nat44Global_Address)(nil),            // 10: ligato.vpp.nat.Nat44Global.Address
+	(*DNat44_StaticMapping)(nil),           // 11: ligato.vpp.nat.DNat44.StaticMapping
+	(*DNat44_IdentityMapping)(nil),         // 12: ligato.vpp.nat.DNat44.IdentityMapping
+	(*DNat44_StaticMapping_LocalIP)(nil),   // 13: ligato.vpp.nat.DNat44.StaticMapping.LocalIP
 }
 var file_ligato_vpp_nat_nat_proto_depIdxs = []int32{
-	7,  // 0: ligato.vpp.nat.Nat44Global.nat_interfaces:type_name -> ligato.vpp.nat.Nat44Global.Interface
-	8,  // 1: ligato.vpp.nat.Nat44Global.address_pool:type_name -> ligato.vpp.nat.Nat44Global.Address
+	9,  // 0: ligato.vpp.nat.Nat44Global.nat_interfaces:type_name -> ligato.vpp.nat.Nat44Global.Interface
+	10, // 1: ligato.vpp.nat.Nat44Global.address_pool:type_name -> ligato.vpp.nat.Nat44Global.Address
 	6,  // 2: ligato.vpp.nat.Nat44Global.virtual_reassembly:type_name -> ligato.vpp.nat.VirtualReassembly
-	9,  // 3: ligato.vpp.nat.DNat44.st_mappings:type_name -> ligato.vpp.nat.DNat44.StaticMapping
-	10, // 4: ligato.vpp.nat.DNat44.id_mappings:type_name -> ligato.vpp.nat.DNat44.IdentityMapping
-	11, // 5: ligato.vpp.nat.DNat44.StaticMapping.local_ips:type_name -> ligato.vpp.nat.DNat44.StaticMapping.LocalIP
+	11, // 3: ligato.vpp.nat.DNat44.st_mappings:type_name -> ligato.vpp.nat.DNat44.StaticMapping
+	12, // 4: ligato.vpp.nat.DNat44.id_mappings:type_name -> ligato.vpp.nat.DNat44.IdentityMapping
+	13, // 5: ligato.vpp.nat.DNat44.StaticMapping.local_ips:type_name -> ligato.vpp.nat.DNat44.StaticMapping.LocalIP
 	0,  // 6: ligato.vpp.nat.DNat44.StaticMapping.protocol:type_name -> ligato.vpp.nat.DNat44.Protocol
 	1,  // 7: ligato.vpp.nat.DNat44.StaticMapping.twice_nat:type_name -> ligato.vpp.nat.DNat44.StaticMapping.TwiceNatMode
 	0,  // 8: ligato.vpp.nat.DNat44.IdentityMapping.protocol:type_name -> ligato.vpp.nat.DNat44.Protocol
@@ -1205,7 +1334,7 @@ func file_ligato_vpp_nat_nat_proto_init() {
 			}
 		}
 		file_ligato_vpp_nat_nat_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Nat44Global_Interface); i {
+			switch v := v.(*Nat44VrfTable); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1217,7 +1346,7 @@ func file_ligato_vpp_nat_nat_proto_init() {
 			}
 		}
 		file_ligato_vpp_nat_nat_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Nat44Global_Address); i {
+			switch v := v.(*Nat44VrfRoute); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1229,7 +1358,7 @@ func file_ligato_vpp_nat_nat_proto_init() {
 			}
 		}
 		file_ligato_vpp_nat_nat_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DNat44_StaticMapping); i {
+			switch v := v.(*Nat44Global_Interface); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1241,7 +1370,7 @@ func file_ligato_vpp_nat_nat_proto_init() {
 			}
 		}
 		file_ligato_vpp_nat_nat_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DNat44_IdentityMapping); i {
+			switch v := v.(*Nat44Global_Address); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1253,6 +1382,30 @@ func file_ligato_vpp_nat_nat_proto_init() {
 			}
 		}
 		file_ligato_vpp_nat_nat_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DNat44_StaticMapping); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ligato_vpp_nat_nat_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DNat44_IdentityMapping); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ligato_vpp_nat_nat_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DNat44_StaticMapping_LocalIP); i {
 			case 0:
 				return &v.state
@@ -1271,7 +1424,7 @@ func file_ligato_vpp_nat_nat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ligato_vpp_nat_nat_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

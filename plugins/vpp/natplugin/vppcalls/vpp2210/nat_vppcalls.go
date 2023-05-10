@@ -711,6 +711,52 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 	return nil
 }
 
+func (h *NatVppHandler) handleNat44AddDelVrfTable(vrf uint32, isAdd bool) error {
+
+	req := &vpp_nat_ed.Nat44EdAddDelVrfTable{
+		TableVrfID: vrf,
+		IsAdd:      isAdd,
+	}
+
+	reply := &vpp_nat_ed.Nat44EdAddDelVrfTableReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *NatVppHandler) AddNat44VrfTable(vrf uint32) error {
+	return h.handleNat44AddDelVrfTable(vrf, true)
+}
+func (h *NatVppHandler) DelNat44VrfTable(vrf uint32) error {
+	return h.handleNat44AddDelVrfTable(vrf, false)
+}
+
+func (h *NatVppHandler) handleNat44AddDelVrfRoute(tableVrfId uint32, vrf uint32, isAdd bool) error {
+	req := &vpp_nat_ed.Nat44EdAddDelVrfRoute{
+		TableVrfID: tableVrfId,
+		VrfID:      vrf,
+		IsAdd:      isAdd,
+	}
+
+	reply := &vpp_nat_ed.Nat44EdAddDelVrfRouteReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *NatVppHandler) AddNat44VrfRoute(tableVrfId uint32, vrf uint32) error {
+	return h.handleNat44AddDelVrfRoute(tableVrfId, vrf, true)
+}
+
+func (h *NatVppHandler) DelNat44VrfRoute(tableVrfId uint32, vrf uint32) error {
+	return h.handleNat44AddDelVrfRoute(tableVrfId, vrf, false)
+}
+
 func setNat44EdFlags(flags *nat44EdFlags) nat_types.NatConfigFlags {
 	var flagsCfg nat_types.NatConfigFlags
 	if flags.isTwiceNat {

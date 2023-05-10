@@ -39,18 +39,18 @@ const (
 	// (i.e. same as used by the agent).
 	// Behaviour of the EXISTING interface depends on the values of ip_addresses and
 	// link_only attributes as follows:
-	// 1. link_only=false and ip_addresses are empty: agent waits for interface to be created
-	//    externally and then configures it in the L2-only mode (resync will remove any IP addresses
-	//    configured from outside of the agent)
-	// 2. link_only=false and ip_addresses are non-empty: agent waits for interface to be created
-	//    externally and then attaches the selected IP addresses to it (resync removes any other
-	//    IPs added externally)
-	// 3. link_only=true and ip_addresses are empty: agent only waits for the interface
-	//    to exists (it doesn't wait for or change any IP addresses attached to it)
-	// 4. link_only=true and ip_addresses are non empty: agent waits for the interface
-	//    to exists and the selected IP addresses to be assigned (i.e. there will be derived
-	//    value for each expected IP address in the PENDING state until the address is assigned
-	//    to the interface externally)
+	//  1. link_only=false and ip_addresses are empty: agent waits for interface to be created
+	//     externally and then configures it in the L2-only mode (resync will remove any IP addresses
+	//     configured from outside of the agent)
+	//  2. link_only=false and ip_addresses are non-empty: agent waits for interface to be created
+	//     externally and then attaches the selected IP addresses to it (resync removes any other
+	//     IPs added externally)
+	//  3. link_only=true and ip_addresses are empty: agent only waits for the interface
+	//     to exists (it doesn't wait for or change any IP addresses attached to it)
+	//  4. link_only=true and ip_addresses are non empty: agent waits for the interface
+	//     to exists and the selected IP addresses to be assigned (i.e. there will be derived
+	//     value for each expected IP address in the PENDING state until the address is assigned
+	//     to the interface externally)
 	Interface_EXISTING Interface_Type = 4
 	// In Linux, VRF is implemented as yet another type of netdevice (i.e. listed with `ip link show`).
 	// Network interfaces are then assigned to VRF simply by enslaving them to the VRF device.
@@ -188,6 +188,7 @@ type Interface struct {
 	// MTU is the maximum transmission unit value.
 	Mtu uint32 `protobuf:"varint,8,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	// Types that are assignable to Link:
+	//
 	//	*Interface_Veth
 	//	*Interface_Tap
 	//	*Interface_VrfDev

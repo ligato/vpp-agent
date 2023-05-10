@@ -83,10 +83,10 @@ type NetNamespace struct {
 	Type NetNamespace_ReferenceType `protobuf:"varint,1,opt,name=type,proto3,enum=ligato.linux.namespace.NetNamespace_ReferenceType" json:"type,omitempty"`
 	// Reference defines reference specific
 	// to the namespace type:
-	//  * namespace ID (NSID)
-	//  * PID number (PID)
-	//  * file path (FD)
-	//  * microservice label (MICROSERVICE)
+	//   - namespace ID (NSID)
+	//   - PID number (PID)
+	//   - file path (FD)
+	//   - microservice label (MICROSERVICE)
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 

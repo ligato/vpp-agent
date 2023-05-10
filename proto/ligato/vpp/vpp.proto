@@ -52,6 +52,8 @@ message ConfigData {
     repeated nat.DNat44 dnat44s = 51;
     repeated nat.Nat44Interface nat44_interfaces = 52;
     repeated nat.Nat44AddressPool nat44_pools = 53;
+    repeated nat.Nat44VrfRoute nat44_vrf_routes = 54;
+    repeated nat.Nat44VrfTable nat44_vrf_tables = 55;
 
     repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
     repeated ipsec.SecurityAssociation ipsec_sas = 61;
@@ -74,7 +76,6 @@ message ConfigData {
     repeated wireguard.Peer wg_peers = 93;
 
     dns.DNSCache dns_cache = 100;
-
 }
 
 message Notification {

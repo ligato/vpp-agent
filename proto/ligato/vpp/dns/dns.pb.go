@@ -22,18 +22,18 @@ const (
 )
 
 // DNSCache configuration models VPP's DNS cache server functionality. The main goal of this functionality is
-//to cache DNS records and minimize external DNS traffic.
-//The presence of this configuration enables the VPP DNS functionality and VPP start to acts as DNS cache Server.
-//It responds on standard DNS port(53) to DNS requests. Removing of this configuration disables the VPP DNS
-//functionality.
+// to cache DNS records and minimize external DNS traffic.
+// The presence of this configuration enables the VPP DNS functionality and VPP start to acts as DNS cache Server.
+// It responds on standard DNS port(53) to DNS requests. Removing of this configuration disables the VPP DNS
+// functionality.
 type DNSCache struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// List of upstream DNS servers that are contacted by VPP when unknown domain name needs to be resolved.
-	//The results are cached and there should be no further upstream DNS server request for the same domain
-	//name until cached DNS record expiration.
+	// The results are cached and there should be no further upstream DNS server request for the same domain
+	// name until cached DNS record expiration.
 	UpstreamDnsServers []string `protobuf:"bytes,1,rep,name=upstream_dns_servers,json=upstreamDnsServers,proto3" json:"upstream_dns_servers,omitempty"`
 }
 

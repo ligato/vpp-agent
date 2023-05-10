@@ -57,6 +57,17 @@ var (
 			"{{if and .LastIp (ne .FirstIp .LastIp)}}-{{.LastIp}}{{end}}"+
 			"{{end}}",
 	))
+	ModelNat44VrfTable = models.Register(&Nat44VrfTable{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "nat44-vrf",
+		Version: "v2",
+	}, models.WithNameTemplate("vrfid/{{.SrcVrfId}}"))
+
+	ModelNat44VrfRoute = models.Register(&Nat44VrfRoute{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "nat44-vrf-route",
+		Version: "v2",
+	}, models.WithNameTemplate("vrfid/{{.SrcVrfId}}/destvrfid/{{.DestVrfId}}"))
 )
 
 // GlobalNAT44Key returns key for Nat44Global.
@@ -77,6 +88,12 @@ func DNAT44Key(label string) string {
 func Nat44InterfaceKey(name string) string {
 	return models.Key(&Nat44Interface{
 		Name: name,
+	})
+}
+
+func Nat44VrfTableKey(vrfId uint32) string {
+	return models.Key(&Nat44VrfTable{
+		SrcVrfId: vrfId,
 	})
 }
 
