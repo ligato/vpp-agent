@@ -16,6 +16,7 @@ package vpp2101
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"sort"
 	"strings"
@@ -637,6 +638,10 @@ func (h *NatVppHandler) getTwiceNatMode(twiceNat, selfTwiceNat bool) nat.DNat44_
 		return nat.DNat44_StaticMapping_SELF
 	}
 	return nat.DNat44_StaticMapping_DISABLED
+}
+
+func (h *NatVppHandler) Nat44VrfTablesDump() ([]*nat.Nat44VrfTable, error) {
+	return nil, errors.Errorf("Not supported for this version")
 }
 
 func getOrCreateDNAT(dnats dnatMap, label string) *nat.DNat44 {

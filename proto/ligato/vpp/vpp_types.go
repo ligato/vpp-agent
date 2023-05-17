@@ -56,6 +56,8 @@ type (
 	DNAT44           = vpp_nat.DNat44
 	Nat44AddressPool = vpp_nat.Nat44AddressPool
 	Nat44Interface   = vpp_nat.Nat44Interface
+	Nat44EdVrfTable  = vpp_nat.Nat44VrfTable
+	Nat44EdVrfRoute  = vpp_nat.Nat44VrfRoute
 
 	// IPSec
 	IPSecSPD = vpp_ipsec.SecurityPolicyDatabase

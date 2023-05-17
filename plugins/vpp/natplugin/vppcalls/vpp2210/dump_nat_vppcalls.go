@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/bits"
 	"net"
 	"sort"
 	"strings"
@@ -1129,6 +1130,33 @@ func (h *NatVppHandler) getTwiceNatMode(twiceNat, selfTwiceNat bool) nat.DNat44_
 		return nat.DNat44_StaticMapping_SELF
 	}
 	return nat.DNat44_StaticMapping_DISABLED
+}
+
+func (h *NatVppHandler) Nat44VrfTablesDump() ([]*nat.Nat44VrfTable, error) {
+	var msgs []*nat.Nat44VrfTable
+
+	req1 := &vpp_nat_ed.Nat44EdVrfTablesDump{}
+	reqContext := h.callsChannel.SendMultiRequest(req1)
+
+	for {
+		msg := &vpp_nat_ed.Nat44EdVrfTablesDetails{}
+		stop, err := reqContext.ReceiveReply(msg)
+		if err != nil {
+			return msgs, fmt.Errorf("failed to dump NAT44 VRF tables: %v", err)
+		}
+		if stop {
+			break
+		}
+		msgs = append(msgs, &nat.Nat44VrfTable{
+			SrcVrfId:   msg.TableVrfID,
+			DestVrfIds: msg.VrfIds})
+		// fixing bad endianess, Check if new version of VPP doesn't contain nat44_ed_vrf_tables_v2_dump
+		for i := 0; i < int(len(msgs[len(msgs)-1].DestVrfIds)); i++ {
+			msgs[len(msgs)-1].DestVrfIds[i] = bits.ReverseBytes32(msgs[len(msgs)-1].DestVrfIds[i])
+		}
+
+	}
+	return msgs, nil
 }
 
 func getOrCreateDNAT(dnats dnatMap, label string) *nat.DNat44 {
