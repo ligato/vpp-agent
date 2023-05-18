@@ -21,13 +21,18 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp.stn"
 
-var (
+var ModelRule models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_stn_stn_proto_init()
+
 	ModelRule = models.Register(&Rule{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "rule",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.Interface}}/ip/{{.IpAddress}}"))
-)
+}
 
 // Key returns the prefix used in the ETCD to store a VPP STN config
 // of a particular STN rule in selected VPP instance.

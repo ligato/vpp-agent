@@ -12,48 +12,48 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package metrics
+package metrics_test
 
 import (
 	"testing"
 
 	. "github.com/onsi/gomega"
 
+	"go.ligato.io/vpp-agent/v3/pkg/metrics"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	testmetrics "go.ligato.io/vpp-agent/v3/pkg/models/testdata/proto"
 )
 
-type TestMetrics struct {
-	TestValue int
-}
+var n int32 = 0
 
-var n = 0
-
-func GetTestMetrics() *TestMetrics {
-	return &TestMetrics{
-		TestValue: n,
+func GetBasicMetrics() *testmetrics.Basic {
+	return &testmetrics.Basic{
+		ValueInt: n,
 	}
 }
 
 func TestRetrieve(t *testing.T) {
-	RegisterTestingT(t)
+	g := NewWithT(t)
 
 	models.DefaultRegistry = models.NewRegistry()
 
-	_, err := models.DefaultRegistry.Register(&TestMetrics{}, models.Spec{
+	_, err := models.DefaultRegistry.Register(&testmetrics.Basic{}, models.Spec{
 		Module: "testmodule",
 		Type:   "testtype",
 		Class:  "metrics",
 	})
-	Expect(err).ToNot(HaveOccurred())
+	g.Expect(err).ToNot(HaveOccurred())
+	registered := models.RegisteredModels()
+	g.Expect(registered).To(HaveLen(1))
 
-	Register(&TestMetrics{}, func() interface{} {
-		return GetTestMetrics()
+	metrics.Register(&testmetrics.Basic{}, func() any {
+		return GetBasicMetrics()
 	})
 
 	n = 1
 
-	var metricData TestMetrics
-	err = Retrieve(&metricData)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(metricData.TestValue).To(Equal(1))
+	var metricData testmetrics.Basic
+	err = metrics.Retrieve(&metricData)
+	g.Expect(err).ToNot(HaveOccurred())
+	g.Expect(metricData.ValueInt).To(Equal(int32(1)))
 }

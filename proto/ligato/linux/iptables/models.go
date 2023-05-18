@@ -21,13 +21,18 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "linux.iptables"
 
-var (
+var ModelRuleChain models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_linux_iptables_iptables_proto_init()
+
 	ModelRuleChain = models.Register(&RuleChain{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
 		Type:    "rulechain",
 	}, models.WithNameTemplate("{{.Name}}"))
-)
+}
 
 // RuleChainKey returns the key used in KV database to store configuration of a particular Linux iptables rule chain.
 func RuleChainKey(name string) string {

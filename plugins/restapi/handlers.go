@@ -44,6 +44,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
+	"go.ligato.io/vpp-agent/v3/pkg/util"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
@@ -749,7 +750,7 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 // configurationGetHandler returns NB configuration of VPP-Agent in yaml format as used by agentctl.
 func (p *Plugin) configurationGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		// create dynamically config that can hold all locally known models (to use only configurator.Config is
+		// create dynamically config that can hold all locally registered models (to use only configurator.Config is
 		// not enough as VPP-Agent could be used as library and additional model could be registered and
 		// these models are unknown for configurator.Config)
 		knownModels, err := client.LocalClient.KnownModels("config")
@@ -874,23 +875,13 @@ func (p *Plugin) configurationUpdateHandler(formatter *render.Render) http.Handl
 				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
-			var message proto.Message
-			if _, isRemoteModel := model.(*models.RemotelyKnownModel); isRemoteModel {
-				// message is retrieved from localclient but it has remotely known model => it is the proxy
-				// models in local model registry => can't convert it to generated message due to unknown
-				// generated message go type (to use reflection to create it), however the processing of proxy
-				// models is different so it might no need type casting fix at all -> using the only thing
-				// available, the dynamic message
-				message = dynamicMessage
-			} else { // message has locally known model -> using generated proto message
-				message, err = models.DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage)
-				if err != nil {
-					errMsg := fmt.Sprintf("can't convert dynamic message to statically generated message "+
-						"due to: %v (dynamic message=%v)", err, dynamicMessage)
-					p.Log.Error(internalErrorLogPrefix + errMsg)
-					p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
-					return
-				}
+			message, err := util.ConvertProto(model.NewInstance(), dynamicMessage)
+			if err != nil {
+				errMsg := fmt.Sprintf("can't convert dynamic message to model proto message "+
+					"due to: %v (dynamic message=%v)", err, dynamicMessage)
+				p.Log.Error(internalErrorLogPrefix + errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
+				return
 			}
 
 			// extract model key

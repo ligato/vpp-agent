@@ -33,7 +33,12 @@ const (
 	AllocRefGWSuffix = "/GW"
 )
 
-var (
+var ModelIPAllocation models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_netalloc_netalloc_proto_init()
+
 	ModelIPAllocation = models.Register(&IPAllocation{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
@@ -41,7 +46,7 @@ var (
 	}, models.WithNameTemplate(
 		"network/{{.NetworkName}}/interface/{{.InterfaceName}}",
 	))
-)
+}
 
 const (
 	/* neighbour gateway (derived) */

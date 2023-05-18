@@ -26,6 +26,15 @@ import (
 const ModuleName = "vpp"
 
 var (
+	ModelInterface models.KnownModel
+	ModelSpan      models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_interfaces_interface_proto_init()
+	file_ligato_vpp_interfaces_span_proto_init()
+
 	ModelInterface = models.Register(&Interface{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
@@ -37,7 +46,7 @@ var (
 		Version: "v2",
 		Type:    "span",
 	}, models.WithNameTemplate("{{.InterfaceFrom}}/to/{{.InterfaceTo}}"))
-)
+}
 
 // InterfaceKey returns the key used in NB DB to store the configuration of the
 // given vpp interface.

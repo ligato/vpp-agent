@@ -15,8 +15,9 @@
 package types
 
 type ModelListOptions struct {
-	Class  string
-	Module string
+	Class    string
+	Module   string
+	Register bool
 }
 
 type SchedulerDumpOptions struct {

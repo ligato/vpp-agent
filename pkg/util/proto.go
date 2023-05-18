@@ -15,8 +15,11 @@
 package util
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -156,4 +159,36 @@ func placeProtosInProto(dst proto.Message, messageMap map[string][]protoreflect.
 		}
 	}
 	return changed
+}
+
+// ConvertProto converts from src proto.Message to a new dst proto.Message via json marshaling
+func ConvertProto(dst proto.Message, src proto.Message) (proto.Message, error) {
+	msg := dst.ProtoReflect().New().Interface()
+	marshaler := protojson.MarshalOptions{
+		EmitUnpopulated: true,
+	}
+	jsonData, err := marshaler.Marshal(src)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal message to json due to: %w (message: %+v)", err, src)
+	}
+	if err := protojson.Unmarshal(jsonData, msg); err != nil {
+		return nil, fmt.Errorf("can't umarshal json to message due to: %w (message: %+v)", err, msg)
+	}
+	return msg, nil
+}
+
+// ConvertProtoToMap converts src proto.Message into map[string]any via json marshaling
+func ConvertProtoToMap(src proto.Message) (map[string]any, error) {
+	m := make(map[string]any)
+	marshaler := protojson.MarshalOptions{
+		EmitUnpopulated: true,
+	}
+	jsonData, err := marshaler.Marshal(src)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal message to json due to: %w (message: %+v)", err, src)
+	}
+	if err := json.Unmarshal(jsonData, &m); err != nil {
+		return nil, fmt.Errorf("can't unmarshal json to map due to: %w (json: %v)", err, jsonData)
+	}
+	return m, nil
 }
