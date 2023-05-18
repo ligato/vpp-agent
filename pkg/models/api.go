@@ -50,10 +50,7 @@ type Registry interface {
 	// RegisteredModels returns all registered models.
 	RegisteredModels() []KnownModel
 
-	// Register registers either a protobuf message known at compile-time together
-	// with the given model specification (for LocalRegistry),
-	// or a remote model represented by an instance of ModelInfo obtained via KnownModels RPC from MetaService
-	// (for RemoteRegistry or also for LocalRegistry but most likely just proxied to a remote agent).
+	// Register registers either a protobuf message together with the given model specification.
 	// If spec.Class is unset, then it defaults to 'config'.
 	Register(x any, spec Spec, opts ...ModelOption) (KnownModel, error)
 }
@@ -79,9 +76,8 @@ type KnownModel interface {
 	NameTemplate() string
 
 	// LocalGoType returns reflect go type for the model. The reflect type can be retrieved only
-	// for locally registered model that provide locally known go types. The remotely retrieved model
-	// can't provide reflect type so if known model information is retrieved remotely, this method
-	// will return nil.
+	// for registered models that provide known go types. If model can't provide reflect type
+	// (model registered with dynamically generated proto message), this method will return nil.
 	LocalGoType() reflect.Type
 
 	// Name returns name for the model.

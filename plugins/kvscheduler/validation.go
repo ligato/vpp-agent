@@ -24,14 +24,15 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 )
 
-// ValidateSemantically validates given proto messages according to semantic validation(KVDescriptor.Validate)
-// from registered KVDescriptors. If all locally known messages are valid, nil is returned. If some locally known
-// messages are invalid, kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
+// ValidateSemantically validates given proto messages according to semantic validation (KVDescriptor.Validate)
+// from registered KVDescriptors. If all messages are valid, nil is returned. If some messages are invalid,
+// kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
 //
-// Usage of dynamic proto messages (dynamicpb.Message) described by remotely known models is not supported.
+// Usage of dynamic proto messages (dynamicpb.Message) is supported only when the corresponding model contains
+// statically generated proto message (in this case the dynamic message can be converted to static).
 // The reason for this is that the KVDescriptors can validate only statically generated proto messages and
-// remotely retrieved dynamic proto messages can't be converted to such proto messages (there are
-// no locally available statically generated proto models).
+// dynamic proto messages can't generally be converted to such proto messages (if corresponding statically generated
+// proto messages are not available).
 func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 	s.txnLock.Lock()
 	defer s.txnLock.Unlock()
@@ -47,7 +48,7 @@ func (s *Scheduler) ValidateSemantically(messages []proto.Message) error {
 			if err != nil {
 				return errors.Errorf("can't get model for message due to: %v (message=%v)", err, message)
 			}
-			goType := model.LocalGoType() // only for locally known models will return meaningful go type
+			goType := model.LocalGoType() // only static known models will return meaningful go type
 			if goType == nil {
 				s.Log.Debug("instance of %s doesn't have local go type and will be skipped from validation "+
 					"using KVDescriptor.Validate  (dynamic message=%v)", model.ProtoName(), message)

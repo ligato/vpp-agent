@@ -53,8 +53,6 @@ func TestYamlCompatibility(t *testing.T) {
 	//  possibilities
 
 	// create construction input for dynamic config from locally registered models (only with class "config")
-	// (for remote models use generic client's KnownModels, example of this is in agentctl yaml config
-	// update (commands.runConfigUpdate))
 	var knownModels []*models.ModelInfo
 	for _, model := range models.RegisteredModels() {
 		if model.Spec().Class == "config" {

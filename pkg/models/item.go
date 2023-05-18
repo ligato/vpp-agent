@@ -78,10 +78,7 @@ func UnmarshalItemUsingModelRegistry(item *api.Item, modelRegistry Registry) (pr
 	}
 
 	// unmarshal item's inner data
-	// We must distinguish between locally and remotely known models with respect to the underlying go type.
-	// LocallyKnownModel is used for proto message with go type generated from imported proto file and known
-	// at compile time, while RemotelyKnownModel can't produce such go typed instances (we know the name of go type,
-	// but can't produce it from remote information) so dynamic proto message must be enough (*dynamicpb.Message))
+	// We must distinguish between static and dynamic known models with respect to the underlying go type.
 	var opts proto.UnmarshalOptions
 	if model.LocalGoType() == nil {
 		opts.Resolver = modelRegistry.MessageTypeRegistry()

@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	// DefaultRegistry represents a global registry for local models (models known in compile time)
+	// DefaultRegistry represents a global registry for known models
 	DefaultRegistry Registry = NewRegistry()
 
 	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")

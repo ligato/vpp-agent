@@ -94,8 +94,7 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		return err
 	}
 
-	// create dynamically config that can hold all remote known models
-	// (not using local model registry that gives only locally available models)
+	// create dynamically config that can hold all known models
 	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
@@ -188,8 +187,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		return err
 	}
 
-	// create dynamically config that can hold all remote known models
-	// (not using local model registry that gives only locally available models)
+	// create dynamically config that can hold all known models
 	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)

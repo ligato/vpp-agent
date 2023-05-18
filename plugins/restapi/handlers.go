@@ -750,7 +750,7 @@ func (p *Plugin) ConvertValidationErrorOutput(validationErrors *kvscheduler.Inva
 // configurationGetHandler returns NB configuration of VPP-Agent in yaml format as used by agentctl.
 func (p *Plugin) configurationGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		// create dynamically config that can hold all locally known models (to use only configurator.Config is
+		// create dynamically config that can hold all locally registered models (to use only configurator.Config is
 		// not enough as VPP-Agent could be used as library and additional model could be registered and
 		// these models are unknown for configurator.Config)
 		knownModels, err := client.LocalClient.KnownModels("config")

@@ -338,7 +338,7 @@ func UseRemoteRegistry(modelClass string) NewClientOption {
 				t, _ := models.ModelOptionFor("nameTemplate", km.GetOptions())
 				_, err := grpcClient.modelRegistry.Register(msg, models.ToSpec(km.Spec), models.WithNameTemplate(t))
 				if err != nil {
-					return fmt.Errorf("cannot register remote model for generic client usage due to: %w", err)
+					return fmt.Errorf("cannot register model for generic client usage due to: %w", err)
 				}
 			}
 		}
@@ -350,7 +350,7 @@ func UseRemoteRegistry(modelClass string) NewClientOption {
 // possible transitive dependencies, but all dependencies (direct or transitive) must be included in input
 // file descriptor protos.
 func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]protoreflect.FileDescriptor, error) {
-	// NOTE this could be done more efficiently by creating dependency tree and
+	// NOTE: this could be done more efficiently by creating dependency tree and
 	// traversing it and all, but it seems more complicated to implement
 	// => going over unresolved FileDescriptorProto over and over while resolving that FileDescriptorProto that
 	// could be resolved, in the end(first round with nothing new to resolve) there is either everything resolved

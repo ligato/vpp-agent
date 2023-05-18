@@ -252,14 +252,15 @@ type KVScheduler interface {
 	// by the sequence number.
 	GetRecordedTransaction(SeqNum uint64) (txn *RecordedTxn)
 
-	// ValidateSemantically validates given proto messages according to semantic validation(KVDescriptor.Validate)
-	// from registered KVDescriptors. If all locally known messages are valid, nil is returned. If some locally known
-	// messages are invalid, kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
+	// ValidateSemantically validates given proto messages according to semantic validation (KVDescriptor.Validate)
+	// from registered KVDescriptors. If all messages are valid, nil is returned. If some messages are invalid,
+	// kvscheduler.MessageValidationErrors is returned. In any other case, error is returned.
 	//
-	// Usage of dynamic proto messages (dynamicpb.Message) described by remotely known models is not supported.
+	// Usage of dynamic proto messages (dynamicpb.Message) is supported only when the corresponding model contains
+	// statically generated proto message (in this case the dynamic message can be converted to static).
 	// The reason for this is that the KVDescriptors can validate only statically generated proto messages and
-	// remotely retrieved dynamic proto messages can't be converted to such proto messages (there are
-	// no locally available statically generated proto models).
+	// dynamic proto messages can't generally be converted to such proto messages (if corresponding statically generated
+	// proto messages are not available).
 	ValidateSemantically([]proto.Message) error
 
 	WatchNBKeyPrefixRegistration(key string) (<-chan struct{}, error)
