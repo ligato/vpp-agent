@@ -34,17 +34,16 @@ var (
 	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
 
-// LocalRegistry defines model registry for managing registered local models. Local models are locally compiled into
-// the program binary and hence some additional information in compare to remote models, i.e. go type.
-type LocalRegistry struct {
+// registry defines model registry for managing registered knownModels.
+type registry struct {
 	modelsByGoType    map[reflect.Type]*knownModel
 	modelsByProtoName map[string]*knownModel
 	modelsByName      map[string]*knownModel
 }
 
 // NewRegistry returns initialized Registry.
-func NewRegistry() *LocalRegistry {
-	return &LocalRegistry{
+func NewRegistry() Registry {
+	return &registry{
 		modelsByGoType:    make(map[reflect.Type]*knownModel),
 		modelsByProtoName: make(map[string]*knownModel),
 		modelsByName:      make(map[string]*knownModel),
@@ -53,7 +52,7 @@ func NewRegistry() *LocalRegistry {
 
 // GetModel returns registered model for the given model name
 // or error if model is not found.
-func (r *LocalRegistry) GetModel(name string) (KnownModel, error) {
+func (r *registry) GetModel(name string) (KnownModel, error) {
 	model, found := r.modelsByName[name]
 	if !found {
 		return &knownModel{}, fmt.Errorf("no model registered for name %v", name)
@@ -62,7 +61,7 @@ func (r *LocalRegistry) GetModel(name string) (KnownModel, error) {
 }
 
 // GetModelFor returns registered model for the given proto message.
-func (r *LocalRegistry) GetModelFor(x any) (KnownModel, error) {
+func (r *registry) GetModelFor(x any) (KnownModel, error) {
 	msg, ok := x.(proto.Message)
 	if !ok {
 		return &knownModel{}, fmt.Errorf("can't get model: %v is not a proto message", x)
@@ -76,7 +75,7 @@ func (r *LocalRegistry) GetModelFor(x any) (KnownModel, error) {
 }
 
 // GetModelForKey returns registered model for the given key or error.
-func (r *LocalRegistry) GetModelForKey(key string) (KnownModel, error) {
+func (r *registry) GetModelForKey(key string) (KnownModel, error) {
 	for _, model := range r.modelsByProtoName {
 		if model.IsKeyValid(key) {
 			return model, nil
@@ -86,7 +85,7 @@ func (r *LocalRegistry) GetModelForKey(key string) (KnownModel, error) {
 }
 
 // RegisteredModels returns all registered models.
-func (r *LocalRegistry) RegisteredModels() []KnownModel {
+func (r *registry) RegisteredModels() []KnownModel {
 	var models []KnownModel
 	for _, model := range r.modelsByProtoName {
 		models = append(models, model)
@@ -95,7 +94,7 @@ func (r *LocalRegistry) RegisteredModels() []KnownModel {
 }
 
 // MessageTypeRegistry creates new message type registry from registered proto messages
-func (r *LocalRegistry) MessageTypeRegistry() *protoregistry.Types {
+func (r *registry) MessageTypeRegistry() *protoregistry.Types {
 	typeRegistry := new(protoregistry.Types)
 	for _, model := range r.modelsByName {
 		err := typeRegistry.RegisterMessage(dynamicpb.NewMessageType(model.pb.ProtoReflect().Descriptor()))
@@ -107,7 +106,7 @@ func (r *LocalRegistry) MessageTypeRegistry() *protoregistry.Types {
 }
 
 // Register registers proto.Message into registry.
-func (r *LocalRegistry) Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error) {
+func (r *registry) Register(x interface{}, spec Spec, opts ...ModelOption) (KnownModel, error) {
 	msg, ok := x.(proto.Message)
 	if !ok {
 		return nil, fmt.Errorf("can't register a non-proto message model")
