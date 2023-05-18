@@ -25,6 +25,16 @@ import (
 const ModuleName = "vpp.ipsec"
 
 var (
+	ModelSecurityPolicyDatabase models.KnownModel
+	ModelSecurityPolicy         models.KnownModel
+	ModelSecurityAssociation    models.KnownModel
+	ModelTunnelProtection       models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_ipsec_ipsec_proto_init()
+
 	ModelSecurityPolicyDatabase = models.Register(&SecurityPolicyDatabase{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
@@ -36,10 +46,10 @@ var (
 		Version: "v2",
 		Type:    "sp",
 	}, models.WithNameTemplate(
-		"spd/{{.SpdIndex}}/" +
-			"sa/{{.SaIndex}}/" +
-			"{{if .IsOutbound}}outbound/{{else}}inbound/{{end}}" +
-			"local-addresses/{{.LocalAddrStart}}-{{.LocalAddrStop}}/" +
+		"spd/{{.SpdIndex}}/"+
+			"sa/{{.SaIndex}}/"+
+			"{{if .IsOutbound}}outbound/{{else}}inbound/{{end}}"+
+			"local-addresses/{{.LocalAddrStart}}-{{.LocalAddrStop}}/"+
 			"remote-addresses/{{.RemoteAddrStart}}-{{.RemoteAddrStop}}"))
 
 	ModelSecurityAssociation = models.Register(&SecurityAssociation{}, models.Spec{
@@ -56,7 +66,7 @@ var (
 		`{{.Interface}}`+
 			`{{if .NextHopAddr}}/nh/{{.NextHopAddr}}{{end}}`,
 	))
-)
+}
 
 // SPDKey returns the key used in NB DB to store the configuration of the
 // given security policy database configuration.

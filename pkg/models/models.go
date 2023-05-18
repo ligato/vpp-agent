@@ -17,31 +17,41 @@ package models
 import (
 	"fmt"
 	"path"
-	"reflect"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 // Register registers model in DefaultRegistry.
-func Register(pb proto.Message, spec Spec, opts ...ModelOption) KnownModel {
-	model, err := DefaultRegistry.Register(pb, spec, opts...)
+func Register(x proto.Message, spec Spec, opts ...ModelOption) KnownModel {
+	model, err := DefaultRegistry.Register(x, spec, opts...)
 	if err != nil {
 		panic(err)
 	}
 	return model
 }
 
-// RegisterRemote registers remotely known model in given RemoteRegistry
-func RegisterRemote(remoteModel *ModelInfo, remoteRegistry *RemoteRegistry) KnownModel {
-	model, err := remoteRegistry.Register(remoteModel, ToSpec(remoteModel.Spec))
-	if err != nil {
-		panic(err)
+// RegisterModelInfos registers models in the form of ModelInfo in the DefaultRegistry.
+// It returns slice of known models that were actually newly registered (didn't exist before in DefaultRegistry).
+func RegisterModelInfos(modelInfos []*ModelInfo) []KnownModel {
+	var knownModels []KnownModel
+	for _, mi := range modelInfos {
+		msg := dynamicpb.NewMessageType(mi.MessageDescriptor).New().Interface()
+		spec := ToSpec(mi.Spec)
+		t, _ := ModelOptionFor("nameTemplate", mi.GetOptions())
+		km, err := DefaultRegistry.Register(msg, spec, WithNameTemplate(t))
+		if err != nil {
+			// model registration failed, try registering remaining model infos
+			continue
+		}
+		knownModels = append(knownModels, km)
 	}
-	return model
+	return knownModels
 }
 
 // RegisteredModels returns models registered in the DefaultRegistry.
@@ -102,18 +112,18 @@ func GetKey(x proto.Message) (string, error) {
 // GetKeyUsingModelRegistry returns complete key for given model from given model registry,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
-func GetKeyUsingModelRegistry(message proto.Message, modelRegistry Registry) (string, error) {
+func GetKeyUsingModelRegistry(x proto.Message, modelRegistry Registry) (string, error) {
 	// find model for message
-	model, err := GetModelFromRegistryFor(message, modelRegistry)
+	model, err := GetModelFromRegistryFor(x, modelRegistry)
 	if err != nil {
 		return "", fmt.Errorf("cannot find known model "+
-			"for message (while getting key for model) due to: %w (message = %+v)", err, message)
+			"for message (while getting key for model) due to: %w (message = %+v)", err, x)
 	}
 
 	// compute Item.ID.Name
-	name, err := model.InstanceName(message)
+	name, err := model.InstanceName(x)
 	if err != nil {
-		return "", fmt.Errorf("cannot compute model instance name due to: %v (message %+v)", err, message)
+		return "", fmt.Errorf("cannot compute model instance name due to: %v (message %+v)", err, x)
 	}
 
 	key := path.Join(model.KeyPrefix(), name)
@@ -134,6 +144,23 @@ func GetName(x proto.Message) (string, error) {
 	return name, nil
 }
 
+// ModelOptionFor extracts value for given model detail option key
+func ModelOptionFor(key string, options []*generic.ModelDetail_Option) (string, error) {
+	for _, option := range options {
+		if option.Key == key {
+			if len(option.Values) == 0 {
+				return "", fmt.Errorf("there is no value for key %v in model options", key)
+			}
+			if strings.TrimSpace(option.Values[0]) == "" {
+				return "", fmt.Errorf("there is no value(only empty string "+
+					"after trimming) for key %v in model options", key)
+			}
+			return option.Values[0], nil
+		}
+	}
+	return "", fmt.Errorf("there is no model option with key %v (model options=%+v))", key, options)
+}
+
 // keyPrefix computes correct key prefix from given model. It
 // handles correctly the case when name suffix of the key is empty
 // (no template name -> key prefix does not end with "/")
@@ -145,42 +172,11 @@ func keyPrefix(modelSpec Spec, hasTemplateName bool) string {
 	return keyPrefix
 }
 
-// DynamicLocallyKnownMessageToGeneratedMessage converts locally registered/known proto dynamic message to
-// corresponding statically generated proto message. This function will fail when there is no registration
-// of statically-generated proto message, i.e. dynamic message refers to remotely known model.
-// This conversion method should help handling dynamic proto messages in mostly protoc-generated proto message
-// oriented codebase (i.e. help for type conversions to named, help handle missing data fields as seen
-// in generated proto messages,...)
-func DynamicLocallyKnownMessageToGeneratedMessage(dynamicMessage *dynamicpb.Message) (proto.Message, error) {
-	// get go type of statically generated proto message corresponding to locally known dynamic message
-	model, err := GetModelFor(dynamicMessage)
-	if err != nil {
-		return nil, fmt.Errorf("can't get model "+
-			"for dynamic message due to: %w (message=%v)", err, dynamicMessage)
+// upperFirst converts the first letter of string to upper case
+func upperFirst(s string) string {
+	if s == "" {
+		return ""
 	}
-	goType := model.LocalGoType() // only for locally known models will return meaningful go type
-	if goType == nil {
-		return nil, fmt.Errorf("dynamic messages for remote models are not supported due to "+
-			"not available go type of statically generated proto message (dynamic message=%v)", dynamicMessage)
-	}
-
-	// create empty statically-generated proto message of the same type as it was used for registration
-	var registeredGoType interface{}
-	if goType.Kind() == reflect.Ptr {
-		registeredGoType = reflect.New(goType.Elem()).Interface()
-	} else {
-		registeredGoType = reflect.Zero(goType).Interface()
-	}
-
-	message := protoMessageOf(registeredGoType)
-
-	// fill empty statically-generated proto message with data from its dynamic proto message counterpart
-	// (alternative approach to this is marshalling dynamicMessage to json and unmarshalling it back to message)
-	proto.Merge(message, dynamicMessage)
-
-	return message, nil
-}
-
-func protoMessageOf(m interface{}) protoreflect.ProtoMessage {
-	return protoimpl.X.ProtoMessageV2Of(m)
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[n:]
 }

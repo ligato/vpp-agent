@@ -31,7 +31,7 @@ var (
 type Retriever func() interface{}
 
 // Register registers given type with retriever to metrics.
-func Register(metricType interface{}, retrieverFunc Retriever) {
+func Register(metricType any, retrieverFunc Retriever) {
 	model, err := models.DefaultRegistry.GetModelFor(metricType)
 	if err != nil {
 		panic(fmt.Sprintf("type %T not registered as model", metricType))
@@ -48,7 +48,7 @@ func Register(metricType interface{}, retrieverFunc Retriever) {
 }
 
 // Retrieve calls registered retriever for given metric and sets returned data to metric.
-func Retrieve(metric interface{}) error {
+func Retrieve(metric any) error {
 	model, err := models.DefaultRegistry.GetModelFor(metric)
 	if err != nil {
 		return fmt.Errorf("type %T not registered as model", metric)

@@ -16,15 +16,18 @@ package vpp_dns
 
 import "go.ligato.io/vpp-agent/v3/pkg/models"
 
-const (
-	ModuleName = "vpp.dns"
-)
+const ModuleName = "vpp.dns"
 
-var (
+var ModelDNSCache models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_dns_dns_proto_init()
+
 	// DNSCache is registered NB model of DNSCache
 	ModelDNSCache = models.Register(&DNSCache{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "dnscache",
 		Version: "v1",
 	})
-)
+}

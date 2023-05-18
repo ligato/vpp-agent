@@ -24,6 +24,15 @@ import (
 const ModuleName = "linux.l3"
 
 var (
+	ModelARPEntry models.KnownModel
+	ModelRoute    models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_linux_l3_arp_proto_init()
+	file_ligato_linux_l3_route_proto_init()
+
 	ModelARPEntry = models.Register(&ARPEntry{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
@@ -38,7 +47,7 @@ var (
 		`{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}`+
 			`{{else}}{{.DstNetwork}}{{end}}/{{.OutgoingInterface}}`,
 	))
-)
+}
 
 // ArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
 func ArpKey(iface, ipAddr string) string {

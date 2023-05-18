@@ -1,4 +1,4 @@
-syntax = "proto2";
+syntax = "proto3";
 
 package ligato.generic;
 
@@ -9,4 +9,8 @@ import "ligato/generic/model.proto";
 
 extend google.protobuf.MessageOptions {
     optional ModelSpec model = 50222;
+}
+
+extend google.protobuf.MessageOptions {
+    string model_name_template = 50223;
 }

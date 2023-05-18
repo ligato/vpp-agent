@@ -53,8 +53,6 @@ func TestYamlCompatibility(t *testing.T) {
 	//  possibilities
 
 	// create construction input for dynamic config from locally registered models (only with class "config")
-	// (for remote models use generic client's KnownModels, example of this is in agentctl yaml config
-	// update (commands.runConfigUpdate))
 	var knownModels []*models.ModelInfo
 	for _, model := range models.RegisteredModels() {
 		if model.Spec().Class == "config" {
@@ -81,7 +79,7 @@ func TestYamlCompatibility(t *testing.T) {
 	Expect(err).ShouldNot(HaveOccurred(), "can't export hardcoded config as yaml")
 
 	// final compare of YAML from hardcoded and dynamic config
-	Expect(yamlFromDynConfig).To(BeEquivalentTo(yamlFromHardcodedConfig))
+	Expect(yamlFromDynConfig).To(MatchYAML(yamlFromHardcodedConfig))
 }
 
 // TestDynamicConfigWithThirdPartyModel tests whether 3rd party model (= model not in hardcoded configurator.Config)

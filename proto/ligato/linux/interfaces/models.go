@@ -24,13 +24,18 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "linux.interfaces"
 
-var (
+var ModelInterface models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_linux_interfaces_interface_proto_init()
+
 	ModelInterface = models.Register(&Interface{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
 		Type:    "interface",
 	})
-)
+}
 
 // InterfaceKey returns the key used in ETCD to store configuration of a particular Linux interface.
 func InterfaceKey(name string) string {

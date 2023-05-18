@@ -124,7 +124,8 @@ func runDump(cli agentcli.Cli, opts DumpOptions) error {
 	defer cancel()
 
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
-		Class: "config",
+		Class:    "config",
+		Register: true,
 	})
 	if err != nil {
 		return err

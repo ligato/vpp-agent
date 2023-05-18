@@ -64,7 +64,8 @@ func runGenerate(cli agentcli.Cli, opts GenerateOptions) error {
 	defer cancel()
 
 	allModels, err := cli.Client().ModelList(ctx, types.ModelListOptions{
-		Class: "config",
+		Class:    "config",
+		Register: true,
 	})
 	if err != nil {
 		return err

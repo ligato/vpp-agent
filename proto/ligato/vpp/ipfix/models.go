@@ -22,6 +22,16 @@ import (
 const ModuleName = "vpp.ipfix"
 
 var (
+	ModelIPFIX            models.KnownModel
+	ModelFlowprobeParams  models.KnownModel
+	ModelFlowprobeFeature models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_ipfix_ipfix_proto_init()
+	file_ligato_vpp_ipfix_flowprobe_proto_init()
+
 	ModelIPFIX = models.Register(&IPFIX{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
@@ -39,7 +49,7 @@ var (
 		Version: "v2",
 		Type:    "flowprobe-feature",
 	}, models.WithNameTemplate("{{.Interface}}"))
-)
+}
 
 // IPFIXKey returns the prefix used in ETCD to store vpp IPFIX config.
 func IPFIXKey() string {

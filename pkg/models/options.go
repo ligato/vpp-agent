@@ -5,7 +5,12 @@ import (
 	"strings"
 	"text/template"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"go.ligato.io/vpp-agent/v3/pkg/util"
+	"go.ligato.io/vpp-agent/v3/proto/ligato/generic"
 )
 
 type modelOptions struct {
@@ -17,7 +22,7 @@ type modelOptions struct {
 type ModelOption func(*modelOptions)
 
 // NameFunc represents function which can name model instance.
-type NameFunc func(obj interface{}) (string, error)
+type NameFunc func(x any) (string, error)
 
 // WithNameTemplate returns option for models which sets function
 // for generating name of instances using custom template.
@@ -38,28 +43,101 @@ func NameTemplate(t string) NameFunc {
 	tmpl := template.Must(
 		template.New("name").Funcs(funcMap).Option("missingkey=error").Parse(t),
 	)
-	return func(obj interface{}) (string, error) {
-		// handling locally known dynamic messages (they don't have data fields as generated proto messages)
-		// (dynamic messages of remotely known models are not supported, remote_model implementation is
-		// not using dynamic message for name template resolving so it is ok)
-		if dynMessage, ok := obj.(*dynamicpb.Message); ok {
-			var err error
-			obj, err = DynamicLocallyKnownMessageToGeneratedMessage(dynMessage)
+	return func(x any) (string, error) {
+		if dynMsg, ok := x.(*dynamicpb.Message); ok {
+			m, err := GetModelFor(dynMsg)
 			if err != nil {
 				return "", err
+			}
+			if m.LocalGoType() != nil {
+				x, err = util.ConvertProto(m.NewInstance(), dynMsg)
+				if err != nil {
+					return "", err
+				}
+			} else {
+				x, err = util.ConvertProtoToMap(dynMsg)
+				if err != nil {
+					return "", err
+				}
+				t = replaceFieldNamesInNameTemplate(dynMsg.Descriptor(), t)
+				tmpl, err = tmpl.Parse(t)
+				if err != nil {
+					return "", err
+				}
 			}
 		}
 
 		// execute name template on generated proto message
 		var s strings.Builder
-		if err := tmpl.Execute(&s, obj); err != nil {
+		if err := tmpl.Execute(&s, x); err != nil {
 			return "", err
 		}
 		return s.String(), nil
 	}
 }
 
+func OptsFromProtoDesc(desc protoreflect.MessageDescriptor) []ModelOption {
+	var opts []ModelOption
+	descOpts := desc.Options()
+	if proto.HasExtension(descOpts, generic.E_ModelNameTemplate) {
+		t := proto.GetExtension(descOpts, generic.E_ModelNameTemplate).(string)
+		opts = append(opts, WithNameTemplate(t))
+	}
+	return opts
+}
+
+func defaultOptions(x any) modelOptions {
+	var opts modelOptions
+	if _, ok := x.(named); ok {
+		opts.nameFunc = func(x any) (string, error) {
+			// handling dynamic messages (they don't implement named interface)
+			if dynMsg, ok := x.(*dynamicpb.Message); ok {
+				m, err := GetModelFor(dynMsg)
+				if err != nil {
+					return "", err
+				}
+				x, err = util.ConvertProto(m.NewInstance(), dynMsg)
+				if err != nil {
+					return "", err
+				}
+			}
+			// handling other proto message
+			return x.(named).GetName(), nil
+		}
+		opts.nameTemplate = namedTemplate
+	}
+	return opts
+}
+
+// replaceFieldNamesInNameTemplate replaces JSON field names to Go Type field name in name template.
+func replaceFieldNamesInNameTemplate(messageDesc protoreflect.MessageDescriptor, nameTemplate string) string {
+	// FIXME this is only a good effort to map between NameTemplate variables and Proto model field names
+	//  (protoName, jsonName). We can do here better (fix field names prefixing other field names or field
+	//  names colliding with field names of inner reference structures), but i the end we are still guessing
+	//  without knowledge of go type. Can we fix this?
+	//  (The dynamicpb.NewMessageType(messageDesc) should return MessageType that joins message descriptor and
+	//  go type information, but for dynamicpb package the go type means always dynamicpb.Message and not real
+	//  go type of generated models. We could use some other MessageType implementation, but they always need
+	//  the go type informations(reflect.Type) so without it the MessageType is useless for solving this)
+	for i := 0; i < messageDesc.Fields().Len(); i++ {
+		fieldDesc := messageDesc.Fields().Get(i)
+		pbJSONName := fieldDesc.JSONName()
+		nameTemplate = strings.ReplaceAll(nameTemplate, "."+upperFirst(pbJSONName), "."+pbJSONName)
+		if fieldDesc.Message() != nil {
+			nameTemplate = replaceFieldNamesInNameTemplate(fieldDesc.Message(), nameTemplate)
+		}
+	}
+	return nameTemplate
+}
+
 var funcMap = template.FuncMap{
+	"field": func(msg proto.Message, fieldNum protoreflect.FieldNumber) string {
+		desc := msg.ProtoReflect().Descriptor().Fields().ByNumber(fieldNum)
+		if desc == nil {
+			return "<invalid>"
+		}
+		return msg.ProtoReflect().Get(desc).String()
+	},
 	"ip": func(s string) string {
 		ip := net.ParseIP(s)
 		if ip == nil {

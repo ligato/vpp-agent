@@ -18,8 +18,15 @@ import (
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
-var MetricsModel = models.Register(&Metrics{}, models.Spec{
-	Module: "govppmux",
-	Type:   "stats",
-	Class:  "metrics",
-})
+var MetricsModel models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_govppmux_metrics_proto_init()
+
+	MetricsModel = models.Register(&Metrics{}, models.Spec{
+		Module: "govppmux",
+		Type:   "stats",
+		Class:  "metrics",
+	})
+}

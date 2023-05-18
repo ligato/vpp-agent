@@ -36,6 +36,7 @@ import (
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/kvscheduler"
@@ -93,12 +94,12 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 		return err
 	}
 
-	// create dynamically config that can hold all remote known models
-	// (not using local model registry that gives only locally available models)
+	// create dynamically config that can hold all known models
 	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
 	}
+	_ = models.RegisterModelInfos(knownModels)
 	config, err := client.NewDynamicConfig(knownModels)
 	if err != nil {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
@@ -186,12 +187,12 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 		return err
 	}
 
-	// create dynamically config that can hold all remote known models
-	// (not using local model registry that gives only locally available models)
+	// create dynamically config that can hold all known models
 	knownModels, err := c.KnownModels("config")
 	if err != nil {
 		return fmt.Errorf("getting registered models: %w", err)
 	}
+	_ = models.RegisterModelInfos(knownModels)
 	config, err := client.NewDynamicConfig(knownModels)
 	if err != nil {
 		return fmt.Errorf("can't create all-config proto message dynamically due to: %w", err)
@@ -605,13 +606,16 @@ func runConfigHistory(cli agentcli.Cli, opts ConfigHistoryOptions) (err error) {
 		}
 	}
 
-	// register remote models into the default registry
-	_, err = cli.Client().ModelList(ctx, types.ModelListOptions{
-		Class: "config",
-	})
+	c, err := cli.Client().GenericClient()
 	if err != nil {
 		return err
 	}
+
+	modelInfos, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	_ = models.RegisterModelInfos(modelInfos)
 
 	txns, err := cli.Client().SchedulerHistory(ctx, types.SchedulerHistoryOptions{
 		SeqNum: ref,
