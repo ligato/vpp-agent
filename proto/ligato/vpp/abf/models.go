@@ -24,13 +24,18 @@ import (
 // ModuleName is the name of the module used for models.
 const ModuleName = "vpp.abfs"
 
-var (
+var ModelABF models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_abf_abf_proto_init()
+
 	ModelABF = models.Register(&ABF{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
 		Type:    "abf",
 	}, models.WithNameTemplate("{{.Index}}"))
-)
+}
 
 // Key returns the prefix used in the ETCD to store VPP ACL-based forwarding
 // config of a particular ABF in selected vpp instance.

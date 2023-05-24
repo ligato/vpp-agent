@@ -24,6 +24,17 @@ import (
 const ModuleName = "vpp.l2"
 
 var (
+	ModelBridgeDomain models.KnownModel
+	ModelFIBEntry     models.KnownModel
+	ModelXConnectPair models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_l2_bridge_domain_proto_init()
+	file_ligato_vpp_l2_fib_proto_init()
+	file_ligato_vpp_l2_xconnect_proto_init()
+
 	ModelBridgeDomain = models.Register(&BridgeDomain{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "bridge-domain",
@@ -41,7 +52,7 @@ var (
 		Type:    "xconnect",
 		Version: "v2",
 	}, models.WithNameTemplate("{{.ReceiveInterface}}"))
-)
+}
 
 // BridgeDomainKey returns the key used in NB DB to store the configuration of the
 // given bridge domain.

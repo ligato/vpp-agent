@@ -17,11 +17,12 @@ package commands
 import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 )
 
 func protoMessageType(fullName string) protoreflect.MessageType {
-	valueType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(fullName))
+	valueType, err := models.DefaultRegistry.MessageTypeRegistry().FindMessageByName(protoreflect.FullName(fullName))
 	if err != nil {
 		logrus.Errorf("error finding message with name %q: %v", fullName, err)
 		return nil

@@ -25,6 +25,27 @@ import (
 const ModuleName = "vpp"
 
 var (
+	ModelARPEntry       models.KnownModel
+	ModelRoute          models.KnownModel
+	ModelProxyARP       models.KnownModel
+	ModelIPScanNeighbor models.KnownModel
+	ModelVrfTable       models.KnownModel
+	ModelDHCPProxy      models.KnownModel
+	ModelL3XC           models.KnownModel
+	ModelTeib           models.KnownModel
+	ModelVRRPEntry      models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_l3_l3_proto_init()
+	file_ligato_vpp_l3_arp_proto_init()
+	file_ligato_vpp_l3_route_proto_init()
+	file_ligato_vpp_l3_vrf_proto_init()
+	file_ligato_vpp_l3_l3xc_proto_init()
+	file_ligato_vpp_l3_teib_proto_init()
+	file_ligato_vpp_l3_vrrp_proto_init()
+
 	ModelARPEntry = models.Register(&ARPEntry{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "arp",
@@ -96,7 +117,7 @@ var (
 	}, models.WithNameTemplate(
 		"{{.Interface}}/vrid/{{.VrId}}",
 	))
-)
+}
 
 // ProxyARPKey returns key for global proxy arp
 func ProxyARPKey() string {

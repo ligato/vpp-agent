@@ -105,7 +105,7 @@ func (p *Plugin) Init() (err error) {
 	var prefixes []string
 	p.Log.Infof("Found %d registered models", len(models.RegisteredModels()))
 	for _, model := range models.RegisteredModels() {
-		p.debugf("- model: %+v", *model.Spec())
+		p.debugf("- model: %+v", model.Spec())
 		prefixes = append(prefixes, model.KeyPrefix())
 	}
 

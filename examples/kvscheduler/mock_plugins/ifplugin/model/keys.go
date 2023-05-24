@@ -21,13 +21,18 @@ import (
 // ModuleName is the module name used for models of the mock ifplugin.
 const ModuleName = "mock"
 
-var (
+var ModelInterface models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_model_interface_proto_init()
+
 	ModelInterface = models.Register(&Interface{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
 		Type:    "interfaces",
 	})
-)
+}
 
 // InterfaceKey returns the key used in NB DB to store the configuration of the
 // given mock interface.

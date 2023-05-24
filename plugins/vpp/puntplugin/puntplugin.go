@@ -100,7 +100,7 @@ func (p *PuntPlugin) Init() (err error) {
 		}
 		key := strings.Replace(models.Key(toHost), "config/", "status/", -1)
 		if register {
-			puntToHost := proto.Clone(toHost).(*vpp_punt.Exception)
+			puntToHost := proto.Clone(toHost).(*vpp_punt.ToHost)
 			puntToHost.SocketPath = socketPath
 			if err := p.PublishState.Put(key, puntToHost, datasync.WithClientLifetimeTTL()); err != nil {
 				p.Log.Errorf("publishing registered punt socket failed: %v", err)

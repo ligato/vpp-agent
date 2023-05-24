@@ -21,10 +21,15 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp.wg"
 
-var (
+var ModelPeer models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_wireguard_wireguard_proto_init()
+
 	ModelPeer = models.Register(&Peer{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v1",
 		Type:    "peer",
 	}, models.WithNameTemplate("{{.WgIfName}}/endpoint/{{.Endpoint}}/{{.Port}}"))
-)
+}

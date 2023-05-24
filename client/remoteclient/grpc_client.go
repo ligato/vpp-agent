@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
 
 	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -58,7 +59,7 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 	// extract proto files for meta service known models
 	protoFilePaths := make(map[string]struct{}) // using map as set for deduplication
 	for _, modelDetail := range knownModels {
-		protoFilePath, err := client.ModelOptionFor("protoFile", modelDetail.Options)
+		protoFilePath, err := models.ModelOptionFor("protoFile", modelDetail.Options)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get protoFile from model options of "+
 				"known model %v due to: %w", modelDetail.ProtoName, err)
@@ -346,23 +347,24 @@ func (r *setConfigRequest) Send(ctx context.Context) error {
 	return r.setItemRequest.Send(ctx)
 }
 
-// UseRemoteRegistry modifies remote client to use remote model registry instead of local model registry. The
-// remote model UseRemoteRegistry is filled with remote known models for given class (modelClass).
+// UseRemoteRegistry modifies remote client to use copy of remote model registry instead of local model registry.
+// The copy is filled with remote known models for given class (modelClass).
 func UseRemoteRegistry(modelClass string) NewClientOption {
 	return func(c client.GenericClient) error {
 		if grpcClient, ok := c.(*grpcClient); ok {
-			// get all remote models
-			knownModels, err := grpcClient.KnownModels(modelClass)
+			kms, err := grpcClient.KnownModels(modelClass)
 			if err != nil {
 				return fmt.Errorf("cannot retrieve remote models (in UseRemoteRegistry) due to: %w", err)
 			}
 
-			// fill them into new remote registry and use that registry instead of default local model registry
-			grpcClient.modelRegistry = models.NewRemoteRegistry()
-			for _, knowModel := range knownModels {
-				if _, err := grpcClient.modelRegistry.Register(knowModel, models.ToSpec(knowModel.Spec)); err != nil {
-					return fmt.Errorf("cannot register remote known model "+
-						"for remote generic client usage due to: %w", err)
+			// fill them into new registry and use that instead of default local model registry
+			grpcClient.modelRegistry = models.NewRegistry()
+			for _, km := range kms {
+				msg := dynamicpb.NewMessageType(km.MessageDescriptor).New().Interface()
+				t, _ := models.ModelOptionFor("nameTemplate", km.GetOptions())
+				_, err := grpcClient.modelRegistry.Register(msg, models.ToSpec(km.Spec), models.WithNameTemplate(t))
+				if err != nil {
+					return fmt.Errorf("cannot register model for generic client usage due to: %w", err)
 				}
 			}
 		}
@@ -374,7 +376,7 @@ func UseRemoteRegistry(modelClass string) NewClientOption {
 // possible transitive dependencies, but all dependencies (direct or transitive) must be included in input
 // file descriptor protos.
 func toFileDescriptors(fileDescProtos []*descriptorpb.FileDescriptorProto) ([]protoreflect.FileDescriptor, error) {
-	// NOTE this could be done more efficiently by creating dependency tree and
+	// NOTE: this could be done more efficiently by creating dependency tree and
 	// traversing it and all, but it seems more complicated to implement
 	// => going over unresolved FileDescriptorProto over and over while resolving that FileDescriptorProto that
 	// could be resolved, in the end(first round with nothing new to resolve) there is either everything resolved

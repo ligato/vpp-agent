@@ -23,13 +23,18 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp.acls"
 
-var (
+var ModelACL models.KnownModel
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_acl_acl_proto_init()
+
 	ModelACL = models.Register(&ACL{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
 		Type:    "acl",
 	})
-)
+}
 
 // Key returns the prefix used in ETCD to store vpp ACL config
 // of a particular ACL in selected vpp instance.

@@ -26,6 +26,18 @@ import (
 const ModuleName = "vpp.nat"
 
 var (
+	ModelNat44Global      models.KnownModel
+	ModelDNat44           models.KnownModel
+	ModelNat44Interface   models.KnownModel
+	ModelNat44AddressPool models.KnownModel
+	ModelNat44VrfTable    models.KnownModel
+	ModelNat44VrfRoute    models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_nat_nat_proto_init()
+
 	ModelNat44Global = models.Register(&Nat44Global{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "nat44-global",
@@ -57,6 +69,7 @@ var (
 			"{{if and .LastIp (ne .FirstIp .LastIp)}}-{{.LastIp}}{{end}}"+
 			"{{end}}",
 	))
+
 	ModelNat44VrfTable = models.Register(&Nat44VrfTable{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "nat44-vrf",
@@ -68,7 +81,7 @@ var (
 		Type:    "nat44-vrf-route",
 		Version: "v2",
 	}, models.WithNameTemplate("vrfid/{{.SrcVrfId}}/destvrfid/{{.DestVrfId}}"))
-)
+}
 
 // GlobalNAT44Key returns key for Nat44Global.
 func GlobalNAT44Key() string {

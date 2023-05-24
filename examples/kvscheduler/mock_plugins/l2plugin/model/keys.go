@@ -24,6 +24,15 @@ import (
 const ModuleName = "mock"
 
 var (
+	ModelBridgeDomain models.KnownModel
+	ModelFIBEntry     models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_model_bridge_domain_proto_init()
+	file_model_fib_proto_init()
+
 	ModelBridgeDomain = models.Register(&BridgeDomain{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "bridge-domain",
@@ -35,7 +44,7 @@ var (
 		Type:    "fib",
 		Version: "v1",
 	}, models.WithNameTemplate("{{.BridgeDomain}}/mac/{{.PhysAddress}}"))
-)
+}
 
 // BridgeDomainKey returns the key used in NB DB to store the configuration of the
 // given mock bridge domain.

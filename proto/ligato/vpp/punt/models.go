@@ -22,6 +22,15 @@ import (
 const ModuleName = "vpp"
 
 var (
+	ModelIPRedirect models.KnownModel
+	ModelToHost     models.KnownModel
+	ModelException  models.KnownModel
+)
+
+func init() {
+	// models.Register requires protoreflect capabilities, so we initialize them first
+	file_ligato_vpp_punt_punt_proto_init()
+
 	ModelIPRedirect = models.Register(&IPRedirect{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "ipredirect",
@@ -43,7 +52,7 @@ var (
 	}, models.WithNameTemplate(
 		"reason/{{.Reason}}",
 	))
-)
+}
 
 // IPRedirectKey returns key representing IP punt redirect configuration.
 func IPRedirectKey(l3Proto L3Protocol, txIf string) string {
