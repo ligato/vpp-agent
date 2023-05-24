@@ -127,6 +127,16 @@ func (c *grpcClient) KnownModels(class string) ([]*client.ModelInfo, error) {
 
 func (c *grpcClient) ChangeRequest() client.ChangeRequest {
 	return &setConfigRequest{
+		setItemRequest: setItemRequest{
+			client:        c.manager,
+			modelRegistry: c.modelRegistry,
+			req:           &generic.SetConfigRequest{},
+		},
+	}
+}
+
+func (c *grpcClient) NewItemChange() client.ItemChange {
+	return &setItemRequest{
 		client:        c.manager,
 		modelRegistry: c.modelRegistry,
 		req:           &generic.SetConfigRequest{},
@@ -270,58 +280,74 @@ func (c *grpcClient) DumpState() ([]*client.StateItem, error) {
 	return resp.GetItems(), nil
 }
 
-type setConfigRequest struct {
+type setItemRequest struct {
 	client        generic.ManagerServiceClient
 	modelRegistry models.Registry
 	req           *generic.SetConfigRequest
 	err           error
 }
 
-func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
+func (r *setItemRequest) update(delete bool, items ...client.UpdateItem) *setItemRequest {
 	if r.err != nil {
 		return r
 	}
-	for _, protoModel := range items {
+	for _, ui := range items {
 		var item *generic.Item
-		item, r.err = models.MarshalItemUsingModelRegistry(protoModel, r.modelRegistry)
-		if r.err != nil {
-			return r
-		}
-		r.req.Updates = append(r.req.Updates, &generic.UpdateItem{
-			Item: item,
-		})
-	}
-	return r
-}
-
-func (r *setConfigRequest) Delete(items ...proto.Message) client.ChangeRequest {
-	if r.err != nil {
-		return r
-	}
-	for _, protoModel := range items {
-		item, err := models.MarshalItemUsingModelRegistry(protoModel, r.modelRegistry)
+		item, err := models.MarshalItemUsingModelRegistry(ui.Message, r.modelRegistry)
 		if err != nil {
 			r.err = err
 			return r
 		}
-		item.Data = nil // delete
+		if delete {
+			item.Data = nil
+			ui.Labels = nil
+		}
 		r.req.Updates = append(r.req.Updates, &generic.UpdateItem{
-			Item: item,
+			Item:   item,
+			Labels: ui.Labels,
 		})
 	}
 	return r
 }
 
-func (r *setConfigRequest) Send(ctx context.Context) (err error) {
+func (r *setItemRequest) Update(items ...client.UpdateItem) client.ItemChange {
+	return r.update(false, items...)
+}
+
+func (r *setItemRequest) Delete(items ...client.UpdateItem) client.ItemChange {
+	return r.update(true, items...)
+}
+
+func (r *setItemRequest) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}
-	_, err = r.client.SetConfig(ctx, r.req)
+	_, err := r.client.SetConfig(ctx, r.req)
 	return err
 }
 
+type setConfigRequest struct {
+	setItemRequest
+}
+
+func (r *setConfigRequest) Update(msgs ...proto.Message) client.ChangeRequest {
+	uis := client.ProtosToUpdateItems(msgs)
+	r.setItemRequest = *r.update(false, uis...)
+	return r
+}
+
+func (r *setConfigRequest) Delete(msgs ...proto.Message) client.ChangeRequest {
+	uis := client.ProtosToUpdateItems(msgs)
+	r.setItemRequest = *r.update(true, uis...)
+	return r
+}
+
+func (r *setConfigRequest) Send(ctx context.Context) error {
+	return r.setItemRequest.Send(ctx)
+}
+
 // UseRemoteRegistry modifies remote client to use remote model registry instead of local model registry. The
-// remote model registry is filled with remote known models for given class (modelClass).
+// remote model UseRemoteRegistry is filled with remote known models for given class (modelClass).
 func UseRemoteRegistry(modelClass string) NewClientOption {
 	return func(c client.GenericClient) error {
 		if grpcClient, ok := c.(*grpcClient); ok {

@@ -22,10 +22,8 @@ import (
 	yaml2 "github.com/ghodss/yaml"
 	"go.ligato.io/cn-infra/v2/config"
 	"go.ligato.io/cn-infra/v2/datasync"
-	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
-	"go.ligato.io/cn-infra/v2/db/keyval"
 	"go.ligato.io/cn-infra/v2/infra"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -198,7 +196,7 @@ func (r *InitFileRegistry) watchResync(resyncReg resync.Registration) {
 		// resyncReg.StatusChan == Started => resync
 		if resyncStatus.ResyncStatus() == resync.Started && !r.pushedToWatchedRegistry {
 			if !r.Empty() { // put preloaded NB init file data into watched p.registry
-				c := client.NewClient(&txnFactory{r.watchedRegistry}, &orchestrator.DefaultPlugin)
+				c := client.NewClient(r.watchedRegistry, &orchestrator.DefaultPlugin)
 				if err := c.ResyncConfig(r.preloadedNBConfigs...); err != nil {
 					r.Log.Errorf("resyncing preloaded NB init file data "+
 						"into watched registry failed: %w", err)
@@ -268,15 +266,4 @@ func (r *InitFileRegistry) preloadNBConfigs(filePath string) error {
 	r.preloadedNBConfigs = configMessages
 
 	return nil
-}
-
-type txnFactory struct {
-	registry *syncbase.Registry
-}
-
-func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
-	if resync {
-		return local.NewProtoTxn(p.registry.PropagateResync)
-	}
-	return local.NewProtoTxn(p.registry.PropagateChanges)
 }
