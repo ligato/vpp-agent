@@ -25,8 +25,8 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 
-	// This blank import registers vppcalls implementation for VPP 20.05
-	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls/vpp2106"
+	// This blank import registers vppcalls implementation for VPP 22.10
+	_ "go.ligato.io/vpp-agent/v3/examples/customize/custom_vpp_plugin/syslog/vppcalls/vpp2210"
 )
 
 // This go generate directive generates adapter code for conversion between
