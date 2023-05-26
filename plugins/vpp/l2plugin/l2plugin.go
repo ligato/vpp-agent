@@ -32,8 +32,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/descriptor/adapter"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2101"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2202"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls/vpp2210"
 )

@@ -29,8 +29,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp2101"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp2202"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/aclplugin/vppcalls/vpp2210"
 )
