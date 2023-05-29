@@ -25,8 +25,6 @@ import (
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/descriptor"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls"
 
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2101"
-	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2106"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2202"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/dnsplugin/vppcalls/vpp2210"
 )

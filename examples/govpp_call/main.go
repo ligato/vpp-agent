@@ -26,7 +26,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
-	l2Api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2101/l2"
+	l2Api "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2210/l2"
 	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
