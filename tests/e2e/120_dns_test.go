@@ -54,8 +54,9 @@ func TestDnsCache(t *testing.T) {
 			PublicUpstreamDNSServer:              net.ParseIP("8.8.8.8"),
 			QueryDomainName:                      "www.google.com",
 			UnreachabilityVerificationDomainName: "www.sme.sk",
-			SkipAAAARecordCheck:                  true, // TODO remove skipping when VPP bug resolved
-			SkipReason:                           "VPP bug https://jira.fd.io/browse/VPP-1963",
+			//SkipAAAARecordCheck:                  true, // TODO remove skipping when VPP bug resolved
+			SkipAll:    true, // TODO remove skipping when VPP bug resolved
+			SkipReason: "VPP bug https://jira.fd.io/browse/VPP-1963 & https://jira.fd.io/browse/VPP-2079",
 		}, {
 			Name:                                 "Test VPP DNS Cache with cloudflare DNS as upstream DNS server",
 			PublicUpstreamDNSServer:              net.ParseIP("1.1.1.1"),

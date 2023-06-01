@@ -668,9 +668,11 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
 
 		ctx.StartMicroservice(msName)
+		ctx.Eventually(ctx.IsMicroserviceRunning(msName)).Should(Equal(true))
+
+		ctx.Eventually(ctx.GetValueState(veth1)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
+		ctx.Eventually(ctx.GetValueState(veth2)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Eventually(ctx.GetValueStateClb(afPacket)).Should(Equal(kvscheduler.ValueState_CONFIGURED))
-		ctx.Expect(ctx.GetValueState(veth1)).To(Equal(kvscheduler.ValueState_CONFIGURED))
-		ctx.Expect(ctx.GetValueState(veth2)).To(Equal(kvscheduler.ValueState_CONFIGURED))
 		ctx.Expect(ctx.PingFromVPP(veth2IP)).To(Succeed())
 		ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
 		ctx.Expect(ctx.AgentInSync()).To(BeTrue())
@@ -691,7 +693,6 @@ func TestInterfaceConnAfPacket(t *testing.T) {
 		afPacket,
 	).Send(context.Background())
 	ctx.Expect(err).ToNot(HaveOccurred())
-
 	ctx.Eventually(ctx.PingFromVPPClb(veth2IP)).Should(Succeed())
 	ctx.Expect(ctx.PingFromMs(msName, afPacketIP)).To(Succeed())
 	ctx.Expect(ctx.AgentInSync()).To(BeTrue())

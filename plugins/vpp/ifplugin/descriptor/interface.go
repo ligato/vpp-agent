@@ -234,6 +234,7 @@ type LinuxPluginAPI interface {
 type NetlinkAPI interface {
 	// InterfaceExists verifies interface existence
 	InterfaceExists(ifName string) (bool, error)
+	SetInterfaceUp(ifName string) error
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
@@ -876,15 +877,15 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 }
 
 // DerivedValues derives:
-//  - key-value for unnumbered configuration sub-section
-//  - empty value for enabled DHCP client
-//  - configuration for every slave of a bonded interface
-//  - one empty value for every IP address to be assigned to the interface
-//  - one empty value for VRF table to put the interface into
-//  - one value with interface configuration reduced to RxMode if set
-//  - one Interface_RxPlacement for every queue with configured Rx placement
-//  - one empty value which will be created once at least one IP address is
-//    assigned to the interface.
+//   - key-value for unnumbered configuration sub-section
+//   - empty value for enabled DHCP client
+//   - configuration for every slave of a bonded interface
+//   - one empty value for every IP address to be assigned to the interface
+//   - one empty value for VRF table to put the interface into
+//   - one value with interface configuration reduced to RxMode if set
+//   - one Interface_RxPlacement for every queue with configured Rx placement
+//   - one empty value which will be created once at least one IP address is
+//     assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
@@ -1017,6 +1018,7 @@ func (d *InterfaceDescriptor) getInterfaceMTU(intf *interfaces.Interface) uint32
 
 // getAfPacketTargetHostIfName returns the host name of the interface to which the given AF-PACKET
 // interface should bind to.
+//
 //nolint:staticcheck
 func (d *InterfaceDescriptor) getAfPacketTargetHostIfName(afpacket *interfaces.AfpacketLink) (string, error) {
 	if afpacket.GetLinuxInterface() == "" {
