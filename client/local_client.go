@@ -18,11 +18,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sirupsen/logrus"
+	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/syncbase"
-	"go.ligato.io/cn-infra/v2/db/keyval"
 	"google.golang.org/protobuf/proto"
 
 	"go.ligato.io/vpp-agent/v3/pkg/models"
@@ -36,17 +37,17 @@ import (
 // Updates and resyncs of this client use local.DefaultRegistry for propagating data to orchestrator.Dispatcher
 // (going through watcher.Aggregator together with other data sources). However, data retrieval uses
 // orchestrator.Dispatcher directly.
-var LocalClient = NewClient(&txnFactory{local.DefaultRegistry}, &orchestrator.DefaultPlugin)
+var LocalClient = NewClient(local.DefaultRegistry, &orchestrator.DefaultPlugin)
 
 type client struct {
-	txnFactory ProtoTxnFactory
+	registry   *syncbase.Registry
 	dispatcher orchestrator.Dispatcher
 }
 
 // NewClient returns new instance that uses given registry for data propagation and dispatcher for data retrieval.
-func NewClient(factory ProtoTxnFactory, dispatcher orchestrator.Dispatcher) ConfigClient {
+func NewClient(registry *syncbase.Registry, dispatcher orchestrator.Dispatcher) ConfigClient {
 	return &client{
-		txnFactory: factory,
+		registry:   registry,
 		dispatcher: dispatcher,
 	}
 }
@@ -64,15 +65,16 @@ func (c *client) KnownModels(class string) ([]*ModelInfo, error) {
 	return modules, nil
 }
 
-func (c *client) ResyncConfig(items ...proto.Message) error {
-	txn := c.txnFactory.NewTxn(true)
+func (c *client) ResyncConfig(msgs ...proto.Message) error {
+	txn := c.newLazyValTxn(true)
 
-	for _, item := range items {
-		key, err := models.GetKey(item)
+	uis := ProtosToUpdateItems(msgs)
+	for _, ui := range uis {
+		key, err := models.GetKey(ui.Message)
 		if err != nil {
 			return err
 		}
-		txn.Put(key, item)
+		txn.Put(key, ui)
 	}
 
 	ctx := context.Background()
@@ -161,45 +163,53 @@ func (c *client) DumpState() ([]*generic.StateItem, error) {
 }
 
 func (c *client) ChangeRequest() ChangeRequest {
-	return &changeRequest{txn: c.txnFactory.NewTxn(false)}
+	return &changeRequest{itemChange: itemChange{txn: c.newLazyValTxn(false)}}
 }
 
-type changeRequest struct {
-	txn keyval.ProtoTxn
+func (c *client) NewItemChange() ItemChange {
+	return &itemChange{txn: c.newLazyValTxn(false)}
+}
+
+func (c *client) newLazyValTxn(resync bool) *LazyValTxn {
+	if resync {
+		return NewLazyValTxn(c.registry.PropagateResync)
+	}
+	return NewLazyValTxn(c.registry.PropagateChanges)
+}
+
+type itemChange struct {
+	txn *LazyValTxn
 	err error
 }
 
-func (r *changeRequest) Update(items ...proto.Message) ChangeRequest {
+func (r *itemChange) update(delete bool, items ...UpdateItem) *itemChange {
 	if r.err != nil {
 		return r
 	}
 	for _, item := range items {
-		key, err := models.GetKey(item)
+		key, err := models.GetKey(item.Message)
 		if err != nil {
 			r.err = err
 			return r
 		}
-		r.txn.Put(key, item)
-	}
-	return r
-}
-
-func (r *changeRequest) Delete(items ...proto.Message) ChangeRequest {
-	if r.err != nil {
-		return r
-	}
-	for _, item := range items {
-		key, err := models.GetKey(item)
-		if err != nil {
-			r.err = err
-			return r
+		if delete {
+			r.txn.Delete(key)
+		} else {
+			r.txn.Put(key, item)
 		}
-		r.txn.Delete(key)
 	}
 	return r
 }
 
-func (r *changeRequest) Send(ctx context.Context) error {
+func (r *itemChange) Update(items ...UpdateItem) ItemChange {
+	return r.update(false, items...)
+}
+
+func (r *itemChange) Delete(items ...UpdateItem) ItemChange {
+	return r.update(true, items...)
+}
+
+func (r *itemChange) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}
@@ -210,20 +220,76 @@ func (r *changeRequest) Send(ctx context.Context) error {
 	return r.txn.Commit(ctx)
 }
 
-// ProtoTxnFactory defines interface for keyval transaction provider.
-type ProtoTxnFactory interface {
-	NewTxn(resync bool) keyval.ProtoTxn
+type changeRequest struct {
+	itemChange
 }
 
-type txnFactory struct {
-	registry *syncbase.Registry
+func (r *changeRequest) Update(msgs ...proto.Message) ChangeRequest {
+	uis := ProtosToUpdateItems(msgs)
+	r.itemChange = *r.update(false, uis...)
+	return r
 }
 
-func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
-	if resync {
-		return local.NewProtoTxn(p.registry.PropagateResync)
+func (r *changeRequest) Delete(msgs ...proto.Message) ChangeRequest {
+	uis := ProtosToUpdateItems(msgs)
+	r.itemChange = *r.update(true, uis...)
+	return r
+}
+
+func (r *changeRequest) Send(ctx context.Context) error {
+	return r.itemChange.Send(ctx)
+}
+
+type LazyValTxn struct {
+	mu      sync.Mutex
+	changes map[string]datasync.ChangeValue
+	commit  func(context.Context, map[string]datasync.ChangeValue) error
+}
+
+func NewLazyValTxn(commit func(context.Context, map[string]datasync.ChangeValue) error) *LazyValTxn {
+	return &LazyValTxn{
+		changes: make(map[string]datasync.ChangeValue),
+		commit:  commit,
 	}
-	return local.NewProtoTxn(p.registry.PropagateChanges)
+}
+
+func (txn *LazyValTxn) Put(key string, value datasync.LazyValue) *LazyValTxn {
+	txn.mu.Lock()
+	defer txn.mu.Unlock()
+
+	txn.changes[key] = NewChangeLazy(key, value, 0, datasync.Put)
+	return txn
+}
+
+func (txn *LazyValTxn) Delete(key string) *LazyValTxn {
+	txn.mu.Lock()
+	defer txn.mu.Unlock()
+
+	txn.changes[key] = NewChangeLazy(key, nil, 0, datasync.Delete)
+	return txn
+}
+
+func (txn *LazyValTxn) Commit(ctx context.Context) error {
+	txn.mu.Lock()
+	defer txn.mu.Unlock()
+
+	return txn.commit(ctx, txn.changes)
+}
+
+func NewChangeLazy(key string, value datasync.LazyValue, rev int64, changeType datasync.Op) *syncbase.Change {
+	// syncbase.Change does not export its changeType field so we set it first with syncbase.NewChange
+	change := syncbase.NewChange("", nil, 0, changeType)
+	change.KeyVal = syncbase.NewKeyVal(key, value, rev)
+	return change
+}
+
+func ProtosToUpdateItems(msgs []proto.Message) []UpdateItem {
+	var uis []UpdateItem
+	for _, msg := range msgs {
+		// resulting UpdateItem will have no labels
+		uis = append(uis, UpdateItem{Message: msg})
+	}
+	return uis
 }
 
 func extractProtoMessages(dsts []interface{}) []proto.Message {

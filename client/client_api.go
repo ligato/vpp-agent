@@ -35,6 +35,18 @@ type UpdateItem struct {
 	Labels  map[string]string
 }
 
+// GetValue exists so that UpdateItem satisfies datasync.LazyValue interface.
+func (item UpdateItem) GetValue(out proto.Message) error {
+	if item.Message != nil {
+		proto.Merge(out, item.Message)
+	}
+	return nil
+}
+
+func (item UpdateItem) GetLabels() map[string]string {
+	return item.Labels
+}
+
 type UpdateResult struct {
 	Key    string
 	Status *generic.ItemStatus
@@ -61,6 +73,9 @@ type GenericClient interface {
 
 	// ChangeRequest returns transaction for changing config.
 	ChangeRequest() ChangeRequest
+
+	// NewItemChange() return transaction with label support for changing config.
+	NewItemChange() ItemChange
 
 	// ResyncConfig overwrites existing config.
 	ResyncConfig(items ...proto.Message) error
@@ -92,5 +107,17 @@ type ChangeRequest interface {
 	Delete(items ...proto.Message) ChangeRequest
 
 	// Send sends the request.
+	Send(ctx context.Context) error
+}
+
+// ItemChange is interface for update item change request (so it supports item labels as well).
+type ItemChange interface {
+	// Update appends updates for given items to the batch change request.
+	Update(items ...UpdateItem) ItemChange
+
+	// Delete appends deletes for given items to the batch change request.
+	Delete(items ...UpdateItem) ItemChange
+
+	// Send sends the batch change request.
 	Send(ctx context.Context) error
 }

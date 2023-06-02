@@ -23,6 +23,7 @@ import (
 	"github.com/go-errors/errors"
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/datasync/syncbase"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging"
 	"go.ligato.io/cn-infra/v2/rpc/grpc"
@@ -184,6 +185,7 @@ func (p *Plugin) watchEvents() {
 
 			var err error
 			var kvPairs []KeyVal
+			labels := make(map[string]Labels)
 
 			for _, x := range e.GetChanges() {
 				kv := KeyVal{
@@ -195,6 +197,9 @@ func (p *Plugin) watchEvents() {
 						p.log.Errorf("decoding value for key %q failed: %v", kv.Key, err)
 						continue
 					}
+				}
+				if item, ok := assertUpdateItem(x); ok {
+					labels[kv.Key] = item.GetLabels()
 				}
 				kvPairs = append(kvPairs, kv)
 			}
@@ -216,13 +221,14 @@ func (p *Plugin) watchEvents() {
 				ctx = contextdecorator.DataSrcContext(ctx, "datasync")
 			}
 			ctx = kvs.WithRetryDefault(ctx)
-			_, err = p.PushData(ctx, kvPairs, nil)
+			_, err = p.PushData(ctx, kvPairs, labels)
 			e.Done(err)
 
 		case e := <-p.resyncChan:
 			p.log.Debugf("=> received RESYNC event (%v prefixes)", len(e.GetValues()))
 
 			var kvPairs []KeyVal
+			labels := make(map[string]Labels)
 
 			for prefix, iter := range e.GetValues() {
 				var keyVals []datasync.KeyVal
@@ -232,6 +238,11 @@ func (p *Plugin) watchEvents() {
 					if err != nil {
 						p.log.Errorf("unmarshal value for key %q failed: %v", key, err)
 						continue
+					}
+					if kv, ok := x.(*syncbase.KeyVal); ok {
+						if item, ok := kv.LazyValue.(updateItem); ok {
+							labels[key] = item.GetLabels()
+						}
 					}
 					kvPairs = append(kvPairs, KeyVal{
 						Key: key,
@@ -263,13 +274,31 @@ func (p *Plugin) watchEvents() {
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			ctx = kvs.WithRetryDefault(ctx)
 
-			_, err := p.PushData(ctx, kvPairs, nil)
+			_, err := p.PushData(ctx, kvPairs, labels)
 			e.Done(err)
 
 		case <-p.quit:
 			return
 		}
 	}
+}
+
+type updateItem interface {
+	datasync.LazyValue
+	GetLabels() map[string]string
+}
+
+func assertUpdateItem(protoResp datasync.ProtoWatchResp) (updateItem, bool) {
+	if changeResp, ok := protoResp.(*syncbase.ChangeResp); ok {
+		if change, ok := changeResp.CurrVal.(*syncbase.Change); ok {
+			if kv, ok := change.KeyVal.(*syncbase.KeyVal); ok {
+				if item, ok := kv.LazyValue.(updateItem); ok {
+					return item, ok
+				}
+			}
+		}
+	}
+	return nil, false
 }
 
 func (p *Plugin) watchStatus(ch <-chan *kvscheduler.BaseValueStatus) {
