@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['2210', '2202']
+        version: ['2306', '2210', '2202']
 
     steps:
       - name: "Checkout"
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['2210', '2202']
+        version: ['2306', '2210', '2202']
 
     steps:
       - name: "Checkout"

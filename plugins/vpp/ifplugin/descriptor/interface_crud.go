@@ -309,6 +309,17 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		if err == nil {
 			err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, targetHostIfName)
 		}
+		doesExists, err := d.linuxIfHandler.InterfaceExists(targetHostIfName)
+		if err != nil {
+			d.log.Error(err)
+		}
+		if doesExists {
+			err := d.linuxIfHandler.SetInterfaceUp(targetHostIfName)
+			if err != nil {
+				d.log.Error(err)
+			}
+		}
+
 	case interfaces.Interface_IPSEC_TUNNEL:
 		err = d.ifHandler.DeleteIPSecTunnelInterface(ctx, intf.Name, ifIdx, intf.GetIpsec())
 	case interfaces.Interface_WIREGUARD_TUNNEL:

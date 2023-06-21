@@ -50,6 +50,7 @@ import (
 
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2202"
 	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2210"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2306"
 )
 
 func init() {
@@ -66,7 +67,7 @@ type IfPlugin struct {
 
 	// handlers
 	ifHandler      vppcalls.InterfaceVppAPI
-	linuxIfHandler linux_ifcalls.NetlinkAPIRead
+	linuxIfHandler linux_ifcalls.NetlinkAPI
 
 	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex

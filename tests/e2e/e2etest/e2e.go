@@ -386,6 +386,24 @@ func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 	return test.Agent.ExecVppctl(action, args...)
 }
 
+func (test *TestCtx) IsMicroserviceRunning(name string) bool {
+	cli, err := docker.NewClientFromEnv()
+	if err != nil {
+		test.Logger.Fatal(err)
+	}
+
+	containers, err := cli.ListContainers(docker.ListContainersOptions{All: false})
+	if err != nil {
+		test.Logger.Fatal(err)
+	}
+	for _, container := range containers {
+		if 0 == strings.Compare(container.Names[0], "/"+MsNamePrefix+name) {
+			return true
+		}
+	}
+	return false
+}
+
 // StartMicroservice starts microservice according to given options
 func (test *TestCtx) StartMicroservice(name string, optMods ...MicroserviceOptModifier) *Microservice {
 	test.t.Helper()

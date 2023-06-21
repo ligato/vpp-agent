@@ -15,9 +15,6 @@
 package vpp
 
 import (
-	"net"
-	"testing"
-
 	. "github.com/onsi/gomega"
 	idxmap_mem "go.ligato.io/cn-infra/v2/idxmap/mem"
 	"go.ligato.io/cn-infra/v2/logging/logrus"
@@ -26,6 +23,8 @@ import (
 	nat_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/natplugin/vppcalls"
 	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 	"google.golang.org/protobuf/proto"
+	"net"
+	"testing"
 )
 
 const (
@@ -35,6 +34,7 @@ const (
 	vpp2106 = "21.06"
 	vpp2202 = "22.02"
 	vpp2210 = "22.10"
+	vpp2306 = "23.06"
 )
 
 func TestNat44Global(t *testing.T) {
@@ -184,7 +184,6 @@ func TestNat44StaticMapping(t *testing.T) {
 			// Create
 			Expect(test).ShouldNot(BeNil())
 			Expect(natHandler.AddNat44StaticMapping(test.input, dnatLabel)).Should(Succeed())
-
 			// Read
 			dnatDump, err := natHandler.DNat44Dump()
 			t.Logf("received this dnat from dump: %v", dnatDump)
