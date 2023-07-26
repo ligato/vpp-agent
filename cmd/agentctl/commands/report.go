@@ -35,6 +35,7 @@ import (
 
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
@@ -85,6 +86,17 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	reportTime := time.Now()
 	reportName := fmt.Sprintf("agentctl-report--%s",
 		strings.ReplaceAll(reportTime.UTC().Format("2006-01-02--15-04-05-.000"), ".", ""))
+
+	// register all known models
+	c, err := cli.Client().GenericClient()
+	if err != nil {
+		return err
+	}
+	knownModels, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	_ = models.RegisterModelInfos(knownModels)
 
 	// create temporal directory
 	dirNamePattern := fmt.Sprintf("%v--*", reportName)
