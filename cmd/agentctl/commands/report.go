@@ -33,8 +33,10 @@ import (
 	"github.com/spf13/cobra"
 	govppapi "go.fd.io/govpp/api"
 
+	"go.ligato.io/vpp-agent/v3/client"
 	"go.ligato.io/vpp-agent/v3/cmd/agentctl/api/types"
 	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
+	"go.ligato.io/vpp-agent/v3/pkg/models"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
@@ -86,6 +88,17 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 	reportName := fmt.Sprintf("agentctl-report--%s",
 		strings.ReplaceAll(reportTime.UTC().Format("2006-01-02--15-04-05-.000"), ".", ""))
 
+	// register all known models
+	c, err := cli.Client().GenericClient()
+	if err != nil {
+		return err
+	}
+	knownModels, err := c.KnownModels("config")
+	if err != nil {
+		return fmt.Errorf("getting registered models: %w", err)
+	}
+	_ = models.RegisterModelInfos(knownModels)
+
 	// create temporal directory
 	dirNamePattern := fmt.Sprintf("%v--*", reportName)
 	dirName, err := os.MkdirTemp("", dirNamePattern)
@@ -120,6 +133,7 @@ func runReport(cli agentcli.Cli, opts ReportOptions) error {
 		writeReportTo("vpp-statistics-interfaces.txt", dirName, writeVPPInterfaceStatsReport, cli),
 		writeReportTo("vpp-statistics-errors.txt", dirName, writeVPPErrorStatsReport, cli),
 		writeReportTo("vpp-api-trace.txt", dirName, writeVPPApiTraceReport, cli),
+		writeReportTo("vpp-api-trace.json", dirName, writeVPPApiTraceReportJSON, cli),
 		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6LocalsidReport, cli),
 		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6PolicyReport, cli),
 		writeReportTo("vpp-other-srv6.txt", dirName, writeVPPSRv6SteeringReport, cli),
@@ -360,26 +374,36 @@ func writeVPPRunningConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli
 }
 
 func writeAgentNBConfigReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	subTaskActionName := "Retrieving agent NB configuration"
 	cliOutputDefer, cliOutputErrPassing := subTaskCliOutputs(cli, subTaskActionName)
 	defer cliOutputDefer(cli)
 
-	// TODO replace with new implementation for agentctl config get (https://github.com/ligato/vpp-agent/pull/1754)
-	client, err := cli.Client().ConfiguratorClient()
+	c, err := cli.Client().GenericClient()
 	if err != nil {
 		return fileErrorPassing(cliOutputErrPassing(err, "getting configuration client"),
 			w, errorW, subTaskActionName)
 	}
-	resp, err := client.Get(ctx, &configurator.GetRequest{})
+
+	knownModels, err := c.KnownModels("config")
 	if err != nil {
-		return fileErrorPassing(cliOutputErrPassing(err, "getting configuration"), w, errorW, subTaskActionName)
+		return fileErrorPassing(cliOutputErrPassing(err, "getting registered models"),
+			w, errorW, subTaskActionName)
 	}
 
-	if err := formatAsTemplate(w, "yaml", resp.GetConfig()); err != nil {
-		return fileErrorPassing(cliOutputErrPassing(err, "formatting"), w, errorW, subTaskActionName)
+	config, err := client.NewDynamicConfig(knownModels)
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "creating dynamic config"),
+			w, errorW, subTaskActionName)
+	}
+
+	err = c.GetConfig(config)
+	if err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "getting configuration"),
+			w, errorW, subTaskActionName)
+	}
+
+	if err := formatAsTemplate(w, "yaml", config); err != nil {
+		return fileErrorPassing(cliOutputErrPassing(err, "formatting configuration"), w, errorW, subTaskActionName)
 	}
 	return nil
 }
@@ -444,7 +468,7 @@ func writeKVschedulerReport(subTaskActionName string, view string, ignoreModels 
 		})
 		if err != nil {
 			if strings.Contains(err.Error(), "no descriptor found matching the key prefix") {
-				if _, e := cli.Out().Write([]byte(fmt.Sprintf("Skipping key prefix %s due to: %v\n", keyPrefix, err))); err != nil {
+				if _, e := cli.Out().Write([]byte(fmt.Sprintf("Skipping key prefix %s due to: %v\n", keyPrefix, err))); e != nil {
 					return e
 				}
 			} else {
@@ -621,30 +645,16 @@ func writeHardwareVPPStatsMemoryReport(w io.Writer, errorW io.Writer, cli agentc
 }
 
 func writeVPPApiTraceReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
-	var saveFileCmdOutput *string
-	var errs Errors
-	err := writeVPPCLICommandReport("Saving vpp api trace remotely to a file",
-		"api trace save agentctl-report.api", w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
-			saveFileCmdOutput = &cmdOutput
-			return fmt.Sprintf("vppctl# %s:\n%s\n\n", vppCLICmd, cmdOutput) // default formatting
+	return writeVPPCLICommandReport("Retrieving vpp api trace in text format",
+		"api trace dump", w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
+			return fmt.Sprintf("vppctl# %s:\n%s\n", vppCLICmd, cmdOutput)
 		})
-	if err != nil {
-		errs = append(errs, err)
-	}
-
-	// retrieve file location on remote machine
-	// Example output: "API trace saved to /tmp/agentctl-report.api"
-	fileLocation := "/tmp/agentctl-report.api"
-	expectedFormattingPrefix := "API trace saved to"
-	if strings.HasPrefix(*saveFileCmdOutput, expectedFormattingPrefix) {
-		fileLocation = strings.TrimSpace(strings.TrimPrefix(*saveFileCmdOutput, expectedFormattingPrefix))
-	}
-
-	if err := writeVPPCLICommandReport("Retrieving vpp api trace from saved remote file",
-		fmt.Sprintf("api trace custom-dump %s", fileLocation), w, errorW, cli); err != nil {
-		errs = append(errs, err)
-	}
-	return errs
+}
+func writeVPPApiTraceReportJSON(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {
+	return writeVPPCLICommandReport("Retrieving vpp api trace in JSON format",
+		"api trace dump-json", w, errorW, cli, func(vppCLICmd, cmdOutput string) string { // formatting output
+			return cmdOutput
+		})
 }
 
 func writeVPPEventLogReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, otherArgs ...interface{}) error {

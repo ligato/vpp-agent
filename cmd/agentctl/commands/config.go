@@ -97,7 +97,7 @@ func runConfigGet(cli agentcli.Cli, opts ConfigGetOptions) error {
 	// create dynamically config that can hold all known models
 	knownModels, err := c.KnownModels("config")
 	if err != nil {
-		return fmt.Errorf("getting registered models: %w", err)
+		return fmt.Errorf("can't retrieve registered models: %w", err)
 	}
 	_ = models.RegisterModelInfos(knownModels)
 	config, err := client.NewDynamicConfig(knownModels)
@@ -190,7 +190,7 @@ func runConfigUpdate(cli agentcli.Cli, opts ConfigUpdateOptions, args []string) 
 	// create dynamically config that can hold all known models
 	knownModels, err := c.KnownModels("config")
 	if err != nil {
-		return fmt.Errorf("getting registered models: %w", err)
+		return fmt.Errorf("can't retrieve registered models: %w", err)
 	}
 	_ = models.RegisterModelInfos(knownModels)
 	config, err := client.NewDynamicConfig(knownModels)
