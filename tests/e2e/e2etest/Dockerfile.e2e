@@ -1,4 +1,4 @@
-FROM golang:1.18 as build
+FROM golang:1.20 as build
 
 RUN env CGO_ENABLED=0 \
  	go build -ldflags='-s -w -extldflags "-static"' -o /test2json cmd/test2json
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -yq \
 
 COPY --from=build /test2json /usr/local/bin/test2json
 
-ARG GOTESTSUM_VERSION=1.8.1
+ARG GOTESTSUM_VERSION=1.10.1
 RUN set -eux; \
 	curl -fsSL https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_linux_amd64.tar.gz -o gotestsum.tar.gz; \
     tar -xf gotestsum.tar.gz gotestsum; \

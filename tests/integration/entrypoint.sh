@@ -4,4 +4,4 @@ set -e
 exec \
   gotestsum --raw-command -- \
   test2json -t -p "integration" \
-  /integration.test -test.v "$@"
+  /integration.test -test.v=test2json "$@"
