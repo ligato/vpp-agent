@@ -148,7 +148,7 @@ clean-examples: ## Clean examples
 	cd examples/localclient_vpp/plugins	 	&& go clean
 
 purge: ## Purge cached files
-	go clean -testcache -cache ./...
+	go clean -testcache -cache
 
 debug-remote: ## Debug remotely
 	cd ./cmd/vpp-agent && dlv debug --headless --listen=:2345 --api-version=2 --accept-multiclient
@@ -263,7 +263,7 @@ gotestsumcmd := $(shell command -v gotestsum 2> /dev/null)
 
 test-tools: ## install test tools
 ifndef gotestsumcmd
-	go install gotest.tools/gotestsum@v1.8.1
+	go install gotest.tools/gotestsum@v1.10.1
 endif
 	@env CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BUILD_DIR)/test2json cmd/test2json
 
@@ -272,7 +272,7 @@ LINTER := $(shell command -v golangci-lint --version 2> /dev/null)
 get-linters:
 ifndef LINTER
 	@echo "# installing linters"
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.53.3
 endif
 
 lint: get-linters ## Lint Go code

@@ -53,7 +53,7 @@ docker rm -f customVPPAgent
 run_e2e() {
     gotestsum --raw-command -- \
         go tool test2json -t -p "e2e" \
-        "${SCRIPT_DIR}"/e2e.test -test.v "$@"
+        "${SCRIPT_DIR}"/e2e.test -test.v=test2json "$@"
 }
 
 cleanup() {
