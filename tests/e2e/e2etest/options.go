@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
 	"github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging"
 )
@@ -46,7 +46,7 @@ type AgentOpt struct {
 	Env                 []string
 	UseEtcd             bool
 	InitialResync       bool
-	ContainerOptsHook   func(*docker.CreateContainerOptions)
+	ContainerOptsHook   func(*moby.ContainerCreateConfig)
 }
 
 // MicroserviceOpt is options data holder for customizing setup of microservice
@@ -54,7 +54,7 @@ type MicroserviceOpt struct {
 	Runtime             ComponentRuntime
 	RuntimeStartOptions RuntimeStartOptionsFunc
 	Name                string
-	ContainerOptsHook   func(*docker.CreateContainerOptions)
+	ContainerConfigHook func(*moby.ContainerCreateConfig)
 }
 
 // EtcdOpt is options data holder for customizing setup of ETCD
@@ -120,10 +120,10 @@ func DefaultSetupOpt(testCtx *TestCtx) *SetupOpt {
 }
 
 // DefaultEtcdOpt creates default values for EtcdOpt
-func DefaultEtcdOpt(ctx *TestCtx) *EtcdOpt {
+func DefaultEtcdOpt(testCtx *TestCtx) *EtcdOpt {
 	return &EtcdOpt{
 		Runtime: &ContainerRuntime{
-			ctx:         ctx,
+			ctx:         testCtx,
 			logIdentity: "ETCD",
 			stopTimeout: etcdStopTimeout,
 		},
@@ -289,9 +289,9 @@ func CreateFileOnSharedVolume(ctx *TestCtx, simpleFileName string, fileContent s
 
 // WithMSContainerStartHook is microservice test setup option that will set the microservice container start
 // hook that will modify the microservice start options.
-func WithMSContainerStartHook(hook func(*docker.CreateContainerOptions)) MicroserviceOptModifier {
+func WithMSContainerStartHook(hook func(*moby.ContainerCreateConfig)) MicroserviceOptModifier {
 	return func(opt *MicroserviceOpt) {
-		opt.ContainerOptsHook = hook
+		opt.ContainerConfigHook = hook
 	}
 }
 

@@ -20,7 +20,9 @@ import (
 	"sync"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
+	docker "github.com/docker/docker/client"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -37,10 +39,9 @@ const (
 	MicroserviceDescriptorName = "microservice"
 
 	// docker API keywords
-	dockerTypeContainer = "container"
-	dockerStateRunning  = "running"
-	dockerActionStart   = "start"
-	dockerActionStop    = "stop"
+	dockerStateRunning = "running"
+	dockerActionStart  = "start"
+	dockerActionStop   = "stop"
 )
 
 // MicroserviceDescriptor watches Docker and notifies KVScheduler about newly
@@ -98,11 +99,11 @@ func NewMicroserviceDescriptor(kvscheduler kvs.KVScheduler, log logging.PluginLo
 	descriptor.ctx, descriptor.cancel = context.WithCancel(context.Background())
 
 	// Docker client
-	descriptor.dockerClient, err = docker.NewClientFromEnv()
+	descriptor.dockerClient, err = docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
-		return nil, errors.Errorf("failed to get docker client instance from the environment variables: %v", err)
+		return nil, errors.Errorf("failed to get Docker client instance from the environment variables: %v", err)
 	}
-	log.Debugf("Using docker client endpoint: %+v", descriptor.dockerClient.Endpoint())
+	log.Debugf("Using Docker daemon host: %+v", descriptor.dockerClient.DaemonHost())
 
 	return descriptor, nil
 }
@@ -166,7 +167,7 @@ func (d *MicroserviceDescriptor) GetMicroserviceStateData(msLabel string) (ms *M
 
 // detectMicroservice inspects container to see if it is a microservice.
 // If microservice is detected, processNewMicroservice() is called to process it.
-func (d *MicroserviceDescriptor) detectMicroservice(container *docker.Container) {
+func (d *MicroserviceDescriptor) detectMicroservice(container *moby.ContainerJSON) {
 	// Search for the microservice label.
 	var label string
 	for _, env := range container.Config.Env {
@@ -175,11 +176,16 @@ func (d *MicroserviceDescriptor) detectMicroservice(container *docker.Container)
 			if label != "" {
 				d.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := d.createTime[label]
-				if last.After(container.Created) {
+				created, err := time.Parse(time.RFC3339Nano, container.Created)
+				if err != nil {
+					d.log.Warnf("Failed to parse container %s creation time due to: %v", container.ID, err)
+					continue
+				}
+				if last.After(created) {
 					d.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
 					continue
 				}
-				d.createTime[label] = container.Created
+				d.createTime[label] = created
 				d.processNewMicroservice(label, container.ID, container.State.Pid)
 			}
 		}
@@ -255,14 +261,13 @@ func (d *MicroserviceDescriptor) setStateInSync() {
 
 // processStartedContainer processes a started Docker container - inspects whether it is a microservice.
 // If it is, notifies scheduler about a new microservice.
-func (d *MicroserviceDescriptor) processStartedContainer(id string) {
-	opts := docker.InspectContainerOptions{ID: id}
-	container, err := d.dockerClient.InspectContainerWithOptions(opts)
+func (d *MicroserviceDescriptor) processStartedContainer(ctx context.Context, id string) {
+	container, err := d.dockerClient.ContainerInspect(ctx, id)
 	if err != nil {
-		d.log.Warnf("Error by inspecting container %s: %v", id, err)
+		d.log.Warnf("Failed to inspect container %s: %v", id, err)
 		return
 	}
-	d.detectMicroservice(container)
+	d.detectMicroservice(&container)
 }
 
 // processStoppedContainer processes a stopped Docker container - if it is a microservice,
@@ -285,33 +290,23 @@ func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 	}()
 
 	// subscribe to Docker events
-	listener := make(chan *docker.APIEvents, 10)
-	err := d.dockerClient.AddEventListener(listener)
-	if err != nil {
-		d.log.Warnf("Failed to add Docker event listener: %v", err)
-		d.setStateInSync() // empty set of microservices is considered
-		return
-	}
+	evs, errs := d.dockerClient.Events(ctx, moby.EventsOptions{})
 
-	// list currently running containers
-	listOpts := docker.ListContainersOptions{
-		All: true,
-	}
-	containers, err := d.dockerClient.ListContainers(listOpts)
+	// detect microservices from currently running containers
+	containers, err := d.dockerClient.ContainerList(ctx, moby.ContainerListOptions{All: true})
 	if err != nil {
-		d.log.Warnf("Failed to list Docker containers: %v", err)
+		d.log.Warnf("Failed to list Docker containers: %w", err)
 		d.setStateInSync() // empty set of microservices is considered
 		return
 	}
-	for _, container := range containers {
-		if container.State == dockerStateRunning {
-			opts := docker.InspectContainerOptions{ID: container.ID}
-			details, err := d.dockerClient.InspectContainerWithOptions(opts)
+	for _, c := range containers {
+		if c.State == dockerStateRunning {
+			container, err := d.dockerClient.ContainerInspect(ctx, c.ID)
 			if err != nil {
-				d.log.Warnf("Error by inspecting container %s: %v", container.ID, err)
+				d.log.Warnf("Failed to inspect container %s: %v", c.ID, err)
 				continue
 			}
-			d.detectMicroservice(details)
+			d.detectMicroservice(&container)
 		}
 	}
 
@@ -321,18 +316,21 @@ func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 	// process Docker events
 	for {
 		select {
-		case ev, ok := <-listener:
+		case ev, ok := <-evs:
 			if !ok {
 				return
 			}
-			if ev.Type == dockerTypeContainer {
+			if ev.Type == events.ContainerEventType {
 				if ev.Action == dockerActionStart {
-					d.processStartedContainer(ev.Actor.ID)
+					d.processStartedContainer(ctx, ev.Actor.ID)
 				}
 				if ev.Action == dockerActionStop {
 					d.processStoppedContainer(ev.Actor.ID)
 				}
 			}
+		case err := <-errs:
+			d.log.Warnf("Error received from Docker client: %v", err)
+			return
 		case <-d.ctx.Done():
 			return
 		}
