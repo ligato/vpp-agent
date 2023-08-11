@@ -295,7 +295,7 @@ func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 	// detect microservices from currently running containers
 	containers, err := d.dockerClient.ContainerList(ctx, moby.ContainerListOptions{All: true})
 	if err != nil {
-		d.log.Warnf("Failed to list Docker containers: %w", err)
+		d.log.Warnf("Failed to list Docker containers: %v", err)
 		d.setStateInSync() // empty set of microservices is considered
 		return
 	}
