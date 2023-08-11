@@ -122,28 +122,18 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (string, string, 
 		return "", "", err
 	}
 
+	ctx, cancel := context.WithTimeout(c.ctx.ctx, containerExecTimeout)
+	defer cancel()
+
 	hijacked, err := c.ctx.dockerClient.ContainerExecAttach(c.ctx.ctx, exec.ID, moby.ExecStartCheck{})
 	if err != nil {
 		return "", "", errors.Errorf("failed to attach docker exec for command %s to container %s due to: %v", cmd, c.container.ID, err)
 	}
 	defer hijacked.Close()
 
-	ctx, cancel := context.WithTimeout(c.ctx.ctx, containerExecTimeout)
-	defer cancel()
-
-	var stdoutBuf, stderrBuf bytes.Buffer
-
-	err = c.ctx.dockerClient.ContainerExecStart(ctx, exec.ID, moby.ExecStartCheck{})
-	if err != nil {
-		return "", "", errors.Errorf("failed to start docker exec for command %s due to: %v", cmd, err)
-	}
-
-	_, err = stdcopy.StdCopy(&stdoutBuf, &stderrBuf, hijacked.Reader)
-	stdout := stdoutBuf.String()
-	stderr := stderrBuf.String()
+	stdout, stderr, err := readExecResp(ctx, hijacked.Reader)
 
 	cmdStr := fmt.Sprintf("`%s %s`", cmd, strings.Join(args, " "))
-
 	if cmdStr != "`vppctl -s /run/vpp/cli.sock show trace`" {
 		c.ctx.Logger.Printf("docker exec: %v:\nstdout(%d): %v\nstderr(%d): %v", cmdStr, len(stdout), stdout, len(stderr), stderr)
 	}
@@ -267,7 +257,11 @@ func (c *ContainerRuntime) attachLoggingToContainer(logOutput io.Writer) error {
 	log = log.WithField("cid", stringid.TruncateID(c.container.ID))
 
 	go func() {
-		defer hijacked.Close()
+		<-c.ctx.ctx.Done()
+		hijacked.Close()
+	}()
+
+	go func() {
 		_, err := stdcopy.StdCopy(logOutput, logOutput, hijacked.Reader)
 		if err != nil {
 			log.Warnf("%s container exited: %v", c.logIdentity, err)
@@ -285,4 +279,21 @@ func (c *ContainerRuntime) inspectContainer(id string) (*moby.ContainerJSON, err
 			c.logIdentity, id, err)
 	}
 	return &info, nil
+}
+
+func readExecResp(ctx context.Context, src io.Reader) (string, string, error) {
+	var stdoutBuf, stderrBuf bytes.Buffer
+	done := make(chan error, 1)
+
+	go func() {
+		_, err := stdcopy.StdCopy(&stdoutBuf, &stderrBuf, src)
+		done <- err
+	}()
+
+	select {
+	case err := <-done:
+		return stdoutBuf.String(), stderrBuf.String(), err
+	case <-ctx.Done():
+		return stdoutBuf.String(), stderrBuf.String(), ctx.Err()
+	}
 }
