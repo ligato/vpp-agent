@@ -17,6 +17,7 @@ package e2etest
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	moby "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/errdefs"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/go-errors/errors"
@@ -180,10 +182,20 @@ func (c *ContainerRuntime) createContainer(config *moby.ContainerCreateConfig, p
 	// pull image
 	if pull {
 		image := config.Config.Image
-		_, err := c.ctx.dockerClient.ImagePull(c.ctx.ctx, image, moby.ImagePullOptions{})
+		reader, err := c.ctx.dockerClient.ImagePull(c.ctx.ctx, image, moby.ImagePullOptions{})
 		if err != nil {
 			return "", errors.Errorf("failed to pull %s image: %v", c.logIdentity, err)
 		}
+		defer reader.Close()
+		decoder := json.NewDecoder(reader)
+		for {
+			if err := decoder.Decode(&jsonmessage.JSONMessage{}); err == io.EOF {
+				break
+			} else if err != nil {
+				return "", errors.Errorf("failed to decode %s image pull response: %v", c.logIdentity, err)
+			}
+		}
+		c.ctx.t.Logf("pulled %s image with name %s", c.logIdentity, image)
 	}
 
 	// create container

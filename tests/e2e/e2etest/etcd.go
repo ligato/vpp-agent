@@ -114,7 +114,7 @@ func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (int
 			"2379/tcp": {{HostIP: "0.0.0.0", HostPort: "2379"}},
 		}
 	}
-	containerConfig := &moby.ContainerCreateConfig{
+	config := &moby.ContainerCreateConfig{
 		Name: "e2e-test-etcd",
 		Config: &container.Config{
 			Env:   []string{"ETCDCTL_API=3"},
@@ -125,7 +125,7 @@ func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (int
 	}
 
 	return &ContainerStartOptions{
-		ContainerConfig: containerConfig,
+		ContainerConfig: config,
 		Pull:            true,
 	}, nil
 }

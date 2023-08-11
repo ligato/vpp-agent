@@ -102,7 +102,7 @@ func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{})
 	coreFilepath := CreateFileOnSharedVolume(ctx, "Corefile", corefileContent)
 
 	// construct container options
-	containerOptions := &moby.ContainerCreateConfig{
+	config := &moby.ContainerCreateConfig{
 		Name: "e2e-test-dns",
 		Config: &container.Config{
 			Image: dnsImage,
@@ -116,7 +116,7 @@ func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{})
 	}
 
 	return &ContainerStartOptions{
-		ContainerConfig: containerOptions,
+		ContainerConfig: config,
 		Pull:            true,
 	}, nil
 }
