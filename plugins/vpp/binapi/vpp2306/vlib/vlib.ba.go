@@ -35,6 +35,10 @@ type ThreadData struct {
 	CPUSocket uint32 `binapi:"u32,name=cpu_socket" json:"cpu_socket,omitempty"`
 }
 
+// Set the next node for a given node request
+//   - node_name[] - node to add the next node to
+//   - next_name[] - node to add as the next node
+//
 // AddNodeNext defines message 'add_node_next'.
 type AddNodeNext struct {
 	NodeName string `binapi:"string[64],name=node_name" json:"node_name,omitempty"`
@@ -72,6 +76,10 @@ func (m *AddNodeNext) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IP Set the next node for a given node response
+//   - retval - return code for the add next node request
+//   - next_index - the index of the next node if success, else ~0
+//
 // AddNodeNextReply defines message 'add_node_next_reply'.
 type AddNodeNextReply struct {
 	Retval    int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -109,6 +117,9 @@ func (m *AddNodeNextReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Process a vpe parser cli string request
+//   - cmd_in_shmem - pointer to cli command string
+//
 // Cli defines message 'cli'.
 type Cli struct {
 	CmdInShmem uint64 `binapi:"u64,name=cmd_in_shmem" json:"cmd_in_shmem,omitempty"`
@@ -212,6 +223,10 @@ func (m *CliInbandReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// vpe parser cli string response
+//   - retval - return code for request
+//   - reply_in_shmem - Reply string from cli processing if any
+//
 // CliReply defines message 'cli_reply'.
 type CliReply struct {
 	Retval       int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -249,6 +264,9 @@ func (m *CliReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// f64 types are not standardized across the wire. Sense wire format in each direction by sending the f64 value 1.0.
+//   - f64_one - The constant of 1.0.  If you send a different value, expect an rv=VNET_API_ERROR_API_ENDIAN_FAILED.
+//
 // GetF64EndianValue defines message 'get_f64_endian_value'.
 type GetF64EndianValue struct {
 	F64One float64 `binapi:"f64,name=f64_one,default=1" json:"f64_one,omitempty"`
@@ -282,6 +300,10 @@ func (m *GetF64EndianValue) Unmarshal(b []byte) error {
 	return nil
 }
 
+// get_f64_endian_value reply message
+//   - retval - return value - VNET_API_ERROR_API_ENDIAN_FAILED if f64_one != 1.0
+//   - f64_one_result - The value of 'f64 1.0'
+//
 // GetF64EndianValueReply defines message 'get_f64_endian_value_reply'.
 type GetF64EndianValueReply struct {
 	Retval       uint32  `binapi:"u32,name=retval" json:"retval,omitempty"`
@@ -319,6 +341,9 @@ func (m *GetF64EndianValueReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Verify f64 wire format by sending a value and receiving the value + 1.0
+//   - f64_value - The value you want to test.  Default: 1.0.
+//
 // GetF64IncrementByOne defines message 'get_f64_increment_by_one'.
 type GetF64IncrementByOne struct {
 	F64Value float64 `binapi:"f64,name=f64_value,default=1" json:"f64_value,omitempty"`
@@ -352,6 +377,9 @@ func (m *GetF64IncrementByOne) Unmarshal(b []byte) error {
 	return nil
 }
 
+// get_f64_increment_by_one reply
+//   - f64_value - The input f64_value incremented by 1.0.
+//
 // GetF64IncrementByOneReply defines message 'get_f64_increment_by_one_reply'.
 type GetF64IncrementByOneReply struct {
 	Retval   uint32  `binapi:"u32,name=retval" json:"retval,omitempty"`
@@ -389,6 +417,10 @@ func (m *GetF64IncrementByOneReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Query relative index via node names
+//   - node_name - name of node to find relative index from
+//   - next_name - next node from node_name to find relative index of
+//
 // GetNextIndex defines message 'get_next_index'.
 type GetNextIndex struct {
 	NodeName string `binapi:"string[64],name=node_name" json:"node_name,omitempty"`
@@ -426,6 +458,10 @@ func (m *GetNextIndex) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for get next node index
+//   - retval - return value
+//   - next_index - index of the next_node
+//
 // GetNextIndexReply defines message 'get_next_index_reply'.
 type GetNextIndexReply struct {
 	Retval    int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -490,6 +526,12 @@ func (m *GetNodeGraph) Unmarshal(b []byte) error {
 	return nil
 }
 
+// get_node_graph_reply
+//   - retval - return code
+//   - reply_in_shmem - result from vlib_node_serialize, in shared
+//     memory. Process with vlib_node_unserialize, remember to switch
+//     heaps and free the result.
+//
 // GetNodeGraphReply defines message 'get_node_graph_reply'.
 type GetNodeGraphReply struct {
 	Retval       int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -527,6 +569,9 @@ func (m *GetNodeGraphReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Get node index using name request
+//   - node_name[] - name of the node
+//
 // GetNodeIndex defines message 'get_node_index'.
 type GetNodeIndex struct {
 	NodeName string `binapi:"string[64],name=node_name" json:"node_name,omitempty"`
@@ -560,6 +605,10 @@ func (m *GetNodeIndex) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Get node index using name request
+//   - retval - return code for the request
+//   - node_index - index of the desired node if found, else ~0
+//
 // GetNodeIndexReply defines message 'get_node_index_reply'.
 type GetNodeIndexReply struct {
 	Retval    int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -597,6 +646,11 @@ func (m *GetNodeIndexReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// show_threads display the information about vpp
+//
+//	threads running on system along with their process id,
+//	cpu id, physical core and cpu socket.
+//
 // ShowThreads defines message 'show_threads'.
 type ShowThreads struct{}
 
@@ -624,6 +678,11 @@ func (m *ShowThreads) Unmarshal(b []byte) error {
 	return nil
 }
 
+// show_threads_reply
+//   - retval - return code
+//   - count - number of threads in thread_data array
+//   - thread_data - array of thread data
+//
 // ShowThreadsReply defines message 'show_threads_reply'.
 type ShowThreadsReply struct {
 	Retval     int32        `binapi:"i32,name=retval" json:"retval,omitempty"`

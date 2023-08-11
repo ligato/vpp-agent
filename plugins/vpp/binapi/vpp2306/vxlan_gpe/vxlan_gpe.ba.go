@@ -25,6 +25,11 @@ const (
 	VersionCrc = 0x3bc06278
 )
 
+// Interface set vxlan-gpe-bypass request
+//   - sw_if_index - interface used to reach neighbor
+//   - is_ipv6 - if non-zero, enable ipv6-vxlan-bypass, else ipv4-vxlan-bypass
+//   - enable - if non-zero enable, else disable
+//
 // SwInterfaceSetVxlanGpeBypass defines message 'sw_interface_set_vxlan_gpe_bypass'.
 type SwInterfaceSetVxlanGpeBypass struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -103,6 +108,20 @@ func (m *SwInterfaceSetVxlanGpeBypassReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Copyright (c) 2015-2016 Cisco and/or its affiliates.
+//   - Licensed under the Apache License, Version 2.0 (the "License");
+//   - you may not use this file except in compliance with the License.
+//   - You may obtain a copy of the License at:
+//     *
+//   - http://www.apache.org/licenses/LICENSE-2.0
+//     *
+//   - Unless required by applicable law or agreed to in writing, software
+//   - distributed under the License is distributed on an "AS IS" BASIS,
+//   - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   - See the License for the specific language governing permissions and
+//   - limitations under the License.
+//
 // VxlanGpeAddDelTunnel defines message 'vxlan_gpe_add_del_tunnel'.
 type VxlanGpeAddDelTunnel struct {
 	Local          ip_types.Address               `binapi:"address,name=local" json:"local,omitempty"`
@@ -207,6 +226,18 @@ func (m *VxlanGpeAddDelTunnelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Create or delete a VXLAN-GPE tunnel
+//   - local - Source IP address
+//   - remote - Destination IP address, can be multicast
+//   - local_port - Source UDP port. It is not included in sent packets. Used only for port registration
+//   - remote_port - Destination UDP port
+//   - mcast_sw_if_index - Interface for multicast destination
+//   - encap_vrf_id - Encap route table FIB index
+//   - decap_vrf_id - Decap route table FIB index
+//   - protocol - Encapsulated protocol
+//   - vni - The VXLAN Network Identifier, uint24
+//   - is_add - Use 1 to create the tunnel, 0 to remove it
+//
 // VxlanGpeAddDelTunnelV2 defines message 'vxlan_gpe_add_del_tunnel_v2'.
 type VxlanGpeAddDelTunnelV2 struct {
 	Local          ip_types.Address               `binapi:"address,name=local" json:"local,omitempty"`

@@ -44,6 +44,12 @@ type IpsecTunnelProtect struct {
 	SaIn      []uint32                       `binapi:"u32[n_sa_in],name=sa_in" json:"sa_in,omitempty"`
 }
 
+// IPsec backend details
+//   - name - name of the backend
+//   - protocol - IPsec protocol (value from ipsec_protocol_t)
+//   - index - backend index
+//   - active - set to 1 if the backend is active, otherwise 0
+//
 // IpsecBackendDetails defines message 'ipsec_backend_details'.
 type IpsecBackendDetails struct {
 	Name     string                 `binapi:"string[128],name=name" json:"name,omitempty"`
@@ -89,6 +95,7 @@ func (m *IpsecBackendDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump IPsec backends
 // IpsecBackendDump defines message 'ipsec_backend_dump'.
 type IpsecBackendDump struct{}
 
@@ -116,6 +123,11 @@ func (m *IpsecBackendDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Add/delete SPD from interface
+//   - is_add - add security mode if non-zero, else delete
+//   - sw_if_index - index of the interface
+//   - spd_id - SPD instance id to use for lookups
+//
 // IpsecInterfaceAddDelSpd defines message 'ipsec_interface_add_del_spd'.
 type IpsecInterfaceAddDelSpd struct {
 	IsAdd     bool                           `binapi:"bool,name=is_add" json:"is_add,omitempty"`
@@ -192,6 +204,7 @@ func (m *IpsecInterfaceAddDelSpdReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Create an IPSec interface
 // IpsecItfCreate defines message 'ipsec_itf_create'.
 type IpsecItfCreate struct {
 	Itf IpsecItf `binapi:"ipsec_itf,name=itf" json:"itf,omitempty"`
@@ -231,6 +244,10 @@ func (m *IpsecItfCreate) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Add IPsec interface interface response
+//   - retval - return status
+//   - sw_if_index - sw_if_index of new interface (for successful add)
+//
 // IpsecItfCreateReply defines message 'ipsec_itf_create_reply'.
 type IpsecItfCreateReply struct {
 	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -406,6 +423,17 @@ func (m *IpsecItfDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec security association database response
+//   - entry - The SA details
+//   - sw_if_index - sw_if_index of tunnel interface, policy-based SAs = ~0
+//   - salt - 4 byte salt
+//   - seq - current sequence number for outbound
+//   - seq_hi - high 32 bits of ESN for outbound
+//   - last_seq - highest sequence number received inbound
+//   - last_seq_hi - high 32 bits of highest ESN received inbound
+//   - replay_window - bit map of seq nums received relative to last_seq if using anti-replay
+//   - stat_index - index for the SA in the stats segment @ /net/ipsec/sa
+//
 // IpsecSaDetails defines message 'ipsec_sa_details'.
 // Deprecated: the message will be removed in the future versions
 type IpsecSaDetails struct {
@@ -517,6 +545,9 @@ func (m *IpsecSaDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump IPsec security association
+//   - sa_id - optional ID of an SA to dump, if ~0 dump all SAs in SAD
+//
 // IpsecSaDump defines message 'ipsec_sa_dump'.
 // Deprecated: the message will be removed in the future versions
 type IpsecSaDump struct {
@@ -967,6 +998,9 @@ func (m *IpsecSadEntryAdd) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Add/delete Security Association Database entry
+//   - entry - Entry to add or delete
+//
 // IpsecSadEntryAddDel defines message 'ipsec_sad_entry_add_del'.
 // Deprecated: the message will be removed in the future versions
 type IpsecSadEntryAddDel struct {
@@ -1480,6 +1514,15 @@ func (m *IpsecSadEntryDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// An API to update the tunnel parameters and the ports associated with an SA
+//
+//	Used in the NAT-T case when the NAT data changes
+//	- sa_id - the id of the SA to update
+//	- is_tun - update the tunnel if non-zero, else update only the ports
+//	- tunnel - sender context, to match reply w/ request
+//	- udp_src_port - new src port for NAT-T. Used if different from 0xffff
+//	- udp_dst_port - new dst port for NAT-T. Used if different from 0xffff
+//
 // IpsecSadEntryUpdate defines message 'ipsec_sad_entry_update'.
 type IpsecSadEntryUpdate struct {
 	SadID      uint32              `binapi:"u32,name=sad_id" json:"sad_id,omitempty"`
@@ -1595,6 +1638,10 @@ func (m *IpsecSadEntryUpdateReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Select IPsec backend
+//   - protocol - IPsec protocol (value from ipsec_protocol_t)
+//   - index - backend index
+//
 // IpsecSelectBackend defines message 'ipsec_select_backend'.
 type IpsecSelectBackend struct {
 	Protocol ipsec_types.IpsecProto `binapi:"ipsec_proto,name=protocol" json:"protocol,omitempty"`
@@ -1665,6 +1712,9 @@ func (m *IpsecSelectBackendReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec Set Async mode
+//   - async_enable - ipsec async mode on or off
+//
 // IpsecSetAsyncMode defines message 'ipsec_set_async_mode'.
 type IpsecSetAsyncMode struct {
 	AsyncEnable bool `binapi:"bool,name=async_enable" json:"async_enable,omitempty"`
@@ -1731,6 +1781,10 @@ func (m *IpsecSetAsyncModeReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Add/delete Security Policy Database
+//   - is_add - add SPD if non-zero, else delete
+//   - spd_id - SPD instance id (control plane allocated)
+//
 // IpsecSpdAddDel defines message 'ipsec_spd_add_del'.
 type IpsecSpdAddDel struct {
 	IsAdd bool   `binapi:"bool,name=is_add" json:"is_add,omitempty"`
@@ -1801,6 +1855,12 @@ func (m *IpsecSpdAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec policy database response
+//
+//	€param entry - The SPD entry.
+//	- bytes - byte count of packets matching this policy
+//	- packets - count of packets matching this policy
+//
 // IpsecSpdDetails defines message 'ipsec_spd_details'.
 type IpsecSpdDetails struct {
 	Entry ipsec_types.IpsecSpdEntry `binapi:"ipsec_spd_entry,name=entry" json:"entry,omitempty"`
@@ -1885,6 +1945,10 @@ func (m *IpsecSpdDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump ipsec policy database data
+//   - spd_id - SPD instance id
+//   - sa_id - SA id, optional, set to ~0 to see all policies in SPD
+//
 // IpsecSpdDump defines message 'ipsec_spd_dump'.
 type IpsecSpdDump struct {
 	SpdID uint32 `binapi:"u32,name=spd_id" json:"spd_id,omitempty"`
@@ -1922,6 +1986,10 @@ func (m *IpsecSpdDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Add/delete Security Policy Database entry
+//   - is_add - add SPD if non-zero, else delete
+//   - entry - Description of the entry to add/dell
+//
 // IpsecSpdEntryAddDel defines message 'ipsec_spd_entry_add_del'.
 // Deprecated: the message will be removed in the future versions
 type IpsecSpdEntryAddDel struct {
@@ -2011,6 +2079,10 @@ func (m *IpsecSpdEntryAddDel) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Reply Add/delete Security Policy Database entry
+//   - retval - success/fail rutrun code
+//   - stat_index - An index for the policy in the stats segment @ /net/ipec/policy
+//
 // IpsecSpdEntryAddDelReply defines message 'ipsec_spd_entry_add_del_reply'.
 // Deprecated: the message will be removed in the future versions
 type IpsecSpdEntryAddDelReply struct {
@@ -2049,6 +2121,10 @@ func (m *IpsecSpdEntryAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Add/delete Security Policy Database entry v2
+//   - is_add - add SPD if non-zero, else delete
+//   - entry - Description of the entry to add/dell
+//
 // IpsecSpdEntryAddDelV2 defines message 'ipsec_spd_entry_add_del_v2'.
 type IpsecSpdEntryAddDelV2 struct {
 	IsAdd bool                        `binapi:"bool,name=is_add" json:"is_add,omitempty"`
@@ -2137,6 +2213,10 @@ func (m *IpsecSpdEntryAddDelV2) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Reply Add/delete Security Policy Database entry v2
+//   - retval - success/fail rutrun code
+//   - stat_index - An index for the policy in the stats segment @ /net/ipec/policy
+//
 // IpsecSpdEntryAddDelV2Reply defines message 'ipsec_spd_entry_add_del_v2_reply'.
 type IpsecSpdEntryAddDelV2Reply struct {
 	Retval    int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -2174,6 +2254,10 @@ func (m *IpsecSpdEntryAddDelV2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: SPD interface response
+//   - spd_index - SPD index
+//   - sw_if_index - index of the interface
+//
 // IpsecSpdInterfaceDetails defines message 'ipsec_spd_interface_details'.
 type IpsecSpdInterfaceDetails struct {
 	SpdIndex  uint32                         `binapi:"u32,name=spd_index" json:"spd_index,omitempty"`
@@ -2211,6 +2295,11 @@ func (m *IpsecSpdInterfaceDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPsec: Get SPD interfaces
+//   - spd_index - SPD index
+//   - spd_index_valid - if 1 spd_index is used to filter
+//     spd_index's, if 0 no filtering is done
+//
 // IpsecSpdInterfaceDump defines message 'ipsec_spd_interface_dump'.
 type IpsecSpdInterfaceDump struct {
 	SpdIndex      uint32 `binapi:"u32,name=spd_index" json:"spd_index,omitempty"`
@@ -2248,6 +2337,10 @@ func (m *IpsecSpdInterfaceDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump IPsec all SPD IDs response
+//   - spd_id - SPD instance id (control plane allocated)
+//   - npolicies - number of policies in SPD
+//
 // IpsecSpdsDetails defines message 'ipsec_spds_details'.
 type IpsecSpdsDetails struct {
 	SpdID     uint32 `binapi:"u32,name=spd_id" json:"spd_id,omitempty"`
@@ -2285,6 +2378,7 @@ func (m *IpsecSpdsDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump IPsec all SPD IDs
 // IpsecSpdsDump defines message 'ipsec_spds_dump'.
 type IpsecSpdsDump struct{}
 
@@ -2442,6 +2536,7 @@ func (m *IpsecTunnelProtectDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// * @brief Dump all tunnel protections
 // IpsecTunnelProtectDump defines message 'ipsec_tunnel_protect_dump'.
 type IpsecTunnelProtectDump struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -2475,6 +2570,43 @@ func (m *IpsecTunnelProtectDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Add or Update Protection for a tunnel with IPSEC
+//
+//	Tunnel protection directly associates an SA with all packets
+//	ingress and egress on the tunnel. This could also be achieved by
+//	assigning an SPD to the tunnel, but that would incur an unnessccary
+//	SPD entry lookup.
+//	For tunnels the ESP acts on the post-encapsulated packet. So if this
+//	packet:
+//	  +---------+------+
+//	  | Payload | O-IP |
+//	  +---------+------+
+//	where O-IP is the overlay IP addrees that was routed into the tunnel,
+//	the resulting encapsulated packet will be:
+//	  +---------+------+------+
+//	  | Payload | O-IP | T-IP |
+//	  +---------+------+------+
+//	where T-IP is the tunnel's src.dst IP addresses.
+//	If the SAs used for protection are in transport mode then the ESP is
+//	inserted before T-IP, i.e.:
+//	  +---------+------+-----+------+
+//	  | Payload | O-IP | ESP | T-IP |
+//	  +---------+------+-----+------+
+//	If the SAs used for protection are in tunnel mode then another
+//	encapsulation occurs, i.e.:
+//	  +---------+------+------+-----+------+
+//	  | Payload | O-IP | T-IP | ESP | C-IP |
+//	  +---------+------+------+-----+------+
+//	where C-IP are the crypto endpoint IP addresses defined as the tunnel
+//	endpoints in the SA.
+//	The mode for the inbound and outbound SA must be the same.
+//	- sw_id_index - Tunnel interface to protect
+//	- nh - The peer/next-hop on the tunnel to which the traffic
+//	            should be protected. For a P2P interface set this to the
+//	            all 0s address.
+//	- sa_in - The ID [set] of inbound SAs
+//	- sa_out - The ID of outbound SA
+//
 // IpsecTunnelProtectUpdate defines message 'ipsec_tunnel_protect_update'.
 type IpsecTunnelProtectUpdate struct {
 	Tunnel IpsecTunnelProtect `binapi:"ipsec_tunnel_protect,name=tunnel" json:"tunnel,omitempty"`

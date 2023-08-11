@@ -24,6 +24,9 @@ const (
 	VersionCrc = 0x63e0810a
 )
 
+// Ipfix meter details in response to the get_meters command
+//   - name The name of the ipfix meter
+//
 // IpfixAllExporterDetails defines message 'ipfix_all_exporter_details'.
 type IpfixAllExporterDetails struct {
 	CollectorAddress ip_types.Address `binapi:"address,name=collector_address" json:"collector_address,omitempty"`
@@ -157,6 +160,10 @@ func (m *IpfixAllExporterGetReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply to IPFIX classify stream dump request
+//   - domain_id - domain ID reported in IPFIX messages for classify stream
+//   - src_port - source port of UDP session for classify stream
+//
 // IpfixClassifyStreamDetails defines message 'ipfix_classify_stream_details'.
 type IpfixClassifyStreamDetails struct {
 	DomainID uint32 `binapi:"u32,name=domain_id" json:"domain_id,omitempty"`
@@ -194,6 +201,7 @@ func (m *IpfixClassifyStreamDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPFIX classify stream dump request
 // IpfixClassifyStreamDump defines message 'ipfix_classify_stream_dump'.
 type IpfixClassifyStreamDump struct{}
 
@@ -221,6 +229,11 @@ func (m *IpfixClassifyStreamDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPFIX add or delete classifier table request
+//   - table_id - classifier table ID
+//   - ip_version - version of IP used in the classifier table
+//   - transport_protocol - transport protocol used in the classifier table or 255 for unspecified
+//
 // IpfixClassifyTableAddDel defines message 'ipfix_classify_table_add_del'.
 type IpfixClassifyTableAddDel struct {
 	TableID           uint32                 `binapi:"u32,name=table_id" json:"table_id,omitempty"`
@@ -301,6 +314,11 @@ func (m *IpfixClassifyTableAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply to IPFIX classify tables dump request
+//   - table_id - classifier table ID
+//   - ip_version - version of IP used in the classifier table
+//   - transport_protocol - transport protocol used in the classifier table or 255 for unspecified
+//
 // IpfixClassifyTableDetails defines message 'ipfix_classify_table_details'.
 type IpfixClassifyTableDetails struct {
 	TableID           uint32                 `binapi:"u32,name=table_id" json:"table_id,omitempty"`
@@ -342,6 +360,7 @@ func (m *IpfixClassifyTableDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPFIX classify tables dump request
 // IpfixClassifyTableDump defines message 'ipfix_classify_table_dump'.
 type IpfixClassifyTableDump struct{}
 
@@ -369,6 +388,23 @@ func (m *IpfixClassifyTableDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Configure IPFIX exporter within the exporting process.
+//
+//	The exporting process can contain multiple independent exporters,
+//	each of which have their own state.  The collector_address is the key
+//	field that identifies a unique exporter. The already existing API
+//	'set_ipfix_exporter' is used to modify a single exporter (which will
+//	always have stat index 0).  If more than one exporter is required then
+//	they can be created and deleted using this API.
+//	- is_create - True for create, False for delete
+//	- collector_address - address of IPFIX collector
+//	- collector_port - port of IPFIX collector
+//	- src_address - address of IPFIX exporter
+//	- vrf_id - VRF / fib table ID
+//	- path_mtu - Path MTU between exporter and collector
+//	- template_interval - number of seconds after which to resend template
+//	- udp_checksum - UDP checksum calculation enable flag
+//
 // IpfixExporterCreateDelete defines message 'ipfix_exporter_create_delete'.
 type IpfixExporterCreateDelete struct {
 	IsCreate         bool             `binapi:"bool,name=is_create" json:"is_create,omitempty"`
@@ -475,6 +511,15 @@ func (m *IpfixExporterCreateDeleteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply to IPFIX exporter dump request
+//   - collector_address - address of IPFIX collector
+//   - collector_port - port of IPFIX collector
+//   - src_address - address of IPFIX exporter
+//   - fib_index - fib table index
+//   - path_mtu - Path MTU between exporter and collector
+//   - template_interval - number of seconds after which to resend template
+//   - udp_checksum - UDP checksum calculation enable flag
+//
 // IpfixExporterDetails defines message 'ipfix_exporter_details'.
 type IpfixExporterDetails struct {
 	CollectorAddress ip_types.Address `binapi:"address,name=collector_address" json:"collector_address,omitempty"`
@@ -538,6 +583,7 @@ func (m *IpfixExporterDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPFIX exporter dump request
 // IpfixExporterDump defines message 'ipfix_exporter_dump'.
 type IpfixExporterDump struct{}
 
@@ -625,6 +671,10 @@ func (m *IpfixFlushReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPFIX classify stream configure request
+//   - domain_id - domain ID reported in IPFIX messages for classify stream
+//   - src_port - source port of UDP session for classify stream
+//
 // SetIpfixClassifyStream defines message 'set_ipfix_classify_stream'.
 type SetIpfixClassifyStream struct {
 	DomainID uint32 `binapi:"u32,name=domain_id" json:"domain_id,omitempty"`
@@ -695,6 +745,15 @@ func (m *SetIpfixClassifyStreamReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Configure IPFIX exporter process request
+//   - collector_address - address of IPFIX collector
+//   - collector_port - port of IPFIX collector
+//   - src_address - address of IPFIX exporter
+//   - vrf_id - VRF / fib table ID
+//   - path_mtu - Path MTU between exporter and collector
+//   - template_interval - number of seconds after which to resend template
+//   - udp_checksum - UDP checksum calculation enable flag
+//
 // SetIpfixExporter defines message 'set_ipfix_exporter'.
 type SetIpfixExporter struct {
 	CollectorAddress ip_types.Address `binapi:"address,name=collector_address" json:"collector_address,omitempty"`

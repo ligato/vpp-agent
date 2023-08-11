@@ -102,6 +102,7 @@ func (m *LogDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// show version
 // ShowVersion defines message 'show_version'.
 type ShowVersion struct{}
 
@@ -129,6 +130,12 @@ func (m *ShowVersion) Unmarshal(b []byte) error {
 	return nil
 }
 
+// show version response
+//   - retval - return code for the request
+//   - program - name of the program (vpe)
+//   - version  - version of the program
+//   - build_directory - root of the workspace where the program was built
+//
 // ShowVersionReply defines message 'show_version_reply'.
 type ShowVersionReply struct {
 	Retval         int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -178,6 +185,7 @@ func (m *ShowVersionReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Show the current system timestamp.
 // ShowVpeSystemTime defines message 'show_vpe_system_time'.
 type ShowVpeSystemTime struct{}
 
@@ -205,6 +213,10 @@ func (m *ShowVpeSystemTime) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for show vpe system time.
+//   - retval - return value
+//   - vpe_system_time - the time in seconds since epoch of the host system.
+//
 // ShowVpeSystemTimeReply defines message 'show_vpe_system_time_reply'.
 type ShowVpeSystemTimeReply struct {
 	Retval        int32               `binapi:"i32,name=retval" json:"retval,omitempty"`

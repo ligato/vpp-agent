@@ -93,6 +93,21 @@ func (x TapFlags) String() string {
 	return s
 }
 
+// Reply for tap dump request
+//   - sw_if_index - software index of tap interface
+//   - id - interface id
+//   - tx_ring_sz - the number of entries of TX ring
+//   - rx_ring_sz - the number of entries of RX ring
+//   - host_mtu_size - host mtu size
+//   - host_mac_addr - mac address assigned to the host side of the interface
+//   - host_ip4_prefix - host IPv4 ip address
+//   - host_ip6_prefix - host IPv6 ip address
+//   - tap_flags - flags for the TAP interface creation
+//   - dev_name - Linux tap device name
+//   - host_if_name - host side interface name
+//   - host_namespace - host namespace the interface is attached into
+//   - host_bridge - host bridge the interface is attached into
+//
 // SwInterfaceTapV2Details defines message 'sw_interface_tap_v2_details'.
 type SwInterfaceTapV2Details struct {
 	SwIfIndex     uint32                        `binapi:"u32,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -180,6 +195,9 @@ func (m *SwInterfaceTapV2Details) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump tap interfaces request
+//   - sw_if_index - filter by sw_if_index
+//
 // SwInterfaceTapV2Dump defines message 'sw_interface_tap_v2_dump'.
 type SwInterfaceTapV2Dump struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index,default=4294967295" json:"sw_if_index,omitempty"`
@@ -213,6 +231,34 @@ func (m *SwInterfaceTapV2Dump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Initialize a new tap interface with the given parameters
+//   - id - interface id, 0xffffffff means auto
+//   - use_random_mac - let the system generate a unique mac address
+//   - mac_address - mac addr to assign to the interface if use_random not set
+//   - num_rx_queues - number of rx queues
+//   - tx_ring_sz - the number of entries of TX ring, optional, default is 256 entries, must be power of 2
+//   - rx_ring_sz - the number of entries of RX ring, optional, default is 256 entries, must be power of 2
+//   - host_mtu_set - host MTU should be set
+//   - host_mtu_size - host MTU size
+//   - host_mac_addr_set - host side interface mac address should be set
+//   - host_mac_addr - host side interface mac address
+//   - host_ip4_prefix_set - host IPv4 ip address should be set
+//   - host_ip4_prefix - host IPv4 ip address
+//   - host_ip6_prefix_set - host IPv6 ip address should be set
+//   - host_ip6_prefix - host IPv6 ip address
+//   - host_ip4_gw_set - host IPv4 default gateway should be set
+//   - host_ip4_gw - host IPv4 default gateway
+//   - host_ip6_gw_set - host IPv6 default gateway should be set
+//   - host_ip6_gw - host IPv6 default gateway
+//   - tap_flags - flags for the TAP interface creation
+//   - host_if_name_set - host side interface name should be set
+//   - host_if_name - host side interface name
+//   - host_namespace_set - host namespace should be set
+//   - host_namespace - host namespace to attach interface to
+//   - host_bridge_set - host bridge should be set
+//   - host_bridge - host bridge to attach interface to
+//   - tag - tag
+//
 // TapCreateV2 defines message 'tap_create_v2'.
 type TapCreateV2 struct {
 	ID               uint32                        `binapi:"u32,name=id,default=4294967295" json:"id,omitempty"`
@@ -352,6 +398,10 @@ func (m *TapCreateV2) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for tap create reply
+//   - retval - return code
+//   - sw_if_index - software index allocated for the new tap interface
+//
 // TapCreateV2Reply defines message 'tap_create_v2_reply'.
 type TapCreateV2Reply struct {
 	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -389,6 +439,35 @@ func (m *TapCreateV2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Initialize a new tap interface with the given parameters
+//   - id - interface id, 0xffffffff means auto
+//   - use_random_mac - let the system generate a unique mac address
+//   - mac_address - mac addr to assign to the interface if use_random not set
+//   - num_rx_queues - number of rx queues
+//   - num_tx_queues - number of tx queues
+//   - tx_ring_sz - the number of entries of TX ring, optional, default is 256 entries, must be power of 2
+//   - rx_ring_sz - the number of entries of RX ring, optional, default is 256 entries, must be power of 2
+//   - host_mtu_set - host MTU should be set
+//   - host_mtu_size - host MTU size
+//   - host_mac_addr_set - host side interface mac address should be set
+//   - host_mac_addr - host side interface mac address
+//   - host_ip4_prefix_set - host IPv4 ip address should be set
+//   - host_ip4_prefix - host IPv4 ip address
+//   - host_ip6_prefix_set - host IPv6 ip address should be set
+//   - host_ip6_prefix - host IPv6 ip address
+//   - host_ip4_gw_set - host IPv4 default gateway should be set
+//   - host_ip4_gw - host IPv4 default gateway
+//   - host_ip6_gw_set - host IPv6 default gateway should be set
+//   - host_ip6_gw - host IPv6 default gateway
+//   - tap_flags - flags for the TAP interface creation
+//   - host_if_name_set - host side interface name should be set
+//   - host_if_name - host side interface name
+//   - host_namespace_set - host namespace should be set
+//   - host_namespace - host namespace to attach interface to
+//   - host_bridge_set - host bridge should be set
+//   - host_bridge - host bridge to attach interface to
+//   - tag - tag
+//
 // TapCreateV3 defines message 'tap_create_v3'.
 type TapCreateV3 struct {
 	ID               uint32                        `binapi:"u32,name=id,default=4294967295" json:"id,omitempty"`
@@ -532,6 +611,10 @@ func (m *TapCreateV3) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for tap create reply
+//   - retval - return code
+//   - sw_if_index - software index allocated for the new tap interface
+//
 // TapCreateV3Reply defines message 'tap_create_v3_reply'.
 type TapCreateV3Reply struct {
 	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -569,6 +652,9 @@ func (m *TapCreateV3Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Delete tap interface
+//   - sw_if_index - interface index of existing tap interface
+//
 // TapDeleteV2 defines message 'tap_delete_v2'.
 type TapDeleteV2 struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`

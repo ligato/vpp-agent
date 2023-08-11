@@ -133,6 +133,10 @@ type IPNeighbor struct {
 	IPAddress  ip_types.Address               `binapi:"address,name=ip_address" json:"ip_address,omitempty"`
 }
 
+// IP neighbor add / del request
+//   - is_add - 1 to add neighbor, 0 to delete
+//   - neighbor - the neighbor to add/remove
+//
 // IPNeighborAddDel defines message 'ip_neighbor_add_del'.
 type IPNeighborAddDel struct {
 	IsAdd    bool       `binapi:"bool,name=is_add" json:"is_add,omitempty"`
@@ -182,6 +186,10 @@ func (m *IPNeighborAddDel) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IP neighbor add / del reply
+//   - retval - return value
+//   - stats_index - the index to use for this neighbor in the stats segment
+//
 // IPNeighborAddDelReply defines message 'ip_neighbor_add_del_reply'.
 type IPNeighborAddDelReply struct {
 	Retval     int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -219,6 +227,16 @@ func (m *IPNeighborAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Enable/disable periodic IP neighbor scan
+//   - af - Address family v4/v6
+//   - max_number - The maximum number of neighbours that will be created.
+//     default 50k
+//   - max_age - The maximum age (in seconds) before an inactive neighbour
+//     is flushed
+//     default 0 => never
+//   - recycle - If max_number of neighbours is reached and new ones need
+//     to be created should the oldest neighbour be 'recycled'.
+//
 // IPNeighborConfig defines message 'ip_neighbor_config'.
 type IPNeighborConfig struct {
 	Af        ip_types.AddressFamily `binapi:"address_family,name=af" json:"af,omitempty"`
@@ -297,6 +315,10 @@ func (m *IPNeighborConfigReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IP neighbors dump response
+//   - age - time between last update and sending this message, in seconds
+//   - neighbour - the neighbor
+//
 // IPNeighborDetails defines message 'ip_neighbor_details'.
 type IPNeighborDetails struct {
 	Age      float64    `binapi:"f64,name=age" json:"age,omitempty"`
@@ -346,6 +368,10 @@ func (m *IPNeighborDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump IP neighbors
+//   - sw_if_index - the interface to dump neighbors, ~0 == all
+//   - af - address family is ipv[6|4]
+//
 // IPNeighborDump defines message 'ip_neighbor_dump'.
 type IPNeighborDump struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index,default=4294967295" json:"sw_if_index,omitempty"`
@@ -383,6 +409,12 @@ func (m *IPNeighborDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Tell client about an IP4 ARP resolution event or
+//
+//	       MAC/IP info from ARP requests in L2 BDs
+//	- pid - client pid registered to receive notification
+//	- neighbor - new neighbor created
+//
 // IPNeighborEvent defines message 'ip_neighbor_event'.
 // Deprecated: the message will be removed in the future versions
 type IPNeighborEvent struct {
@@ -433,6 +465,13 @@ func (m *IPNeighborEvent) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Tell client about an IP4 ARP resolution event or
+//
+//	       MAC/IP info from ARP requests in L2 BDs
+//	- pid - client pid registered to receive notification
+//	- flags - Flags
+//	- neighbor -  neighbor
+//
 // IPNeighborEventV2 defines message 'ip_neighbor_event_v2'.
 type IPNeighborEventV2 struct {
 	PID      uint32               `binapi:"u32,name=pid" json:"pid,omitempty"`
@@ -486,6 +525,12 @@ func (m *IPNeighborEventV2) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IP neighbor flush request - removes *all* neighbours.
+//
+//	 dynamic and static from API/CLI and dynamic from data-plane.
+//	- af - Flush neighbours of this address family
+//	- sw_if_index - Flush on this interface (~0 => all interfaces)
+//
 // IPNeighborFlush defines message 'ip_neighbor_flush'.
 type IPNeighborFlush struct {
 	Af        ip_types.AddressFamily         `binapi:"address_family,name=af" json:"af,omitempty"`
@@ -556,6 +601,21 @@ func (m *IPNeighborFlushReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IP neighbour replace begin
+//
+//	The use-case is that, for some unspecified reason, the control plane
+//	has a different set of neighbours it than VPP
+//	currently has. The CP would thus like to 'replace' VPP's set
+//	only by specifying what the new set shall be, i.e. it is not
+//	going to delete anything that already exists, rather, it wants any
+//	unspecified neighbors deleted implicitly.
+//	The CP declares the start of this procedure with this replace_begin
+//	API Call, and when it has populated all neighbours it wants, it calls
+//	the below replace_end API. From this point on it is of course free
+//	to add and delete neighbours as usual.
+//	The underlying mechanism by which VPP implements this replace is
+//	intentionally left unspecified.
+//
 // IPNeighborReplaceBegin defines message 'ip_neighbor_replace_begin'.
 type IPNeighborReplaceBegin struct{}
 
@@ -616,6 +676,10 @@ func (m *IPNeighborReplaceBeginReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IP neighbour replace end
+//
+//	see ip_neighbor_replace_begin description.
+//
 // IPNeighborReplaceEnd defines message 'ip_neighbor_replace_end'.
 type IPNeighborReplaceEnd struct{}
 
@@ -676,6 +740,12 @@ func (m *IPNeighborReplaceEndReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Register for IP neighbour events creation
+//   - enable - 1 => register for events, 0 => cancel registration
+//   - pid - sender's pid
+//   - ip - exact IP address of interested neighbor resolution event
+//   - sw_if_index - interface on which the IP address is present.
+//
 // WantIPNeighborEvents defines message 'want_ip_neighbor_events'.
 // Deprecated: the message will be removed in the future versions
 type WantIPNeighborEvents struct {
@@ -759,6 +829,12 @@ func (m *WantIPNeighborEventsReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Register for IP neighbour events (creation or deletion)
+//   - enable - 1 => register for events, 0 => cancel registration
+//   - pid - sender's pid
+//   - ip - exact IP address of interested neighbor resolution event
+//   - sw_if_index - interface on which the IP address is present.
+//
 // WantIPNeighborEventsV2 defines message 'want_ip_neighbor_events_v2'.
 type WantIPNeighborEventsV2 struct {
 	Enable    bool                           `binapi:"bool,name=enable" json:"enable,omitempty"`

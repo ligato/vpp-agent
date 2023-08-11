@@ -109,6 +109,9 @@ func (m *TeibDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// TEIB Entry
+//   - sw_if_index
+//
 // TeibEntryAddDel defines message 'teib_entry_add_del'.
 type TeibEntryAddDel struct {
 	IsAdd uint8     `binapi:"u8,name=is_add" json:"is_add,omitempty"`
