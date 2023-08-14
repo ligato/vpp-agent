@@ -75,6 +75,17 @@ type Srv6SidListWithSlIndex struct {
 	Sids    [16]ip_types.IP6Address `binapi:"ip6_address[16],name=sids" json:"sids,omitempty"`
 }
 
+// IPv6 SR LocalSID add/del request
+//   - is_del Boolean of whether its a delete instruction
+//   - localsid_addr IPv6 address of the localsid
+//   - end_psp Boolean of whether decapsulation is allowed in this function
+//   - behavior Type of behavior (function) for this localsid
+//   - sw_if_index Only for L2/L3 xconnect. OIF. In VRF variant the
+//     fib_table. Default:0xffffffff
+//   - vlan_index Only for L2 xconnect. Outgoing VLAN tag.
+//   - fib_table  FIB table in which we should install the localsid entry
+//   - nh_addr Next Hop IPv46 address. Only for L2/L3 xconnect.
+//
 // SrLocalsidAddDel defines message 'sr_localsid_add_del'.
 type SrLocalsidAddDel struct {
 	IsDel     bool                           `binapi:"bool,name=is_del,default=false" json:"is_del,omitempty"`
@@ -232,6 +243,7 @@ func (m *SrLocalsidsDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump the list of SR LocalSIDs
 // SrLocalsidsDump defines message 'sr_localsids_dump'.
 type SrLocalsidsDump struct{}
 
@@ -338,6 +350,7 @@ func (m *SrLocalsidsWithPacketStatsDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump the list of SR LocalSIDs along with packet statistics
 // SrLocalsidsWithPacketStatsDump defines message 'sr_localsids_with_packet_stats_dump'.
 // InProgress: the message form may change in the future versions
 type SrLocalsidsWithPacketStatsDump struct{}
@@ -449,6 +462,7 @@ func (m *SrPoliciesDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump the list of SR policies
 // SrPoliciesDump defines message 'sr_policies_dump'.
 type SrPoliciesDump struct{}
 
@@ -562,6 +576,7 @@ func (m *SrPoliciesV2Details) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump the list of SR policies v2
 // SrPoliciesV2Dump defines message 'sr_policies_v2_dump'.
 type SrPoliciesV2Dump struct{}
 
@@ -676,6 +691,7 @@ func (m *SrPoliciesWithSlIndexDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump the list of SR policies along with actual segment list index on VPP
 // SrPoliciesWithSlIndexDump defines message 'sr_policies_with_sl_index_dump'.
 // InProgress: the message form may change in the future versions
 type SrPoliciesWithSlIndexDump struct{}
@@ -704,6 +720,14 @@ func (m *SrPoliciesWithSlIndexDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR policy add
+//   - bsid is the bindingSID of the SR Policy
+//   - weight is the weight of the sid list. optional.
+//   - is_encap is the behavior of the SR policy. (0.SRH insert // 1.Encapsulation)
+//   - is_spray is the type of the SR policy. (0.Default // 1.Spray)
+//   - fib_table is the VRF where to install the FIB entry for the BSID
+//   - sids is a srv6_sid_list object
+//
 // SrPolicyAdd defines message 'sr_policy_add'.
 type SrPolicyAdd struct {
 	BsidAddr ip_types.IP6Address `binapi:"ip6_address,name=bsid_addr" json:"bsid_addr,omitempty"`
@@ -802,6 +826,15 @@ func (m *SrPolicyAddReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR policy add
+//   - bsid is the bindingSID of the SR Policy
+//   - weight is the weight of the sid list. optional.
+//   - is_encap is the behavior of the SR policy. (0.SRH insert // 1.Encapsulation)
+//   - type is the SR policy param. (0.Default // 1.Spray // 2.Tef)
+//   - fib_table is the VRF where to install the FIB entry for the BSID
+//   - sids is a srv6_sid_list object
+//   - encap_src is a encaps IPv6 source addr. optional.
+//
 // SrPolicyAddV2 defines message 'sr_policy_add_v2'.
 // InProgress: the message form may change in the future versions
 type SrPolicyAddV2 struct {
@@ -906,6 +939,10 @@ func (m *SrPolicyAddV2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR policy deletion
+//   - bsid is the bindingSID of the SR Policy
+//   - index is the index of the SR policy
+//
 // SrPolicyDel defines message 'sr_policy_del'.
 type SrPolicyDel struct {
 	BsidAddr      ip_types.IP6Address `binapi:"ip6_address,name=bsid_addr" json:"bsid_addr,omitempty"`
@@ -976,6 +1013,15 @@ func (m *SrPolicyDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR policy modification
+//   - bsid is the bindingSID of the SR Policy
+//   - sr_policy_index is the index of the SR policy
+//   - fib_table is the VRF where to install the FIB entry for the BSID
+//   - operation is the operation to perform (among the top ones)
+//   - sl_index is the index of the Segment List to modify/delete
+//   - weight is the weight of the sid list. optional.
+//   - sids is a srv6_sid_list object
+//
 // SrPolicyMod defines message 'sr_policy_mod'.
 type SrPolicyMod struct {
 	BsidAddr      ip_types.IP6Address `binapi:"ip6_address,name=bsid_addr" json:"bsid_addr,omitempty"`
@@ -1078,6 +1124,16 @@ func (m *SrPolicyModReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR policy modification
+//   - bsid is the bindingSID of the SR Policy
+//   - sr_policy_index is the index of the SR policy
+//   - fib_table is the VRF where to install the FIB entry for the BSID
+//   - operation is the operation to perform (among the top ones)
+//   - sl_index is the index of the Segment List to modify/delete
+//   - weight is the weight of the sid list. optional.
+//   - sids is a srv6_sid_list object
+//   - encap_src is a encaps IPv6 source addr. optional.
+//
 // SrPolicyModV2 defines message 'sr_policy_mod_v2'.
 // InProgress: the message form may change in the future versions
 type SrPolicyModV2 struct {
@@ -1186,6 +1242,9 @@ func (m *SrPolicyModV2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR Set SRv6 encapsulation hop-limit
+//   - hop_limit is the hop-limit value to set
+//
 // SrSetEncapHopLimit defines message 'sr_set_encap_hop_limit'.
 type SrSetEncapHopLimit struct {
 	HopLimit uint8 `binapi:"u8,name=hop_limit" json:"hop_limit,omitempty"`
@@ -1252,6 +1311,10 @@ func (m *SrSetEncapHopLimitReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR Set SRv6 encapsulation source
+//   - bsid is the bindingSID of the SR Policy
+//   - index is the index of the SR policy
+//
 // SrSetEncapSource defines message 'sr_set_encap_source'.
 type SrSetEncapSource struct {
 	EncapsSource ip_types.IP6Address `binapi:"ip6_address,name=encaps_source" json:"encaps_source,omitempty"`
@@ -1318,6 +1381,16 @@ func (m *SrSetEncapSourceReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// IPv6 SR steering add/del
+//   - is_del
+//   - bsid is the bindingSID of the SR Policy (alt to sr_policy_index)
+//   - sr_policy is the index of the SR Policy (alt to bsid)
+//   - table_id is the VRF where to install the FIB entry for the BSID
+//   - prefix is the IPv4/v6 address for L3 traffic type
+//   - mask_width is the mask for L3 traffic type
+//   - sw_if_index is the incoming interface for L2 traffic
+//   - traffic_type describes the type of traffic
+//
 // SrSteeringAddDel defines message 'sr_steering_add_del'.
 type SrSteeringAddDel struct {
 	IsDel         bool                           `binapi:"bool,name=is_del,default=false" json:"is_del,omitempty"`
@@ -1469,6 +1542,7 @@ func (m *SrSteeringPolDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump the steering policies
 // SrSteeringPolDump defines message 'sr_steering_pol_dump'.
 type SrSteeringPolDump struct{}
 

@@ -173,6 +173,12 @@ type MacEntry struct {
 	Flags     uint8                          `binapi:"u8,name=flags" json:"flags,omitempty"`
 }
 
+// Set bridge domain ip to mac entry request
+//   - bd_id - the bridge domain to set the flags for
+//   - is_add - if non-zero, add the entry, else clear it
+//   - ip - ipv4 or ipv6 address
+//   - mac - MAC address
+//
 // BdIPMacAddDel defines message 'bd_ip_mac_add_del'.
 type BdIPMacAddDel struct {
 	IsAdd bool    `binapi:"bool,name=is_add,default=true" json:"is_add,omitempty"`
@@ -252,6 +258,12 @@ func (m *BdIPMacAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// bridge domain IP to MAC entry details structure
+//   - bd_id - bridge domain table id
+//   - is_ipv6 - if non-zero, ipv6 address, else ipv4 address
+//   - ip_address - ipv4 or ipv6 address
+//   - mac_address - MAC address
+//
 // BdIPMacDetails defines message 'bd_ip_mac_details'.
 type BdIPMacDetails struct {
 	Entry BdIPMac `binapi:"bd_ip_mac,name=entry" json:"entry,omitempty"`
@@ -294,6 +306,9 @@ func (m *BdIPMacDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump bridge domain IP to MAC entries
+//   - bd_id - bridge domain identifier
+//
 // BdIPMacDump defines message 'bd_ip_mac_dump'.
 type BdIPMacDump struct {
 	BdID uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -327,6 +342,9 @@ func (m *BdIPMacDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Flush bridge domain IP to MAC entries
+//   - bd_id - bridge domain identifier
+//
 // BdIPMacFlush defines message 'bd_ip_mac_flush'.
 type BdIPMacFlush struct {
 	BdID uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -393,6 +411,17 @@ func (m *BdIPMacFlushReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain add or delete request - will be deprecated
+//   - bd_id - the bridge domain to create
+//   - flood - enable/disable bcast/mcast flooding in the bd
+//   - uu_flood - enable/disable unknown unicast flood in the bd
+//   - forward - enable/disable forwarding on all interfaces in the bd
+//   - learn - enable/disable learning on all interfaces in the bd
+//   - arp_term - enable/disable arp termination in the bd
+//   - arp_ufwd - enable/disable arp unicast forwarding in the bd
+//   - mac_age - mac aging time in min, 0 for disabled
+//   - is_add - add or delete flag
+//
 // BridgeDomainAddDel defines message 'bridge_domain_add_del'.
 // Deprecated: the message will be removed in the future versions
 type BridgeDomainAddDel struct {
@@ -497,6 +526,18 @@ func (m *BridgeDomainAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain add delete request version 2
+//   - bd_id -  if the id == ~0 creates a bridge domain with an unused id
+//     if the id != ~0 the id of the bridge domain to create/delete
+//   - flood - enable/disable bcast/mcast flooding in the bd
+//   - uu_flood - enable/disable unknown unicast flood in the bd
+//   - forward - enable/disable forwarding on all interfaces in the bd
+//   - learn - enable/disable learning on all interfaces in the bd
+//   - arp_term - enable/disable arp termination in the bd
+//   - arp_ufwd - enable/disable arp unicast forwarding in the bd
+//   - mac_age - mac aging time in min, 0 for disabled
+//   - is_add - add or delete flag
+//
 // BridgeDomainAddDelV2 defines message 'bridge_domain_add_del_v2'.
 type BridgeDomainAddDelV2 struct {
 	BdID    uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -566,6 +607,10 @@ func (m *BridgeDomainAddDelV2) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain add delete version 2 response
+//   - retval - return code for the set bridge flags request
+//   - resulting_id - the id for the new bridge domain
+//
 // BridgeDomainAddDelV2Reply defines message 'bridge_domain_add_del_v2_reply'.
 type BridgeDomainAddDelV2Reply struct {
 	Retval int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -603,6 +648,18 @@ func (m *BridgeDomainAddDelV2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain operational state response
+//   - bd_id - the bridge domain id
+//   - flood - bcast/mcast flooding state on all interfaces in the bd
+//   - uu_flood - unknown unicast flooding state on all interfaces in the bd
+//   - forward - forwarding state on all interfaces in the bd
+//   - learn - learning state on all interfaces in the bd
+//   - arp_term - arp termination state on all interfaces in the bd
+//   - arp_ufwd - arp unicast forwarding state on all interfaces in the bd
+//   - mac_age - mac aging time in min, 0 for disabled
+//   - bd_tag - optional textual tag for the bridge domain
+//   - n_sw_ifs - number of sw_if_index's in the domain
+//
 // BridgeDomainDetails defines message 'bridge_domain_details'.
 type BridgeDomainDetails struct {
 	BdID           uint32                         `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -706,6 +763,10 @@ func (m *BridgeDomainDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain request operational state details
+//   - bd_id - the bridge domain id desired or ~0 to request all bds
+//   - sw_if_index - filter by sw_if_index UNIMPLEMENTED
+//
 // BridgeDomainDump defines message 'bridge_domain_dump'.
 type BridgeDomainDump struct {
 	BdID      uint32                         `binapi:"u32,name=bd_id,default=4294967295" json:"bd_id,omitempty"`
@@ -743,6 +804,9 @@ func (m *BridgeDomainDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain set default learn limit
+//   - learn limit - maximum number of entries by default for bridge domains
+//
 // BridgeDomainSetDefaultLearnLimit defines message 'bridge_domain_set_default_learn_limit'.
 type BridgeDomainSetDefaultLearnLimit struct {
 	LearnLimit uint32 `binapi:"u32,name=learn_limit" json:"learn_limit,omitempty"`
@@ -813,6 +877,10 @@ func (m *BridgeDomainSetDefaultLearnLimitReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain set learn limit
+//   - bd_id - the bridge domain idenntifier
+//   - learn limit - maximum number of entries for this bd
+//
 // BridgeDomainSetLearnLimit defines message 'bridge_domain_set_learn_limit'.
 type BridgeDomainSetLearnLimit struct {
 	BdID       uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -885,6 +953,10 @@ func (m *BridgeDomainSetLearnLimitReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 bridge domain set mac age
+//   - bd_id - the bridge domain to create
+//   - mac_age - mac aging time in min, 0 for disabled
+//
 // BridgeDomainSetMacAge defines message 'bridge_domain_set_mac_age'.
 type BridgeDomainSetMacAge struct {
 	BdID   uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -955,6 +1027,11 @@ func (m *BridgeDomainSetMacAgeReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Set bridge flags request
+//   - bd_id - the bridge domain to set the flags for
+//   - is_set - if non-zero, set the flags, else clear them
+//   - flags - flags that are non-zero to set or clear
+//
 // BridgeFlags defines message 'bridge_flags'.
 type BridgeFlags struct {
 	BdID  uint32  `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -996,6 +1073,10 @@ func (m *BridgeFlags) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Set bridge flags response
+//   - retval - return code for the set bridge flags request
+//   - resulting_feature_bitmap - the internal L2 feature bitmap after the request is implemented
+//
 // BridgeFlagsReply defines message 'bridge_flags_reply'.
 type BridgeFlagsReply struct {
 	Retval                 int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -1033,6 +1114,10 @@ func (m *BridgeFlagsReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Create BVI interface instance request
+//   - mac_address - mac addr to assign to the interface if none-zero
+//   - user_instance - requested instance, ~0 => dynamically allocate
+//
 // BviCreate defines message 'bvi_create'.
 type BviCreate struct {
 	Mac          ethernet_types.MacAddress `binapi:"mac_address,name=mac" json:"mac,omitempty"`
@@ -1070,6 +1155,10 @@ func (m *BviCreate) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Create BVI interface instance response
+//   - sw_if_index - sw index of the interface that was created
+//   - retval - return code for the request
+//
 // BviCreateReply defines message 'bvi_create_reply'.
 type BviCreateReply struct {
 	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -1107,6 +1196,9 @@ func (m *BviCreateReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Delete BVI interface request
+//   - sw_if_index - sw index of the interface that was created
+//
 // BviDelete defines message 'bvi_delete'.
 type BviDelete struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1173,6 +1265,14 @@ func (m *BviDeleteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Tell client about an IP4 ARP resolution event or
+//
+//	       MAC/IP info from ARP requests in L2 BDs
+//	- pid - client pid registered to receive notification
+//	- ip - IP address of new ARP term entry
+//	- sw_if_index - interface of new ARP term entry
+//	- mac - MAC address of new ARP term entry
+//
 // L2ArpTermEvent defines message 'l2_arp_term_event'.
 type L2ArpTermEvent struct {
 	PID       uint32                         `binapi:"u32,name=pid" json:"pid,omitempty"`
@@ -1221,6 +1321,7 @@ func (m *L2ArpTermEvent) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 fib clear table request, clear all mac entries in the l2 fib
 // L2FibClearTable defines message 'l2_fib_clear_table'.
 type L2FibClearTable struct{}
 
@@ -1281,6 +1382,14 @@ func (m *L2FibClearTableReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// l2 fib table details structure
+//   - bd_id - the l2 fib / bridge domain table id
+//   - mac - the entry's mac address
+//   - sw_if_index - index of the interface
+//   - static_mac - the entry is statically configured.
+//   - filter_mac - the entry is a mac filter entry.
+//   - bvi_mac - the mac address is a bridge virtual interface
+//
 // L2FibTableDetails defines message 'l2_fib_table_details'.
 type L2FibTableDetails struct {
 	BdID      uint32                         `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -1334,6 +1443,9 @@ func (m *L2FibTableDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump l2 fib (aka bridge domain) table
+//   - bd_id - the l2 fib / bridge domain table identifier
+//
 // L2FibTableDump defines message 'l2_fib_table_dump'.
 type L2FibTableDump struct {
 	BdID uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -1367,6 +1479,16 @@ func (m *L2FibTableDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Set interface L2 flags (such as L2_LEARN, L2_FWD,
+//
+//	L2_FLOOD, L2_UU_FLOOD, or L2_ARP_TERM bits). This can be used
+//	to disable one or more of the features represented by the
+//	flag bits on an interface to override what is set as default
+//	for all interfaces in the bridge domain
+//	- sw_if_index - interface
+//	- is_set - if non-zero, set the bits, else clear them
+//	- feature_bitmap - non-zero bits (as above) to set or clear
+//
 // L2Flags defines message 'l2_flags'.
 type L2Flags struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1408,6 +1530,10 @@ func (m *L2Flags) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Set interface L2 flags response
+//   - retval - return code for the set l2 bits request
+//   - resulting_feature_bitmap - the internal l2 feature bitmap after the request is implemented
+//
 // L2FlagsReply defines message 'l2_flags_reply'.
 type L2FlagsReply struct {
 	Retval                 int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -1445,6 +1571,10 @@ func (m *L2FlagsReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 interface ethernet flow point filtering enable/disable request
+//   - sw_if_index - interface to enable/disable filtering on
+//   - enable_disable - if non-zero enable filtering, else disable
+//
 // L2InterfaceEfpFilter defines message 'l2_interface_efp_filter'.
 type L2InterfaceEfpFilter struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1515,6 +1645,16 @@ func (m *L2InterfaceEfpFilterReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 interface pbb tag rewrite configure request
+//   - sw_if_index - interface the operation is applied to
+//   - vtr_op - Choose from l2_vtr_op_t enum values
+//   - inner_tag - needed for translate_qinq vtr op only
+//   - outer_tag - needed for translate_qinq vtr op only
+//   - b_dmac - B-tag remote mac address, needed for any push or translate_qinq vtr op
+//   - b_smac - B-tag local mac address, needed for any push or translate qinq vtr op
+//   - b_vlanid - B-tag vlanid, needed for any push or translate qinq vtr op
+//   - i_sid - I-tag service id, needed for any push or translate qinq vtr op
+//
 // L2InterfacePbbTagRewrite defines message 'l2_interface_pbb_tag_rewrite'.
 type L2InterfacePbbTagRewrite struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1607,6 +1747,13 @@ func (m *L2InterfacePbbTagRewriteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 interface vlan tag rewrite configure request
+//   - sw_if_index - interface the operation is applied to
+//   - vtr_op - Choose from l2_vtr_op_t enum values
+//   - push_dot1q - first pushed flag dot1q id set, else dot1ad
+//   - tag1 - Needed for any push or translate vtr op
+//   - tag2 - Needed for any push 2 or translate x-2 vtr ops
+//
 // L2InterfaceVlanTagRewrite defines message 'l2_interface_vlan_tag_rewrite'.
 type L2InterfaceVlanTagRewrite struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1691,6 +1838,11 @@ func (m *L2InterfaceVlanTagRewriteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 MAC event for a list of learned or aged MACs
+//   - pid - client pid registered to receive notification
+//   - n_macs - number of learned/aged MAC entries
+//   - mac - array of learned/aged MAC entries
+//
 // L2MacsEvent defines message 'l2_macs_event'.
 type L2MacsEvent struct {
 	PID   uint32     `binapi:"u32,name=pid" json:"pid,omitempty"`
@@ -1757,6 +1909,11 @@ func (m *L2MacsEvent) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 interface patch add / del request
+//   - rx_sw_if_index - receive side interface
+//   - tx_sw_if_index - transmit side interface
+//   - is_add - if non-zero set up the interface patch, else remove it
+//
 // L2PatchAddDel defines message 'l2_patch_add_del'.
 type L2PatchAddDel struct {
 	RxSwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=rx_sw_if_index" json:"rx_sw_if_index,omitempty"`
@@ -1831,6 +1988,10 @@ func (m *L2PatchAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply to l2_xconnect_dump
+//   - rx_sw_if_index - Receive interface index
+//   - tx_sw_if_index - Transmit interface index
+//
 // L2XconnectDetails defines message 'l2_xconnect_details'.
 type L2XconnectDetails struct {
 	RxSwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=rx_sw_if_index" json:"rx_sw_if_index,omitempty"`
@@ -1868,6 +2029,7 @@ func (m *L2XconnectDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump L2 XConnects
 // L2XconnectDump defines message 'l2_xconnect_dump'.
 type L2XconnectDump struct{}
 
@@ -1895,6 +2057,15 @@ func (m *L2XconnectDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 FIB add entry request
+//   - mac - the entry's mac address
+//   - bd_id - the entry's bridge domain id
+//   - sw_if_index - the interface
+//   - is_add - If non zero add the entry, else delete it
+//   - static_mac -
+//   - filter_mac -
+//   - bvi_mac -
+//
 // L2fibAddDel defines message 'l2fib_add_del'.
 type L2fibAddDel struct {
 	Mac       ethernet_types.MacAddress      `binapi:"mac_address,name=mac" json:"mac,omitempty"`
@@ -1985,6 +2156,7 @@ func (m *L2fibAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 FIB flush all  entries
 // L2fibFlushAll defines message 'l2fib_flush_all'.
 type L2fibFlushAll struct{}
 
@@ -2045,6 +2217,9 @@ func (m *L2fibFlushAllReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 FIB flush bridge domain entries
+//   - bd_id - the entry's bridge domain id
+//
 // L2fibFlushBd defines message 'l2fib_flush_bd'.
 type L2fibFlushBd struct {
 	BdID uint32 `binapi:"u32,name=bd_id" json:"bd_id,omitempty"`
@@ -2111,6 +2286,9 @@ func (m *L2fibFlushBdReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// L2 FIB flush interface entries
+//   - bd_id - the entry's bridge domain id
+//
 // L2fibFlushInt defines message 'l2fib_flush_int'.
 type L2fibFlushInt struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -2177,6 +2355,9 @@ func (m *L2fibFlushIntReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// set l2 table scan delay
+//   - scan_delay - event scan delay in 10 msec unit
+//
 // L2fibSetScanDelay defines message 'l2fib_set_scan_delay'.
 type L2fibSetScanDelay struct {
 	ScanDelay uint16 `binapi:"u16,name=scan_delay,default=10" json:"scan_delay,omitempty"`
@@ -2243,6 +2424,13 @@ func (m *L2fibSetScanDelayReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Interface bridge mode request
+//   - rx_sw_if_index - the interface
+//   - bd_id - bridge domain id
+//   - port_type - port_mode, see #l2_port_type
+//   - shg - Split horizon group, for bridge mode only
+//   - enable - Enable beige mode if not 0, else set to L3 mode
+//
 // SwInterfaceSetL2Bridge defines message 'sw_interface_set_l2_bridge'.
 type SwInterfaceSetL2Bridge struct {
 	RxSwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=rx_sw_if_index" json:"rx_sw_if_index,omitempty"`
@@ -2327,6 +2515,11 @@ func (m *SwInterfaceSetL2BridgeReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Set L2 XConnect between two interfaces request
+//   - rx_sw_if_index - Receive interface index
+//   - tx_sw_if_index - Transmit interface index
+//   - enable - enable xconnect if not 0, else set to L3 mode
+//
 // SwInterfaceSetL2Xconnect defines message 'sw_interface_set_l2_xconnect'.
 type SwInterfaceSetL2Xconnect struct {
 	RxSwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=rx_sw_if_index" json:"rx_sw_if_index,omitempty"`
@@ -2403,6 +2596,10 @@ func (m *SwInterfaceSetL2XconnectReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Interface set vpath request
+//   - sw_if_index - interface used to reach neighbor
+//   - enable - if non-zero enable, else disable
+//
 // SwInterfaceSetVpath defines message 'sw_interface_set_vpath'.
 type SwInterfaceSetVpath struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -2473,6 +2670,12 @@ func (m *SwInterfaceSetVpathReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Register for IP4 ARP resolution event on receiving ARP reply or
+//
+//	       MAC/IP info from ARP requests in L2 BDs
+//	- enable - 1 => register for events, 0 => cancel registration
+//	- pid - sender's pid
+//
 // WantL2ArpTermEvents defines message 'want_l2_arp_term_events'.
 type WantL2ArpTermEvents struct {
 	Enable bool   `binapi:"bool,name=enable" json:"enable,omitempty"`
@@ -2543,6 +2746,13 @@ func (m *WantL2ArpTermEventsReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Register to receive L2 MAC events for learned and aged MAC
+//   - learn_limit - MAC learn limit
+//   - scan_delay - event scan delay in 10 msec unit
+//   - max_macs_in_event - in units of 10 mac entries
+//   - enable_disable - 1 => register for MAC events, 0 => cancel registration
+//   - pid - sender's pid
+//
 // WantL2MacsEvents defines message 'want_l2_macs_events'.
 // Deprecated: the message will be removed in the future versions
 type WantL2MacsEvents struct {
@@ -2593,6 +2803,11 @@ func (m *WantL2MacsEvents) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Register to receive L2 MAC events for learned and aged MAC
+//   - max_macs_in_event - in units of 10 mac entries
+//   - enable_disable - 1 => register for MAC events, 0 => cancel registration
+//   - pid - sender's pid
+//
 // WantL2MacsEvents2 defines message 'want_l2_macs_events2'.
 type WantL2MacsEvents2 struct {
 	MaxMacsInEvent uint8  `binapi:"u8,name=max_macs_in_event,default=10" json:"max_macs_in_event,omitempty"`

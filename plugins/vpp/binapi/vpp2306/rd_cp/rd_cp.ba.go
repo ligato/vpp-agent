@@ -24,6 +24,16 @@ const (
 	VersionCrc = 0x871c3bee
 )
 
+// Enable/disable IPv6 ND address autoconfiguration
+//
+//	       and setting up default routes
+//	- sw_if_index - interface to enable the autoconfigutation on
+//	- enable - 1 to enable address autoconfiguration, 0 to disable
+//	- install_default_routes - 1 to enable installing defaut routes,
+//	                                0 to disable installing defaut routes,
+//	                                the value is ignored (and taken as 0)
+//	                                when enable param is set to 0
+//
 // IP6NdAddressAutoconfig defines message 'ip6_nd_address_autoconfig'.
 type IP6NdAddressAutoconfig struct {
 	SwIfIndex            interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`

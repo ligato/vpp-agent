@@ -34,6 +34,10 @@ type ProxyArp struct {
 	Hi      ip_types.IP4Address `binapi:"ip4_address,name=hi" json:"hi,omitempty"`
 }
 
+// Proxy ARP add / del request
+//   - is_add - 1 if adding the Proxy ARP range, 0 if deleting
+//   - proxy - Proxy configuration
+//
 // ProxyArpAddDel defines message 'proxy_arp_add_del'.
 type ProxyArpAddDel struct {
 	IsAdd bool     `binapi:"bool,name=is_add" json:"is_add,omitempty"`
@@ -110,6 +114,9 @@ func (m *ProxyArpAddDelReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Proxy ARP dump details reply
+//   - - proxy - Same data as used to configure
+//
 // ProxyArpDetails defines message 'proxy_arp_details'.
 type ProxyArpDetails struct {
 	Proxy ProxyArp `binapi:"proxy_arp,name=proxy" json:"proxy,omitempty"`
@@ -149,6 +156,7 @@ func (m *ProxyArpDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Proxy ARP dump request
 // ProxyArpDump defines message 'proxy_arp_dump'.
 type ProxyArpDump struct{}
 
@@ -176,6 +184,9 @@ func (m *ProxyArpDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Proxy ARP interface dump details reply
+//   - - sw_if_index The interface on which ARP proxy is enabled.
+//
 // ProxyArpIntfcDetails defines message 'proxy_arp_intfc_details'.
 type ProxyArpIntfcDetails struct {
 	SwIfIndex uint32 `binapi:"u32,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -209,6 +220,7 @@ func (m *ProxyArpIntfcDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Proxy ARP interface dump request
 // ProxyArpIntfcDump defines message 'proxy_arp_intfc_dump'.
 type ProxyArpIntfcDump struct{}
 
@@ -236,6 +248,10 @@ func (m *ProxyArpIntfcDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Proxy ARP add / del interface request
+//   - sw_if_index - Which interface to enable / disable Proxy Arp on
+//   - enable - 1 to enable Proxy ARP on interface, 0 to disable
+//
 // ProxyArpIntfcEnableDisable defines message 'proxy_arp_intfc_enable_disable'.
 type ProxyArpIntfcEnableDisable struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`

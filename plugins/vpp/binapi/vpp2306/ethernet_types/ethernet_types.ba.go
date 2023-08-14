@@ -27,6 +27,12 @@ const (
 // MacAddress defines alias 'mac_address'.
 type MacAddress [6]uint8
 
+func NewMacAddress(mac net.HardwareAddr) MacAddress {
+	var macaddr MacAddress
+	copy(macaddr[:], mac[:])
+	return macaddr
+}
+
 func ParseMacAddress(s string) (MacAddress, error) {
 	var macaddr MacAddress
 	mac, err := net.ParseMAC(s)
