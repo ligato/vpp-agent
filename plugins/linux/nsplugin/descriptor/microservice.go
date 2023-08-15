@@ -144,6 +144,7 @@ func (d *MicroserviceDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (value
 
 // StartTracker starts microservice tracker,
 func (d *MicroserviceDescriptor) StartTracker() {
+	d.wg.Add(1)
 	go d.trackMicroservices(d.ctx)
 }
 
@@ -283,10 +284,9 @@ func (d *MicroserviceDescriptor) processStoppedContainer(id string) {
 
 // trackMicroservices is running in the background and maintains a map of microservice labels to container info.
 func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
-	d.wg.Add(1)
 	defer func() {
-		d.wg.Done()
 		d.log.Debugf("Microservice tracking ended")
+		d.wg.Done()
 	}()
 
 	// subscribe to Docker events

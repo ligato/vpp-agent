@@ -125,7 +125,7 @@ func (c *ContainerRuntime) ExecCmd(cmd string, args ...string) (string, string, 
 	ctx, cancel := context.WithTimeout(c.ctx.ctx, containerExecTimeout)
 	defer cancel()
 
-	hijacked, err := c.ctx.dockerClient.ContainerExecAttach(c.ctx.ctx, exec.ID, moby.ExecStartCheck{})
+	hijacked, err := c.ctx.dockerClient.ContainerExecAttach(ctx, exec.ID, moby.ExecStartCheck{})
 	if err != nil {
 		return "", "", errors.Errorf("failed to attach docker exec for command %s to container %s due to: %v", cmd, c.container.ID, err)
 	}
