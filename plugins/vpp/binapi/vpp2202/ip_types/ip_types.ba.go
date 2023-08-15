@@ -274,12 +274,21 @@ func (x IPProto) String() string {
 // AddressWithPrefix defines alias 'address_with_prefix'.
 type AddressWithPrefix Prefix
 
+func NewAddressWithPrefix(network net.IPNet) AddressWithPrefix {
+	prefix := NewPrefix(network)
+	return AddressWithPrefix(prefix)
+}
+
 func ParseAddressWithPrefix(s string) (AddressWithPrefix, error) {
 	prefix, err := ParsePrefix(s)
 	if err != nil {
 		return AddressWithPrefix{}, err
 	}
 	return AddressWithPrefix(prefix), nil
+}
+
+func (x AddressWithPrefix) ToIPNet() *net.IPNet {
+	return Prefix(x).ToIPNet()
 }
 
 func (x AddressWithPrefix) String() string {
@@ -302,10 +311,16 @@ func (x *AddressWithPrefix) UnmarshalText(text []byte) error {
 // IP4Address defines alias 'ip4_address'.
 type IP4Address [4]uint8
 
+func NewIP4Address(ip net.IP) IP4Address {
+	var ipaddr IP4Address
+	copy(ipaddr[:], ip.To4())
+	return ipaddr
+}
+
 func ParseIP4Address(s string) (IP4Address, error) {
 	ip := net.ParseIP(s).To4()
 	if ip == nil {
-		return IP4Address{}, fmt.Errorf("invalid IP address: %s", s)
+		return IP4Address{}, fmt.Errorf("invalid IP4 address: %s", s)
 	}
 	var ipaddr IP4Address
 	copy(ipaddr[:], ip.To4())
@@ -339,10 +354,16 @@ type IP4AddressWithPrefix IP4Prefix
 // IP6Address defines alias 'ip6_address'.
 type IP6Address [16]uint8
 
+func NewIP6Address(ip net.IP) IP6Address {
+	var ipaddr IP6Address
+	copy(ipaddr[:], ip.To16())
+	return ipaddr
+}
+
 func ParseIP6Address(s string) (IP6Address, error) {
 	ip := net.ParseIP(s).To16()
 	if ip == nil {
-		return IP6Address{}, fmt.Errorf("invalid IP address: %s", s)
+		return IP6Address{}, fmt.Errorf("invalid IP6 address: %s", s)
 	}
 	var ipaddr IP6Address
 	copy(ipaddr[:], ip.To16())
@@ -379,15 +400,7 @@ type Address struct {
 	Un AddressUnion  `binapi:"address_union,name=un" json:"un,omitempty"`
 }
 
-func ParseAddress(s string) (Address, error) {
-	ip := net.ParseIP(s)
-	if ip == nil {
-		return Address{}, fmt.Errorf("invalid address: %s", s)
-	}
-	return AddressFromIP(ip), nil
-}
-
-func AddressFromIP(ip net.IP) Address {
+func NewAddress(ip net.IP) Address {
 	var addr Address
 	if ip.To4() == nil {
 		addr.Af = ADDRESS_IP6
@@ -401,6 +414,14 @@ func AddressFromIP(ip net.IP) Address {
 		addr.Un.SetIP4(ip4)
 	}
 	return addr
+}
+
+func ParseAddress(s string) (Address, error) {
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return Address{}, fmt.Errorf("invalid IP address: %s", s)
+	}
+	return NewAddress(ip), nil
 }
 
 func (x Address) ToIP() net.IP {
@@ -442,18 +463,26 @@ type IP4Prefix struct {
 	Len     uint8      `binapi:"u8,name=len" json:"len,omitempty"`
 }
 
+func NewIP4Prefix(network net.IPNet) IP4Prefix {
+	var prefix IP4Prefix
+	maskSize, _ := network.Mask.Size()
+	prefix.Len = byte(maskSize)
+	prefix.Address = NewIP4Address(network.IP)
+	return prefix
+}
+
 func ParseIP4Prefix(s string) (prefix IP4Prefix, err error) {
 	hasPrefix := strings.Contains(s, "/")
 	if hasPrefix {
 		ip, network, err := net.ParseCIDR(s)
 		if err != nil {
-			return IP4Prefix{}, fmt.Errorf("invalid IP %s: %s", s, err)
+			return IP4Prefix{}, fmt.Errorf("invalid IP4 %s: %s", s, err)
 		}
 		maskSize, _ := network.Mask.Size()
 		prefix.Len = byte(maskSize)
 		prefix.Address, err = ParseIP4Address(ip.String())
 		if err != nil {
-			return IP4Prefix{}, fmt.Errorf("invalid IP %s: %s", s, err)
+			return IP4Prefix{}, fmt.Errorf("invalid IP4 %s: %s", s, err)
 		}
 	} else {
 		ip := net.ParseIP(s)
@@ -464,7 +493,7 @@ func ParseIP4Prefix(s string) (prefix IP4Prefix, err error) {
 		prefix.Len = byte(defaultMaskSize)
 		prefix.Address, err = ParseIP4Address(ip.String())
 		if err != nil {
-			return IP4Prefix{}, fmt.Errorf("invalid IP %s: %s", s, err)
+			return IP4Prefix{}, fmt.Errorf("invalid IP4 %s: %s", s, err)
 		}
 	}
 	return prefix, nil
@@ -506,18 +535,26 @@ type IP6Prefix struct {
 	Len     uint8      `binapi:"u8,name=len" json:"len,omitempty"`
 }
 
+func NewIP6Prefix(network net.IPNet) IP6Prefix {
+	var prefix IP6Prefix
+	maskSize, _ := network.Mask.Size()
+	prefix.Len = byte(maskSize)
+	prefix.Address = NewIP6Address(network.IP)
+	return prefix
+}
+
 func ParseIP6Prefix(s string) (prefix IP6Prefix, err error) {
 	hasPrefix := strings.Contains(s, "/")
 	if hasPrefix {
 		ip, network, err := net.ParseCIDR(s)
 		if err != nil {
-			return IP6Prefix{}, fmt.Errorf("invalid IP %s: %s", s, err)
+			return IP6Prefix{}, fmt.Errorf("invalid IP6 %s: %s", s, err)
 		}
 		maskSize, _ := network.Mask.Size()
 		prefix.Len = byte(maskSize)
 		prefix.Address, err = ParseIP6Address(ip.String())
 		if err != nil {
-			return IP6Prefix{}, fmt.Errorf("invalid IP %s: %s", s, err)
+			return IP6Prefix{}, fmt.Errorf("invalid IP6 %s: %s", s, err)
 		}
 	} else {
 		ip := net.ParseIP(s)
@@ -528,7 +565,7 @@ func ParseIP6Prefix(s string) (prefix IP6Prefix, err error) {
 		prefix.Len = byte(defaultMaskSize)
 		prefix.Address, err = ParseIP6Address(ip.String())
 		if err != nil {
-			return IP6Prefix{}, fmt.Errorf("invalid IP %s: %s", s, err)
+			return IP6Prefix{}, fmt.Errorf("invalid IP6 %s: %s", s, err)
 		}
 	}
 	return prefix, nil
@@ -570,6 +607,14 @@ type Mprefix struct {
 type Prefix struct {
 	Address Address `binapi:"address,name=address" json:"address,omitempty"`
 	Len     uint8   `binapi:"u8,name=len" json:"len,omitempty"`
+}
+
+func NewPrefix(network net.IPNet) Prefix {
+	var prefix Prefix
+	maskSize, _ := network.Mask.Size()
+	prefix.Len = byte(maskSize)
+	prefix.Address = NewAddress(network.IP)
+	return prefix
 }
 
 func ParsePrefix(ip string) (prefix Prefix, err error) {

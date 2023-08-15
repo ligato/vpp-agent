@@ -60,6 +60,12 @@ func (x SpanState) String() string {
 	return "SpanState(" + strconv.Itoa(int(x)) + ")"
 }
 
+// Reply to SPAN dump request
+//   - sw_if_index_from - mirrored interface
+//   - sw_if_index_to - interface where the traffic is mirrored
+//   - state - 0 = disabled, 1 = rx enabled, 2 = tx enabled, 3 tx & rx enabled
+//   - is_l2 - 0 = mirrored at hw device level, 1 = mirrored at l2
+//
 // SwInterfaceSpanDetails defines message 'sw_interface_span_details'.
 type SwInterfaceSpanDetails struct {
 	SwIfIndexFrom interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index_from" json:"sw_if_index_from,omitempty"`
@@ -105,6 +111,9 @@ func (m *SwInterfaceSpanDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// SPAN dump request
+//   - is_l2 - 0 = hw device level, 1 = L2
+//
 // SwInterfaceSpanDump defines message 'sw_interface_span_dump'.
 type SwInterfaceSpanDump struct {
 	IsL2 bool `binapi:"bool,name=is_l2" json:"is_l2,omitempty"`
@@ -138,6 +147,12 @@ func (m *SwInterfaceSpanDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Enable/Disable span to mirror traffic from one interface to another
+//   - sw_if_index_from - interface to be mirrored
+//   - sw_if_index_to - interface where the traffic is mirrored
+//   - state - 0 = disabled, 1 = rx enabled, 2 = tx enabled, 3 tx & rx enabled
+//   - is_l2 - 0 = mirror at hw device level, 1 = mirror at L2
+//
 // SwInterfaceSpanEnableDisable defines message 'sw_interface_span_enable_disable'.
 type SwInterfaceSpanEnableDisable struct {
 	SwIfIndexFrom interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index_from" json:"sw_if_index_from,omitempty"`

@@ -38,6 +38,9 @@ type ModuleVersion struct {
 	Name  string `binapi:"string[64],name=name" json:"name,omitempty"`
 }
 
+// /*
+//   - Get API version table (includes built-in and plugins)
+//
 // APIVersions defines message 'api_versions'.
 type APIVersions struct{}
 
@@ -131,6 +134,7 @@ func (m *APIVersionsReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Control ping from client to api server request
 // ControlPing defines message 'control_ping'.
 type ControlPing struct{}
 
@@ -158,6 +162,10 @@ func (m *ControlPing) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Control ping from the client to the server response
+//   - retval - return code for the request
+//   - vpe_pid - the pid of the vpe, returned by the server
+//
 // ControlPingReply defines message 'control_ping_reply'.
 type ControlPingReply struct {
 	Retval      int32  `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -199,6 +207,9 @@ func (m *ControlPingReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Lookup message-ID base by name
+//
 // GetFirstMsgID defines message 'get_first_msg_id'.
 type GetFirstMsgID struct {
 	Name string `binapi:"string[64],name=name" json:"name,omitempty"`
@@ -269,6 +280,9 @@ func (m *GetFirstMsgIDReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Create a client registration
+//
 // MemclntCreate defines message 'memclnt_create'.
 type MemclntCreate struct {
 	CtxQuota    int32    `binapi:"i32,name=ctx_quota" json:"ctx_quota,omitempty"`
@@ -471,6 +485,9 @@ func (m *MemclntCreateV2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Delete a client registration
+//
 // MemclntDelete defines message 'memclnt_delete'.
 type MemclntDelete struct {
 	Index     uint32 `binapi:"u32,name=index" json:"index,omitempty"`
@@ -549,6 +566,10 @@ func (m *MemclntDeleteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Memory client ping / response
+//   - Only sent on inactive connections
+//
 // MemclntKeepalive defines message 'memclnt_keepalive'.
 type MemclntKeepalive struct{}
 
@@ -609,6 +630,9 @@ func (m *MemclntKeepaliveReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Client read timeout
+//
 // MemclntReadTimeout defines message 'memclnt_read_timeout'.
 type MemclntReadTimeout struct {
 	Dummy uint8 `binapi:"u8,name=dummy" json:"dummy,omitempty"`
@@ -642,6 +666,9 @@ func (m *MemclntReadTimeout) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Client RX thread suspend
+//
 // MemclntRxThreadSuspend defines message 'memclnt_rx_thread_suspend'.
 type MemclntRxThreadSuspend struct {
 	Dummy uint8 `binapi:"u8,name=dummy" json:"dummy,omitempty"`
@@ -675,6 +702,9 @@ func (m *MemclntRxThreadSuspend) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - RPC
+//
 // RPCCall defines message 'rpc_call'.
 type RPCCall struct {
 	Function        uint64 `binapi:"u64,name=function" json:"function,omitempty"`
@@ -762,6 +792,9 @@ func (m *RPCCallReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Client RX thread exit
+//
 // RxThreadExit defines message 'rx_thread_exit'.
 type RxThreadExit struct {
 	Dummy uint8 `binapi:"u8,name=dummy" json:"dummy,omitempty"`
@@ -795,6 +828,9 @@ func (m *RxThreadExit) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Initialize shm api over socket api
+//
 // SockInitShm defines message 'sock_init_shm'.
 type SockInitShm struct {
 	RequestedSize uint32   `binapi:"u32,name=requested_size" json:"requested_size,omitempty"`
@@ -878,6 +914,9 @@ func (m *SockInitShmReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Create a socket client registration.
+//
 // SockclntCreate defines message 'sockclnt_create'.
 type SockclntCreate struct {
 	Name string `binapi:"string[64],name=name" json:"name,omitempty"`
@@ -975,6 +1014,9 @@ func (m *SockclntCreateReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Delete a client registration
+//
 // SockclntDelete defines message 'sockclnt_delete'.
 type SockclntDelete struct {
 	Index uint32 `binapi:"u32,name=index" json:"index,omitempty"`
@@ -1041,6 +1083,11 @@ func (m *SockclntDeleteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// /*
+//   - Trace the plugin message-id allocator
+//   - so we stand a chance of dealing with different sets of plugins
+//   - at api trace replay time
+//
 // TracePluginMsgIds defines message 'trace_plugin_msg_ids'.
 type TracePluginMsgIds struct {
 	PluginName string `binapi:"string[128],name=plugin_name" json:"plugin_name,omitempty"`

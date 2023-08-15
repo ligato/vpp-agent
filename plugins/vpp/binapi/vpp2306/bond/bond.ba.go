@@ -103,6 +103,12 @@ func (x BondMode) String() string {
 	return "BondMode(" + strconv.Itoa(int(x)) + ")"
 }
 
+// Initialize a new bond interface with the given paramters
+//   - sw_if_index - member sw_if_index
+//   - bond_sw_if_index - bond sw_if_index
+//   - is_passive - interface does not initiate the lacp protocol, remote must be active speaker
+//   - is_long_timeout - 90 seconds vs default 3 seconds neighbor timeout
+//
 // BondAddMember defines message 'bond_add_member'.
 type BondAddMember struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -148,6 +154,9 @@ func (m *BondAddMember) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for bond add_member reply
+//   - retval - return code
+//
 // BondAddMemberReply defines message 'bond_add_member_reply'.
 type BondAddMemberReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -181,6 +190,14 @@ func (m *BondAddMemberReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Initialize a new bond interface with the given paramters
+//   - id - if non-~0, specifies a custom interface ID
+//   - use_custom_mac - if set, mac_address is valid
+//   - mac_address - mac addr to assign to the interface if use_custom_mac is set
+//   - mode - mode, required (1=round-robin, 2=active-backup, 3=xor, 4=broadcast, 5=lacp)
+//   - lb - load balance, optional (0=l2, 1=l34, 2=l23) valid for xor and lacp modes. Otherwise ignored
+//   - numa_only - if numa_only is set, pkts will be transmitted by LAG members on local numa node only if have at least one, otherwise it works as usual.
+//
 // BondCreate defines message 'bond_create'.
 // Deprecated: the message will be removed in the future versions
 type BondCreate struct {
@@ -235,6 +252,15 @@ func (m *BondCreate) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Initialize a new bond interface with the given paramters
+//   - mode - mode, required (1=round-robin, 2=active-backup, 3=xor, 4=broadcast, 5=lacp)
+//   - lb - load balance, optional (0=l2, 1=l34, 2=l23) valid for xor and lacp modes. Otherwise ignored (default=l2)
+//   - numa_only - if numa_only is set, pkts will be transmitted by LAG members on local numa node only if have at least one, otherwise it works as usual.
+//   - enable_gso - enable gso support (default 0)
+//   - use_custom_mac - if set, mac_address is valid
+//   - mac_address - mac addr to assign to the interface if use_custom_mac is set
+//   - id - if non-~0, specifies a custom interface ID (default=0xFFFFFFFF)
+//
 // BondCreate2 defines message 'bond_create2'.
 type BondCreate2 struct {
 	Mode         BondMode                  `binapi:"bond_mode,name=mode" json:"mode,omitempty"`
@@ -292,6 +318,10 @@ func (m *BondCreate2) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for bond create2 reply
+//   - retval - return code
+//   - sw_if_index - software index allocated for the new tap interface
+//
 // BondCreate2Reply defines message 'bond_create2_reply'.
 type BondCreate2Reply struct {
 	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -329,6 +359,10 @@ func (m *BondCreate2Reply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for bond create reply
+//   - retval - return code
+//   - sw_if_index - software index allocated for the new tap interface
+//
 // BondCreateReply defines message 'bond_create_reply'.
 type BondCreateReply struct {
 	Retval    int32                          `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -366,6 +400,9 @@ func (m *BondCreateReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Delete bond interface
+//   - sw_if_index - interface index of member interface
+//
 // BondDelete defines message 'bond_delete'.
 type BondDelete struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -432,6 +469,9 @@ func (m *BondDeleteReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// bond detach member
+//   - sw_if_index - interface index of member interface
+//
 // BondDetachMember defines message 'bond_detach_member'.
 type BondDetachMember struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -498,6 +538,9 @@ func (m *BondDetachMemberReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// bond detach slave
+//   - sw_if_index - interface index of member interface
+//
 // BondDetachSlave defines message 'bond_detach_slave'.
 // Deprecated: the message will be removed in the future versions
 type BondDetachSlave struct {
@@ -566,6 +609,12 @@ func (m *BondDetachSlaveReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Initialize a new bond interface with the given paramters
+//   - sw_if_index - slave sw_if_index
+//   - bond_sw_if_index - bond sw_if_index
+//   - is_passive - interface does not initiate the lacp protocol, remote must be active speaker
+//   - is_long_timeout - 90 seconds vs default 3 seconds neighbor timeout
+//
 // BondEnslave defines message 'bond_enslave'.
 // Deprecated: the message will be removed in the future versions
 type BondEnslave struct {
@@ -612,6 +661,9 @@ func (m *BondEnslave) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for bond enslave reply
+//   - retval - return code
+//
 // BondEnslaveReply defines message 'bond_enslave_reply'.
 type BondEnslaveReply struct {
 	Retval int32 `binapi:"i32,name=retval" json:"retval,omitempty"`
@@ -645,6 +697,16 @@ func (m *BondEnslaveReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for bond dump request
+//   - sw_if_index - software index of bond interface
+//   - id - ID of interface
+//   - mode - bonding mode
+//   - lb - load balance algo
+//   - numa_only - enable local numa TX for lacp mode
+//   - active_members - active members count
+//   - members - config member count
+//   - interface_name - name of interface
+//
 // SwBondInterfaceDetails defines message 'sw_bond_interface_details'.
 type SwBondInterfaceDetails struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -706,6 +768,7 @@ func (m *SwBondInterfaceDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump bond interfaces request
 // SwBondInterfaceDump defines message 'sw_bond_interface_dump'.
 type SwBondInterfaceDump struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index,default=4294967295" json:"sw_if_index,omitempty"`
@@ -739,6 +802,16 @@ func (m *SwBondInterfaceDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for bond dump request
+//   - sw_if_index - software index of bond interface
+//   - id - ID of interface
+//   - interface_name - name of interface
+//   - mode - bonding mode
+//   - lb - load balance algo
+//   - numa_only - enable local numa TX for lacp mode
+//   - active_slaves - active member count
+//   - slaves - config member count
+//
 // SwInterfaceBondDetails defines message 'sw_interface_bond_details'.
 type SwInterfaceBondDetails struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -800,6 +873,7 @@ func (m *SwInterfaceBondDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Dump bond interfaces request
 // SwInterfaceBondDump defines message 'sw_interface_bond_dump'.
 // Deprecated: the message will be removed in the future versions
 type SwInterfaceBondDump struct{}
@@ -828,6 +902,10 @@ func (m *SwInterfaceBondDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Interface set bond weight
+//   - sw_if_index - member interface for which to set the weight
+//   - weight - weight value to be set for the member interface
+//
 // SwInterfaceSetBondWeight defines message 'sw_interface_set_bond_weight'.
 type SwInterfaceSetBondWeight struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -900,6 +978,14 @@ func (m *SwInterfaceSetBondWeightReply) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for slave dump request
+//   - sw_if_index - software index of slave interface
+//   - interface_name - name of interface
+//   - is_passve - interface does not initiate the lacp protocol, remote must be active speaker
+//   - is_long_timeout - 90 seconds vs default 3 seconds neighbor timeout
+//   - is_local_numa - the slave interface is local numa
+//   - weight - the weight for the slave interface (active-backup mode only)
+//
 // SwInterfaceSlaveDetails defines message 'sw_interface_slave_details'.
 type SwInterfaceSlaveDetails struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -953,6 +1039,9 @@ func (m *SwInterfaceSlaveDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// bond slave dump
+//   - sw_if_index - interface index of bond interface
+//
 // SwInterfaceSlaveDump defines message 'sw_interface_slave_dump'.
 // Deprecated: the message will be removed in the future versions
 type SwInterfaceSlaveDump struct {
@@ -987,6 +1076,14 @@ func (m *SwInterfaceSlaveDump) Unmarshal(b []byte) error {
 	return nil
 }
 
+// Reply for member dump request
+//   - sw_if_index - software index of member interface
+//   - interface_name - name of interface
+//   - is_passve - interface does not initiate the lacp protocol, remote must be active speaker
+//   - is_long_timeout - 90 seconds vs default 3 seconds neighbor timeout
+//   - is_local_numa - the member interface is local numa
+//   - weight - the weight for the member interface (active-backup mode only)
+//
 // SwMemberInterfaceDetails defines message 'sw_member_interface_details'.
 type SwMemberInterfaceDetails struct {
 	SwIfIndex     interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
@@ -1040,6 +1137,9 @@ func (m *SwMemberInterfaceDetails) Unmarshal(b []byte) error {
 	return nil
 }
 
+// bond member dump
+//   - sw_if_index - interface index of bond interface
+//
 // SwMemberInterfaceDump defines message 'sw_member_interface_dump'.
 type SwMemberInterfaceDump struct {
 	SwIfIndex interface_types.InterfaceIndex `binapi:"interface_index,name=sw_if_index" json:"sw_if_index,omitempty"`
