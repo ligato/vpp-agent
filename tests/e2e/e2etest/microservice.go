@@ -1,12 +1,17 @@
 package e2etest
 
 import (
+	"context"
 	"runtime"
 	"testing"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	docker "github.com/docker/docker/client"
 	"github.com/go-errors/errors"
 	"github.com/vishvananda/netns"
+
 	nslinuxcalls "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin/linuxcalls"
 )
 
@@ -91,51 +96,45 @@ func MicroserviceStartOptionsForContainerRuntime(ctx *TestCtx, options interface
 	}
 
 	msLabel := MsNamePrefix + opts.Name
-	createOpts := &docker.CreateContainerOptions{
-		Context: ctx.ctx,
-		Name:    msLabel,
-		Config: &docker.Config{
+	config := &moby.ContainerCreateConfig{
+		Name: msLabel,
+		Config: &container.Config{
 			Image: msImage,
 			Labels: map[string]string{
 				msLabelKey: opts.Name,
 			},
-			//Entrypoint:
 			Env: []string{"MICROSERVICE_LABEL=" + msLabel},
+			// entrypoint
 			Cmd: []string{"tail", "-f", "/dev/null"},
 		},
-		HostConfig: &docker.HostConfig{
+		HostConfig: &container.HostConfig{
 			// networking configured via VPP in E2E tests
 			NetworkMode: "none",
 		},
 	}
 
-	if opts.ContainerOptsHook != nil {
-		opts.ContainerOptsHook(createOpts)
+	if opts.ContainerConfigHook != nil {
+		opts.ContainerConfigHook(config)
 	}
 
 	return &ContainerStartOptions{
-		ContainerOptions: createOpts,
-		Pull:             true,
+		ContainerConfig: config,
+		Pull:            true,
 	}, nil
 }
 
 // TODO this is runtime specific -> integrate it into runtime concept
 func removeDanglingMicroservices(t *testing.T, dockerClient *docker.Client) {
 	// remove any running microservices prior to starting a new test
-	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
-		All: true,
-		Filters: map[string][]string{
-			"label": {msLabelKey},
-		},
+	containers, err := dockerClient.ContainerList(context.Background(), moby.ContainerListOptions{
+		Filters: filters.NewArgs(filters.Arg("label", msLabelKey)),
+		All:     true,
 	})
 	if err != nil {
 		t.Fatalf("failed to list existing microservices: %v", err)
 	}
 	for _, container := range containers {
-		err = dockerClient.RemoveContainer(docker.RemoveContainerOptions{
-			ID:    container.ID,
-			Force: true,
-		})
+		err = dockerClient.ContainerRemove(context.Background(), container.ID, moby.ContainerRemoveOptions{Force: true})
 		if err != nil {
 			t.Fatalf("failed to remove existing microservices: %v", err)
 		} else {

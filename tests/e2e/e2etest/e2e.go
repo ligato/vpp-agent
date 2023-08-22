@@ -27,7 +27,8 @@ import (
 	"testing"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
+	docker "github.com/docker/docker/client"
 	"github.com/onsi/gomega"
 	"go.ligato.io/cn-infra/v2/logging"
 	"google.golang.org/grpc"
@@ -182,12 +183,12 @@ func Setup(t *testing.T, optMods ...SetupOptModifier) *TestCtx {
 
 	// connect to the docker daemon
 	var err error
-	testCtx.dockerClient, err = docker.NewClientFromEnv()
+	testCtx.dockerClient, err = docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
 		t.Fatalf("failed to get docker client instance from the environment variables: %v", err)
 	}
 	if Debug {
-		t.Logf("Using docker client endpoint: %+v", testCtx.dockerClient.Endpoint())
+		t.Logf("Using Docker daemon host: %+v", testCtx.dockerClient.DaemonHost())
 	}
 
 	// make sure there are no containers left from the previous run
@@ -265,14 +266,15 @@ func AgentInstanceName(testCtx *TestCtx) string {
 
 // Teardown perform test cleanup
 func (test *TestCtx) Teardown() {
+	if test.cancel != nil {
+		defer func() {
+			test.cancel()
+			test.cancel = nil
+		}()
+	}
 	if test.t.Failed() || Debug {
 		defer test.dumpLog()
 		defer test.dumpPacketTrace()
-	}
-
-	if test.cancel != nil {
-		test.cancel()
-		test.cancel = nil
 	}
 
 	// terminate all agents and close their clients
@@ -309,7 +311,9 @@ func (test *TestCtx) dumpLog() {
 		return
 	}
 	defer test.outputBuf.Reset()
-	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e.log", test.VppRelease(), test.t.Name()))
+
+	logName := fmt.Sprintf("%s_%s_e2e.log", test.VppRelease(), test.t.Name())
+	path := filepath.Join(logDir, strings.ReplaceAll(logName, "/", "-"))
 	f, err := os.Create(path)
 	if err != nil {
 		test.t.Errorf("failed to create test log file: %v", err)
@@ -332,7 +336,9 @@ func (test *TestCtx) dumpPacketTrace() {
 		return
 	}
 	defer test.traceBuf.Reset()
-	path := filepath.Join(logDir, fmt.Sprintf("%s_%s_e2e_packettrace.log", test.VppRelease(), test.t.Name()))
+
+	traceName := fmt.Sprintf("%s_%s_e2e.log", test.VppRelease(), test.t.Name())
+	path := filepath.Join(logDir, strings.ReplaceAll(traceName, "/", "-"))
 	f, err := os.Create(path)
 	if err != nil {
 		test.t.Errorf("failed to create packet trace log file: %v", err)
@@ -387,12 +393,12 @@ func (test *TestCtx) ExecVppctl(action string, args ...string) (string, error) {
 }
 
 func (test *TestCtx) IsMicroserviceRunning(name string) bool {
-	cli, err := docker.NewClientFromEnv()
+	dockerClient, err := docker.NewClientWithOpts(docker.FromEnv, docker.WithAPIVersionNegotiation())
 	if err != nil {
 		test.Logger.Fatal(err)
 	}
 
-	containers, err := cli.ListContainers(docker.ListContainersOptions{All: false})
+	containers, err := dockerClient.ContainerList(context.Background(), moby.ContainerListOptions{All: false})
 	if err != nil {
 		test.Logger.Fatal(err)
 	}

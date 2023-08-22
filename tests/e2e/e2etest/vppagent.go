@@ -22,7 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	docker "github.com/docker/docker/client"
 	"github.com/go-errors/errors"
 	"github.com/onsi/gomega"
 	"github.com/vishvananda/netns"
@@ -118,57 +121,51 @@ func AgentStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (in
 
 	// construct vpp-agent container creation options
 	agentLabel := agentNamePrefix + opts.Name
-	createOpts := &docker.CreateContainerOptions{
-		Context: ctx.ctx,
-		Name:    agentLabel,
-		Config: &docker.Config{
+	config := &moby.ContainerCreateConfig{
+		Name: agentLabel,
+		Config: &container.Config{
 			Image: opts.Image,
 			Labels: map[string]string{
 				agentLabelKey: opts.Name,
 			},
 			Env:          opts.Env,
-			AttachStderr: true,
 			AttachStdout: true,
+			AttachStderr: true,
 		},
-		HostConfig: &docker.HostConfig{
-			PublishAllPorts: true,
-			Privileged:      true,
-			PidMode:         "host",
+		HostConfig: &container.HostConfig{
 			Binds: []string{
 				"/var/run/docker.sock:/var/run/docker.sock",
 				ctx.DataDir + ":/testdata:ro",
 				filepath.Join(ctx.DataDir, "certs") + ":/etc/certs:ro",
 				shareVolumeName + ":" + ctx.ShareDir,
 			},
+			PidMode:         "host",
+			Privileged:      true,
+			PublishAllPorts: true,
 		},
 	}
 	if opts.ContainerOptsHook != nil {
-		opts.ContainerOptsHook(createOpts)
+		opts.ContainerOptsHook(config)
 	}
 	return &ContainerStartOptions{
-		ContainerOptions: createOpts,
-		Pull:             false,
-		AttachLogs:       true,
+		ContainerConfig: config,
+		Pull:            false,
+		AttachLogs:      true,
 	}, nil
 }
 
 // TODO this is runtime specific -> integrate it into runtime concept
 func removeDanglingAgents(t *testing.T, dockerClient *docker.Client) {
 	// remove any running vpp-agents prior to starting a new test
-	containers, err := dockerClient.ListContainers(docker.ListContainersOptions{
-		All: true,
-		Filters: map[string][]string{
-			"label": {agentLabelKey},
-		},
+	containers, err := dockerClient.ContainerList(context.Background(), moby.ContainerListOptions{
+		Filters: filters.NewArgs(filters.Arg("label", agentLabelKey)),
+		All:     true,
 	})
 	if err != nil {
 		t.Fatalf("failed to list existing vpp-agents: %v", err)
 	}
 	for _, container := range containers {
-		err = dockerClient.RemoveContainer(docker.RemoveContainerOptions{
-			ID:    container.ID,
-			Force: true,
-		})
+		err = dockerClient.ContainerRemove(context.Background(), container.ID, moby.ContainerRemoveOptions{Force: true})
 		if err != nil {
 			t.Fatalf("failed to remove existing vpp-agents: %v", err)
 		} else {

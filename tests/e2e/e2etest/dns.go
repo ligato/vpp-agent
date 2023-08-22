@@ -17,7 +17,8 @@ package e2etest
 import (
 	"fmt"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/go-errors/errors"
 )
 
@@ -101,13 +102,13 @@ func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{})
 	coreFilepath := CreateFileOnSharedVolume(ctx, "Corefile", corefileContent)
 
 	// construct container options
-	containerOptions := &docker.CreateContainerOptions{
+	config := &moby.ContainerCreateConfig{
 		Name: "e2e-test-dns",
-		Config: &docker.Config{
+		Config: &container.Config{
 			Image: dnsImage,
 			Cmd:   []string{"-conf", coreFilepath}, // CMD adds only additional parameters to command in ENTRYPOINT
 		},
-		HostConfig: &docker.HostConfig{
+		HostConfig: &container.HostConfig{
 			Binds: []string{
 				shareVolumeName + ":" + ctx.ShareDir, // needed for coredns configuration
 			},
@@ -115,7 +116,7 @@ func DNSServerStartOptionsForContainerRuntime(ctx *TestCtx, options interface{})
 	}
 
 	return &ContainerStartOptions{
-		ContainerOptions: containerOptions,
-		Pull:             true,
+		ContainerConfig: config,
+		Pull:            true,
 	}, nil
 }

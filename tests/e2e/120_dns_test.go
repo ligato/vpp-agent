@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
 	. "github.com/onsi/gomega"
 
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
@@ -319,11 +319,11 @@ func configureVPPAgentAsDNSServer(ctx *TestCtx, vppDNSServer, upstreamDNSServer 
 
 // useMicroserviceWithDig provides modifier for using specialized microservice image for using linux dig tool
 func useMicroserviceWithDig() MicroserviceOptModifier {
-	return WithMSContainerStartHook(func(opts *docker.CreateContainerOptions) {
+	return WithMSContainerStartHook(func(config *moby.ContainerCreateConfig) {
 		// use different image (+ entrypoint usage in image needs changes in container start)
-		opts.Config.Image = "itsthenetwork/alpine-dig"
-		opts.Config.Entrypoint = []string{"tail", "-f", "/dev/null"}
-		opts.Config.Cmd = []string{}
-		opts.HostConfig.NetworkMode = "bridge" // return back to default docker networking
+		config.Config.Image = "itsthenetwork/alpine-dig"
+		config.Config.Entrypoint = []string{"tail", "-f", "/dev/null"}
+		config.Config.Cmd = []string{}
+		config.HostConfig.NetworkMode = "bridge" // return back to default docker networking
 	})
 }

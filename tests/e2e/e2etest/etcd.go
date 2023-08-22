@@ -17,12 +17,14 @@ package e2etest
 import (
 	"path/filepath"
 
-	docker "github.com/fsouza/go-dockerclient"
+	moby "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 	"github.com/go-errors/errors"
 )
 
 const (
-	etcdImage       = "gcr.io/etcd-development/etcd:v3.5.5"
+	etcdImage       = "gcr.io/etcd-development/etcd:v3.5.7"
 	etcdStopTimeout = 1 // seconds
 )
 
@@ -88,7 +90,7 @@ func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (int
 	cmd := []string{
 		"/usr/local/bin/etcd",
 	}
-	hostConfig := &docker.HostConfig{}
+	hostConfig := &container.HostConfig{}
 	if opts.UseHTTPS {
 		cmd = append(cmd,
 			"--client-cert-auth",
@@ -108,13 +110,13 @@ func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (int
 	if opts.UseTestContainerForNetworking {
 		hostConfig.NetworkMode = "container:vpp-agent-e2e-test"
 	} else { // separate container networking (default)
-		hostConfig.PortBindings = map[docker.Port][]docker.PortBinding{
+		hostConfig.PortBindings = map[nat.Port][]nat.PortBinding{
 			"2379/tcp": {{HostIP: "0.0.0.0", HostPort: "2379"}},
 		}
 	}
-	containerOptions := &docker.CreateContainerOptions{
+	config := &moby.ContainerCreateConfig{
 		Name: "e2e-test-etcd",
-		Config: &docker.Config{
+		Config: &container.Config{
 			Env:   []string{"ETCDCTL_API=3"},
 			Image: etcdImage,
 			Cmd:   cmd,
@@ -123,7 +125,7 @@ func ETCDStartOptionsForContainerRuntime(ctx *TestCtx, options interface{}) (int
 	}
 
 	return &ContainerStartOptions{
-		ContainerOptions: containerOptions,
-		Pull:             true,
+		ContainerConfig: config,
+		Pull:            true,
 	}, nil
 }
