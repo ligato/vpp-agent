@@ -39,7 +39,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.1.0
 	go.etcd.io/etcd/client/v3 v3.5.7
 	go.fd.io/govpp v0.8.0
-	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20230804085813-a0697d53e2c2
+	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20230824082901-356dce1f1754
 	golang.org/x/sys v0.6.0
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
@@ -53,7 +53,7 @@ require (
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/bennyscetbun/jsongo v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
+	github.com/bshuster-repo/logrus-logstash-hook v1.1.0 // indirect
 	github.com/bsm/sarama-cluster v2.1.15+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
