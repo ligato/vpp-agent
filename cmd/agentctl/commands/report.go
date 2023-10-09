@@ -672,8 +672,12 @@ func writeVPPEventLogReport(w io.Writer, errorW io.Writer, cli agentcli.Cli, oth
 	}
 
 	// get VPP startup time
-	vppStartUpTime, err := vppStartupTime(*clockOutput)
-	addRealTime := err == nil
+	var vppStartUpTime *time.Time
+	addRealTime := false
+	if clockOutput != nil {
+		vppStartUpTime, err = vppStartupTime(*clockOutput)
+		addRealTime = err == nil
+	}
 
 	// write event-log report (+ add into each line real date/time computed from VPP start timestamp)
 	err = writeVPPCLICommandReport("Retrieving vpp event-log information",
