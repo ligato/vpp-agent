@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
 	"net"
 	"reflect"
 	"strings"
@@ -240,8 +241,7 @@ func (d *LocalSIDDescriptor) Dependencies(key string, localSID *srv6.LocalSID) (
 		})
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: localsidIncomingInterfaceDep,
-			Key:   interfaces.InterfaceKey(ef.EndFunctionAd.IncomingInterface),
-		})
+			Key:   interfaces.InterfaceAddressKey(ef.EndFunctionAd.IncomingInterface, ef.EndFunctionAd.L3ServiceAddress, netalloc_api.IPAddressSource_EXISTING)})
 	}
 
 	return dependencies
